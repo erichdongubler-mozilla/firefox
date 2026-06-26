@@ -4027,14 +4027,10 @@ void MacroAssembler::patchCall(uint32_t callerOffset, uint32_t calleeOffset) {
       getInstructionAt(BufferOffset(callerOffset - 1 * kInstrSize));
 
   DEBUG_PRINTF("\t%p %u\n\t", auipc_, callerOffset - 2 * kInstrSize);
-#ifdef JS_DISASM_RISCV64
   disassembleInstr(auipc_);
-#endif /* JS_DISASM_RISCV64 */
   DEBUG_PRINTF("\t%p %u\n\t", jalr_, callerOffset - 1 * kInstrSize);
 
-#ifdef JS_DISASM_RISCV64
   disassembleInstr(jalr_);
-#endif /* JS_DISASM_RISCV64 */
   DEBUG_PRINTF("\t\n");
 
   MOZ_ASSERT(jalr_->IsJalr() && auipc_->IsAuipc());
@@ -5002,10 +4998,8 @@ void MacroAssemblerRiscv64::patchLi32(CodeOffset offset, Imm32 imm) {
   inst0->SetImm20UValue(high_20);
   inst1->SetImm12Value(low_12);
 
-#ifdef JS_DISASM_RISCV64
   disassembleInstr(inst0);
   disassembleInstr(inst1);
-#endif /* JS_DISASM_RISCV64 */
 
   MOZ_ASSERT((inst0->Imm20UValue() << kImm20Shift) + inst1->Imm12Value() ==
              imm.value);

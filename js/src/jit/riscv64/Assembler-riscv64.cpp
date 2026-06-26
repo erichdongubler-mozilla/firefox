@@ -467,14 +467,12 @@ class LiPtr {
    * Disassemble the li_ptr instruction sequence.
    */
   void disassemble() {
-#ifdef JS_DISASM_RISCV64
     Assembler::disassembleInstr(at(0));
     Assembler::disassembleInstr(at(1));
     Assembler::disassembleInstr(at(2));
     Assembler::disassembleInstr(at(3));
     Assembler::disassembleInstr(at(4));
     Assembler::disassembleInstr(at(5));
-#endif
   }
 
   /**
@@ -689,7 +687,6 @@ class LiConstant {
    * Disassemble the li_constant instruction sequence.
    */
   void disassemble() {
-#ifdef JS_DISASM_RISCV64
     Assembler::disassembleInstr(at(0));
     Assembler::disassembleInstr(at(1));
     Assembler::disassembleInstr(at(2));
@@ -698,7 +695,6 @@ class LiConstant {
     Assembler::disassembleInstr(at(5));
     Assembler::disassembleInstr(at(6));
     Assembler::disassembleInstr(at(7));
-#endif
   }
 
   /**
@@ -1640,9 +1636,7 @@ void Assembler::PatchShortRangeBranchToVeneer(Buffer* buffer, unsigned rangeIdx,
       buffer->getInst(BufferOffset(veneer.getOffset() + kInstrSize));
 
   DEBUG_PRINTF("\t%p(%x): ", branchInst, branch.getOffset());
-#ifdef JS_DISASM_RISCV64
   disassembleInstr(branchInst);
-#endif /* JS_DISASM_RISCV64 */
   DEBUG_PRINTF("\t insert veneer %x, branch: %x deadline: %x\n",
                veneer.getOffset(), branch.getOffset(), deadline.getOffset());
 
@@ -1677,10 +1671,8 @@ void Assembler::PatchShortRangeBranchToVeneer(Buffer* buffer, unsigned rangeIdx,
     branchInst->SetImm20JValue(offset);
   }
 
-#ifdef JS_DISASM_RISCV64
   DEBUG_PRINTF("\tfix to veneer:");
   disassembleInstr(branchInst);
-#endif /* JS_DISASM_RISCV64 */
 }
 }  // namespace jit
 }  // namespace js
