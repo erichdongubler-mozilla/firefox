@@ -54,6 +54,9 @@ export class ContentSection extends React.PureComponent {
         case "WIDGET_CROSSWORD":
           widgetName = "crossword";
           break;
+        case "WIDGET_STOCKS":
+          widgetName = "stocks";
+          break;
       }
 
       if (widgetName) {
@@ -180,6 +183,7 @@ export class ContentSection extends React.PureComponent {
       mayHaveClocksWidget,
       mayHavePrivacyWidget,
       mayHaveCrosswordWidget,
+      mayHaveStocksWidget,
       mayHaveWeatherForecast,
       openPreferences,
       wallpapersUserEnabled,
@@ -211,6 +215,7 @@ export class ContentSection extends React.PureComponent {
       clocksEnabled,
       privacyEnabled,
       crosswordEnabled,
+      stocksEnabled,
     } = enabledWidgets;
 
     // @nova-cleanup(remove-conditional): Remove novaEnabled check and newtab-custom-stories-toggle, default to newtab-recommended-stories-toggle
@@ -341,6 +346,20 @@ export class ContentSection extends React.PureComponent {
                     ></moz-toggle>
                   </div>
                 )}
+
+                {/* Stocks */}
+                {mayHaveStocksWidget && (
+                  <div id="stocks-widget-section" className="section">
+                    <moz-toggle
+                      id="stocks-toggle"
+                      pressed={stocksEnabled || null}
+                      ontoggle={this.onPreferenceSelect}
+                      data-preference="widgets.stocks.enabled"
+                      data-event-source="WIDGET_STOCKS"
+                      data-l10n-id="newtab-custom-widget-stocks-toggle"
+                    />
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -457,6 +476,7 @@ export class ContentSection extends React.PureComponent {
                             mayHaveClocksWidget={mayHaveClocksWidget}
                             mayHavePrivacyWidget={mayHavePrivacyWidget}
                             mayHaveCrosswordWidget={mayHaveCrosswordWidget}
+                            mayHaveStocksWidget={mayHaveStocksWidget}
                             mayHaveWeatherForecast={mayHaveWeatherForecast}
                             weatherDisplay={weatherDisplay}
                             setPref={setPref}
