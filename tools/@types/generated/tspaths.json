@@ -88,6 +88,9 @@
       "chrome://browser/content/aiwindow/components/smartwindow-smartbar-glow.mjs": [
         "../../../browser/components/aiwindow/ui/components/smartwindow-smartbar-glow/smartwindow-smartbar-glow.mjs"
       ],
+      "chrome://browser/content/aiwindow/components/smartwindow-topsites.mjs": [
+        "../../../browser/components/aiwindow/ui/components/smartwindow-topsites/smartwindow-topsites.mjs"
+      ],
       "chrome://browser/content/aiwindow/components/website-chip-container.mjs": [
         "../../../browser/components/aiwindow/ui/components/website-chip-container/website-chip-container.mjs"
       ],
@@ -355,6 +358,9 @@
       "chrome://browser/content/translations/TranslationsPanelShared.sys.mjs": [
         "../../../browser/components/translations/content/TranslationsPanelShared.sys.mjs"
       ],
+      "chrome://browser/content/urlbar/L10nCache.mjs": [
+        "../../../browser/components/urlbar/content/L10nCache.mjs"
+      ],
       "chrome://browser/content/urlbar/SearchModeSwitcher.mjs": [
         "../../../browser/components/urlbar/content/SearchModeSwitcher.mjs"
       ],
@@ -435,6 +441,9 @@
       ],
       "chrome://global/content/aboutwebrtc/graphdb.mjs": [
         "../../../toolkit/content/aboutwebrtc/graphdb.mjs"
+      ],
+      "chrome://global/content/autocomplete-row-item/autocomplete-row-item.mjs": [
+        "../../../toolkit/components/satchel/autocomplete-row-item/autocomplete-row-item.mjs"
       ],
       "chrome://global/content/bindings/colorpicker-common.mjs": [
         "../../../toolkit/content/widgets/colorpicker-common.mjs"
@@ -1231,6 +1240,9 @@
       "chrome://remote/content/webdriver-bidi/modules/root/moz/debugging.sys.mjs": [
         "../../../remote/webdriver-bidi/modules/root/moz/debugging.sys.mjs"
       ],
+      "chrome://remote/content/webdriver-bidi/modules/root/moz/profiler.sys.mjs": [
+        "../../../remote/webdriver-bidi/modules/root/moz/profiler.sys.mjs"
+      ],
       "chrome://remote/content/webdriver-bidi/modules/root/network.sys.mjs": [
         "../../../remote/webdriver-bidi/modules/root/network.sys.mjs"
       ],
@@ -1467,9 +1479,6 @@
       ],
       "resource:///modules/MSMigrationUtils.sys.mjs": [
         "../../../browser/components/migration/MSMigrationUtils.sys.mjs"
-      ],
-      "resource:///modules/MerinoClient.sys.mjs": [
-        "../../../browser/components/urlbar/MerinoClient.sys.mjs"
       ],
       "resource:///modules/MigrationUtils.sys.mjs": [
         "../../../browser/components/migration/MigrationUtils.sys.mjs"
@@ -1851,9 +1860,6 @@
       ],
       "resource:///modules/topsites/constants.mjs": [
         "../../../browser/components/topsites/constants.mjs"
-      ],
-      "resource:///modules/urlbar/private/GeolocationUtils.sys.mjs": [
-        "../../../browser/components/urlbar/private/GeolocationUtils.sys.mjs"
       ],
       "resource:///modules/webrtcUI.sys.mjs": [
         "../../../browser/modules/webrtcUI.sys.mjs"
@@ -6331,9 +6337,6 @@
       "resource://gre/modules/NewTabUtils.sys.mjs": [
         "../../../toolkit/modules/NewTabUtils.sys.mjs"
       ],
-      "resource://gre/modules/NimbusGeckoViewQATelemetry.sys.mjs": [
-        "../../../mobile/shared/modules/geckoview/NimbusGeckoViewQATelemetry.sys.mjs"
-      ],
       "resource://gre/modules/OSCrypto_win.sys.mjs": [
         "../../../toolkit/components/passwordmgr/OSCrypto_win.sys.mjs"
       ],
@@ -6756,6 +6759,9 @@
       ],
       "resource://gre/modules/narrate/VoiceSelect.sys.mjs": [
         "../../../toolkit/components/narrate/VoiceSelect.sys.mjs"
+      ],
+      "resource://gre/modules/policies/PolicySchemaValidator.sys.mjs": [
+        "../../../toolkit/components/enterprisepolicies/PolicySchemaValidator.sys.mjs"
       ],
       "resource://gre/modules/policies/WindowsGPOParser.sys.mjs": [
         "../../../toolkit/components/enterprisepolicies/WindowsGPOParser.sys.mjs"
@@ -7645,9 +7651,6 @@
       "resource://testing-common/ImageTestUtils.sys.mjs": [
         "../../../testing/modules/ImageTestUtils.sys.mjs"
       ],
-      "resource://testing-common/InflightAssetsMessageProvider.sys.mjs": [
-        "../../../browser/components/asrouter/tests/InflightAssetsMessageProvider.sys.mjs"
-      ],
       "resource://testing-common/JSObjectsTestUtils.sys.mjs": [
         "../../../devtools/shared/tests/objects/JSObjectsTestUtils.sys.mjs"
       ],
@@ -7689,9 +7692,6 @@
       ],
       "resource://testing-common/MockSound.sys.mjs": [
         "../../../testing/specialpowers/content/MockSound.sys.mjs"
-      ],
-      "resource://testing-common/NimbusRolloutMessageProvider.sys.mjs": [
-        "../../../browser/components/asrouter/tests/NimbusRolloutMessageProvider.sys.mjs"
       ],
       "resource://testing-common/NimbusTestUtils.sys.mjs": [
         "../../../toolkit/components/nimbus/test/NimbusTestUtils.sys.mjs"
@@ -7779,6 +7779,9 @@
       ],
       "resource://testing-common/TestIntegration.sys.mjs": [
         "../../../toolkit/modules/tests/xpcshell/TestIntegration.sys.mjs"
+      ],
+      "resource://testing-common/TestProfilerArtifact.sys.mjs": [
+        "../../../testing/modules/TestProfilerArtifact.sys.mjs"
       ],
       "resource://testing-common/TestUtils.sys.mjs": [
         "../../../testing/modules/TestUtils.sys.mjs"
