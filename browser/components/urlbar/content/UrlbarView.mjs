@@ -995,7 +995,7 @@ export class UrlbarView {
           this.#selectElement(this.getFirstSelectableElement(), {
             updateInput: false,
             setAccessibleFocus:
-              this.controller._userSelectionBehavior == "arrow",
+              this.controller.userSelectionBehavior == "arrow",
           });
         } else {
           this.input.setResultForCurrentValue(firstResult);
