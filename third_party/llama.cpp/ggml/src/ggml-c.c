@@ -7800,6 +7800,8 @@ void ggml_threadpool_params_init(struct ggml_threadpool_params * p, int n_thread
     p->poll       = 50;    // hybrid-polling enabled
     p->strict_cpu = false; // no strict placement (all threads share same cpumask)
     p->paused     = false; // threads are ready to go
+    p->thread_create_callback = 0;
+    p->thread_destroy_callback = 0;
     memset(p->cpumask, 0, GGML_MAX_N_THREADS); // all-zero means use the default affinity (usually inherited)
 }
 
