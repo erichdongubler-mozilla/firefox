@@ -81,19 +81,19 @@ void MacroAssembler::branchTest32(Condition cond, Register lhs, Imm32 rhs,
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
   ma_and(scratch, lhs, rhs);
-  ma_b(scratch, scratch, label, cond, LongJump);
+  ma_b(scratch, scratch, label, cond, ShortJump);
 }
 void MacroAssembler::branchTest32(Condition cond, Register lhs, Register rhs,
                                   Label* label) {
   MOZ_ASSERT(cond == Zero || cond == NonZero || cond == Signed ||
              cond == NotSigned);
   if (lhs == rhs) {
-    ma_b(lhs, rhs, label, cond, LongJump);
+    ma_b(lhs, rhs, label, cond, ShortJump);
   } else {
     UseScratchRegisterScope temps(this);
     Register scratch = temps.Acquire();
     and_(scratch, lhs, rhs);
-    ma_b(scratch, scratch, label, cond, LongJump);
+    ma_b(scratch, scratch, label, cond, ShortJump);
   }
 }
 void MacroAssembler::branchTest64(Condition cond, Register64 lhs,
@@ -483,12 +483,12 @@ void MacroAssembler::branch16(Condition cond, const Address& lhs, Imm32 rhs,
 }
 void MacroAssembler::branch32(Condition cond, Register lhs, Register rhs,
                               Label* label) {
-  ma_b(lhs, rhs, label, cond, LongJump);
+  ma_b(lhs, rhs, label, cond, ShortJump);
 }
 
 void MacroAssembler::branch32(Condition cond, Register lhs, Imm32 imm,
                               Label* label) {
-  ma_b(lhs, imm, label, cond, LongJump);
+  ma_b(lhs, imm, label, cond, ShortJump);
 }
 
 void MacroAssembler::branch32(Condition cond, const Address& lhs, Register rhs,
@@ -496,7 +496,7 @@ void MacroAssembler::branch32(Condition cond, const Address& lhs, Register rhs,
   UseScratchRegisterScope temps(this);
   Register scratch2 = temps.Acquire();
   load32(lhs, scratch2);
-  ma_b(scratch2, rhs, label, cond, LongJump);
+  ma_b(scratch2, rhs, label, cond, ShortJump);
 }
 
 void MacroAssembler::branch32(Condition cond, const Address& lhs, Imm32 rhs,
@@ -504,7 +504,7 @@ void MacroAssembler::branch32(Condition cond, const Address& lhs, Imm32 rhs,
   UseScratchRegisterScope temps(this);
   Register scratch2 = temps.Acquire();
   load32(lhs, scratch2);
-  ma_b(scratch2, rhs, label, cond, LongJump);
+  ma_b(scratch2, rhs, label, cond, ShortJump);
 }
 
 void MacroAssembler::branch32(Condition cond, const AbsoluteAddress& lhs,
@@ -512,7 +512,7 @@ void MacroAssembler::branch32(Condition cond, const AbsoluteAddress& lhs,
   UseScratchRegisterScope temps(this);
   Register scratch2 = temps.Acquire();
   load32(lhs, scratch2);
-  ma_b(scratch2, rhs, label, cond, LongJump);
+  ma_b(scratch2, rhs, label, cond, ShortJump);
 }
 
 void MacroAssembler::branch32(Condition cond, const AbsoluteAddress& lhs,
@@ -520,7 +520,7 @@ void MacroAssembler::branch32(Condition cond, const AbsoluteAddress& lhs,
   UseScratchRegisterScope temps(this);
   Register scratch2 = temps.Acquire();
   load32(lhs, scratch2);
-  ma_b(scratch2, rhs, label, cond, LongJump);
+  ma_b(scratch2, rhs, label, cond, ShortJump);
 }
 
 void MacroAssembler::branch32(Condition cond, const BaseIndex& lhs, Imm32 rhs,
@@ -528,7 +528,7 @@ void MacroAssembler::branch32(Condition cond, const BaseIndex& lhs, Imm32 rhs,
   UseScratchRegisterScope temps(this);
   Register scratch2 = temps.Acquire();
   load32(lhs, scratch2);
-  ma_b(scratch2, rhs, label, cond, LongJump);
+  ma_b(scratch2, rhs, label, cond, ShortJump);
 }
 
 void MacroAssembler::branch32(Condition cond, wasm::SymbolicAddress addr,
@@ -536,7 +536,7 @@ void MacroAssembler::branch32(Condition cond, wasm::SymbolicAddress addr,
   UseScratchRegisterScope temps(this);
   Register scratch2 = temps.Acquire();
   load32(addr, scratch2);
-  ma_b(scratch2, imm, label, cond, LongJump);
+  ma_b(scratch2, imm, label, cond, ShortJump);
 }
 void MacroAssembler::branch64(Condition cond, Register64 lhs, Imm64 val,
                               Label* success, Label* fail) {
@@ -620,11 +620,11 @@ void MacroAssembler::branch64(Condition cond, const Address& lhs,
 
 void MacroAssembler::branchDouble(DoubleCondition cc, FloatRegister frs1,
                                   FloatRegister frs2, Label* L) {
-  BranchFloat64(cc, frs1, frs2, L, LongJump);
+  BranchFloat64(cc, frs1, frs2, L, ShortJump);
 }
 void MacroAssembler::branchFloat(DoubleCondition cc, FloatRegister frs1,
                                  FloatRegister frs2, Label* L) {
-  BranchFloat32(cc, frs1, frs2, L, LongJump);
+  BranchFloat32(cc, frs1, frs2, L, ShortJump);
 }
 
 void MacroAssembler::branchMulPtr(Condition cond, Register src, Register dest,
@@ -651,31 +651,31 @@ void MacroAssembler::branchPrivatePtr(Condition cond, const Address& lhs,
 
 void MacroAssembler::branchPtr(Condition cond, Register lhs, Register rhs,
                                Label* label) {
-  ma_b(lhs, rhs, label, cond, LongJump);
+  ma_b(lhs, rhs, label, cond, ShortJump);
 }
 
 void MacroAssembler::branchPtr(Condition cond, Register lhs, Imm32 rhs,
                                Label* label) {
-  ma_b(lhs, rhs, label, cond, LongJump);
+  ma_b(lhs, rhs, label, cond, ShortJump);
 }
 
 void MacroAssembler::branchPtr(Condition cond, Register lhs, ImmPtr rhs,
                                Label* label) {
   if (rhs.value == nullptr && (cond == Zero || cond == NonZero)) {
-    ma_b(lhs, lhs, label, cond, LongJump);
+    ma_b(lhs, lhs, label, cond, ShortJump);
   } else {
-    ma_b(lhs, rhs, label, cond, LongJump);
+    ma_b(lhs, rhs, label, cond, ShortJump);
   }
 }
 
 void MacroAssembler::branchPtr(Condition cond, Register lhs, ImmGCPtr rhs,
                                Label* label) {
-  ma_b(lhs, rhs, label, cond, LongJump);
+  ma_b(lhs, rhs, label, cond, ShortJump);
 }
 
 void MacroAssembler::branchPtr(Condition cond, Register lhs, ImmWord rhs,
                                Label* label) {
-  ma_b(lhs, rhs, label, cond, LongJump);
+  ma_b(lhs, rhs, label, cond, ShortJump);
 }
 
 void MacroAssembler::branchPtr(Condition cond, const Address& lhs, Register rhs,
@@ -758,7 +758,7 @@ void MacroAssembler::branchTest32(Condition cond, const AbsoluteAddress& lhs,
   Register scratch2 = temps.Acquire();
   load32(lhs, scratch2);
   and32(rhs, scratch2);
-  ma_b(scratch2, scratch2, label, cond, LongJump);
+  ma_b(scratch2, scratch2, label, cond, ShortJump);
 }
 
 void MacroAssembler::branchTest32(Condition cond, const Address& lhs, Imm32 rhs,
@@ -769,7 +769,7 @@ void MacroAssembler::branchTest32(Condition cond, const Address& lhs, Imm32 rhs,
   Register scratch2 = temps.Acquire();
   load32(lhs, scratch2);
   and32(rhs, scratch2);
-  ma_b(scratch2, scratch2, label, cond, LongJump);
+  ma_b(scratch2, scratch2, label, cond, ShortJump);
 }
 void MacroAssembler::branchTestBigInt(Condition cond, Register tag,
                                       Label* label) {
@@ -1073,12 +1073,12 @@ void MacroAssembler::branchTestPtr(Condition cond, Register lhs, Register rhs,
   MOZ_ASSERT(cond == Zero || cond == NonZero || cond == Signed ||
              cond == NotSigned);
   if (lhs == rhs) {
-    ma_b(lhs, rhs, label, cond, LongJump);
+    ma_b(lhs, rhs, label, cond, ShortJump);
   } else {
     UseScratchRegisterScope temps(this);
     Register scratch = temps.Acquire();
     and_(scratch, lhs, rhs);
-    ma_b(scratch, scratch, label, cond, LongJump);
+    ma_b(scratch, scratch, label, cond, ShortJump);
   }
 }
 
@@ -1089,7 +1089,7 @@ void MacroAssembler::branchTestPtr(Condition cond, Register lhs, Imm32 rhs,
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
   ma_and(scratch, lhs, rhs);
-  ma_b(scratch, scratch, label, cond, LongJump);
+  ma_b(scratch, scratch, label, cond, ShortJump);
 }
 
 void MacroAssembler::branchTestPtr(Condition cond, Register lhs, ImmWord rhs,
@@ -1099,7 +1099,7 @@ void MacroAssembler::branchTestPtr(Condition cond, Register lhs, ImmWord rhs,
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
   ma_and(scratch, lhs, rhs);
-  ma_b(scratch, scratch, label, cond, LongJump);
+  ma_b(scratch, scratch, label, cond, ShortJump);
 }
 
 void MacroAssembler::branchTestPtr(Condition cond, const Address& lhs,
