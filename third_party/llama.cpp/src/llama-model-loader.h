@@ -49,6 +49,21 @@ struct llama_model_loader {
               std::abort();
             }
         }
+
+        // bounds-checked against an in-memory buffer (Firefox: llama_model_load_from_buffer)
+        llama_tensor_weight(size_t buffer_size, uint16_t idx, const struct gguf_context * gguf_ctx, ggml_tensor * tensor) : idx(idx), tensor(tensor) {
+            const int tensor_idx = gguf_find_tensor(gguf_ctx, ggml_get_name(tensor));
+            if (tensor_idx < 0) {
+                // throw std::runtime_error(format("tensor '%s' not found in the model", ggml_get_name(tensor)));
+                std::abort();
+            }
+
+            offs = gguf_get_data_offset(gguf_ctx) + gguf_get_tensor_offset(gguf_ctx, tensor_idx);
+            if (offs + ggml_nbytes(tensor) < offs || offs + ggml_nbytes(tensor) > buffer_size) {
+                // throw std::runtime_error(format("tensor '%s' data is not within the buffer bounds, model is corrupted or incomplete", ggml_get_name(tensor)));
+                std::abort();
+            }
+        }
     };
 
     // custom comparator to sort weights more nicely by layer
@@ -81,6 +96,10 @@ struct llama_model_loader {
     bool use_direct_io = false;
     bool check_tensors;
     bool no_alloc;
+
+    // in-memory buffer source (Firefox: llama_model_load_from_buffer); null for file/path loads
+    const void * buffer_data = nullptr;
+    size_t       buffer_size = 0;
 
     llama_files files;
     llama_ftype ftype;
@@ -128,6 +147,8 @@ struct llama_model_loader {
         const std::string & fname,
         std::vector<std::string> & splits, // optional, only need if the split does not follow naming scheme
         FILE * file,
+        const void * buffer,
+        size_t buffer_size,
         bool use_mmap,
         bool use_direct_io,
         bool check_tensors,

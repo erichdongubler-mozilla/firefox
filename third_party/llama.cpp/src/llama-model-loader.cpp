@@ -517,6 +517,8 @@ llama_model_loader::llama_model_loader(
         const std::string & fname,
         std::vector<std::string> & splits,
         FILE * file,
+        const void * buffer,
+        size_t buffer_size,
         bool use_mmap,
         bool use_direct_io,
         bool check_tensors,
@@ -694,6 +696,38 @@ llama_model_loader::llama_model_loader(
             n_bytes    += ggml_nbytes(cur);
             weights_map.emplace(tensor_name, llama_tensor_weight(files.back().get(), 0, metadata, cur));
         }
+    } else if (buffer != nullptr) {
+        // Firefox: load the model from an in-memory buffer (no file/mmap)
+        struct ggml_context * ctx = NULL;
+        struct gguf_init_params params = {
+            /*.no_alloc = */ true,
+            /*.ctx      = */ &ctx,
+        };
+
+        metadata_ptr.reset(gguf_init_from_buffer(buffer, buffer_size, params));
+        metadata = metadata_ptr.get();
+        if (metadata == nullptr) {
+            throw std::runtime_error(format("%s: failed to load model from buffer", __func__));
+        }
+
+        this->buffer_data = buffer;
+        this->buffer_size = buffer_size;
+
+        get_key(llm_kv(LLM_KV_GENERAL_ARCHITECTURE), arch_name, false);
+        llm_kv = LLM_KV(llm_arch_from_string(arch_name));
+
+        contexts.emplace_back(ctx);
+
+        // Save tensors data offset info, bounds-checked against the buffer.
+        for (ggml_tensor * cur = ggml_get_first_tensor(ctx); cur; cur = ggml_get_next_tensor(ctx, cur)) {
+            std::string tensor_name = std::string(cur->name);
+            if (weights_map.find(tensor_name) != weights_map.end()) {
+                throw std::runtime_error(format("invalid model: tensor '%s' is duplicated", ggml_get_name(cur)));
+            }
+            n_elements += ggml_nelements(cur);
+            n_bytes    += ggml_nbytes(cur);
+            weights_map.emplace(tensor_name, llama_tensor_weight(buffer_size, 0, metadata, cur));
+        }
     } else {
         get_key(llm_kv(LLM_KV_GENERAL_ARCHITECTURE), arch_name, false);
         llm_kv = LLM_KV(llm_arch_from_string(arch_name));
@@ -812,6 +846,11 @@ llama_model_loader::llama_model_loader(
 
     if (!llama_mmap::SUPPORTED) {
         LLAMA_LOG_WARN("%s: mmap is not supported on this platform\n", __func__);
+        use_mmap = false;
+    }
+
+    if (buffer_data != nullptr) {
+        // buffer-based loading reads tensor data directly from memory
         use_mmap = false;
     }
 
@@ -1386,7 +1425,11 @@ void llama_model_loader::get_mapping_range(size_t * first, size_t * last, void *
 void llama_model_loader::load_data_for(struct ggml_tensor * cur) const {
     const auto & w = require_weight(ggml_get_name(cur));
 
-    if (use_mmap) {
+    if (buffer_data != nullptr) {
+        GGML_ASSERT(cur->data != nullptr);
+        GGML_ASSERT(w.offs + ggml_nbytes(cur) <= buffer_size);
+        memcpy(cur->data, (const uint8_t *) buffer_data + w.offs, ggml_nbytes(cur));
+    } else if (use_mmap) {
         const auto & mapping = mappings.at(w.idx);
         if (cur->data == nullptr) {
             cur->data = (uint8_t *)mapping->addr() + w.offs;
@@ -1536,7 +1579,15 @@ bool llama_model_loader::load_all_data(
 
         size_t n_size = ggml_nbytes(cur);
 
-        if (use_mmap) {
+        if (buffer_data != nullptr) {
+            // Firefox: tensor data lives in the in-memory buffer
+            GGML_ASSERT(weight->offs + n_size <= buffer_size);
+            const uint8_t * data = (const uint8_t *) buffer_data + weight->offs;
+            if (check_tensors) {
+                validation_result.push_back(std::make_pair(cur, ggml_validate_row_data(cur->type, data, n_size)));
+            }
+            ggml_backend_tensor_set(cur, data, 0, n_size);
+        } else if (use_mmap) {
             const auto & mapping = mappings.at(weight->idx);
             ggml_backend_buffer_t buf_mmap = nullptr;
             if (bufs.count(weight->idx)) {

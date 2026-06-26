@@ -495,6 +495,18 @@ extern "C" {
                                    FILE * file,
               struct llama_model_params   params);
 
+    // Firefox: load a model from an open file handle (alias of llama_model_load_from_file_ptr)
+    // The caller is responsible for closing the file handle
+    LLAMA_API struct llama_model * llama_model_load_from_file_handle(
+                                   FILE * file,
+              struct llama_model_params   params);
+
+    // Firefox: load a model from an in-memory buffer containing a complete GGUF file
+    LLAMA_API struct llama_model * llama_model_load_from_buffer(
+                            const void * buffer,
+                                size_t   buffer_size,
+              struct llama_model_params   params);
+
     // Load a model from multiple splits (support custom naming scheme)
     // The paths must be in the correct order
     LLAMA_API struct llama_model * llama_model_load_from_splits(
