@@ -14,6 +14,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <cerrno>
 
 #include "moz-overrides.h"
 

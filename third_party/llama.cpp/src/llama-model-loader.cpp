@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <cstring>
 #include <regex>
+#include <mutex>
 
 #include "moz-overrides.h"
 
