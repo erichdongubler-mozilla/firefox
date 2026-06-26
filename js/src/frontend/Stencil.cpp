@@ -2472,7 +2472,9 @@ static bool InstantiateTopLevel(JSContext* cx, CompilationInput& input,
 
     script->outermostScope()->as<ModuleScope>().initModule(module);
 
-    module->initScriptSlots(script);
+    if (!module->initScriptSlots(cx, script)) {
+      return false;
+    }
 
     if (!ModuleObject::createEnvironment(cx, module)) {
       return false;

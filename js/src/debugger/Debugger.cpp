@@ -6173,6 +6173,22 @@ class MOZ_STACK_CLASS Debugger::SourceQuery : public Debugger::QueryBase {
       return false;
     }
 
+    // IterateScripts only finds sources reachable via a live BaseScript.
+    // For JS modules, onTopLevelEvaluationFinished clears ScriptSlot so the
+    // BaseScript can be GC'd while the ScriptSourceObject is kept alive by
+    // CyclicModuleFields. Collect those SSOs here.
+    for (auto iter = debugger->allDebuggees(); !iter.done(); iter.next()) {
+      auto siter = ObjectRealm::get(iter.get()).moduleScriptSources.iter();
+      for (; !siter.done(); siter.next()) {
+        if (ScriptSourceObject* sso = siter.get().get()) {
+          if (!sources.put(sso)) {
+            ReportOutOfMemory(cx);
+            return false;
+          }
+        }
+      }
+    }
+
     // TODO: Until such time that wasm modules are real ES6 modules,
     // unconditionally consider all wasm toplevel instance scripts.
     for (auto iter = debugger->allDebuggees(); !iter.done(); iter.next()) {

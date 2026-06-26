@@ -40,7 +40,9 @@ Realm::DebuggerVectorEntry::DebuggerVectorEntry(js::Debugger* dbg_,
     : dbg(dbg_), debuggerLink(link) {}
 
 ObjectRealm::ObjectRealm(JS::Zone* zone)
-    : innerViews(zone, zone), iteratorCache(zone) {}
+    : innerViews(zone, zone),
+      moduleScriptSources(zone, zone),
+      iteratorCache(zone) {}
 
 Realm::Realm(Compartment* comp, const JS::RealmOptions& options)
     : JS::shadow::Realm(comp),

@@ -234,6 +234,7 @@ struct IteratorHashPolicy {
 
 class DebugEnvironments;
 class NonSyntacticVariablesObject;
+class ScriptSourceObject;
 class WithEnvironmentObject;
 
 // ObjectRealm stores various tables and other state associated with particular
@@ -251,6 +252,12 @@ class ObjectRealm {
  public:
   // Map from array buffers to views sharing that storage.
   JS::WeakCache<js::InnerViewTable> innerViews;
+
+  using ModuleScriptSourceSet =
+      JS::GCHashSet<js::WeakHeapPtr<ScriptSourceObject*>,
+                    js::DefaultHasher<js::WeakHeapPtr<ScriptSourceObject*>>,
+                    js::ZoneAllocPolicy>;
+  JS::WeakCache<ModuleScriptSourceSet> moduleScriptSources;
 
   // Keep track of the metadata objects which can be associated with each JS
   // object. Both keys and values are in this realm.
