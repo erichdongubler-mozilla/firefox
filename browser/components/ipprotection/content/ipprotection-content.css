@@ -183,10 +183,6 @@ ipprotection-message-bar.vpn-top-content {
   flex-direction: column;
   gap: var(--space-large);
   padding: var(--space-medium);
-
-  @media -moz-pref("browser.nova.enabled") {
-    border-radius: var(--border-radius-xlarge);
-  }
 }
 
 #enrolling-header {
