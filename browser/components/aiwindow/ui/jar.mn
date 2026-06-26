@@ -22,6 +22,8 @@ browser.jar:
   content/browser/aiwindow/assets/loader.svg                        (assets/loader.svg)
   content/browser/aiwindow/components/ai-chat-message.mjs           (components/ai-chat-message/ai-chat-message.mjs)
   content/browser/aiwindow/components/ai-chat-message.css           (components/ai-chat-message/ai-chat-message.css)
+  content/browser/aiwindow/components/ai-grouped-chip-container.mjs (components/ai-grouped-chip-container/ai-grouped-chip-container.mjs)
+  content/browser/aiwindow/components/ai-grouped-chip-container.css (components/ai-grouped-chip-container/ai-grouped-chip-container.css)
   content/browser/aiwindow/components/ai-website-chip.mjs           (components/ai-website-chip/ai-website-chip.mjs)
   content/browser/aiwindow/components/ai-website-chip.css           (components/ai-website-chip/ai-website-chip.css)
   content/browser/aiwindow/components/ai-website-select.mjs         (components/ai-website-select/ai-website-select.mjs)

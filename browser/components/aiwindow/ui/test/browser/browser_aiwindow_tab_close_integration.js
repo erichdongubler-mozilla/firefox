@@ -270,7 +270,9 @@ add_task(async function test_renders_action_result_confirmed_state() {
         chatContent.shadowRoot.querySelector("ai-action-result");
       Assert.ok(actionResult, "Action result component should be rendered");
       Assert.ok(
-        actionResult.parentElement?.classList.contains("chat-bubble-assistant"),
+        actionResult.parentElement?.parentElement?.classList.contains(
+          "chat-bubble-assistant"
+        ),
         "Action result should be inside assistant message bubble"
       );
 
