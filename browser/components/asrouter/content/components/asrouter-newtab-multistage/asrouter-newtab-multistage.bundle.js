@@ -2971,7 +2971,7 @@ class ProtonScreen extends (external_React_default()).PureComponent {
       this.mainContentHeader.focus();
     }
   }
-  getScreenClassName(includeNoodles, hasZapBorder, hasZapShadow, isVideoOnboarding, isAddonsPicker) {
+  getScreenClassName(includeNoodles, isVideoOnboarding, isAddonsPicker) {
     if (isVideoOnboarding) {
       return "with-video";
     }
@@ -2981,9 +2981,7 @@ class ProtonScreen extends (external_React_default()).PureComponent {
     const screenClass = `screen-${this.props.order % 2 !== 0 ? 1 : 2}`;
     const dialogInitial = this.props.isFirstScreen && this.props.previousOrder < 0 ? `dialog-initial` : ``;
     const dialogLast = this.props.isLastScreen ? `dialog-last` : ``;
-    const zapBorder = hasZapBorder ? `zap-border` : ``;
-    const zapShadow = hasZapShadow ? `zap-shadow` : ``;
-    return `${screenClass} ${dialogInitial} ${dialogLast} ${zapBorder} ${zapShadow} ${includeNoodles ? `with-noodles` : ``}`;
+    return `${screenClass} ${dialogInitial} ${dialogLast} ${includeNoodles ? `with-noodles` : ``}`;
   }
   renderTitle({
     title,
@@ -3327,15 +3325,13 @@ class ProtonScreen extends (external_React_default()).PureComponent {
       isWideScreen
     } = this.props;
     const includeNoodles = content.has_noodles;
-    const hasZapBorder = content.zap_border;
-    const hasZapShadow = content.zap_shadow;
     // The default screen position is "center"
     const isCenterPosition = content.position === "center" || !content.position;
     const hideStepsIndicator = autoAdvance || content?.video_container || isSingleScreen || forceHideStepsIndicator;
     const textColorClass = content.text_color ? `${content.text_color}-text` : "";
     // Assign proton screen style 'screen-1' or 'screen-2' to centered screens
     // by checking if screen order is even or odd.
-    const screenClassName = isCenterPosition ? this.getScreenClassName(includeNoodles, hasZapBorder, hasZapShadow, content?.video_container, content.tiles?.type === "addons-picker") : `${hasZapBorder ? "zap-border" : ""} ${hasZapShadow ? " zap-shadow" : ""}`;
+    const screenClassName = isCenterPosition ? this.getScreenClassName(includeNoodles, content?.video_container, content.tiles?.type === "addons-picker") : "";
     const isEmbeddedMigration = content.tiles?.type === "migration-wizard";
     const isSystemPromptStyleSpotlight = content.isSystemPromptStyleSpotlight === true;
     const combinedStyles = this.getCombinedInnerStyles(content, isWideScreen);

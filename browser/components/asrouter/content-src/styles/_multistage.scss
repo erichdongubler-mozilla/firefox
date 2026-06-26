@@ -65,10 +65,6 @@ html {
         pointer-events: none;
       }
 
-      .main-content {
-        background-color: var(--background-color-box);
-      }
-
       .screen {
         &:dir(rtl) {
           transform: unset;
@@ -328,7 +324,7 @@ html {
   .main-content {
     background-color: var(--background-color-canvas);
     // Fallback value can be removed after Nova has reached release
-    border-radius: var(--border-radius-xlarge, 16px);
+    border-radius: var(--border-radius-xxlarge, 16px);
     box-shadow: 0 2px 14px 0 rgba(0, 0, 0, 20%);
     display: flex;
     flex-direction: column;
@@ -466,7 +462,6 @@ html {
     &[pos='center'] {
       background-color: var(--background-color-overlay);
       min-width: $main-section-width;
-      border-radius: var(--border-radius-xlarge, 16px);
 
       &.with-noodles {
         // Adjust for noodles partially extending out from the square modal
@@ -475,30 +470,6 @@ html {
 
         .section-main {
           height: $main-section-width;
-        }
-      }
-
-      @media (not (prefers-contrast)) and (-moz-pref('browser.nova.enabled')) {
-        // Nova gradient border
-        &.zap-border {
-          .main-content {
-            background: linear-gradient(96deg, #B89CFF 20.68%, #FF9565 79.34%) border-box border-area, image(var(--background-color-box)) padding-box;
-            border: 1px solid transparent;
-          }
-        }
-
-        // Nova gradient shadow
-        &.zap-shadow {
-          .section-main::before {
-            content: '';
-            position: absolute;
-            z-index: -1;
-            inset: 7px;
-            border-radius: 60px;
-            box-shadow: -12px -12px 70px 0 light-dark(#E7D9FF, rgba(99, 47, 200, 80%)),
-              10px 10px 70px 0 light-dark(#FFD3B7, rgba(255, 138, 87, 80%));
-            transition: var(--transition);
-          }
         }
       }
 
@@ -567,7 +538,7 @@ html {
 
         .main-content {
           background-color: var(--background-color-canvas);
-          border-radius: var(--border-radius-xlarge, 8px);
+          border-radius: var(--border-radius-xxlarge, 8px);
           box-shadow: 0 2px 14px rgba(58, 57, 68, 20%);
           overflow: hidden;
 
@@ -753,29 +724,10 @@ html {
           box-shadow: 0 2px 14px 0 rgba(0, 0, 0, 20%);
           width: $split-section-width + $split-section-width;
           height: $split-screen-height;
-          border-radius: var(--border-radius-xlarge, 8px);
+          border-radius: var(--border-radius-xxlarge, 8px);
           inset: 0;
           margin: auto;
           pointer-events: none;
-        }
-
-        @media (not (prefers-contrast)) and (-moz-pref('browser.nova.enabled')) {
-          // Nova gradient border for split layout
-          &.zap-border {
-            &::before {
-              background: linear-gradient(96deg, #B89CFF 20.68%, #FF9565 79.34%) border-box border-area, image(var(--background-color-box)) padding-box;
-              border: 1px solid transparent;
-            }
-          }
-
-          // Nova gradient shadow for split layout
-          &.zap-shadow {
-            &::before {
-              box-shadow: -12px -12px 70px 0 light-dark(#E7D9FF, rgba(99, 47, 200, 80%)),
-                10px 10px 70px 0 light-dark(#FFD3B7, rgba(255, 138, 87, 80%));
-              transition: var(--transition);
-            }
-          }
         }
       }
 
@@ -837,7 +789,7 @@ html {
         }
 
         .main-content {
-          border-radius: 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0;
+          border-radius: 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0;
           overflow: hidden;
           padding-inline: 35px 20px;
           padding-block: 120px 0;
@@ -848,7 +800,7 @@ html {
           }
 
           &:dir(rtl) {
-            border-radius: var(--border-radius-xlarge, 8px) 0 0 var(--border-radius-xlarge, 8px);
+            border-radius: var(--border-radius-xxlarge, 8px) 0 0 var(--border-radius-xxlarge, 8px);
           }
 
           .legal-paragraph {
@@ -1054,7 +1006,7 @@ html {
       .section-secondary {
         --mr-secondary-position: center center / auto 350px;
 
-        border-radius: var(--border-radius-xlarge, 8px) 0 0 var(--border-radius-xlarge, 8px);
+        border-radius: var(--border-radius-xxlarge, 8px) 0 0 var(--border-radius-xxlarge, 8px);
         margin: auto 0 auto auto;
         display: flex;
         align-items: center;
@@ -1063,7 +1015,7 @@ html {
         position: relative;
 
         &:dir(rtl) {
-          border-radius: 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0;
+          border-radius: 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0;
           margin: auto;
           margin-inline-end: 0;
         }
@@ -1171,10 +1123,10 @@ html {
 
             margin: auto;
             margin-inline-end: 0;
-            border-radius: var(--border-radius-xlarge, 8px) 0 0 var(--border-radius-xlarge, 8px);
+            border-radius: var(--border-radius-xxlarge, 8px) 0 0 var(--border-radius-xxlarge, 8px);
 
             &:dir(rtl) {
-              border-radius: 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0;
+              border-radius: 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0;
               margin: auto;
               margin-inline-end: 0;
             }
@@ -1183,10 +1135,10 @@ html {
           .section-secondary {
             margin: auto;
             margin-inline-start: 0;
-            border-radius: 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0;
+            border-radius: 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0;
 
             &:dir(rtl) {
-              border-radius: var(--border-radius-xlarge, 8px) 0 0 var(--border-radius-xlarge, 8px);
+              border-radius: var(--border-radius-xxlarge, 8px) 0 0 var(--border-radius-xxlarge, 8px);
               margin: auto;
               margin-inline-start: 0;
             }
@@ -1211,10 +1163,10 @@ html {
 
             margin: auto;
             margin-inline-end: 0;
-            border-radius: var(--border-radius-xlarge, 8px) 0 0 var(--border-radius-xlarge, 8px);
+            border-radius: var(--border-radius-xxlarge, 8px) 0 0 var(--border-radius-xxlarge, 8px);
 
             &:dir(rtl) {
-              border-radius: 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0;
+              border-radius: 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0;
               margin: auto;
               margin-inline-end: 0;
             }
@@ -1223,10 +1175,10 @@ html {
           .section-secondary {
             margin: auto;
             margin-inline-start: 0;
-            border-radius: 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0;
+            border-radius: 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0;
 
             &:dir(rtl) {
-              border-radius: var(--border-radius-xlarge, 8px) 0 0 var(--border-radius-xlarge, 8px);
+              border-radius: var(--border-radius-xxlarge, 8px) 0 0 var(--border-radius-xxlarge, 8px);
               margin: auto;
               margin-inline-start: 0;
             }
@@ -1543,14 +1495,14 @@ html {
             flex-direction: column;
 
             .section-secondary {
-              border-radius: var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0 0;
+              border-radius: var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0 0;
               margin: auto;
               margin-bottom: 0;
 
               &:dir(rtl) {
                 margin: auto;
                 margin-bottom: 0;
-                border-radius: var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0 0;
+                border-radius: var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0 0;
               }
             }
 
@@ -1558,12 +1510,12 @@ html {
               height: auto;
               margin: auto;
               margin-top: 0;
-              border-radius: 0 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px);
+              border-radius: 0 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px);
 
               &:dir(rtl) {
                 margin: auto;
                 margin-top: 0;
-                border-radius: 0 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px);
+                border-radius: 0 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px);
               }
             }
           }
@@ -1576,7 +1528,7 @@ html {
           .section-secondary {
             --mr-secondary-position: center center / 75%;
 
-            border-radius: var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0 0;
+            border-radius: var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0 0;
             margin: auto;
             margin-bottom: 0;
             height: $small-secondary-section-height;
@@ -1600,7 +1552,7 @@ html {
             &:dir(rtl) {
               margin: auto;
               margin-bottom: 0;
-              border-radius: var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0 0;
+              border-radius: var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0 0;
             }
 
             &.with-secondary-section-hidden {
@@ -1635,16 +1587,16 @@ html {
 
               .main-content {
                 padding: 50px 0 0;
-                border-radius: var(--border-radius-xlarge, 8px);
+                border-radius: var(--border-radius-xxlarge, 8px);
 
                 &:dir(rtl) {
-                  border-radius: var(--border-radius-xlarge, 8px);
+                  border-radius: var(--border-radius-xxlarge, 8px);
                 }
               }
             }
 
             .main-content {
-              border-radius: 0 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px);
+              border-radius: 0 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px);
               padding: 30px 0 0;
 
               .main-content-inner {
@@ -1727,7 +1679,7 @@ html {
               margin-top: 0;
 
               .main-content {
-                border-radius: 0 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px);
+                border-radius: 0 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px);
               }
             }
           }
@@ -1746,10 +1698,10 @@ html {
 
               margin: auto;
               margin-inline-end: 0;
-              border-radius: var(--border-radius-xlarge, 8px) 0 0 var(--border-radius-xlarge, 8px);
+              border-radius: var(--border-radius-xxlarge, 8px) 0 0 var(--border-radius-xxlarge, 8px);
 
               &:dir(rtl) {
-                border-radius: 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0;
+                border-radius: 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0;
                 margin: auto;
                 margin-inline-end: 0;
               }
@@ -1758,10 +1710,10 @@ html {
             .section-secondary {
               margin: auto;
               margin-inline-start: 0;
-              border-radius: 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0;
+              border-radius: 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0;
 
               &:dir(rtl) {
-                border-radius: var(--border-radius-xlarge, 8px) 0 0 var(--border-radius-xlarge, 8px);
+                border-radius: var(--border-radius-xxlarge, 8px) 0 0 var(--border-radius-xxlarge, 8px);
                 margin: auto;
                 margin-inline-start: 0;
               }
@@ -2103,44 +2055,22 @@ html {
           top: -10px;
           line-height: 1;
 
-          @media (-moz-pref("browser.nova.enabled")) {
-            border-radius: var(--border-radius-xlarge);
-            right: 10px;
-            top: -12px;
-            align-content: center;
-          }
-
           &.centered {
             /* stylelint-disable-next-line */
             border-radius: 8px 8px 0 0;
             background-color: var(--button-background-color-primary);
             position: relative;
             right: unset;
-            top: unset;
+            top: -6px;
             line-height: 0.75;
             width: 100%;
             box-sizing: border-box;
-
-            @media (-moz-pref("browser.nova.enabled")) {
-              top: -5px;
-              align-content: center;
-            }
 
             &.backup {
               /* stylelint-disable-next-line */
               border-radius: 10px 10px 0 0;
               background-color: var(--picker-backup-flair-background);
               color: var(--picker-backup-flair-color);
-
-              @media (-moz-pref("browser.nova.enabled")) {
-                border-radius: var(--border-radius-xlarge);
-                background-color: var(--button-background-color-primary);
-                color: var(--button-text-color-primary);
-                padding-inline: 12px;
-                align-content: center;
-                top: -9px;
-                width: unset;
-              }
 
               &.spacer {
                 background-color: transparent;
@@ -3301,8 +3231,6 @@ html {
 
     .dialog-initial {
       .main-content,
-      .section-main,
-      ::before,
       .dismiss-button,
       .more-button {
         translate: 0 calc(-2 * var(--translate));
@@ -3436,8 +3364,6 @@ html {
       }
 
       .main-content,
-      .section-main,
-      ::before,
       .dismiss-button,
       .more-button {
         opacity: 0;
