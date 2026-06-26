@@ -66,7 +66,7 @@ bool WeakRefObject::construct(JSContext* cx, unsigned argc, Value* vp) {
     target = ObjectValue(*object);
 
     // If the target is a DOM wrapper, preserve it.
-    preserveDOMWrapper(cx, object);
+    MaybePreserveDOMWrapper(cx, object);
   } else {
     JS::Symbol* symbol = target.toSymbol();
     isPermanent = symbol->isPermanentAndMayBeShared();
@@ -97,11 +97,6 @@ bool WeakRefObject::construct(JSContext* cx, unsigned argc, Value* vp) {
   args.rval().setObject(*weakRef);
 
   return true;
-}
-
-/* static */
-void WeakRefObject::preserveDOMWrapper(JSContext* cx, HandleObject obj) {
-  MaybePreserveDOMWrapper(cx, obj);
 }
 
 /* static */

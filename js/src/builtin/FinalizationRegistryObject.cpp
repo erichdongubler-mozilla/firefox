@@ -404,7 +404,7 @@ bool FinalizationRegistryObject::register_(JSContext* cx, unsigned argc,
     target = ObjectValue(*object);
 
     // If the target is a DOM wrapper, preserve it.
-    preserveDOMWrapper(cx, object);
+    MaybePreserveDOMWrapper(cx, object);
   } else {
     JS::Symbol* symbol = target.toSymbol();
     isPermanent = symbol->isPermanentAndMayBeShared();
@@ -423,12 +423,6 @@ bool FinalizationRegistryObject::register_(JSContext* cx, unsigned argc,
   registrationGuard.release();
   args.rval().setUndefined();
   return true;
-}
-
-/* static */
-void FinalizationRegistryObject::preserveDOMWrapper(JSContext* cx,
-                                                    HandleObject obj) {
-  MaybePreserveDOMWrapper(cx, obj);
 }
 
 /* static */
