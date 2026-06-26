@@ -46,7 +46,8 @@ bool PreserveWrapper(JSContext* aCx, JS::Handle<JSObject*> aObj) {
   MOZ_ASSERT(aCx);
   MOZ_ASSERT(aObj);
   MOZ_ASSERT(mozilla::dom::IsDOMObject(aObj));
-  return mozilla::dom::TryPreserveWrapper(aObj);
+  mozilla::dom::TryPreserveWrapper(aObj);
+  return true;
 }
 
 JSObject* Wrap(JSContext* aCx, JS::Handle<JSObject*> aExisting,

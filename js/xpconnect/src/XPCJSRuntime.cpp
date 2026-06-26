@@ -2975,9 +2975,7 @@ static bool PreserveWrapper(JSContext* cx, JS::Handle<JSObject*> obj) {
   MOZ_ASSERT(obj);
   MOZ_ASSERT(mozilla::dom::IsDOMObject(obj));
 
-  if (!mozilla::dom::TryPreserveWrapper(obj)) {
-    return false;
-  }
+  mozilla::dom::TryPreserveWrapper(obj);
 
   MOZ_ASSERT(!mozilla::dom::HasReleasedWrapper(obj),
              "There should be no released wrapper since we just preserved it");
