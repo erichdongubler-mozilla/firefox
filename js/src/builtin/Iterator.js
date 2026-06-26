@@ -1923,6 +1923,8 @@ function IteratorRange(start, end, optionOrStep) {
 
 }
 
+#endif
+
 /**
  *  Iterator.prototype.chunks ( chunkSize )
  *
@@ -2179,8 +2181,6 @@ function* IteratorWindowsGenerator(iterator, nextMethod, windowSize, undersized)
   // Step 8.b.ii.2. Return ReturnCompletion(undefined).
   // (implicit)
 }
-
-#endif
 
 /**
  *  Iterator.prototype.join ( separator )

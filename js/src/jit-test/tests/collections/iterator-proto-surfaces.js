@@ -25,7 +25,8 @@ function test(constructor) {
 
     var expectedKeys = ["map", "filter", "take", "drop", "flatMap", "reduce", "toArray",
                         "forEach", "some", "every", "find", "includes", "join",
-                        "constructor", Symbol.iterator, Symbol.toStringTag];
+                        "chunks", "windows", "constructor", Symbol.iterator,
+                        Symbol.toStringTag];
     if (getBuildConfiguration("explicit-resource-management")) {
       expectedKeys.splice(expectedKeys.length - 1, 0, Symbol.dispose);
     }
