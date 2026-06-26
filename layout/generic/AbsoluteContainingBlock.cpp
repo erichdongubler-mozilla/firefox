@@ -465,7 +465,7 @@ static SideBits GetScrollCompensatedSidesFor(
   } else if (aPositionArea.second == StylePositionAreaKeyword::Bottom ||
              aPositionArea.second == StylePositionAreaKeyword::SpanBottom) {
     sides |= SideBits::eTop;
-  } else if (aPositionArea.first == StylePositionAreaKeyword::Center) {
+  } else if (aPositionArea.second == StylePositionAreaKeyword::Center) {
     sides |= SideBits::eTopBottom;
   }
 
