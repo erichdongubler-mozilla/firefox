@@ -364,7 +364,7 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
         }
 
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_uninstall_survey).apply {
-            isVisible = Config.channel.isDebug
+            isVisible = true
             isChecked = context.components.settings.uninstallSurveyFeatureFlagEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }

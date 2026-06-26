@@ -670,7 +670,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
             onBackPressedCallback = onBackPressedCallback,
         )
 
-        if (Config.channel.isDebug) {
+        if (components.settings.uninstallSurveyFeatureFlagEnabled) {
             lifecycleScope.launch(IO) {
                 uninstallSurveyManager.updateUninstallSurveyShortcut()
             }
