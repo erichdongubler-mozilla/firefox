@@ -18,6 +18,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
   UrlbarSearchUtils:
     "moz-src:///browser/components/urlbar/UrlbarSearchUtils.sys.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
 });
 
 /**
@@ -70,7 +71,7 @@ export class UrlbarProviderAliasEngines extends UrlbarProvider {
       alias
     ).trimStart();
     let result = new lazy.UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.SEARCH,
+      type: lazy.UrlbarShared.RESULT_TYPE.SEARCH,
       source: UrlbarUtils.RESULT_SOURCE.SEARCH,
       heuristic: true,
       payload: {

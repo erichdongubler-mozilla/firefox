@@ -299,9 +299,9 @@ export class UrlbarView {
       return "unknown";
     }
     switch (result.type) {
-      case lazy.UrlbarUtils.RESULT_TYPE.TAB_SWITCH:
+      case UrlbarShared.RESULT_TYPE.TAB_SWITCH:
         return "switchtab";
-      case lazy.UrlbarUtils.RESULT_TYPE.SEARCH:
+      case UrlbarShared.RESULT_TYPE.SEARCH:
         if (result.providerName == "UrlbarProviderRecentSearches") {
           return "recent_search";
         }
@@ -322,7 +322,7 @@ export class UrlbarView {
           return type;
         }
         return "searchengine";
-      case lazy.UrlbarUtils.RESULT_TYPE.URL:
+      case UrlbarShared.RESULT_TYPE.URL:
         if (result.autofill) {
           let { type } = result.autofill;
           if (!type) {
@@ -357,21 +357,21 @@ export class UrlbarView {
           }
           return type;
         }
-      case lazy.UrlbarUtils.RESULT_TYPE.KEYWORD:
+      case UrlbarShared.RESULT_TYPE.KEYWORD:
         return "keyword";
-      case lazy.UrlbarUtils.RESULT_TYPE.OMNIBOX:
+      case UrlbarShared.RESULT_TYPE.OMNIBOX:
         return "extension";
-      case lazy.UrlbarUtils.RESULT_TYPE.REMOTE_TAB:
+      case UrlbarShared.RESULT_TYPE.REMOTE_TAB:
         return "remotetab";
-      case lazy.UrlbarUtils.RESULT_TYPE.TIP:
+      case UrlbarShared.RESULT_TYPE.TIP:
         return "tip";
-      case lazy.UrlbarUtils.RESULT_TYPE.DYNAMIC:
+      case UrlbarShared.RESULT_TYPE.DYNAMIC:
         if (result.providerName == "UrlbarProviderTabToSearch") {
           // This is the onboarding result.
           return "tabtosearch";
         }
         return "dynamic";
-      case lazy.UrlbarUtils.RESULT_TYPE.RESTRICT:
+      case UrlbarShared.RESULT_TYPE.RESTRICT:
         if (result.payload.keyword === UrlbarShared.RESTRICT_TOKENS.BOOKMARK) {
           return "restrict_keyword_bookmarks";
         }
@@ -385,7 +385,7 @@ export class UrlbarView {
           return "restrict_keyword_actions";
         }
         break;
-      case lazy.UrlbarUtils.RESULT_TYPE.AI_CHAT:
+      case UrlbarShared.RESULT_TYPE.AI_CHAT:
         return "ai_chat";
     }
     return "unknown";
@@ -592,7 +592,7 @@ export class UrlbarView {
 
     // Replace the row with a dismissal acknowledgment tip.
     let tip = new lazy.UrlbarResult({
-      type: lazy.UrlbarUtils.RESULT_TYPE.TIP,
+      type: UrlbarShared.RESULT_TYPE.TIP,
       source: lazy.UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
       payload: {
         type: "dismissalAcknowledgment",
@@ -867,7 +867,7 @@ export class UrlbarView {
     if (
       this.#queryContext?.results?.length &&
       this.#queryContext.searchString == this.input.value &&
-      this.#queryContext.results[0].type != lazy.UrlbarUtils.RESULT_TYPE.TIP
+      this.#queryContext.results[0].type != UrlbarShared.RESULT_TYPE.TIP
     ) {
       this.#openPanel();
     }
@@ -1242,7 +1242,7 @@ export class UrlbarView {
     }
     return (
       !lazy.UrlbarPrefs.get("experimental.hideHeuristic") ||
-      result.type == lazy.UrlbarUtils.RESULT_TYPE.TIP
+      result.type == UrlbarShared.RESULT_TYPE.TIP
     );
   }
 
@@ -1255,7 +1255,7 @@ export class UrlbarView {
   #resultIsSearchSuggestion(result) {
     return Boolean(
       result &&
-      result.type == lazy.UrlbarUtils.RESULT_TYPE.SEARCH &&
+      result.type == UrlbarShared.RESULT_TYPE.SEARCH &&
       result.payload.suggestion
     );
   }
@@ -2094,15 +2094,15 @@ export class UrlbarView {
     }
 
     if (
-      (oldResult.type == lazy.UrlbarUtils.RESULT_TYPE.DYNAMIC) !=
-      (newResult.type == lazy.UrlbarUtils.RESULT_TYPE.DYNAMIC)
+      (oldResult.type == UrlbarShared.RESULT_TYPE.DYNAMIC) !=
+      (newResult.type == UrlbarShared.RESULT_TYPE.DYNAMIC)
     ) {
       return true;
     }
 
     if (
-      oldResult.type == lazy.UrlbarUtils.RESULT_TYPE.DYNAMIC &&
-      newResult.type == lazy.UrlbarUtils.RESULT_TYPE.DYNAMIC &&
+      oldResult.type == UrlbarShared.RESULT_TYPE.DYNAMIC &&
+      newResult.type == UrlbarShared.RESULT_TYPE.DYNAMIC &&
       oldResult.payload.dynamicType != newResult.payload.dynamicType
     ) {
       return true;
@@ -2124,7 +2124,7 @@ export class UrlbarView {
     // present in other result types, so reusing them has higher risk of leaving
     // stale DOM.
     if (
-      oldResult.type == lazy.UrlbarUtils.RESULT_TYPE.TAB_SWITCH &&
+      oldResult.type == UrlbarShared.RESULT_TYPE.TAB_SWITCH &&
       newResult.type != oldResult.type
     ) {
       return true;
@@ -2134,14 +2134,14 @@ export class UrlbarView {
       newResult.providerName == "UrlbarProviderQuickSuggest" &&
       // Check if the `RESULT_TYPE` is `DYNAMIC` because otherwise the
       // `suggestionType` and `items` checks aren't relevant.
-      newResult.type == lazy.UrlbarUtils.RESULT_TYPE.DYNAMIC &&
+      newResult.type == UrlbarShared.RESULT_TYPE.DYNAMIC &&
       (oldResult.payload.suggestionType != newResult.payload.suggestionType ||
         oldResult.payload.items?.length != newResult.payload.items?.length)
     ) {
       return true;
     }
 
-    if (newResult.type == lazy.UrlbarUtils.RESULT_TYPE.DYNAMIC) {
+    if (newResult.type == UrlbarShared.RESULT_TYPE.DYNAMIC) {
       if (oldResult.providerName != newResult.providerName) {
         return true;
       }
@@ -2195,7 +2195,7 @@ export class UrlbarView {
         }
       }
 
-      if (item.result.type == lazy.UrlbarUtils.RESULT_TYPE.DYNAMIC) {
+      if (item.result.type == UrlbarShared.RESULT_TYPE.DYNAMIC) {
         this.#createRowContentForDynamicType(item, result);
       } else if (result.isBottomUrlSuggestion) {
         this.#createRowContentForBottomUrl(item, result);
@@ -2246,7 +2246,7 @@ export class UrlbarView {
     item.removeAttribute("feedback-acknowledgment");
 
     if (
-      result.type == lazy.UrlbarUtils.RESULT_TYPE.SEARCH &&
+      result.type == UrlbarShared.RESULT_TYPE.SEARCH &&
       !result.payload.providesSearchMode &&
       !result.payload.inPrivateWindow &&
       result.providerName != "UrlbarProviderQuickSuggest"
@@ -2255,11 +2255,11 @@ export class UrlbarView {
         "type",
         result.isRichSuggestion ? "rich-search" : "search"
       );
-    } else if (result.type == lazy.UrlbarUtils.RESULT_TYPE.REMOTE_TAB) {
+    } else if (result.type == UrlbarShared.RESULT_TYPE.REMOTE_TAB) {
       item.setAttribute("type", "remotetab");
-    } else if (result.type == lazy.UrlbarUtils.RESULT_TYPE.TAB_SWITCH) {
+    } else if (result.type == UrlbarShared.RESULT_TYPE.TAB_SWITCH) {
       item.setAttribute("type", "switchtab");
-    } else if (result.type == lazy.UrlbarUtils.RESULT_TYPE.TIP) {
+    } else if (result.type == UrlbarShared.RESULT_TYPE.TIP) {
       item.setAttribute("type", "tip");
       item.setAttribute("tip-type", result.payload.type);
 
@@ -2288,7 +2288,7 @@ export class UrlbarView {
       }
     } else if (result.source == lazy.UrlbarUtils.RESULT_SOURCE.BOOKMARKS) {
       item.setAttribute("type", "bookmark");
-    } else if (result.type == lazy.UrlbarUtils.RESULT_TYPE.DYNAMIC) {
+    } else if (result.type == UrlbarShared.RESULT_TYPE.DYNAMIC) {
       item.setAttribute("type", "dynamic");
       this.#updateRowForDynamicType(item, result);
       return;
@@ -2358,7 +2358,7 @@ export class UrlbarView {
     let setURL = false;
     let isRowSelectable = true;
     switch (result.type) {
-      case lazy.UrlbarUtils.RESULT_TYPE.TAB_SWITCH:
+      case UrlbarShared.RESULT_TYPE.TAB_SWITCH:
         // Hide chiclet when showing secondaryActions.
         if (!lazy.UrlbarPrefs.get("secondaryActions.switchToTab")) {
           actionSetter = () => {
@@ -2367,21 +2367,21 @@ export class UrlbarView {
         }
         setURL = true;
         break;
-      case lazy.UrlbarUtils.RESULT_TYPE.REMOTE_TAB:
+      case UrlbarShared.RESULT_TYPE.REMOTE_TAB:
         actionSetter = () => {
           this.#l10nCache.removeElementL10n(action);
           action.textContent = result.payload.device;
         };
         setURL = true;
         break;
-      case lazy.UrlbarUtils.RESULT_TYPE.AI_CHAT:
+      case UrlbarShared.RESULT_TYPE.AI_CHAT:
         actionSetter = () => {
           this.#l10nCache.setElementL10n(action, {
             id: "urlbar-result-action-ai-chat",
           });
         };
         break;
-      case lazy.UrlbarUtils.RESULT_TYPE.SEARCH:
+      case UrlbarShared.RESULT_TYPE.SEARCH:
         if (
           result.payload.suggestionObject?.suggestionType == "important_dates"
         ) {
@@ -2423,19 +2423,19 @@ export class UrlbarView {
           };
         }
         break;
-      case lazy.UrlbarUtils.RESULT_TYPE.KEYWORD:
+      case UrlbarShared.RESULT_TYPE.KEYWORD:
         isVisitAction = result.payload.input.trim() == result.payload.keyword;
         break;
-      case lazy.UrlbarUtils.RESULT_TYPE.OMNIBOX:
+      case UrlbarShared.RESULT_TYPE.OMNIBOX:
         actionSetter = () => {
           this.#l10nCache.removeElementL10n(action);
           action.textContent = result.payload.content;
         };
         break;
-      case lazy.UrlbarUtils.RESULT_TYPE.TIP:
+      case UrlbarShared.RESULT_TYPE.TIP:
         isRowSelectable = false;
         break;
-      case lazy.UrlbarUtils.RESULT_TYPE.URL:
+      case UrlbarShared.RESULT_TYPE.URL:
         if (result.providerName == "UrlbarProviderClipboard") {
           actionSetter = () => {
             this.#l10nCache.setElementL10n(action, {
@@ -2486,7 +2486,7 @@ export class UrlbarView {
 
     let sponsored =
       result.payload.isSponsored &&
-      result.type != lazy.UrlbarUtils.RESULT_TYPE.TAB_SWITCH &&
+      result.type != UrlbarShared.RESULT_TYPE.TAB_SWITCH &&
       result.providerName != "UrlbarProviderQuickSuggest";
     item.toggleAttribute("sponsored", !!sponsored);
     if (sponsored) {
@@ -2604,8 +2604,8 @@ export class UrlbarView {
   #iconForResult(result, iconUrlOverride = null) {
     if (
       result.source == lazy.UrlbarUtils.RESULT_SOURCE.HISTORY &&
-      (result.type == lazy.UrlbarUtils.RESULT_TYPE.SEARCH ||
-        result.type == lazy.UrlbarUtils.RESULT_TYPE.KEYWORD)
+      (result.type == UrlbarShared.RESULT_TYPE.SEARCH ||
+        result.type == UrlbarShared.RESULT_TYPE.KEYWORD)
     ) {
       return lazy.UrlbarUtils.ICON.HISTORY;
     }
@@ -2625,15 +2625,15 @@ export class UrlbarView {
     }
 
     if (
-      result.type == lazy.UrlbarUtils.RESULT_TYPE.SEARCH &&
+      result.type == UrlbarShared.RESULT_TYPE.SEARCH &&
       result.payload.trending
     ) {
       return lazy.UrlbarUtils.ICON.TRENDING;
     }
 
     if (
-      result.type == lazy.UrlbarUtils.RESULT_TYPE.SEARCH ||
-      result.type == lazy.UrlbarUtils.RESULT_TYPE.KEYWORD
+      result.type == UrlbarShared.RESULT_TYPE.SEARCH ||
+      result.type == UrlbarShared.RESULT_TYPE.KEYWORD
     ) {
       return lazy.UrlbarUtils.ICON.SEARCH_GLASS;
     }
@@ -2716,10 +2716,7 @@ export class UrlbarView {
       !Services.prefs.getBoolPref("browser.nova.enabled", false)
     );
 
-    this.#setRowSelectable(
-      item,
-      result.type != lazy.UrlbarUtils.RESULT_TYPE.TIP
-    );
+    this.#setRowSelectable(item, result.type != UrlbarShared.RESULT_TYPE.TIP);
 
     let favicon = item._elements.get("favicon");
     if (result.richSuggestionIconSize) {
@@ -2854,7 +2851,7 @@ export class UrlbarView {
         this.visibleResults.push(result);
         seenOnlyHeuristicOrSearchSuggestions &&=
           result.heuristic ||
-          (result.type == lazy.UrlbarUtils.RESULT_TYPE.SEARCH &&
+          (result.type == UrlbarShared.RESULT_TYPE.SEARCH &&
             result.payload.suggestion);
         if (result.exposureTelemetry) {
           this.controller.engagementEvent.addExposure(
@@ -2914,7 +2911,7 @@ export class UrlbarView {
       // Show the search suggestions label only if there are other visible
       // results before this one that aren't the heuristic or suggestions.
       !(
-        item.result.type == lazy.UrlbarUtils.RESULT_TYPE.SEARCH &&
+        item.result.type == UrlbarShared.RESULT_TYPE.SEARCH &&
         item.result.payload.suggestion &&
         seenOnlyHeuristicOrSearchSuggestions
       )
@@ -3022,17 +3019,17 @@ export class UrlbarView {
     }
 
     switch (row.result.type) {
-      case lazy.UrlbarUtils.RESULT_TYPE.KEYWORD:
-      case lazy.UrlbarUtils.RESULT_TYPE.REMOTE_TAB:
-      case lazy.UrlbarUtils.RESULT_TYPE.TAB_SWITCH:
-      case lazy.UrlbarUtils.RESULT_TYPE.URL:
+      case UrlbarShared.RESULT_TYPE.KEYWORD:
+      case UrlbarShared.RESULT_TYPE.REMOTE_TAB:
+      case UrlbarShared.RESULT_TYPE.TAB_SWITCH:
+      case UrlbarShared.RESULT_TYPE.URL:
         return { id: "urlbar-group-firefox-suggest" };
-      case lazy.UrlbarUtils.RESULT_TYPE.SEARCH:
+      case UrlbarShared.RESULT_TYPE.SEARCH:
         return {
           id: "urlbar-group-search-suggestions",
           args: { engine: engineName },
         };
-      case lazy.UrlbarUtils.RESULT_TYPE.DYNAMIC:
+      case UrlbarShared.RESULT_TYPE.DYNAMIC:
         if (row.result.providerName == "quickactions") {
           return { id: "urlbar-group-quickactions" };
         }
@@ -3047,8 +3044,8 @@ export class UrlbarView {
 
     if (
       !visible &&
-      row.result.type != lazy.UrlbarUtils.RESULT_TYPE.TIP &&
-      row.result.type != lazy.UrlbarUtils.RESULT_TYPE.DYNAMIC
+      row.result.type != UrlbarShared.RESULT_TYPE.TIP &&
+      row.result.type != UrlbarShared.RESULT_TYPE.DYNAMIC
     ) {
       // Reset the overflow state of elements that can overflow in case their
       // content changes while they're hidden. When making the row visible
@@ -3395,7 +3392,7 @@ export class UrlbarView {
     }
 
     if (result.payload.providesSearchMode) {
-      if (result.type == lazy.UrlbarUtils.RESULT_TYPE.RESTRICT) {
+      if (result.type == UrlbarShared.RESULT_TYPE.RESTRICT) {
         let localSearchMode =
           result.payload.l10nRestrictKeywords[0].toLowerCase();
         let keywords = result.payload.l10nRestrictKeywords
@@ -3479,7 +3476,7 @@ export class UrlbarView {
     );
 
     if (
-      result.type == lazy.UrlbarUtils.RESULT_TYPE.TAB_SWITCH &&
+      result.type == UrlbarShared.RESULT_TYPE.TAB_SWITCH &&
       lazy.UrlbarProviderOpenTabs.isContainerUserContextId(
         result.payload.userContextId
       )
@@ -3507,7 +3504,7 @@ export class UrlbarView {
     );
 
     if (
-      result.type == lazy.UrlbarUtils.RESULT_TYPE.TAB_SWITCH &&
+      result.type == UrlbarShared.RESULT_TYPE.TAB_SWITCH &&
       result.payload.tabGroup
     ) {
       if (!tabGroupAction) {
@@ -3733,7 +3730,7 @@ export class UrlbarView {
       return false;
     }
     let result = this.#queryContext.results[0];
-    if (result.type != lazy.UrlbarUtils.RESULT_TYPE.TIP) {
+    if (result.type != UrlbarShared.RESULT_TYPE.TIP) {
       return false;
     }
     let buttons = this.#rows.firstElementChild._buttons;
@@ -3957,7 +3954,7 @@ export class UrlbarView {
       let isPrivateSearchWithoutPrivateEngine =
         result.payload.inPrivateWindow && !result.payload.isPrivateEngine;
       let isSearchHistory =
-        result.type == lazy.UrlbarUtils.RESULT_TYPE.SEARCH &&
+        result.type == UrlbarShared.RESULT_TYPE.SEARCH &&
         result.source == lazy.UrlbarUtils.RESULT_SOURCE.HISTORY;
       let isSearchSuggestion = result.payload.suggestion && !isSearchHistory;
 
@@ -4004,7 +4001,7 @@ export class UrlbarView {
 
       // If an engine is selected, update search results to use that engine.
       // Otherwise, restore their original engines.
-      if (result.type == lazy.UrlbarUtils.RESULT_TYPE.SEARCH) {
+      if (result.type == UrlbarShared.RESULT_TYPE.SEARCH) {
         if (engine) {
           if (!result.payload.originalEngine) {
             result.payload.originalEngine = result.payload.engine;

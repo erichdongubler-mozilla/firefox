@@ -10,6 +10,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   QuickSuggest: "moz-src:///browser/components/urlbar/QuickSuggest.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
 });
 
@@ -64,7 +65,7 @@ export class MDNSuggestions extends SuggestProvider {
     url.searchParams.set("utm_content", "treatment");
 
     return new lazy.UrlbarResult({
-      type: lazy.UrlbarUtils.RESULT_TYPE.URL,
+      type: lazy.UrlbarShared.RESULT_TYPE.URL,
       source: lazy.UrlbarUtils.RESULT_SOURCE.OTHER_NETWORK,
       isBestMatch: true,
       isBottomUrlSuggestion: true,

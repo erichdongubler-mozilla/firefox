@@ -159,7 +159,7 @@ export class UrlbarProviderHeuristicFallback extends UrlbarProvider {
         !lazy.UrlbarPrefs.get("keyword.enabled")
       ) {
         return new lazy.UrlbarResult({
-          type: UrlbarUtils.RESULT_TYPE.URL,
+          type: lazy.UrlbarShared.RESULT_TYPE.URL,
           source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
           heuristic: true,
           payload: {
@@ -221,7 +221,7 @@ export class UrlbarProviderHeuristicFallback extends UrlbarProvider {
     }
 
     return new lazy.UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.URL,
+      type: lazy.UrlbarShared.RESULT_TYPE.URL,
       source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
       heuristic: true,
       payload: {
@@ -278,7 +278,7 @@ export class UrlbarProviderHeuristicFallback extends UrlbarProvider {
 
     query = query.trimStart();
     return new lazy.UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.SEARCH,
+      type: lazy.UrlbarShared.RESULT_TYPE.SEARCH,
       source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
       heuristic: true,
       payload: {
@@ -323,7 +323,7 @@ export class UrlbarProviderHeuristicFallback extends UrlbarProvider {
     }
 
     return new lazy.UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.SEARCH,
+      type: lazy.UrlbarShared.RESULT_TYPE.SEARCH,
       source: UrlbarUtils.RESULT_SOURCE.SEARCH,
       heuristic,
       payload: {

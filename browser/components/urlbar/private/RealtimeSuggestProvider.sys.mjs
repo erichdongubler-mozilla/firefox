@@ -12,6 +12,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
   UrlbarSearchUtils:
     "moz-src:///browser/components/urlbar/UrlbarSearchUtils.sys.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
 });
 
@@ -139,7 +140,7 @@ export class RealtimeSuggestProvider extends SuggestProvider {
    *   The dynamic result type that will be set in the Merino result's payload
    *   as `result.payload.dynamicType`. Note that "dynamic" here refers to the
    *   concept of dynamic result types as used in the view and
-   *   `UrlbarUtils.RESULT_TYPE.DYNAMIC`, not Rust dynamic suggestions.
+   *   `UrlbarShared.RESULT_TYPE.DYNAMIC`, not Rust dynamic suggestions.
    *
    *   If you override this, make sure the value starts with "realtime-" because
    *   there are CSS rules that depend on that.
@@ -342,7 +343,7 @@ export class RealtimeSuggestProvider extends SuggestProvider {
     }
 
     let result = new lazy.UrlbarResult({
-      type: lazy.UrlbarUtils.RESULT_TYPE.DYNAMIC,
+      type: lazy.UrlbarShared.RESULT_TYPE.DYNAMIC,
       source: lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
       isBestMatch: true,
       ...additionalOptions,
@@ -396,7 +397,7 @@ export class RealtimeSuggestProvider extends SuggestProvider {
         };
 
     return new lazy.UrlbarResult({
-      type: lazy.UrlbarUtils.RESULT_TYPE.TIP,
+      type: lazy.UrlbarShared.RESULT_TYPE.TIP,
       source: lazy.UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
       isBestMatch: true,
       payload: {

@@ -22,6 +22,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   UrlbarProviderOpenTabs:
     "moz-src:///browser/components/urlbar/UrlbarProviderOpenTabs.sys.mjs",
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "SQL_ADAPTIVE_QUERY", () => {
@@ -137,7 +138,7 @@ export class UrlbarProviderInputHistory extends UrlbarProvider {
         }
         let userContextId = row.getResultByName("userContextId") || 0;
         let result = new lazy.UrlbarResult({
-          type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+          type: lazy.UrlbarShared.RESULT_TYPE.TAB_SWITCH,
           source: UrlbarUtils.RESULT_SOURCE.TABS,
           payload: {
             url,
@@ -178,7 +179,7 @@ export class UrlbarProviderInputHistory extends UrlbarProvider {
       let isBlockable = resultSource == UrlbarUtils.RESULT_SOURCE.HISTORY;
 
       let result = new lazy.UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.URL,
+        type: lazy.UrlbarShared.RESULT_TYPE.URL,
         source: resultSource,
         payload: {
           url,
@@ -210,7 +211,7 @@ export class UrlbarProviderInputHistory extends UrlbarProvider {
     let { result } = details;
     if (
       details.selType == "dismiss" &&
-      result.type == UrlbarUtils.RESULT_TYPE.URL
+      result.type == lazy.UrlbarShared.RESULT_TYPE.URL
     ) {
       // Even if removing history normally also removes input history, that
       // doesn't happen if the page is bookmarked, so we do remove input history

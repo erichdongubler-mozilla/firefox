@@ -319,7 +319,7 @@ function makeUrlbarResult(queryContext, info) {
       case "searchengine":
         // Return a form history result.
         return new lazy.UrlbarResult({
-          type: UrlbarUtils.RESULT_TYPE.SEARCH,
+          type: lazy.UrlbarShared.RESULT_TYPE.SEARCH,
           source: UrlbarUtils.RESULT_SOURCE.HISTORY,
           payload: {
             engine: action.params.engineName,
@@ -339,7 +339,7 @@ function makeUrlbarResult(queryContext, info) {
         });
       case "switchtab": {
         return new lazy.UrlbarResult({
-          type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+          type: lazy.UrlbarShared.RESULT_TYPE.TAB_SWITCH,
           source: UrlbarUtils.RESULT_SOURCE.TABS,
           payload: {
             url: action.params.url,
@@ -412,7 +412,7 @@ function makeUrlbarResult(queryContext, info) {
   }
 
   return new lazy.UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.URL,
+    type: lazy.UrlbarShared.RESULT_TYPE.URL,
     source,
     payload: {
       url: info.url,
@@ -1599,7 +1599,7 @@ export class UrlbarProviderPlaces extends UrlbarProvider {
     let { result } = details;
     if (details.selType == "dismiss") {
       switch (result.type) {
-        case UrlbarUtils.RESULT_TYPE.SEARCH: {
+        case lazy.UrlbarShared.RESULT_TYPE.SEARCH: {
           // URL restyled as a search suggestion. Generate the URL and remove it
           // from browsing history.
           let { url } = UrlbarUtils.getUrlFromResult(result);
@@ -1607,7 +1607,7 @@ export class UrlbarProviderPlaces extends UrlbarProvider {
           controller.removeResult(result);
           break;
         }
-        case UrlbarUtils.RESULT_TYPE.URL:
+        case lazy.UrlbarShared.RESULT_TYPE.URL:
           // Remove browsing history entries from Places.
           lazy.PlacesUtils.history
             .remove(result.payload.url)

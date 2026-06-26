@@ -14,6 +14,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   Region: "resource://gre/modules/Region.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
 });
 
@@ -228,7 +229,7 @@ export class WeatherSuggestions extends SuggestProvider {
     let titleL10n = await this.#getTitleL10n(suggestion.city, merinoSuggestion);
 
     return new lazy.UrlbarResult({
-      type: lazy.UrlbarUtils.RESULT_TYPE.URL,
+      type: lazy.UrlbarShared.RESULT_TYPE.URL,
       source: lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
       isBestMatch: true,
       suggestedIndex: 1,
@@ -258,7 +259,7 @@ export class WeatherSuggestions extends SuggestProvider {
 
   #makeDynamicResult(suggestion, unit) {
     return new lazy.UrlbarResult({
-      type: lazy.UrlbarUtils.RESULT_TYPE.DYNAMIC,
+      type: lazy.UrlbarShared.RESULT_TYPE.DYNAMIC,
       source: lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
       showFeedbackMenu: true,
       suggestedIndex: 1,

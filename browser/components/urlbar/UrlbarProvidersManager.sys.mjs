@@ -926,7 +926,7 @@ export class Query {
       !this.acceptableSources.includes(result.source) &&
       !result.heuristic &&
       // Treat form history as searches for the purpose of acceptableSources.
-      (result.type != lazy.UrlbarUtils.RESULT_TYPE.SEARCH ||
+      (result.type != lazy.UrlbarShared.RESULT_TYPE.SEARCH ||
         result.source != lazy.UrlbarUtils.RESULT_SOURCE.HISTORY ||
         !this.acceptableSources.includes(
           lazy.UrlbarUtils.RESULT_SOURCE.SEARCH
@@ -944,7 +944,7 @@ export class Query {
     // Filter out javascript results for safety. The provider is supposed to do
     // it, but we don't want to risk leaking these out.
     if (
-      result.type != lazy.UrlbarUtils.RESULT_TYPE.KEYWORD &&
+      result.type != lazy.UrlbarShared.RESULT_TYPE.KEYWORD &&
       result.payload.url &&
       result.payload.url.startsWith("javascript:") &&
       !this.context.searchString.startsWith("javascript:") &&

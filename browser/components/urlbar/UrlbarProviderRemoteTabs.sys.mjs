@@ -197,7 +197,7 @@ export class UrlbarProviderRemoteTabs extends UrlbarProvider {
           ? UrlbarUtils.getIconForUrl(tab.url)
           : "";
         let result = new lazy.UrlbarResult({
-          type: UrlbarUtils.RESULT_TYPE.REMOTE_TAB,
+          type: lazy.UrlbarShared.RESULT_TYPE.REMOTE_TAB,
           source: UrlbarUtils.RESULT_SOURCE.TABS,
           payload: {
             url: tab.url,

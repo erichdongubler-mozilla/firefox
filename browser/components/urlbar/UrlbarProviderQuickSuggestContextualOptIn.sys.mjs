@@ -19,6 +19,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   UrlbarProviderTopSites:
     "moz-src:///browser/components/urlbar/UrlbarProviderTopSites.sys.mjs",
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
 });
 
 const DYNAMIC_RESULT_TYPE = "quickSuggestContextualOptIn";
@@ -315,7 +316,7 @@ export class UrlbarProviderQuickSuggestContextualOptIn extends UrlbarProvider {
    */
   async startQuery(queryContext, addCallback) {
     let result = new lazy.UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.DYNAMIC,
+      type: lazy.UrlbarShared.RESULT_TYPE.DYNAMIC,
       source: UrlbarUtils.RESULT_SOURCE.SEARCH,
       suggestedIndex: 0,
       payload: {

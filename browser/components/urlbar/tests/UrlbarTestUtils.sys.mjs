@@ -33,6 +33,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   UrlbarParentController:
     "moz-src:///browser/components/urlbar/UrlbarParentController.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
   UrlbarSearchUtils:
     "moz-src:///browser/components/urlbar/UrlbarSearchUtils.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
@@ -572,10 +573,14 @@ class UrlbarInputTestUtils {
    *
    * @param {ChromeWindow} win The window containing the urlbar.
    * @param {string} url The URL to match against the result's payload.
-   * @param {number} [type] The UrlbarUtils.RESULT_TYPE to match.
+   * @param {number} [type] The lazy.UrlbarShared.RESULT_TYPE to match.
    *   Defaults to RESULT_TYPE.URL.
    */
-  async pickResultAndWaitForLoad(win, url, type = UrlbarUtils.RESULT_TYPE.URL) {
+  async pickResultAndWaitForLoad(
+    win,
+    url,
+    type = lazy.UrlbarShared.RESULT_TYPE.URL
+  ) {
     let resultCount = this.getResultCount(win);
     let targetIndex = -1;
     for (let i = 0; i < resultCount; i++) {
@@ -658,7 +663,7 @@ class UrlbarInputTestUtils {
       title: element.getElementsByClassName("urlbarView-title")[0],
       url: element.getElementsByClassName("urlbarView-url")[0],
     };
-    if (details.type == UrlbarUtils.RESULT_TYPE.SEARCH) {
+    if (details.type == lazy.UrlbarShared.RESULT_TYPE.SEARCH) {
       details.searchParams = {
         engine: result.payload.engine,
         keyword: result.payload.keyword,
@@ -667,9 +672,9 @@ class UrlbarInputTestUtils {
         inPrivateWindow: result.payload.inPrivateWindow,
         isPrivateEngine: result.payload.isPrivateEngine,
       };
-    } else if (details.type == UrlbarUtils.RESULT_TYPE.KEYWORD) {
+    } else if (details.type == lazy.UrlbarShared.RESULT_TYPE.KEYWORD) {
       details.keyword = result.payload.keyword;
-    } else if (details.type == UrlbarUtils.RESULT_TYPE.DYNAMIC) {
+    } else if (details.type == lazy.UrlbarShared.RESULT_TYPE.DYNAMIC) {
       details.dynamicType = result.payload.dynamicType;
     }
     return details;
@@ -774,7 +779,8 @@ class UrlbarInputTestUtils {
     return this.promiseSearchComplete(win).then(context => {
       // Look for search suggestions.
       let firstSearchSuggestionIndex = context.results.findIndex(
-        r => r.type == UrlbarUtils.RESULT_TYPE.SEARCH && r.payload.suggestion
+        r =>
+          r.type == lazy.UrlbarShared.RESULT_TYPE.SEARCH && r.payload.suggestion
       );
       if (firstSearchSuggestionIndex == -1) {
         throw new Error("Cannot find a search suggestion");

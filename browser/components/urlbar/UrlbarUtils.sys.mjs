@@ -14,6 +14,7 @@
  * @import {UrlbarSearchStringTokenData} from "./UrlbarTokenizer.sys.mjs"
  */
 
+import { UrlbarShared } from "chrome://browser/content/urlbar/UrlbarShared.mjs";
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = XPCOMUtils.declareLazy({
@@ -39,7 +40,6 @@ const lazy = XPCOMUtils.declareLazy({
   SearchSuggestionController:
     "moz-src:///toolkit/components/search/SearchSuggestionController.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
-  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
   UrlbarProviderInterventions:
     "moz-src:///browser/components/urlbar/UrlbarProviderInterventions.sys.mjs",
   UrlbarProviderOpenTabs:
@@ -125,34 +125,6 @@ export var UrlbarUtils = {
     NETWORK: 3,
     // Can be delayed, contains results coming from unknown sources.
     EXTENSION: 4,
-  }),
-
-  // Defines UrlbarResult types.
-  RESULT_TYPE: Object.freeze({
-    // An open tab.
-    TAB_SWITCH: 1,
-    // A search suggestion or engine.
-    SEARCH: 2,
-    // A common url/title tuple, may be a bookmark with tags.
-    URL: 3,
-    // A bookmark keyword.
-    KEYWORD: 4,
-    // A WebExtension Omnibox result.
-    OMNIBOX: 5,
-    // A tab from another synced device.
-    REMOTE_TAB: 6,
-    // An actionable message to help the user with their query.
-    TIP: 7,
-    // A type of result which layout is defined at runtime.
-    DYNAMIC: 8,
-    // A restrict keyword result, could be @bookmarks, @history, or @tabs.
-    RESTRICT: 9,
-    // An AI chat result.
-    AI_CHAT: 10,
-
-    // When you add a new type, also add its schema to
-    // UrlbarUtils.RESULT_PAYLOAD_SCHEMA below.  Also consider checking if
-    // consumers of "urlbar-user-start-navigation" need updating.
   }),
 
   // This defines the source of results returned by a provider. Each provider
@@ -273,7 +245,7 @@ export var UrlbarUtils = {
      * @typedef {object} LocalSearchMode
      * @property {Values<typeof this.RESULT_SOURCE>} source
      *   The source which the search mode will search.
-     * @property {Values<typeof lazy.UrlbarShared.RESTRICT_TOKENS>} restrict
+     * @property {Values<typeof UrlbarShared.RESTRICT_TOKENS>} restrict
      *   The restrict token that is associated with the search (*, %, $ etc).
      * @property {string} icon
      *   The URL of the icon associated with the search mode in preferences.
@@ -289,7 +261,7 @@ export var UrlbarUtils = {
     return /** @type {LocalSearchMode[]} */ ([
       {
         source: this.RESULT_SOURCE.BOOKMARKS,
-        restrict: lazy.UrlbarShared.RESTRICT_TOKENS.BOOKMARK,
+        restrict: UrlbarShared.RESTRICT_TOKENS.BOOKMARK,
         icon: "chrome://browser/skin/bookmark.svg",
         pref: "shortcuts.bookmarks",
         telemetryLabel: "bookmarks",
@@ -297,7 +269,7 @@ export var UrlbarUtils = {
       },
       {
         source: this.RESULT_SOURCE.TABS,
-        restrict: lazy.UrlbarShared.RESTRICT_TOKENS.OPENPAGE,
+        restrict: UrlbarShared.RESTRICT_TOKENS.OPENPAGE,
         icon: "chrome://browser/skin/tabs.svg",
         pref: "shortcuts.tabs",
         telemetryLabel: "tabs",
@@ -305,7 +277,7 @@ export var UrlbarUtils = {
       },
       {
         source: this.RESULT_SOURCE.HISTORY,
-        restrict: lazy.UrlbarShared.RESTRICT_TOKENS.HISTORY,
+        restrict: UrlbarShared.RESTRICT_TOKENS.HISTORY,
         icon: "chrome://browser/skin/history.svg",
         pref: "shortcuts.history",
         telemetryLabel: "history",
@@ -313,7 +285,7 @@ export var UrlbarUtils = {
       },
       {
         source: this.RESULT_SOURCE.ACTIONS,
-        restrict: lazy.UrlbarShared.RESTRICT_TOKENS.ACTION,
+        restrict: UrlbarShared.RESTRICT_TOKENS.ACTION,
         icon: "chrome://browser/skin/quickactions.svg",
         pref: "shortcuts.actions",
         telemetryLabel: "actions",
@@ -325,7 +297,7 @@ export var UrlbarUtils = {
   /**
    * Returns the payload schema for the given type of result.
    *
-   * @param {Values<typeof this.RESULT_TYPE>} type
+   * @param {Values<typeof UrlbarShared.RESULT_TYPE>} type
    * @returns {object} The schema for the given type.
    */
   getPayloadSchema(type) {
@@ -647,7 +619,7 @@ export var UrlbarUtils = {
     }
 
     switch (result.type) {
-      case this.RESULT_TYPE.SEARCH:
+      case UrlbarShared.RESULT_TYPE.SEARCH:
         if (result.source == this.RESULT_SOURCE.HISTORY) {
           return result.providerName == "UrlbarProviderRecentSearches"
             ? this.RESULT_GROUP.RECENT_SEARCH
@@ -660,13 +632,13 @@ export var UrlbarUtils = {
           return this.RESULT_GROUP.REMOTE_SUGGESTION;
         }
         break;
-      case this.RESULT_TYPE.OMNIBOX:
+      case UrlbarShared.RESULT_TYPE.OMNIBOX:
         return this.RESULT_GROUP.OMNIBOX;
-      case this.RESULT_TYPE.REMOTE_TAB:
+      case UrlbarShared.RESULT_TYPE.REMOTE_TAB:
         return this.RESULT_GROUP.REMOTE_TAB;
-      case this.RESULT_TYPE.RESTRICT:
+      case UrlbarShared.RESULT_TYPE.RESTRICT:
         return this.RESULT_GROUP.RESTRICT_SEARCH_KEYWORD;
-      case this.RESULT_TYPE.AI_CHAT:
+      case UrlbarShared.RESULT_TYPE.AI_CHAT:
         return this.RESULT_GROUP.AI;
     }
     // When enabled, semantic history results (both history URLs and
@@ -701,8 +673,8 @@ export var UrlbarUtils = {
   getUrlFromResult(result, { element = null } = {}) {
     if (
       result.payload.engine &&
-      (result.type == this.RESULT_TYPE.SEARCH ||
-        result.type == this.RESULT_TYPE.DYNAMIC)
+      (result.type == UrlbarShared.RESULT_TYPE.SEARCH ||
+        result.type == UrlbarShared.RESULT_TYPE.DYNAMIC)
     ) {
       let query =
         element?.dataset.query ||
@@ -779,7 +751,7 @@ export var UrlbarUtils = {
     }
 
     switch (result.type) {
-      case this.RESULT_TYPE.TIP:
+      case UrlbarShared.RESULT_TYPE.TIP:
         return 3;
     }
     return 1;
@@ -2019,7 +1991,7 @@ export var UrlbarUtils = {
     }
 
     switch (result.type) {
-      case this.RESULT_TYPE.DYNAMIC:
+      case UrlbarShared.RESULT_TYPE.DYNAMIC:
         switch (result.providerName) {
           case "UrlbarProviderCalculator":
             return "calc";
@@ -2034,13 +2006,13 @@ export var UrlbarUtils = {
             return "action";
         }
         break;
-      case this.RESULT_TYPE.KEYWORD:
+      case UrlbarShared.RESULT_TYPE.KEYWORD:
         return "keyword";
-      case this.RESULT_TYPE.OMNIBOX:
+      case UrlbarShared.RESULT_TYPE.OMNIBOX:
         return "addon";
-      case this.RESULT_TYPE.REMOTE_TAB:
+      case UrlbarShared.RESULT_TYPE.REMOTE_TAB:
         return "remote_tab";
-      case this.RESULT_TYPE.SEARCH:
+      case UrlbarShared.RESULT_TYPE.SEARCH:
         if (result.providerName === "UrlbarProviderTabToSearch") {
           return "tab_to_search";
         }
@@ -2062,9 +2034,9 @@ export var UrlbarUtils = {
           return type;
         }
         return "search_engine";
-      case this.RESULT_TYPE.TAB_SWITCH:
+      case UrlbarShared.RESULT_TYPE.TAB_SWITCH:
         return checkForSubType("tab", result);
-      case this.RESULT_TYPE.TIP:
+      case UrlbarShared.RESULT_TYPE.TIP:
         if (result.providerName === "UrlbarProviderInterventions") {
           switch (result.payload.type) {
             case lazy.UrlbarProviderInterventions.TIP_TYPE.CLEAR:
@@ -2091,7 +2063,7 @@ export var UrlbarUtils = {
           default:
             return "tip_unknown";
         }
-      case this.RESULT_TYPE.URL:
+      case UrlbarShared.RESULT_TYPE.URL:
         if (
           result.source === this.RESULT_SOURCE.OTHER_LOCAL &&
           result.heuristic
@@ -2114,29 +2086,21 @@ export var UrlbarUtils = {
           return checkForSubType("bookmark", result);
         }
         return checkForSubType("history", result);
-      case this.RESULT_TYPE.RESTRICT:
-        if (
-          result.payload.keyword === lazy.UrlbarShared.RESTRICT_TOKENS.BOOKMARK
-        ) {
+      case UrlbarShared.RESULT_TYPE.RESTRICT:
+        if (result.payload.keyword === UrlbarShared.RESTRICT_TOKENS.BOOKMARK) {
           return "restrict_keyword_bookmarks";
         }
-        if (
-          result.payload.keyword === lazy.UrlbarShared.RESTRICT_TOKENS.OPENPAGE
-        ) {
+        if (result.payload.keyword === UrlbarShared.RESTRICT_TOKENS.OPENPAGE) {
           return "restrict_keyword_tabs";
         }
-        if (
-          result.payload.keyword === lazy.UrlbarShared.RESTRICT_TOKENS.HISTORY
-        ) {
+        if (result.payload.keyword === UrlbarShared.RESTRICT_TOKENS.HISTORY) {
           return "restrict_keyword_history";
         }
-        if (
-          result.payload.keyword === lazy.UrlbarShared.RESTRICT_TOKENS.ACTION
-        ) {
+        if (result.payload.keyword === UrlbarShared.RESTRICT_TOKENS.ACTION) {
           return "restrict_keyword_actions";
         }
         break;
-      case this.RESULT_TYPE.AI_CHAT:
+      case UrlbarShared.RESULT_TYPE.AI_CHAT:
         return "ai_chat";
     }
 
@@ -2539,7 +2503,7 @@ const L10N_SCHEMA = {
  * these schemas using JsonSchemaValidator.sys.mjs.
  */
 UrlbarUtils.RESULT_PAYLOAD_SCHEMA = {
-  [UrlbarUtils.RESULT_TYPE.TAB_SWITCH]: {
+  [UrlbarShared.RESULT_TYPE.TAB_SWITCH]: {
     type: "object",
     required: ["url"],
     properties: {
@@ -2596,7 +2560,7 @@ UrlbarUtils.RESULT_PAYLOAD_SCHEMA = {
       },
     },
   },
-  [UrlbarUtils.RESULT_TYPE.SEARCH]: {
+  [UrlbarShared.RESULT_TYPE.SEARCH]: {
     type: "object",
     properties: {
       blockL10n: L10N_SCHEMA,
@@ -2675,7 +2639,7 @@ UrlbarUtils.RESULT_PAYLOAD_SCHEMA = {
       },
     },
   },
-  [UrlbarUtils.RESULT_TYPE.URL]: {
+  [UrlbarShared.RESULT_TYPE.URL]: {
     type: "object",
     required: ["url"],
     properties: {
@@ -2792,7 +2756,7 @@ UrlbarUtils.RESULT_PAYLOAD_SCHEMA = {
       },
     },
   },
-  [UrlbarUtils.RESULT_TYPE.KEYWORD]: {
+  [UrlbarShared.RESULT_TYPE.KEYWORD]: {
     type: "object",
     required: ["keyword", "url"],
     properties: {
@@ -2816,7 +2780,7 @@ UrlbarUtils.RESULT_PAYLOAD_SCHEMA = {
       },
     },
   },
-  [UrlbarUtils.RESULT_TYPE.OMNIBOX]: {
+  [UrlbarShared.RESULT_TYPE.OMNIBOX]: {
     type: "object",
     required: ["keyword"],
     properties: {
@@ -2838,7 +2802,7 @@ UrlbarUtils.RESULT_PAYLOAD_SCHEMA = {
       },
     },
   },
-  [UrlbarUtils.RESULT_TYPE.REMOTE_TAB]: {
+  [UrlbarShared.RESULT_TYPE.REMOTE_TAB]: {
     type: "object",
     required: ["device", "url", "lastUsed"],
     properties: {
@@ -2859,7 +2823,7 @@ UrlbarUtils.RESULT_PAYLOAD_SCHEMA = {
       },
     },
   },
-  [UrlbarUtils.RESULT_TYPE.TIP]: {
+  [UrlbarShared.RESULT_TYPE.TIP]: {
     type: "object",
     required: ["type"],
     properties: {
@@ -2953,7 +2917,7 @@ UrlbarUtils.RESULT_PAYLOAD_SCHEMA = {
       },
     },
   },
-  [UrlbarUtils.RESULT_TYPE.DYNAMIC]: {
+  [UrlbarShared.RESULT_TYPE.DYNAMIC]: {
     type: "object",
     required: ["dynamicType"],
     properties: {
@@ -2962,7 +2926,7 @@ UrlbarUtils.RESULT_PAYLOAD_SCHEMA = {
       },
     },
   },
-  [UrlbarUtils.RESULT_TYPE.RESTRICT]: {
+  [UrlbarShared.RESULT_TYPE.RESTRICT]: {
     type: "object",
     properties: {
       icon: {
@@ -2985,7 +2949,7 @@ UrlbarUtils.RESULT_PAYLOAD_SCHEMA = {
       },
     },
   },
-  [UrlbarUtils.RESULT_TYPE.AI_CHAT]: {
+  [UrlbarShared.RESULT_TYPE.AI_CHAT]: {
     type: "object",
     required: ["icon", "query", "title"],
     properties: {
@@ -3334,9 +3298,9 @@ export class UrlbarQueryContext {
     // an origin but we've determined a search is allowed, then allow it.
     if (this.tokens.length == 1) {
       switch (this.tokens[0].type) {
-        case lazy.UrlbarShared.TOKEN_TYPE.POSSIBLE_ORIGIN:
+        case UrlbarShared.TOKEN_TYPE.POSSIBLE_ORIGIN:
           return false;
-        case lazy.UrlbarShared.TOKEN_TYPE.POSSIBLE_ORIGIN_BUT_SEARCH_ALLOWED:
+        case UrlbarShared.TOKEN_TYPE.POSSIBLE_ORIGIN_BUT_SEARCH_ALLOWED:
           return true;
       }
     }

@@ -22,6 +22,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ActionsProviderQuickActions:
     "moz-src:///browser/components/urlbar/ActionsProviderQuickActions.sys.mjs",
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
 });
 
 /**
@@ -54,7 +55,7 @@ export class UrlbarProviderActionsSearchMode extends UrlbarProvider {
     });
     results.forEach(resultKey => {
       let result = new lazy.UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.DYNAMIC,
+        type: lazy.UrlbarShared.RESULT_TYPE.DYNAMIC,
         source: UrlbarUtils.RESULT_SOURCE.ACTIONS,
         payload: {
           key: resultKey,

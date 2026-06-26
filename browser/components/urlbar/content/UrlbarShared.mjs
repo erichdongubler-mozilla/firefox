@@ -54,6 +54,34 @@ export const UrlbarShared = {
     ACTION: ">",
   }),
 
+  // Defines UrlbarResult types.
+  RESULT_TYPE: Object.freeze({
+    // An open tab.
+    TAB_SWITCH: 1,
+    // A search suggestion or engine.
+    SEARCH: 2,
+    // A common url/title tuple, may be a bookmark with tags.
+    URL: 3,
+    // A bookmark keyword.
+    KEYWORD: 4,
+    // A WebExtension Omnibox result.
+    OMNIBOX: 5,
+    // A tab from another synced device.
+    REMOTE_TAB: 6,
+    // An actionable message to help the user with their query.
+    TIP: 7,
+    // A type of result which layout is defined at runtime.
+    DYNAMIC: 8,
+    // A restrict keyword result, could be @bookmarks, @history, or @tabs.
+    RESTRICT: 9,
+    // An AI chat result.
+    AI_CHAT: 10,
+
+    // When you add a new type, also add its schema to
+    // UrlbarUtils.RESULT_PAYLOAD_SCHEMA. Also consider checking if
+    // consumers of "urlbar-user-start-navigation" need updating.
+  }),
+
   /**
    * Set of characters in RESTRICT_TOKENS that will enter search mode.
    */

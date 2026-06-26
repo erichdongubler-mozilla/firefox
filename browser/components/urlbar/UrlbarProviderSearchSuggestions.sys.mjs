@@ -526,7 +526,7 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
 
         results.push(
           new lazy.UrlbarResult({
-            type: UrlbarUtils.RESULT_TYPE.SEARCH,
+            type: lazy.UrlbarShared.RESULT_TYPE.SEARCH,
             source: UrlbarUtils.RESULT_SOURCE.SEARCH,
             isRichSuggestion: !!entry.icon,
             richSuggestionIconSize: entry.icon
@@ -675,7 +675,7 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
 
 function makeFormHistoryResult(queryContext, engine, entry) {
   return new lazy.UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.SEARCH,
+    type: lazy.UrlbarShared.RESULT_TYPE.SEARCH,
     source: UrlbarUtils.RESULT_SOURCE.HISTORY,
     payload: {
       engine: engine.name,

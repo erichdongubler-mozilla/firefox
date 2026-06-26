@@ -1042,7 +1042,7 @@ export class UrlbarProviderAutofill extends UrlbarProvider {
     }
 
     return new lazy.UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.URL,
+      type: lazy.UrlbarShared.RESULT_TYPE.URL,
       source: UrlbarUtils.RESULT_SOURCE.HISTORY,
       heuristic: true,
       autofill: {
@@ -1091,7 +1091,7 @@ export class UrlbarProviderAutofill extends UrlbarProvider {
           queryContext.searchString +
           aboutUrl.substring(queryContext.searchString.length);
         return new lazy.UrlbarResult({
-          type: UrlbarUtils.RESULT_TYPE.URL,
+          type: lazy.UrlbarShared.RESULT_TYPE.URL,
           source: UrlbarUtils.RESULT_SOURCE.HISTORY,
           heuristic: true,
           autofill: {
@@ -1224,7 +1224,7 @@ export class UrlbarProviderAutofill extends UrlbarProvider {
 
     let title = rows[0].getResultByName("title");
     let result = new lazy.UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.URL,
+      type: lazy.UrlbarShared.RESULT_TYPE.URL,
       source: UrlbarUtils.RESULT_SOURCE.HISTORY,
       payload: {
         url: originUrl,

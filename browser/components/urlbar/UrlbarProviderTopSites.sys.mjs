@@ -25,6 +25,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   UrlbarProviderOpenTabs:
     "moz-src:///browser/components/urlbar/UrlbarProviderOpenTabs.sys.mjs",
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
   UrlbarSearchUtils:
     "moz-src:///browser/components/urlbar/UrlbarSearchUtils.sys.mjs",
 });
@@ -227,7 +228,7 @@ export class UrlbarProviderTopSites extends UrlbarProvider {
                 }
                 payload.userContextId = userContextId;
                 let result = new lazy.UrlbarResult({
-                  type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+                  type: lazy.UrlbarShared.RESULT_TYPE.TAB_SWITCH,
                   source: UrlbarUtils.RESULT_SOURCE.TABS,
                   payload,
                 });
@@ -263,7 +264,7 @@ export class UrlbarProviderTopSites extends UrlbarProvider {
           }
 
           let result = new lazy.UrlbarResult({
-            type: UrlbarUtils.RESULT_TYPE.URL,
+            type: lazy.UrlbarShared.RESULT_TYPE.URL,
             source: resultSource,
             payload,
           });
@@ -293,7 +294,7 @@ export class UrlbarProviderTopSites extends UrlbarProvider {
           }
 
           let result = new lazy.UrlbarResult({
-            type: UrlbarUtils.RESULT_TYPE.SEARCH,
+            type: lazy.UrlbarShared.RESULT_TYPE.SEARCH,
             source: UrlbarUtils.RESULT_SOURCE.SEARCH,
             payload: {
               keyword: site.title,

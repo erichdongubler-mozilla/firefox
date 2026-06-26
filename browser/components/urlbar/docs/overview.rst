@@ -361,14 +361,14 @@ properties, supported by all of the results.
 
 .. note::
 
-  Result types are also enumerated by *UrlbarUtils.RESULT_TYPE*.
+  Result types are also enumerated by *UrlbarShared.RESULT_TYPE*.
 
 .. code-block:: text
 
   UrlbarResult {
     constructor(resultType, payload);
 
-    type: {integer} One of UrlbarUtils.RESULT_TYPE.
+    type: {integer} One of UrlbarShared.RESULT_TYPE.
     source: {integer} One of UrlbarUtils.RESULT_SOURCE.
     title: {string} A title that may be used as a label for this result.
     icon: {string} Url of an icon for this result.

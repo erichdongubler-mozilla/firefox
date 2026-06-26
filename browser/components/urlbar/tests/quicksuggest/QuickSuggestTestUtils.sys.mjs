@@ -21,6 +21,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustSuggest.sys.mjs",
   TestUtils: "resource://testing-common/TestUtils.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
   YelpSubjectType:
     "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustSuggest.sys.mjs",
@@ -477,7 +478,7 @@ class _QuickSuggestTestUtils {
       suggestedIndex,
       isSuggestedIndexRelativeToGroup,
       isBestMatch,
-      type: lazy.UrlbarUtils.RESULT_TYPE.URL,
+      type: lazy.UrlbarShared.RESULT_TYPE.URL,
       source: lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
       heuristic: false,
       payload: {
@@ -578,7 +579,7 @@ class _QuickSuggestTestUtils {
     let result = {
       suggestedIndex,
       isSuggestedIndexRelativeToGroup,
-      type: lazy.UrlbarUtils.RESULT_TYPE.URL,
+      type: lazy.UrlbarShared.RESULT_TYPE.URL,
       source: lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
       heuristic: false,
       payload: {
@@ -922,7 +923,7 @@ class _QuickSuggestTestUtils {
     let result = {
       isBestMatch: true,
       suggestedIndex: 1,
-      type: lazy.UrlbarUtils.RESULT_TYPE.URL,
+      type: lazy.UrlbarShared.RESULT_TYPE.URL,
       source: lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
       heuristic: false,
       payload: {
@@ -980,7 +981,7 @@ class _QuickSuggestTestUtils {
     return {
       isBestMatch: true,
       suggestedIndex: 1,
-      type: lazy.UrlbarUtils.RESULT_TYPE.URL,
+      type: lazy.UrlbarShared.RESULT_TYPE.URL,
       source: lazy.UrlbarUtils.RESULT_SOURCE.OTHER_NETWORK,
       heuristic: false,
       payload: {
@@ -1045,7 +1046,7 @@ class _QuickSuggestTestUtils {
     }
 
     let result = {
-      type: lazy.UrlbarUtils.RESULT_TYPE.URL,
+      type: lazy.UrlbarShared.RESULT_TYPE.URL,
       source: lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
       isBestMatch: !!isTopPick,
       suggestedIndex,
@@ -1131,7 +1132,7 @@ class _QuickSuggestTestUtils {
     };
 
     return {
-      type: lazy.UrlbarUtils.RESULT_TYPE.URL,
+      type: lazy.UrlbarShared.RESULT_TYPE.URL,
       source: lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
       heuristic: false,
       isBestMatch: true,
@@ -1224,7 +1225,7 @@ class _QuickSuggestTestUtils {
       "UrlbarProviderQuickSuggest",
       "Result provider name is UrlbarProviderQuickSuggest"
     );
-    this.Assert.equal(details.type, lazy.UrlbarUtils.RESULT_TYPE.URL);
+    this.Assert.equal(details.type, lazy.UrlbarShared.RESULT_TYPE.URL);
     this.Assert.equal(details.isSponsored, isSponsored, "Result isSponsored");
     if (url) {
       this.Assert.equal(details.url, url, "Result URL");

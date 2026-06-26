@@ -23,6 +23,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarProviderSemanticHistorySearch:
     "moz-src:///browser/components/urlbar/UrlbarProviderSemanticHistorySearch.sys.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
   UrlUtils: "resource://gre/modules/UrlUtils.sys.mjs",
 });
@@ -701,7 +702,7 @@ export class UrlbarParentController {
           (result == context.results[0] && result.heuristic) ||
           result.autofill
         ) {
-          if (result.type == lazy.UrlbarUtils.RESULT_TYPE.SEARCH) {
+          if (result.type == lazy.UrlbarShared.RESULT_TYPE.SEARCH) {
             // Speculative connect only if search suggestions are enabled.
             if (
               (lazy.UrlbarPrefs.get("suggest.searches") ||

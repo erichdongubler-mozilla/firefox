@@ -23,6 +23,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   UrlbarProviderOpenTabs:
     "moz-src:///browser/components/urlbar/UrlbarProviderOpenTabs.sys.mjs",
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "logger", function () {
@@ -147,7 +148,7 @@ export class UrlbarProviderSemanticHistorySearch extends UrlbarProvider {
         )
       ) {
         const result = new lazy.UrlbarResult({
-          type: UrlbarUtils.RESULT_TYPE.URL,
+          type: lazy.UrlbarShared.RESULT_TYPE.URL,
           source: UrlbarUtils.RESULT_SOURCE.HISTORY,
           payload: {
             title: res.title,
@@ -202,7 +203,7 @@ export class UrlbarProviderSemanticHistorySearch extends UrlbarProvider {
         continue;
       }
       let result = new lazy.UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+        type: lazy.UrlbarShared.RESULT_TYPE.TAB_SWITCH,
         source: UrlbarUtils.RESULT_SOURCE.TABS,
         payload: {
           url: res.url,
