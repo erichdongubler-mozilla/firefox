@@ -2125,10 +2125,7 @@ const EmbeddedBackupRestore = ({
   const ref = (0,external_React_namespaceObject.useRef)(null);
   (0,external_React_namespaceObject.useEffect)(() => {
     const loadRestore = async () => {
-      await window.AWFindBackupsInWellKnownLocations?.({
-        validateFile: true,
-        multipleFiles: true
-      });
+      await window.AWFindBackupsInWellKnownLocations?.();
     };
     loadRestore();
     // Clear the pref used to target the restore screen so that users will not

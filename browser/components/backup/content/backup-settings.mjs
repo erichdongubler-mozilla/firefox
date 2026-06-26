@@ -115,6 +115,7 @@ export default class BackupSettings extends MozLitElement {
     this.addEventListener("dialogCancel", this);
     this.addEventListener("restoreFromBackupConfirm", this);
     this.addEventListener("restoreFromBackupChooseFile", this);
+    this.addEventListener("BackupUI:RestoreDialogReady", this);
   }
 
   handleErrorBarDismiss = () => {
@@ -151,6 +152,12 @@ export default class BackupSettings extends MozLitElement {
             composed: true,
           })
         );
+        break;
+      case "BackupUI:RestoreDialogReady":
+        if (this.restoreFromBackupDialogEl) {
+          this.restoreFromBackupDialogEl.showModal();
+          this.restoreFromBackupEl?.resizeTextarea();
+        }
         break;
     }
   }
@@ -254,12 +261,13 @@ export default class BackupSettings extends MozLitElement {
   handleShowRestoreDialog() {
     if (this.restoreFromBackupDialogEl) {
       this.dispatchEvent(
-        new CustomEvent("BackupUI:FindBackupsInWellKnownLocations", {
+        new CustomEvent("BackupUI:PrepareRestoreDialog", {
           bubbles: true,
           composed: true,
           detail: { source: "preferences" },
         })
       );
+
       this.restoreFromBackupDialogEl.showModal();
     }
   }
