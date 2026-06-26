@@ -1252,10 +1252,11 @@ void nsINode::GetDebugDescription(nsACString& aOutput,
           data.Truncate(5);
           data.AppendLiteral("...");
         }
+        data.ReplaceSubstring(u"\\", u"\\\\");
         data.ReplaceSubstring(u"\n", u"\\n");
         data.ReplaceSubstring(u"\"", u"\\\"");
         data.ReplaceSubstring(u"\u00A0", u"&nbsp;");
-        aOutput.Append("(\""_ns + NS_ConvertUTF16toUTF8(data) + ")\""_ns);
+        aOutput.Append("(\""_ns + NS_ConvertUTF16toUTF8(data) + "\")"_ns);
       }
     }
 
