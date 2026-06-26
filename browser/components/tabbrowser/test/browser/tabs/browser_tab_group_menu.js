@@ -69,7 +69,7 @@ add_task(async function test_tabGroupCreatePanel() {
     let group = gBrowser.addTabGroup([tab], {
       color: "cyan",
       label: "Food",
-      isUserTriggered: true,
+      metricsContext: gBrowser.TabMetrics.userTriggeredContext(),
     });
     await panelShown;
     return group;

@@ -492,23 +492,26 @@
       });
 
       this.#commandButtons.ungroupTabs.addEventListener("command", () => {
-        this.activeGroup.ungroupTabs({
-          isUserTriggered: true,
-          telemetrySource: TabMetrics.METRIC_SOURCE.TAB_GROUP_MENU,
-        });
-      });
-
-      this.#commandButtons.saveAndCloseGroup.addEventListener("command", () => {
-        this.activeGroup.saveAndClose({ isUserTriggered: true });
-      });
-
-      this.#commandButtons.deleteGroup.addEventListener("command", () => {
-        gBrowser.removeTabGroup(
-          this.activeGroup,
+        this.activeGroup.ungroupTabs(
           TabMetrics.userTriggeredContext(
             TabMetrics.METRIC_SOURCE.TAB_GROUP_MENU
           )
         );
+      });
+
+      this.#commandButtons.saveAndCloseGroup.addEventListener("command", () => {
+        this.activeGroup.saveAndClose(
+          // Should this be TabMetrics.METRIC_SOURCE.TAB_GROUP_MENU?
+          TabMetrics.userTriggeredContext()
+        );
+      });
+
+      this.#commandButtons.deleteGroup.addEventListener("command", () => {
+        gBrowser.removeTabGroup(this.activeGroup, {
+          metricsContext: TabMetrics.userTriggeredContext(
+            TabMetrics.METRIC_SOURCE.TAB_GROUP_MENU
+          ),
+        });
       });
 
       this.#commandButtons.shareTabGroup.addEventListener("command", () => {
@@ -998,10 +1001,11 @@
             this.#handleMlTelemetry("save-popup-hidden");
           }
         } else {
-          this.activeGroup.ungroupTabs({
-            isUserTriggered: true,
-            telemetrySource: TabMetrics.METRIC_SOURCE.CANCEL_TAB_GROUP_CREATION,
-          });
+          this.activeGroup.ungroupTabs(
+            TabMetrics.userTriggeredContext(
+              TabMetrics.METRIC_SOURCE.CANCEL_TAB_GROUP_CREATION
+            )
+          );
         }
       }
       if (this.#nameField.disabled) {

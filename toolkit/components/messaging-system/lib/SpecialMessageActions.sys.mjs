@@ -874,7 +874,7 @@ export const SpecialMessageActions = {
             let newTab = window.gBrowser.getTabForBrowser(newBrowser);
             window.gBrowser.addTabGroup([newTab], {
               insertBefore: tab.group.nextElementSibling,
-              ...window.gBrowser.TabMetrics.userTriggeredContext(
+              metricsContext: window.gBrowser.TabMetrics.userTriggeredContext(
                 window.gBrowser.TabMetrics.METRIC_SOURCE.MESSAGING
               ),
             });
@@ -885,7 +885,7 @@ export const SpecialMessageActions = {
           // Add the current tab to a new tab group in place.
           window.gBrowser.addTabGroup([tab], {
             insertBefore: tab,
-            ...window.gBrowser.TabMetrics.userTriggeredContext(
+            metricsContext: window.gBrowser.TabMetrics.userTriggeredContext(
               window.gBrowser.TabMetrics.METRIC_SOURCE.MESSAGING
             ),
           });
