@@ -101,19 +101,19 @@ void Assembler::WritePoolGuard(BufferOffset branch, Instruction* inst,
   DEBUG_PRINTF("%p(%x): ", inst, branch.getOffset());
 #ifdef JS_DISASM_RISCV64
   if (JitSpewEnabled(JitSpew_Codegen)) {
-    disassembleInstr(inst, JitSpew_Codegen);
+    disassembleInstr(branch, inst);
     inst += kInstrSize;
 
     // Disassemble veneer branches after spewing the pool guard, so all
     // instructions appear in order.
     BufferOffset bo(branch.getOffset() + kInstrSize);
     while (bo < dest) {
-      disassembleInstr(inst, JitSpew_Codegen);
+      disassembleInstr(bo, inst);
       inst += kInstrSize;
       bo = BufferOffset(bo.getOffset() + kInstrSize);
     }
   }
-#endif /* JS_DISASM_RISCV64 */
+#endif
 }
 
 void Assembler::copyJumpRelocationTable(uint8_t* dest) {
@@ -877,20 +877,101 @@ bool Assembler::oom() const {
 }
 
 #ifdef JS_DISASM_RISCV64
-int Assembler::disassembleInstr(Instruction* instr, bool enable_spew) {
-  if (!FLAG_riscv_debug && !enable_spew) {
-    return -1;
+class NameConverterWithInstruction : public disasm::NameConverter {
+  BufferOffset offs_;
+  Instruction* instr_;
+
+ public:
+  NameConverterWithInstruction(BufferOffset offs, Instruction* instr)
+      : offs_(offs), instr_(instr) {}
+
+  const char* NameOfAddress(uint8_t* addr) const {
+    if (instr_->IsJal()) {
+      // Print target buffer offset.
+      SNPrintF(tmp_buffer_, "%06" PRIx32,
+               offs_.getOffset() + instr_->Imm20JValue());
+    } else {
+      SNPrintF(tmp_buffer_, "(unknown)");
+    }
+    return tmp_buffer_.start();
+  }
+};
+
+class NameConverterWithLabelDoc : public disasm::NameConverter {
+  DisassemblerSpew::LabelDoc target_;
+
+ public:
+  explicit NameConverterWithLabelDoc(DisassemblerSpew::LabelDoc target)
+      : target_(target) {}
+
+  const char* NameOfAddress(uint8_t* addr) const {
+    if (target_.valid) {
+      // Print target label identifier, with optional "f" for forward branches.
+      SNPrintF(tmp_buffer_, "%d%s", target_.doc, !target_.bound ? "f" : "");
+    } else {
+      SNPrintF(tmp_buffer_, "(link-time target)");
+    }
+    return tmp_buffer_.start();
+  }
+};
+
+void Assembler::disassembleInstr(Instruction* instr) {
+  if (!FLAG_riscv_debug) {
+    return;
   }
   disasm::NameConverter converter;
   disasm::Disassembler disasm(converter);
-  EmbeddedVector<char, 128> disasm_buffer;
+  EmbeddedVector<char, disasm::ReasonableBufferSize> buffer;
 
-  int size = disasm.InstructionDecode(disasm_buffer, instr);
-  DEBUG_PRINTF("%s\n", disasm_buffer.start());
-  if (enable_spew) {
-    JitSpew(JitSpew_Codegen, "%s", disasm_buffer.start());
+  disasm.InstructionDecode(buffer, instr);
+  DEBUG_PRINTF("%s\n", buffer.start());
+}
+
+void Assembler::disassembleInstr(BufferOffset offs, Instruction* instr) {
+  NameConverterWithInstruction converter(offs, instr);
+  disasm::Disassembler disasm(converter);
+  EmbeddedVector<char, disasm::ReasonableBufferSize> buffer;
+
+  disasm.InstructionDecode(buffer, instr);
+
+  JitSpew(JitSpew_Codegen, "[?] %06" PRIx32 " %s", uint32_t(offs.getOffset()),
+          buffer.start());
+}
+
+void Assembler::spew(BufferOffset offs, Instruction* instr) {
+  if (spew_.isDisabled() || !instr) {
+    return;
   }
-  return size;
+
+  disasm::NameConverter converter;
+  disasm::Disassembler disasm(converter);
+  EmbeddedVector<char, disasm::ReasonableBufferSize> buffer;
+
+  disasm.InstructionDecode(buffer, instr);
+
+  spew_.spew("%06" PRIx32 " %s", uint32_t(offs.getOffset()), buffer.start());
+}
+
+void Assembler::spewBranch(BufferOffset offs, Instruction* instr,
+                           LabelDoc target) {
+  if (spew_.isDisabled() || !instr) {
+    return;
+  }
+
+  NameConverterWithLabelDoc converter(target);
+  disasm::Disassembler disasm(converter);
+  EmbeddedVector<char, disasm::ReasonableBufferSize> buffer;
+
+  disasm.InstructionDecode(buffer, instr);
+
+  spew_.spew("%06" PRIx32 " %s", uint32_t(offs.getOffset()), buffer.start());
+}
+
+DisassemblerSpew::LabelDoc Assembler::refLabel(Label* label) {
+  if (spew_.isDisabled()) {
+    return LabelDoc();
+  }
+  return spew_.refLabel(label);
 }
 #endif /* JS_DISASM_RISCV64 */
 
@@ -1071,7 +1152,9 @@ void Assembler::jumpChainPutTargetAt(BufferOffset pos,
 }
 
 void Assembler::bind(Label* label, BufferOffset boff) {
-  JitSpew(JitSpew_Codegen, ".set Llabel %p %u", label, currentOffset());
+#ifdef JS_DISASM_RISCV64
+  spew_.spewBind(label);
+#endif
   DEBUG_PRINTF(".set Llabel %p %u\n", label, currentOffset());
 
   // If our caller didn't give us an explicit target to bind to
@@ -1483,7 +1566,9 @@ bool UseScratchRegisterScope::hasAvailable() const {
 }
 
 void Assembler::retarget(Label* label, Label* target) {
-  spew("retarget %p -> %p", label, target);
+#ifdef JS_DISASM_RISCV64
+  spew_.spewRetarget(label, target);
+#endif
 
   if (label->used()) {
     if (target->bound()) {
