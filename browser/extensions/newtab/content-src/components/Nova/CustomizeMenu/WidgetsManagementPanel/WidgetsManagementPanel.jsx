@@ -24,6 +24,7 @@ function WidgetsManagementPanel({
   mayHaveClocksWidget,
   mayHavePrivacyWidget,
   mayHaveCrosswordWidget,
+  mayHaveStocksWidget,
   setPref,
 }) {
   const prefs = useSelector(state => state.Prefs.values);
@@ -78,6 +79,9 @@ function WidgetsManagementPanel({
         case "WIDGET_CROSSWORD":
           widgetName = "crossword";
           break;
+        case "WIDGET_STOCKS":
+          widgetName = "stocks";
+          break;
       }
 
       if (widgetName) {
@@ -111,6 +115,7 @@ function WidgetsManagementPanel({
     clocksEnabled,
     privacyEnabled,
     crosswordEnabled,
+    stocksEnabled,
   } = enabledWidgets;
   const isRTL = typeof document !== "undefined" && document.dir === "rtl";
   const arrowIconSrc = `chrome://global/skin/icons/shaft-arrow-${isRTL ? "right" : "left"}.svg`;
@@ -225,6 +230,18 @@ function WidgetsManagementPanel({
                     data-event-source="WIDGET_CROSSWORD"
                     label="Crossword"
                   ></moz-toggle>
+                </div>
+              )}
+              {mayHaveStocksWidget && (
+                <div id="stocks-widget-section" className="section">
+                  <moz-toggle
+                    id="stocks-toggle"
+                    pressed={stocksEnabled || null}
+                    ontoggle={onToggleWidget}
+                    data-preference="widgets.stocks.enabled"
+                    data-event-source="WIDGET_STOCKS"
+                    data-l10n-id="newtab-custom-widget-stocks-toggle"
+                  />
                 </div>
               )}
             </div>
