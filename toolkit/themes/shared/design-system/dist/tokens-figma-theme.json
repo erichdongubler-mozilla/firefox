@@ -1364,6 +1364,21 @@
     "dark": "{Theme$border/color/interactive}",
     "forcedColors": "{Theme$border/color/interactive}"
   },
+  "select/nova/border": {
+    "light": "{Primitives$border/width} solid {Theme$border/color/interactive}",
+    "dark": "{Primitives$border/width} solid {Theme$border/color/interactive}",
+    "forcedColors": "{Primitives$border/width} solid {Theme$border/color/interactive}"
+  },
+  "select/nova/border/color/hover": {
+    "light": "{Theme$border/color/interactive/hover}",
+    "dark": "{Theme$border/color/interactive/hover}",
+    "forcedColors": "{Theme$border/color/interactive/hover}"
+  },
+  "select/nova/border/color/disabled": {
+    "light": "{Theme$border/color/interactive/disabled}",
+    "dark": "{Theme$border/color/interactive/disabled}",
+    "forcedColors": "{Theme$border/color/interactive/disabled}"
+  },
   "select/background/color": {
     "light": "{Theme$button/background/color}",
     "dark": "{Theme$button/background/color}",
