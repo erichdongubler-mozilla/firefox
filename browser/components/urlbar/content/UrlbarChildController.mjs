@@ -45,11 +45,14 @@ export class UrlbarChildController {
   /** @type {UrlbarParentController} */
   #parent;
 
+  /** @type {UrlbarView} */
+  #view = null;
+
   // Listeners (the view, the event bufferer, the search one-offs) live here,
   // on the input's side, rather than on the parent controller. The parent
-  // delegates its notifications to us via setListenerHost(). This keeps
-  // dispatch on the side where the listeners are, which is required once
-  // `<moz-urlbar>` runs in a content process.
+  // delegates its notifications to us via setChild(). This keeps dispatch on
+  // the side where the listeners are, which is required once `<moz-urlbar>`
+  // runs in a content process.
   #listeners = new Set();
 
   #userSelectionBehavior = /** @type {"arrow"|"tab"|"none"} */ ("none");
@@ -68,7 +71,7 @@ export class UrlbarChildController {
       )
     );
     this.#parent = actor.getOrCreateController(options.input);
-    this.#parent.setListenerHost(this);
+    this.#parent.setChild(this);
   }
 
   get input() {
@@ -78,7 +81,7 @@ export class UrlbarChildController {
     return this.#parent.browserWindow;
   }
   get view() {
-    return this.#parent.view;
+    return this.#view;
   }
   get engagementEvent() {
     return this.#parent.engagementEvent;
@@ -113,7 +116,7 @@ export class UrlbarChildController {
   }
 
   setView(view) {
-    return this.#parent.setView(view);
+    this.#view = view;
   }
   getViewTemplate(result) {
     return this.#parent.getViewTemplate(result);

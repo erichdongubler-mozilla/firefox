@@ -67,12 +67,12 @@ const NOTIFICATIONS = {
  * - onViewClose()
  */
 export class UrlbarParentController {
-  // Listener registration and notification dispatch live on the paired
-  // UrlbarChildController, which registers itself via setListenerHost().
-  // That keeps dispatch on the side where the listeners (the view, the
-  // event bufferer) live — required once `<moz-urlbar>` runs in a content
-  // process. The host is always set before any query runs.
-  #listenerHost = null;
+  // The paired UrlbarChildController, which registers itself via setChild().
+  // Listener registration and notification dispatch live on it, keeping
+  // dispatch on the side where the listeners (the view, the event bufferer)
+  // live — required once `<moz-urlbar>` runs in a content process. The child
+  // is always set before any query runs.
+  #child = null;
 
   /**
    * Initialises the class. The manager may be overridden here, this is for
@@ -133,13 +133,16 @@ export class UrlbarParentController {
   }
 
   /**
-   * Hooks up the controller with a view.
+   * The view, owned by the paired `UrlbarChildController`. The parent no
+   * longer holds the view directly; it reads it through the child for the
+   * few telemetry call sites that still need view state. This goes away
+   * together with the `#child` back-reference once telemetry stops reading
+   * the view synchronously.
    *
-   * @param {UrlbarView} view
-   *   The UrlbarView instance associated with this controller.
+   * @type {UrlbarView}
    */
-  setView(view) {
-    this.view = view;
+  get view() {
+    return this.#child?.view;
   }
 
   /**
@@ -335,14 +338,14 @@ export class UrlbarParentController {
   }
 
   /**
-   * Sets the object that owns listener registration and notification
-   * dispatch (the paired UrlbarChildController). It must be set before any
-   * query runs, since the query lifecycle notifies through it.
+   * Sets the paired UrlbarChildController, which owns listener registration
+   * and notification dispatch. It must be set before any query runs, since
+   * the query lifecycle notifies through it.
    *
-   * @param {object} host The listener host.
+   * @param {object} child The paired UrlbarChildController.
    */
-  setListenerHost(host) {
-    this.#listenerHost = host;
+  setChild(child) {
+    this.#child = child;
   }
 
   /**
@@ -463,14 +466,14 @@ export class UrlbarParentController {
   }
 
   /**
-   * Notifies listeners of results, by dispatching through the listener host
-   * (the paired UrlbarChildController, which owns the listeners).
+   * Notifies listeners of results, by dispatching through the paired
+   * UrlbarChildController, which owns the listeners.
    *
    * @param {string} name Name of the notification.
    * @param {object} params Parameters to pass with the notification.
    */
   notify(name, ...params) {
-    this.#listenerHost.notify(name, ...params);
+    this.#child.notify(name, ...params);
   }
 }
 
