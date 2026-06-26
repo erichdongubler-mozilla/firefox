@@ -210,6 +210,8 @@ skip-if = [
   "debug && standalone", # Bug 2025711
 ]
 
+["browser_smartwindow_manage_tabs_tool.js"]
+
 ["browser_smartwindow_metrics_telemetry.js"]
 
 ["browser_smartwindow_nimbus.js"]
