@@ -305,7 +305,7 @@ export class UrlbarView {
         if (result.providerName == "UrlbarProviderRecentSearches") {
           return "recent_search";
         }
-        if (result.source == lazy.UrlbarUtils.RESULT_SOURCE.HISTORY) {
+        if (result.source == UrlbarShared.RESULT_SOURCE.HISTORY) {
           return "formhistory";
         }
         if (result.providerName == "UrlbarProviderTabToSearch") {
@@ -336,7 +336,7 @@ export class UrlbarView {
           return `autofill_${type}`;
         }
         if (
-          result.source == lazy.UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL &&
+          result.source == UrlbarShared.RESULT_SOURCE.OTHER_LOCAL &&
           result.heuristic
         ) {
           return "visiturl";
@@ -349,7 +349,7 @@ export class UrlbarView {
         }
         {
           let type =
-            result.source == lazy.UrlbarUtils.RESULT_SOURCE.BOOKMARKS
+            result.source == UrlbarShared.RESULT_SOURCE.BOOKMARKS
               ? "bookmark"
               : "history";
           if (result.providerName == "UrlbarProviderInputHistory") {
@@ -593,7 +593,7 @@ export class UrlbarView {
     // Replace the row with a dismissal acknowledgment tip.
     let tip = new lazy.UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.TIP,
-      source: lazy.UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+      source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
       payload: {
         type: "dismissalAcknowledgment",
         titleL10n,
@@ -956,9 +956,7 @@ export class UrlbarView {
     // Set the actionmode atttribute if we are in actions search mode.
     // We do this before updating the result rows so that there is no flicker
     // after the actions are initially displayed.
-    if (
-      this.input.searchMode?.source == lazy.UrlbarUtils.RESULT_SOURCE.ACTIONS
-    ) {
+    if (this.input.searchMode?.source == UrlbarShared.RESULT_SOURCE.ACTIONS) {
       this.#rows.toggleAttribute("actionmode", true);
     }
 
@@ -2286,7 +2284,7 @@ export class UrlbarView {
           result.payload.titleL10n.args
         );
       }
-    } else if (result.source == lazy.UrlbarUtils.RESULT_SOURCE.BOOKMARKS) {
+    } else if (result.source == UrlbarShared.RESULT_SOURCE.BOOKMARKS) {
       item.setAttribute("type", "bookmark");
     } else if (result.type == UrlbarShared.RESULT_TYPE.DYNAMIC) {
       item.setAttribute("type", "dynamic");
@@ -2603,7 +2601,7 @@ export class UrlbarView {
 
   #iconForResult(result, iconUrlOverride = null) {
     if (
-      result.source == lazy.UrlbarUtils.RESULT_SOURCE.HISTORY &&
+      result.source == UrlbarShared.RESULT_SOURCE.HISTORY &&
       (result.type == UrlbarShared.RESULT_TYPE.SEARCH ||
         result.type == UrlbarShared.RESULT_TYPE.KEYWORD)
     ) {
@@ -3101,8 +3099,8 @@ export class UrlbarView {
     // flicker, and the first visible result's source being an action doesn't
     // necessarily imply we are in actions mode, therefore we should check both.
     if (
-      this.input.searchMode?.source != lazy.UrlbarUtils.RESULT_SOURCE.ACTIONS &&
-      this.visibleResults[0]?.source != lazy.UrlbarUtils.RESULT_SOURCE.ACTIONS
+      this.input.searchMode?.source != UrlbarShared.RESULT_SOURCE.ACTIONS &&
+      this.visibleResults[0]?.source != UrlbarShared.RESULT_SOURCE.ACTIONS
     ) {
       this.#rows.toggleAttribute("actionmode", false);
     }
@@ -3955,7 +3953,7 @@ export class UrlbarView {
         result.payload.inPrivateWindow && !result.payload.isPrivateEngine;
       let isSearchHistory =
         result.type == UrlbarShared.RESULT_TYPE.SEARCH &&
-        result.source == lazy.UrlbarUtils.RESULT_SOURCE.HISTORY;
+        result.source == UrlbarShared.RESULT_SOURCE.HISTORY;
       let isSearchSuggestion = result.payload.suggestion && !isSearchHistory;
 
       // For one-off buttons having a source, we update the action for the

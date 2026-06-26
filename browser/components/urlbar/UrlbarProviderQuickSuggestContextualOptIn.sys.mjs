@@ -317,7 +317,7 @@ export class UrlbarProviderQuickSuggestContextualOptIn extends UrlbarProvider {
   async startQuery(queryContext, addCallback) {
     let result = new lazy.UrlbarResult({
       type: lazy.UrlbarShared.RESULT_TYPE.DYNAMIC,
-      source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+      source: lazy.UrlbarShared.RESULT_SOURCE.SEARCH,
       suggestedIndex: 0,
       payload: {
         buttons: [

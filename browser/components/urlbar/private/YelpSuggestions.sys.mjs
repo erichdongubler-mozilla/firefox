@@ -15,7 +15,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
   UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
-  UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
   YelpSubjectType:
     "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustSuggest.sys.mjs",
 });
@@ -185,7 +184,7 @@ export class YelpSuggestions extends SuggestProvider {
 
     let resultProperties = {
       type: lazy.UrlbarShared.RESULT_TYPE.URL,
-      source: lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
+      source: lazy.UrlbarShared.RESULT_SOURCE.SEARCH,
       isBottomUrlSuggestion: true,
       isBestMatch: lazy.UrlbarPrefs.get("yelpSuggestPriority"),
     };

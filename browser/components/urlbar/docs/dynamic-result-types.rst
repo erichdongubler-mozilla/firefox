@@ -574,7 +574,7 @@ payload property in the following example:
 
     let result = new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.DYNAMIC,
-      source: UrlbarUtils.RESULT_SOURCE.OTHER_NETWORK,
+      source: UrlbarShared.RESULT_SOURCE.OTHER_NETWORK,
       payload: {
         title: [
           "Some result title",

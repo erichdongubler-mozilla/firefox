@@ -96,9 +96,9 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
     // If the sources don't include search or the user used a restriction
     // character other than search, don't allow any suggestions.
     if (
-      !queryContext.sources.includes(UrlbarUtils.RESULT_SOURCE.SEARCH) ||
+      !queryContext.sources.includes(lazy.UrlbarShared.RESULT_SOURCE.SEARCH) ||
       (queryContext.restrictSource &&
-        queryContext.restrictSource != UrlbarUtils.RESULT_SOURCE.SEARCH)
+        queryContext.restrictSource != lazy.UrlbarShared.RESULT_SOURCE.SEARCH)
     ) {
       return false;
     }
@@ -139,12 +139,13 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
     return (
       queryContext.searchString.startsWith("@") ||
       (queryContext.restrictSource &&
-        queryContext.restrictSource == UrlbarUtils.RESULT_SOURCE.SEARCH) ||
+        queryContext.restrictSource ==
+          lazy.UrlbarShared.RESULT_SOURCE.SEARCH) ||
       queryContext.tokens.some(
         t => t.type == lazy.UrlbarShared.TOKEN_TYPE.RESTRICT_SEARCH
       ) ||
       (queryContext.searchMode &&
-        queryContext.sources.includes(UrlbarUtils.RESULT_SOURCE.SEARCH))
+        queryContext.sources.includes(lazy.UrlbarShared.RESULT_SOURCE.SEARCH))
     );
   }
 
@@ -527,7 +528,7 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
         results.push(
           new lazy.UrlbarResult({
             type: lazy.UrlbarShared.RESULT_TYPE.SEARCH,
-            source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+            source: lazy.UrlbarShared.RESULT_SOURCE.SEARCH,
             isRichSuggestion: !!entry.icon,
             richSuggestionIconSize: entry.icon
               ? UrlbarProviderSearchSuggestions.RICH_ICON_SIZE
@@ -676,7 +677,7 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
 function makeFormHistoryResult(queryContext, engine, entry) {
   return new lazy.UrlbarResult({
     type: lazy.UrlbarShared.RESULT_TYPE.SEARCH,
-    source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+    source: lazy.UrlbarShared.RESULT_SOURCE.HISTORY,
     payload: {
       engine: engine.name,
       suggestion: entry.value,

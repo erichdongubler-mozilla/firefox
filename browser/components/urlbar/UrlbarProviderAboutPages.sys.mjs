@@ -54,7 +54,7 @@ export class UrlbarProviderAboutPages extends UrlbarProvider {
       if (aboutUrl.startsWith(searchString)) {
         let result = new lazy.UrlbarResult({
           type: lazy.UrlbarShared.RESULT_TYPE.URL,
-          source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+          source: lazy.UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
           payload: {
             title: aboutUrl,
             url: aboutUrl,

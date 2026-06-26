@@ -214,7 +214,7 @@ export class ImportantDatesSuggestions extends SuggestProvider {
     let dateString = this.#formatDateOrRange(eventDateOrRange);
     return new lazy.UrlbarResult({
       type: lazy.UrlbarShared.RESULT_TYPE.SEARCH,
-      source: lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
+      source: lazy.UrlbarShared.RESULT_SOURCE.SEARCH,
       isBestMatch: true,
       richSuggestionIconSize: 24,
       payload: {

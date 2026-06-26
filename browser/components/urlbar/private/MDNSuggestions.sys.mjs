@@ -66,7 +66,7 @@ export class MDNSuggestions extends SuggestProvider {
 
     return new lazy.UrlbarResult({
       type: lazy.UrlbarShared.RESULT_TYPE.URL,
-      source: lazy.UrlbarUtils.RESULT_SOURCE.OTHER_NETWORK,
+      source: lazy.UrlbarShared.RESULT_SOURCE.OTHER_NETWORK,
       isBestMatch: true,
       isBottomUrlSuggestion: true,
       payload: {

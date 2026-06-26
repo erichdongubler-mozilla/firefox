@@ -100,7 +100,8 @@ export class UrlbarProviderSemanticHistorySearch extends UrlbarProvider {
       lazy.UrlbarPrefs.get("suggest.history") &&
       queryContext.searchString.length >= minSearchStringLength &&
       (!queryContext.searchMode ||
-        queryContext.searchMode.source == UrlbarUtils.RESULT_SOURCE.HISTORY)
+        queryContext.searchMode.source ==
+          lazy.UrlbarShared.RESULT_SOURCE.HISTORY)
     ) {
       // The smartbar (SW-only surface) is gated on the SW pref so it can light
       // up independently of the CW feature gate; all other surfaces (urlbar in
@@ -149,7 +150,7 @@ export class UrlbarProviderSemanticHistorySearch extends UrlbarProvider {
       ) {
         const result = new lazy.UrlbarResult({
           type: lazy.UrlbarShared.RESULT_TYPE.URL,
-          source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+          source: lazy.UrlbarShared.RESULT_SOURCE.HISTORY,
           payload: {
             title: res.title,
             url: res.url,
@@ -204,7 +205,7 @@ export class UrlbarProviderSemanticHistorySearch extends UrlbarProvider {
       }
       let result = new lazy.UrlbarResult({
         type: lazy.UrlbarShared.RESULT_TYPE.TAB_SWITCH,
-        source: UrlbarUtils.RESULT_SOURCE.TABS,
+        source: lazy.UrlbarShared.RESULT_SOURCE.TABS,
         payload: {
           url: res.url,
           title: res.title,

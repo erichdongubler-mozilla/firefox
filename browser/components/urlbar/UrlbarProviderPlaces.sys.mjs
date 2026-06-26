@@ -131,12 +131,12 @@ const lazy = XPCOMUtils.declareLazy({
     );
   },
   sourceToBehaviorMap: () => {
-    return /** @type {Map<Values<typeof UrlbarUtils.RESULT_SOURCE>, string>} */ (
+    return /** @type {Map<Values<typeof lazy.UrlbarShared.RESULT_SOURCE>, string>} */ (
       new Map([
-        [UrlbarUtils.RESULT_SOURCE.HISTORY, "history"],
-        [UrlbarUtils.RESULT_SOURCE.BOOKMARKS, "bookmark"],
-        [UrlbarUtils.RESULT_SOURCE.TABS, "openpage"],
-        [UrlbarUtils.RESULT_SOURCE.SEARCH, "search"],
+        [lazy.UrlbarShared.RESULT_SOURCE.HISTORY, "history"],
+        [lazy.UrlbarShared.RESULT_SOURCE.BOOKMARKS, "bookmark"],
+        [lazy.UrlbarShared.RESULT_SOURCE.TABS, "openpage"],
+        [lazy.UrlbarShared.RESULT_SOURCE.SEARCH, "search"],
       ])
     );
   },
@@ -320,7 +320,7 @@ function makeUrlbarResult(queryContext, info) {
         // Return a form history result.
         return new lazy.UrlbarResult({
           type: lazy.UrlbarShared.RESULT_TYPE.SEARCH,
-          source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+          source: lazy.UrlbarShared.RESULT_SOURCE.HISTORY,
           payload: {
             engine: action.params.engineName,
             isBlockable: true,
@@ -340,7 +340,7 @@ function makeUrlbarResult(queryContext, info) {
       case "switchtab": {
         return new lazy.UrlbarResult({
           type: lazy.UrlbarShared.RESULT_TYPE.TAB_SWITCH,
-          source: UrlbarUtils.RESULT_SOURCE.TABS,
+          source: lazy.UrlbarShared.RESULT_SOURCE.TABS,
           payload: {
             url: action.params.url,
             title: info.title,
@@ -378,9 +378,9 @@ function makeUrlbarResult(queryContext, info) {
   // "tag". In the last case it should not be considered a bookmark, but an
   // history item with tags. We don't show tags for non bookmarked items though.
   if (info.style.includes("bookmark")) {
-    source = UrlbarUtils.RESULT_SOURCE.BOOKMARKS;
+    source = lazy.UrlbarShared.RESULT_SOURCE.BOOKMARKS;
   } else {
-    source = UrlbarUtils.RESULT_SOURCE.HISTORY;
+    source = lazy.UrlbarShared.RESULT_SOURCE.HISTORY;
     isBlockable = true;
     blockL10n = { id: "urlbar-result-menu-remove-from-history" };
     helpUrl =
@@ -397,7 +397,7 @@ function makeUrlbarResult(queryContext, info) {
     // However, as mentioned above, we don't want to show tags for non-
     // bookmarked items, so we include tags in the final result only if it's
     // bookmarked, and we drop the tags otherwise.
-    if (source != UrlbarUtils.RESULT_SOURCE.BOOKMARKS) {
+    if (source != lazy.UrlbarShared.RESULT_SOURCE.BOOKMARKS) {
       titleTags = "";
     }
 

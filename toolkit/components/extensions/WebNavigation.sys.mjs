@@ -9,7 +9,6 @@ const lazy = XPCOMUtils.declareLazy({
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   ClickHandlerParent: "resource:///actors/ClickHandlerParent.sys.mjs",
-  UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
   UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
   WebNavigationFrames: "resource://gre/modules/WebNavigationFrames.sys.mjs",
 });
@@ -129,7 +128,7 @@ export var WebNavigationManager = {
    *   The result information associated with the navigation action.
    * @param {Items<typeof lazy.UrlbarShared.RESULT_TYPE>} [acData.result.type]
    *   The result type associated with the navigation action.
-   * @param {Items<typeof lazy.UrlbarUtils.RESULT_SOURCE>} [acData.result.source]
+   * @param {Items<typeof lazy.UrlbarShared.RESULT_SOURCE>} [acData.result.source]
    *   The result source associated with the navigation action.
    */
   onURLBarUserStartNavigation(acData) {
@@ -149,7 +148,7 @@ export var WebNavigationManager = {
           break;
         case lazy.UrlbarShared.RESULT_TYPE.URL:
           if (
-            acData.result.source == lazy.UrlbarUtils.RESULT_SOURCE.BOOKMARKS
+            acData.result.source == lazy.UrlbarShared.RESULT_SOURCE.BOOKMARKS
           ) {
             tabTransitionData.auto_bookmark = true;
           } else {

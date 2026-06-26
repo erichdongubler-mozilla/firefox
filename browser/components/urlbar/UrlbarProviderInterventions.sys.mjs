@@ -642,7 +642,7 @@ export class UrlbarProviderInterventions extends UrlbarProvider {
 
     let result = new lazy.UrlbarResult({
       type: lazy.UrlbarShared.RESULT_TYPE.TIP,
-      source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+      source: lazy.UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
       suggestedIndex: 1,
       payload: {
         ...getPayloadForTip(this.currentTip),

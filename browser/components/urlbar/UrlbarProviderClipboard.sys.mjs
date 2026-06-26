@@ -118,7 +118,7 @@ export class UrlbarProviderClipboard extends UrlbarProvider {
     // If the query was started, isActive should have cached a url already.
     let result = new lazy.UrlbarResult({
       type: lazy.UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+      source: lazy.UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
       payload: {
         title: UrlbarUtils.prepareUrlForDisplay(this.#previousClipboard.value, {
           trimURL: false,

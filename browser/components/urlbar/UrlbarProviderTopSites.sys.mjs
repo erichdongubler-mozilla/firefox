@@ -229,7 +229,7 @@ export class UrlbarProviderTopSites extends UrlbarProvider {
                 payload.userContextId = userContextId;
                 let result = new lazy.UrlbarResult({
                   type: lazy.UrlbarShared.RESULT_TYPE.TAB_SWITCH,
-                  source: UrlbarUtils.RESULT_SOURCE.TABS,
+                  source: lazy.UrlbarShared.RESULT_SOURCE.TABS,
                   payload,
                 });
                 addCallback(this, result);
@@ -248,8 +248,8 @@ export class UrlbarProviderTopSites extends UrlbarProvider {
           }
           payload.sendAttributionRequest = site.sendAttributionRequest;
 
-          /** @type {Values<typeof UrlbarUtils.RESULT_SOURCE>} */
-          let resultSource = UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL;
+          /** @type {Values<typeof lazy.UrlbarShared.RESULT_SOURCE>} */
+          let resultSource = lazy.UrlbarShared.RESULT_SOURCE.OTHER_LOCAL;
           if (lazy.UrlbarPrefs.get("suggest.bookmark")) {
             let bookmark = await lazy.PlacesUtils.bookmarks.fetch({
               url: new URL(payload.url),
@@ -259,7 +259,7 @@ export class UrlbarProviderTopSites extends UrlbarProvider {
               break;
             }
             if (bookmark) {
-              resultSource = UrlbarUtils.RESULT_SOURCE.BOOKMARKS;
+              resultSource = lazy.UrlbarShared.RESULT_SOURCE.BOOKMARKS;
             }
           }
 
@@ -295,7 +295,7 @@ export class UrlbarProviderTopSites extends UrlbarProvider {
 
           let result = new lazy.UrlbarResult({
             type: lazy.UrlbarShared.RESULT_TYPE.SEARCH,
-            source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+            source: lazy.UrlbarShared.RESULT_SOURCE.SEARCH,
             payload: {
               keyword: site.title,
               providesSearchMode: true,

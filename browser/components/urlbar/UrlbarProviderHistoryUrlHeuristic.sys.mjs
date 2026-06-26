@@ -117,7 +117,7 @@ export class UrlbarProviderHistoryUrlHeuristic extends UrlbarProvider {
 
     return new lazy.UrlbarResult({
       type: lazy.UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: lazy.UrlbarShared.RESULT_SOURCE.HISTORY,
       heuristic: true,
       payload: {
         url: inputedURL,

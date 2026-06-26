@@ -111,7 +111,7 @@ export class DynamicSuggestions extends SuggestProvider {
     delete resultProperties.payload;
     return new lazy.UrlbarResult({
       type: lazy.UrlbarShared.RESULT_TYPE.URL,
-      source: lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
+      source: lazy.UrlbarShared.RESULT_SOURCE.SEARCH,
       ...resultProperties,
       payload,
     });
@@ -140,7 +140,7 @@ export class DynamicSuggestions extends SuggestProvider {
     // no requirements for its payload other than `dynamicType`.
     return new lazy.UrlbarResult({
       type: lazy.UrlbarShared.RESULT_TYPE.DYNAMIC,
-      source: lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
+      source: lazy.UrlbarShared.RESULT_SOURCE.SEARCH,
       // Exposure suggestions should always be hidden, and it's assumed that
       // exposure telemetry should be recorded for them, so as a convenience
       // set `exposureTelemetry` here. Otherwise experiments would need to set

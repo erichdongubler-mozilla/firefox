@@ -1049,7 +1049,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     // Discard SERPs from browser history that dupe either the heuristic or
     // previously added suggestions.
     if (
-      result.source == UrlbarUtils.RESULT_SOURCE.HISTORY &&
+      result.source == lazy.UrlbarShared.RESULT_SOURCE.HISTORY &&
       result.type == lazy.UrlbarShared.RESULT_TYPE.URL &&
       // If there's no suggestions, we're not going to have anything to match
       // against, so avoid processing the url.
@@ -1117,7 +1117,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     // presence of a partner's URL search param to detect these. The param is
     // defined in the pref below, which is also used for the newtab page.
     if (
-      result.source == UrlbarUtils.RESULT_SOURCE.HISTORY &&
+      result.source == lazy.UrlbarShared.RESULT_SOURCE.HISTORY &&
       result.type == lazy.UrlbarShared.RESULT_TYPE.URL
     ) {
       let param = Services.prefs.getCharPref(
@@ -1171,7 +1171,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     // Dedupe history results with different ref.
     if (
       lazy.UrlbarPrefs.get("deduplication.enabled") &&
-      result.source == UrlbarUtils.RESULT_SOURCE.HISTORY &&
+      result.source == lazy.UrlbarShared.RESULT_SOURCE.HISTORY &&
       result.type == lazy.UrlbarShared.RESULT_TYPE.URL &&
       !result.heuristic &&
       result.payload.lastVisit

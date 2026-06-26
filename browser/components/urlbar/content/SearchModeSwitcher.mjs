@@ -424,7 +424,7 @@ export class SearchModeSwitcher {
       {
         entry: "searchbutton",
         isPreview: false,
-        source: selectedEngine?.source || lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
+        source: selectedEngine?.source || UrlbarShared.RESULT_SOURCE.SEARCH,
         engineName: selectedEngine?.name,
       },
       this.#input.window.gBrowser.selectedBrowser

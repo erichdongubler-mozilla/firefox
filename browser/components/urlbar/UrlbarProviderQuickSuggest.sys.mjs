@@ -57,9 +57,9 @@ export class UrlbarProviderQuickSuggest extends UrlbarProvider {
     // If the sources don't include search or the user used a restriction
     // character other than search, don't allow any suggestions.
     if (
-      !queryContext.sources.includes(UrlbarUtils.RESULT_SOURCE.SEARCH) ||
+      !queryContext.sources.includes(lazy.UrlbarShared.RESULT_SOURCE.SEARCH) ||
       (queryContext.restrictSource &&
-        queryContext.restrictSource != UrlbarUtils.RESULT_SOURCE.SEARCH)
+        queryContext.restrictSource != lazy.UrlbarShared.RESULT_SOURCE.SEARCH)
     ) {
       return false;
     }
@@ -490,7 +490,7 @@ export class UrlbarProviderQuickSuggest extends UrlbarProvider {
 
     return new lazy.UrlbarResult({
       type: lazy.UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+      source: lazy.UrlbarShared.RESULT_SOURCE.SEARCH,
       isBestMatch: !!suggestion.is_top_pick,
       payload,
       highlights: {

@@ -127,23 +127,6 @@ export var UrlbarUtils = {
     EXTENSION: 4,
   }),
 
-  // This defines the source of results returned by a provider. Each provider
-  // can return results from more than one source. This is used by the
-  // ProvidersManager to decide which providers must be queried and which
-  // results can be returned.
-  // If you add new source types, consider checking if consumers of
-  // "urlbar-user-start-navigation" need update as well.
-  RESULT_SOURCE: Object.freeze({
-    BOOKMARKS: 1,
-    HISTORY: 2,
-    SEARCH: 3,
-    TABS: 4,
-    OTHER_LOCAL: 5,
-    OTHER_NETWORK: 6,
-    ADDON: 7,
-    ACTIONS: 8,
-  }),
-
   // Per-result exposure telemetry.
   EXPOSURE_TELEMETRY: {
     // Exposure telemetry will not be recorded for the result.
@@ -243,7 +226,7 @@ export var UrlbarUtils = {
   get LOCAL_SEARCH_MODES() {
     /**
      * @typedef {object} LocalSearchMode
-     * @property {Values<typeof this.RESULT_SOURCE>} source
+     * @property {Values<typeof UrlbarShared.RESULT_SOURCE>} source
      *   The source which the search mode will search.
      * @property {Values<typeof UrlbarShared.RESTRICT_TOKENS>} restrict
      *   The restrict token that is associated with the search (*, %, $ etc).
@@ -260,7 +243,7 @@ export var UrlbarUtils = {
 
     return /** @type {LocalSearchMode[]} */ ([
       {
-        source: this.RESULT_SOURCE.BOOKMARKS,
+        source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
         restrict: UrlbarShared.RESTRICT_TOKENS.BOOKMARK,
         icon: "chrome://browser/skin/bookmark.svg",
         pref: "shortcuts.bookmarks",
@@ -268,7 +251,7 @@ export var UrlbarUtils = {
         uiLabel: "urlbar-searchmode-bookmarks2",
       },
       {
-        source: this.RESULT_SOURCE.TABS,
+        source: UrlbarShared.RESULT_SOURCE.TABS,
         restrict: UrlbarShared.RESTRICT_TOKENS.OPENPAGE,
         icon: "chrome://browser/skin/tabs.svg",
         pref: "shortcuts.tabs",
@@ -276,7 +259,7 @@ export var UrlbarUtils = {
         uiLabel: "urlbar-searchmode-tabs2",
       },
       {
-        source: this.RESULT_SOURCE.HISTORY,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         restrict: UrlbarShared.RESTRICT_TOKENS.HISTORY,
         icon: "chrome://browser/skin/history.svg",
         pref: "shortcuts.history",
@@ -284,7 +267,7 @@ export var UrlbarUtils = {
         uiLabel: "urlbar-searchmode-history2",
       },
       {
-        source: this.RESULT_SOURCE.ACTIONS,
+        source: UrlbarShared.RESULT_SOURCE.ACTIONS,
         restrict: UrlbarShared.RESTRICT_TOKENS.ACTION,
         icon: "chrome://browser/skin/quickactions.svg",
         pref: "shortcuts.actions",
@@ -620,7 +603,7 @@ export var UrlbarUtils = {
 
     switch (result.type) {
       case UrlbarShared.RESULT_TYPE.SEARCH:
-        if (result.source == this.RESULT_SOURCE.HISTORY) {
+        if (result.source == UrlbarShared.RESULT_SOURCE.HISTORY) {
           return result.providerName == "UrlbarProviderRecentSearches"
             ? this.RESULT_GROUP.RECENT_SEARCH
             : this.RESULT_GROUP.FORM_HISTORY;
@@ -1672,15 +1655,15 @@ export var UrlbarUtils = {
    * Returns the name of a result source.  The name is the lowercase name of the
    * corresponding property in the RESULT_SOURCE object.
    *
-   * @param {Values<typeof this.RESULT_SOURCE>} source
-   *   A UrlbarUtils.RESULT_SOURCE value.
+   * @param {Values<typeof UrlbarShared.RESULT_SOURCE>} source
+   *   A UrlbarShared.RESULT_SOURCE value.
    * @returns {string}
    *   The token's name, a lowercased name in the RESULT_SOURCE object.
    */
   getResultSourceName(source) {
     if (!this._resultSourceNamesBySource) {
       this._resultSourceNamesBySource = new Map();
-      for (let [name, src] of Object.entries(this.RESULT_SOURCE)) {
+      for (let [name, src] of Object.entries(UrlbarShared.RESULT_SOURCE)) {
         this._resultSourceNamesBySource.set(src, name.toLowerCase());
       }
     }
@@ -1980,9 +1963,9 @@ export var UrlbarUtils = {
       }
       if (
         lazy.UrlbarSearchUtils.resultIsSERP(res, [
-          UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
-          UrlbarUtils.RESULT_SOURCE.HISTORY,
-          UrlbarUtils.RESULT_SOURCE.TABS,
+          UrlbarShared.RESULT_SOURCE.BOOKMARKS,
+          UrlbarShared.RESULT_SOURCE.HISTORY,
+          UrlbarShared.RESULT_SOURCE.TABS,
         ])
       ) {
         type += "_serp";
@@ -2016,7 +1999,7 @@ export var UrlbarUtils = {
         if (result.providerName === "UrlbarProviderTabToSearch") {
           return "tab_to_search";
         }
-        if (result.source == this.RESULT_SOURCE.HISTORY) {
+        if (result.source == UrlbarShared.RESULT_SOURCE.HISTORY) {
           return result.providerName == "UrlbarProviderRecentSearches"
             ? "recent_search"
             : "search_history";
@@ -2065,7 +2048,7 @@ export var UrlbarUtils = {
         }
       case UrlbarShared.RESULT_TYPE.URL:
         if (
-          result.source === this.RESULT_SOURCE.OTHER_LOCAL &&
+          result.source === UrlbarShared.RESULT_SOURCE.OTHER_LOCAL &&
           result.heuristic
         ) {
           return "url";
@@ -2082,7 +2065,7 @@ export var UrlbarUtils = {
         if (result.payload.isAutofillFallback) {
           return "history_autofill_fallback_origin";
         }
-        if (result.source === this.RESULT_SOURCE.BOOKMARKS) {
+        if (result.source === UrlbarShared.RESULT_SOURCE.BOOKMARKS) {
           return checkForSubType("bookmark", result);
         }
         return checkForSubType("history", result);
@@ -2968,7 +2951,7 @@ UrlbarUtils.RESULT_PAYLOAD_SCHEMA = {
 
 /**
  * @typedef UrlbarSearchModeData
- * @property {Values<typeof UrlbarUtils.RESULT_SOURCE>} source
+ * @property {Values<typeof UrlbarShared.RESULT_SOURCE>} source
  *   The source from which search mode was entered.
  * @property {string} [engineName]
  *   The search engine name associated with the search mode.
@@ -3002,7 +2985,7 @@ export class UrlbarQueryContext {
    * @param {string | null} [options.tabGroup]
    *   The tab group where this context was generated, if any.
    * @param {Array} [options.sources]
-   *   A list of acceptable UrlbarUtils.RESULT_SOURCE for the context.
+   *   A list of acceptable UrlbarShared.RESULT_SOURCE for the context.
    * @param {object} [options.searchMode]
    *   The input's current search mode.  See UrlbarInput.setSearchMode for a
    *   description.
@@ -3152,7 +3135,7 @@ export class UrlbarQueryContext {
   providers;
 
   /**
-   * @type {?Values<typeof UrlbarUtils.RESULT_SOURCE>}
+   * @type {?Values<typeof UrlbarShared.RESULT_SOURCE>}
    *   Set if this context is restricted to a single source.
    */
   restrictSource;
@@ -3189,7 +3172,7 @@ export class UrlbarQueryContext {
   searchString;
 
   /**
-   * @type {Values<typeof UrlbarUtils.RESULT_SOURCE>[]}
+   * @type {Values<typeof UrlbarShared.RESULT_SOURCE>[]}
    *   The possible sources of results for this context.
    */
   sources;

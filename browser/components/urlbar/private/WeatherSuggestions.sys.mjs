@@ -15,7 +15,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
   UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
-  UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
 });
 
 const MERINO_TIMEOUT_MS = 5000; // 5s
@@ -230,7 +229,7 @@ export class WeatherSuggestions extends SuggestProvider {
 
     return new lazy.UrlbarResult({
       type: lazy.UrlbarShared.RESULT_TYPE.URL,
-      source: lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
+      source: lazy.UrlbarShared.RESULT_SOURCE.SEARCH,
       isBestMatch: true,
       suggestedIndex: 1,
       isRichSuggestion: true,
@@ -260,7 +259,7 @@ export class WeatherSuggestions extends SuggestProvider {
   #makeDynamicResult(suggestion, unit) {
     return new lazy.UrlbarResult({
       type: lazy.UrlbarShared.RESULT_TYPE.DYNAMIC,
-      source: lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
+      source: lazy.UrlbarShared.RESULT_SOURCE.SEARCH,
       showFeedbackMenu: true,
       suggestedIndex: 1,
       payload: {

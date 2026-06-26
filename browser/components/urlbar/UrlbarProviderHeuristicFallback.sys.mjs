@@ -110,7 +110,7 @@ export class UrlbarProviderHeuristicFallback extends UrlbarProvider {
     if (
       queryContext.sapName == "searchbar" ||
       lazy.UrlbarPrefs.get("keyword.enabled") ||
-      queryContext.restrictSource == UrlbarUtils.RESULT_SOURCE.SEARCH ||
+      queryContext.restrictSource == lazy.UrlbarShared.RESULT_SOURCE.SEARCH ||
       queryContext.searchMode
     ) {
       result = await this._engineSearchResult({
@@ -132,7 +132,7 @@ export class UrlbarProviderHeuristicFallback extends UrlbarProvider {
     // URLs into URL results when search mode is active or a search mode
     // restriction token was typed.
     if (
-      queryContext.restrictSource == UrlbarUtils.RESULT_SOURCE.SEARCH ||
+      queryContext.restrictSource == lazy.UrlbarShared.RESULT_SOURCE.SEARCH ||
       lazy.UrlbarShared.SEARCH_MODE_RESTRICT.has(
         queryContext.restrictToken?.value
       ) ||
@@ -160,7 +160,7 @@ export class UrlbarProviderHeuristicFallback extends UrlbarProvider {
       ) {
         return new lazy.UrlbarResult({
           type: lazy.UrlbarShared.RESULT_TYPE.URL,
-          source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+          source: lazy.UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
           heuristic: true,
           payload: {
             title: searchUrl,
@@ -222,7 +222,7 @@ export class UrlbarProviderHeuristicFallback extends UrlbarProvider {
 
     return new lazy.UrlbarResult({
       type: lazy.UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+      source: lazy.UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
       heuristic: true,
       payload: {
         title: displayURL,
@@ -268,7 +268,7 @@ export class UrlbarProviderHeuristicFallback extends UrlbarProvider {
       return null;
     }
 
-    if (queryContext.restrictSource == UrlbarUtils.RESULT_SOURCE.SEARCH) {
+    if (queryContext.restrictSource == lazy.UrlbarShared.RESULT_SOURCE.SEARCH) {
       return await this._engineSearchResult({
         queryContext,
         keyword: firstToken,
@@ -279,7 +279,7 @@ export class UrlbarProviderHeuristicFallback extends UrlbarProvider {
     query = query.trimStart();
     return new lazy.UrlbarResult({
       type: lazy.UrlbarShared.RESULT_TYPE.SEARCH,
-      source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+      source: lazy.UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
       heuristic: true,
       payload: {
         query,
@@ -324,7 +324,7 @@ export class UrlbarProviderHeuristicFallback extends UrlbarProvider {
 
     return new lazy.UrlbarResult({
       type: lazy.UrlbarShared.RESULT_TYPE.SEARCH,
-      source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+      source: lazy.UrlbarShared.RESULT_SOURCE.SEARCH,
       heuristic,
       payload: {
         engine: engine.name,

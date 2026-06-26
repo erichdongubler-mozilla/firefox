@@ -40,7 +40,8 @@ export class UrlbarProviderBookmarkKeywords extends UrlbarProvider {
   async isActive(queryContext) {
     return (
       (!queryContext.restrictSource ||
-        queryContext.restrictSource == UrlbarUtils.RESULT_SOURCE.BOOKMARKS) &&
+        queryContext.restrictSource ==
+          lazy.UrlbarShared.RESULT_SOURCE.BOOKMARKS) &&
       !queryContext.searchMode &&
       !!queryContext.tokens.length
     );
@@ -88,7 +89,7 @@ export class UrlbarProviderBookmarkKeywords extends UrlbarProvider {
 
     let result = new lazy.UrlbarResult({
       type: lazy.UrlbarShared.RESULT_TYPE.KEYWORD,
-      source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+      source: lazy.UrlbarShared.RESULT_SOURCE.BOOKMARKS,
       heuristic: true,
       payload: {
         title,

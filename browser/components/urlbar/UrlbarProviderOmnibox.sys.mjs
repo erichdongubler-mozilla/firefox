@@ -101,7 +101,7 @@ export class UrlbarProviderOmnibox extends UrlbarProvider {
     let description = lazy.ExtensionSearchHandler.getDescription(keyword);
     let heuristicResult = new lazy.UrlbarResult({
       type: lazy.UrlbarShared.RESULT_TYPE.OMNIBOX,
-      source: UrlbarUtils.RESULT_SOURCE.ADDON,
+      source: lazy.UrlbarShared.RESULT_SOURCE.ADDON,
       heuristic: true,
       payload: {
         title: description,
@@ -136,7 +136,7 @@ export class UrlbarProviderOmnibox extends UrlbarProvider {
           }
           let result = new lazy.UrlbarResult({
             type: lazy.UrlbarShared.RESULT_TYPE.OMNIBOX,
-            source: UrlbarUtils.RESULT_SOURCE.ADDON,
+            source: lazy.UrlbarShared.RESULT_SOURCE.ADDON,
             payload: {
               title: suggestion.description,
               content,

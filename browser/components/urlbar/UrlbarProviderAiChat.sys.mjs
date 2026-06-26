@@ -140,7 +140,7 @@ export class UrlbarProviderAiChat extends UrlbarProvider {
     let result = new lazy.UrlbarResult({
       heuristic,
       type: lazy.UrlbarShared.RESULT_TYPE.AI_CHAT,
-      source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+      source: lazy.UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
       suggestedIndex: heuristic ? undefined : 1,
       payload: {
         icon: UrlbarProviderAiChat.CHAT_ICON_URL,
@@ -163,7 +163,7 @@ export class UrlbarProviderAiChat extends UrlbarProvider {
 
       let searchResult = new lazy.UrlbarResult({
         type: lazy.UrlbarShared.RESULT_TYPE.SEARCH,
-        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+        source: lazy.UrlbarShared.RESULT_SOURCE.SEARCH,
         // Pin below the heuristic result.
         suggestedIndex: 1,
         payload: {

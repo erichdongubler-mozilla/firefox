@@ -133,7 +133,7 @@ export class UrlbarProviderCalculator extends UrlbarProvider {
       let value = Calculator.evaluatePostfix(postfix);
       const result = new lazy.UrlbarResult({
         type: lazy.UrlbarShared.RESULT_TYPE.DYNAMIC,
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: lazy.UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         suggestedIndex: 1,
         payload: {
           value,

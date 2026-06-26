@@ -479,11 +479,11 @@ interface SearchMode {
   // The name of the search engine to restrict to. Can be left empty to use source
   // restriction instead.
   engineName?: string;
-  // A result source to restrict to. One of the values in UrlbarUtils.RESULT_SOURCE.
+  // A result source to restrict to. One of the values in UrlbarShared.RESULT_SOURCE.
   // Defaults to 3 (SEARCH).
   source?: number;
   // How search mode was entered. This is recorded in event telemetry. One of the
-  // values in UrlbarUtils.SEARCH_MODE_ENTRY. Defaults to "other".
+  // values in UrlbarShared.SEARCH_MODE_ENTRY. Defaults to "other".
   entry?: string;
   // If true, we will preview search mode. Search mode preview does not record
   // telemetry and has slighly different UI behavior. The preview is exited in

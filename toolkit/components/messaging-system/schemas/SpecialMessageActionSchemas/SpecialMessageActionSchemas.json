@@ -783,7 +783,7 @@
                 },
                 "source": {
                   "type": "integer",
-                  "description": "A result source to restrict to. One of the values in UrlbarUtils.RESULT_SOURCE.",
+                  "description": "A result source to restrict to. One of the values in UrlbarShared.RESULT_SOURCE.",
                   "default": 3
                 },
                 "entry": {

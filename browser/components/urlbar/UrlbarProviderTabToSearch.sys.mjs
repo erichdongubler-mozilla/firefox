@@ -355,7 +355,7 @@ export class UrlbarProviderTabToSearch extends UrlbarProvider {
 function makeOnboardingResult(engine, satisfiesAutofillThreshold = false) {
   return new lazy.UrlbarResult({
     type: lazy.UrlbarShared.RESULT_TYPE.DYNAMIC,
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    source: lazy.UrlbarShared.RESULT_SOURCE.SEARCH,
     resultSpan: 2,
     suggestedIndex: 1,
     payload: {
@@ -372,7 +372,7 @@ function makeOnboardingResult(engine, satisfiesAutofillThreshold = false) {
 function makeResult(context, engine, satisfiesAutofillThreshold = false) {
   return new lazy.UrlbarResult({
     type: lazy.UrlbarShared.RESULT_TYPE.SEARCH,
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    source: lazy.UrlbarShared.RESULT_SOURCE.SEARCH,
     suggestedIndex: 1,
     payload: {
       engine: engine.name,

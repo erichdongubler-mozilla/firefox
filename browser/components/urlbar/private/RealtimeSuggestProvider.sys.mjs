@@ -13,7 +13,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   UrlbarSearchUtils:
     "moz-src:///browser/components/urlbar/UrlbarSearchUtils.sys.mjs",
   UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
-  UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
 });
 
 /**
@@ -344,7 +343,7 @@ export class RealtimeSuggestProvider extends SuggestProvider {
 
     let result = new lazy.UrlbarResult({
       type: lazy.UrlbarShared.RESULT_TYPE.DYNAMIC,
-      source: lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
+      source: lazy.UrlbarShared.RESULT_SOURCE.SEARCH,
       isBestMatch: true,
       ...additionalOptions,
       payload: {
@@ -398,7 +397,7 @@ export class RealtimeSuggestProvider extends SuggestProvider {
 
     return new lazy.UrlbarResult({
       type: lazy.UrlbarShared.RESULT_TYPE.TIP,
-      source: lazy.UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+      source: lazy.UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
       isBestMatch: true,
       payload: {
         // This `type` is the tip type, required for `TIP` results.

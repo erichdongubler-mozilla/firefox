@@ -53,7 +53,7 @@ export class UrlbarResult {
   /**
    * @param {object} params
    * @param {Values<typeof UrlbarShared.RESULT_TYPE>} params.type
-   * @param {Values<typeof lazy.UrlbarUtils.RESULT_SOURCE>} params.source
+   * @param {Values<typeof UrlbarShared.RESULT_SOURCE>} params.source
    * @param {UrlbarAutofillData} [params.autofill]
    * @param {number} [params.exposureTelemetry]
    * @param {Values<typeof lazy.UrlbarUtils.RESULT_GROUP>} [params.group]
@@ -106,7 +106,7 @@ export class UrlbarResult {
 
     // Source describes which data has been used to derive this result. In case
     // multiple sources are involved, use the more privacy restricted.
-    if (!Object.values(lazy.UrlbarUtils.RESULT_SOURCE).includes(source)) {
+    if (!Object.values(UrlbarShared.RESULT_SOURCE).includes(source)) {
       throw new Error("Invalid result source");
     }
     this.#source = source;

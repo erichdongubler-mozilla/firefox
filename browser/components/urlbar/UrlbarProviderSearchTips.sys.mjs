@@ -424,7 +424,7 @@ export class UrlbarProviderSearchTips extends UrlbarProvider {
   #makeResult({ tip, icon, titleL10n, heuristic = false }) {
     return new lazy.UrlbarResult({
       type: lazy.UrlbarShared.RESULT_TYPE.TIP,
-      source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+      source: lazy.UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
       heuristic,
       payload: {
         type: tip,

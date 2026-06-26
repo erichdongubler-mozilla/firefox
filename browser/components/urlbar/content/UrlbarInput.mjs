@@ -1007,7 +1007,7 @@ ${
       } else {
         this.searchMode = {
           engineName: state.persist.originalEngineName,
-          source: lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
+          source: UrlbarShared.RESULT_SOURCE.SEARCH,
           isPreview: false,
         };
       }
@@ -1811,8 +1811,7 @@ ${
 
         const actionDetails = {
           isSuggestion: !!result.payload.suggestion,
-          isFormHistory:
-            result.source == lazy.UrlbarUtils.RESULT_SOURCE.HISTORY,
+          isFormHistory: result.source == UrlbarShared.RESULT_SOURCE.HISTORY,
           alias: result.payload.keyword,
         };
         const engine = lazy.SearchService.getEngineByName(
@@ -2548,7 +2547,7 @@ ${
           {
             engineName: searchEngine.name,
             entry: "searchbutton",
-            source: lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
+            source: UrlbarShared.RESULT_SOURCE.SEARCH,
             isPreview: false,
           },
           this.window.gBrowser.selectedBrowser
@@ -2636,7 +2635,7 @@ ${
    *   A search mode object.
    * @param {string} searchMode.engineName
    *   The name of the search engine to restrict to.
-   * @param {UrlbarUtils.RESULT_SOURCE} searchMode.source
+   * @param {Values<typeof UrlbarShared.RESULT_SOURCE>} searchMode.source
    *   A result source to restrict to.
    * @param {string} searchMode.entry
    *   How search mode was entered. This is recorded in event telemetry. One of
@@ -2690,7 +2689,7 @@ ${
         // History results for general-purpose search engines are often not
         // useful, so we hide them in search mode. See bug 1658646 for
         // discussion.
-        searchMode.source = lazy.UrlbarUtils.RESULT_SOURCE.SEARCH;
+        searchMode.source = UrlbarShared.RESULT_SOURCE.SEARCH;
       }
     } else if (source) {
       let sourceName = lazy.UrlbarUtils.getResultSourceName(source);
@@ -2802,7 +2801,7 @@ ${
     // We restrict to search results when entering search mode from this
     // shortcut to honor historical behaviour.
     this.searchMode = {
-      source: lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
+      source: UrlbarShared.RESULT_SOURCE.SEARCH,
       engineName: lazy.UrlbarSearchUtils.getDefaultEngine(this.isPrivate)?.name,
       entry: "shortcut",
     };
@@ -3567,7 +3566,7 @@ ${
     let allowAutofill =
       this.selectionEnd == value.length &&
       !this.searchMode?.engineName &&
-      this.searchMode?.source != lazy.UrlbarUtils.RESULT_SOURCE.SEARCH;
+      this.searchMode?.source != UrlbarShared.RESULT_SOURCE.SEARCH;
 
     if (!allowAutofill) {
       this.#clearAutofill();
@@ -4251,7 +4250,7 @@ ${
    *   Details of the result type, if any.
    * @param {string} [resultDetails.searchTerm]
    *   Search term of the result source, if any.
-   * @param {Values<typeof lazy.UrlbarUtils.RESULT_SOURCE>} [resultDetails.source]
+   * @param {Values<typeof UrlbarShared.RESULT_SOURCE>} [resultDetails.source]
    *   Details of the result source, if any.
    * @param {object} browser [optional] the browser to use for the load.
    * @param {boolean} keepViewOpen [optional]
@@ -5720,7 +5719,7 @@ ${
     // When we are in actions search mode we can show more results so
     // increase the limit.
     let maxResults =
-      this.searchMode?.source != lazy.UrlbarUtils.RESULT_SOURCE.ACTIONS
+      this.searchMode?.source != UrlbarShared.RESULT_SOURCE.ACTIONS
         ? lazy.UrlbarPrefs.get("maxRichResults")
         : UNLIMITED_MAX_RESULTS;
     let options = {

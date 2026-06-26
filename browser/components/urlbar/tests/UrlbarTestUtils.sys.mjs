@@ -989,7 +989,7 @@ class UrlbarInputTestUtils {
       () =>
         results.hasAttribute("actionmode") ==
         (this.#urlbar(window).searchMode?.source ==
-          UrlbarUtils.RESULT_SOURCE.ACTIONS)
+          lazy.UrlbarShared.RESULT_SOURCE.ACTIONS)
     );
     this.Assert.ok(true, "Urlbar results have proper actionmode attribute");
 
@@ -1147,7 +1147,7 @@ class UrlbarInputTestUtils {
       let resultCount = this.getResultCount(window);
       for (let i = 0; i < resultCount; i++) {
         let result = await this.getDetailsOfResultAt(window, i);
-        if (result.source == UrlbarUtils.RESULT_SOURCE.SEARCH) {
+        if (result.source == lazy.UrlbarShared.RESULT_SOURCE.SEARCH) {
           this.Assert.equal(
             expectedSearchMode.engineName,
             result.searchParams.engine,
@@ -1204,7 +1204,7 @@ class UrlbarInputTestUtils {
       searchMode = { engineName: buttons[0].engine.name };
       let engine = lazy.SearchService.getEngineByName(searchMode.engineName);
       if (engine.isGeneralPurposeEngine) {
-        searchMode.source = UrlbarUtils.RESULT_SOURCE.SEARCH;
+        searchMode.source = lazy.UrlbarShared.RESULT_SOURCE.SEARCH;
       }
     }
 

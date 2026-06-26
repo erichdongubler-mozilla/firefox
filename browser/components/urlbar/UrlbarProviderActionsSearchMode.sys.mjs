@@ -37,7 +37,9 @@ export class UrlbarProviderActionsSearchMode extends UrlbarProvider {
   }
 
   async isActive(queryContext) {
-    return queryContext.searchMode?.source == UrlbarUtils.RESULT_SOURCE.ACTIONS;
+    return (
+      queryContext.searchMode?.source == lazy.UrlbarShared.RESULT_SOURCE.ACTIONS
+    );
   }
 
   /**
@@ -56,7 +58,7 @@ export class UrlbarProviderActionsSearchMode extends UrlbarProvider {
     results.forEach(resultKey => {
       let result = new lazy.UrlbarResult({
         type: lazy.UrlbarShared.RESULT_TYPE.DYNAMIC,
-        source: UrlbarUtils.RESULT_SOURCE.ACTIONS,
+        source: lazy.UrlbarShared.RESULT_SOURCE.ACTIONS,
         payload: {
           key: resultKey,
           dynamicType: DYNAMIC_TYPE_NAME,

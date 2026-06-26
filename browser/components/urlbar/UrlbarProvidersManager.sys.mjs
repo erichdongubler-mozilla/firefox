@@ -927,15 +927,15 @@ export class Query {
       !result.heuristic &&
       // Treat form history as searches for the purpose of acceptableSources.
       (result.type != lazy.UrlbarShared.RESULT_TYPE.SEARCH ||
-        result.source != lazy.UrlbarUtils.RESULT_SOURCE.HISTORY ||
+        result.source != lazy.UrlbarShared.RESULT_SOURCE.HISTORY ||
         !this.acceptableSources.includes(
-          lazy.UrlbarUtils.RESULT_SOURCE.SEARCH
+          lazy.UrlbarShared.RESULT_SOURCE.SEARCH
         )) &&
       // To enable tab group search in tabs mode, allow actions to bypass
       // acceptableSources.
       !(
-        result.source == lazy.UrlbarUtils.RESULT_SOURCE.ACTIONS &&
-        this.acceptableSources.includes(lazy.UrlbarUtils.RESULT_SOURCE.TABS)
+        result.source == lazy.UrlbarShared.RESULT_SOURCE.ACTIONS &&
+        this.acceptableSources.includes(lazy.UrlbarShared.RESULT_SOURCE.TABS)
       )
     ) {
       return;
@@ -1055,10 +1055,10 @@ function updateSourcesIfEmpty(context) {
       ? restrictToken.type
       : undefined;
 
-  for (let source of Object.values(lazy.UrlbarUtils.RESULT_SOURCE)) {
+  for (let source of Object.values(lazy.UrlbarShared.RESULT_SOURCE)) {
     // Check prefs and restriction tokens.
     switch (source) {
-      case lazy.UrlbarUtils.RESULT_SOURCE.BOOKMARKS:
+      case lazy.UrlbarShared.RESULT_SOURCE.BOOKMARKS:
         if (
           restrictTokenType ===
             lazy.UrlbarShared.TOKEN_TYPE.RESTRICT_BOOKMARK ||
@@ -1068,7 +1068,7 @@ function updateSourcesIfEmpty(context) {
           acceptedSources.push(source);
         }
         break;
-      case lazy.UrlbarUtils.RESULT_SOURCE.HISTORY:
+      case lazy.UrlbarShared.RESULT_SOURCE.HISTORY:
         if (
           restrictTokenType === lazy.UrlbarShared.TOKEN_TYPE.RESTRICT_HISTORY ||
           (!restrictTokenType && lazy.UrlbarPrefs.get("suggest.history"))
@@ -1076,7 +1076,7 @@ function updateSourcesIfEmpty(context) {
           acceptedSources.push(source);
         }
         break;
-      case lazy.UrlbarUtils.RESULT_SOURCE.SEARCH:
+      case lazy.UrlbarShared.RESULT_SOURCE.SEARCH:
         if (
           restrictTokenType === lazy.UrlbarShared.TOKEN_TYPE.RESTRICT_SEARCH ||
           !restrictTokenType
@@ -1089,7 +1089,7 @@ function updateSourcesIfEmpty(context) {
           acceptedSources.push(source);
         }
         break;
-      case lazy.UrlbarUtils.RESULT_SOURCE.TABS:
+      case lazy.UrlbarShared.RESULT_SOURCE.TABS:
         if (
           restrictTokenType ===
             lazy.UrlbarShared.TOKEN_TYPE.RESTRICT_OPENPAGE ||
@@ -1098,13 +1098,13 @@ function updateSourcesIfEmpty(context) {
           acceptedSources.push(source);
         }
         break;
-      case lazy.UrlbarUtils.RESULT_SOURCE.OTHER_NETWORK:
+      case lazy.UrlbarShared.RESULT_SOURCE.OTHER_NETWORK:
         if (!context.isPrivate && !restrictTokenType) {
           acceptedSources.push(source);
         }
         break;
-      case lazy.UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL:
-      case lazy.UrlbarUtils.RESULT_SOURCE.ADDON:
+      case lazy.UrlbarShared.RESULT_SOURCE.OTHER_LOCAL:
+      case lazy.UrlbarShared.RESULT_SOURCE.ADDON:
       default:
         if (!restrictTokenType) {
           acceptedSources.push(source);

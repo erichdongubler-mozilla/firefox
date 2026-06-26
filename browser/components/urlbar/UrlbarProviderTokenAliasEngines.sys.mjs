@@ -125,7 +125,7 @@ export class UrlbarProviderTokenAliasEngines extends UrlbarProvider {
       ) {
         let result = new lazy.UrlbarResult({
           type: lazy.UrlbarShared.RESULT_TYPE.SEARCH,
-          source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+          source: lazy.UrlbarShared.RESULT_SOURCE.SEARCH,
           hideRowLabel: true,
           payload: {
             engine: engine.name,
@@ -196,7 +196,7 @@ export class UrlbarProviderTokenAliasEngines extends UrlbarProvider {
           let value = aliasPreservingUserCase + " ";
           return new lazy.UrlbarResult({
             type: lazy.UrlbarShared.RESULT_TYPE.SEARCH,
-            source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+            source: lazy.UrlbarShared.RESULT_SOURCE.SEARCH,
             // We set suggestedIndex = 0 instead of the heuristic because we
             // don't want this result to be automatically selected. That way,
             // users can press Tab to select the result, building on their

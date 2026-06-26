@@ -149,7 +149,7 @@ export class UrlbarProviderRecentSearches extends UrlbarProvider {
     for (let result of results) {
       let res = new lazy.UrlbarResult({
         type: lazy.UrlbarShared.RESULT_TYPE.SEARCH,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        source: lazy.UrlbarShared.RESULT_SOURCE.HISTORY,
         payload: {
           engine: engine.name,
           suggestion: result.value,

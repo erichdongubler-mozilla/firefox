@@ -120,9 +120,9 @@ export class UrlbarProviderGlobalActions extends UrlbarProvider {
 
     let result = new lazy.UrlbarResult({
       type: lazy.UrlbarShared.RESULT_TYPE.DYNAMIC,
-      source: UrlbarUtils.RESULT_SOURCE.ACTIONS,
+      source: lazy.UrlbarShared.RESULT_SOURCE.ACTIONS,
       suggestedIndex:
-        queryContext.restrictSource == UrlbarUtils.RESULT_SOURCE.TABS
+        queryContext.restrictSource == lazy.UrlbarShared.RESULT_SOURCE.TABS
           ? SUGGESTED_INDEX_TABS_MODE
           : SUGGESTED_INDEX,
       payload,

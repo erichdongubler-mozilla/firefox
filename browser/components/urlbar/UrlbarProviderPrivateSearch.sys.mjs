@@ -104,7 +104,7 @@ export class UrlbarProviderPrivateSearch extends UrlbarProvider {
 
     let result = new lazy.UrlbarResult({
       type: lazy.UrlbarShared.RESULT_TYPE.SEARCH,
-      source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+      source: lazy.UrlbarShared.RESULT_SOURCE.SEARCH,
       suggestedIndex: 1,
       payload: {
         engine: engine.name,

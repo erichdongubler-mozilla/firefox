@@ -139,7 +139,7 @@ export class UrlbarProviderInputHistory extends UrlbarProvider {
         let userContextId = row.getResultByName("userContextId") || 0;
         let result = new lazy.UrlbarResult({
           type: lazy.UrlbarShared.RESULT_TYPE.TAB_SWITCH,
-          source: UrlbarUtils.RESULT_SOURCE.TABS,
+          source: lazy.UrlbarShared.RESULT_SOURCE.TABS,
           payload: {
             url,
             title: resultTitle,
@@ -161,10 +161,10 @@ export class UrlbarProviderInputHistory extends UrlbarProvider {
 
       let resultSource;
       if (bookmarked && lazy.UrlbarPrefs.get("suggest.bookmark")) {
-        resultSource = UrlbarUtils.RESULT_SOURCE.BOOKMARKS;
+        resultSource = lazy.UrlbarShared.RESULT_SOURCE.BOOKMARKS;
         resultTitle = bookmarkTitle || historyTitle;
       } else if (lazy.UrlbarPrefs.get("suggest.history")) {
-        resultSource = UrlbarUtils.RESULT_SOURCE.HISTORY;
+        resultSource = lazy.UrlbarShared.RESULT_SOURCE.HISTORY;
       } else {
         continue;
       }
@@ -176,7 +176,7 @@ export class UrlbarProviderInputHistory extends UrlbarProvider {
         );
       });
 
-      let isBlockable = resultSource == UrlbarUtils.RESULT_SOURCE.HISTORY;
+      let isBlockable = resultSource == lazy.UrlbarShared.RESULT_SOURCE.HISTORY;
 
       let result = new lazy.UrlbarResult({
         type: lazy.UrlbarShared.RESULT_TYPE.URL,

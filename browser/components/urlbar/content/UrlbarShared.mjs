@@ -82,6 +82,23 @@ export const UrlbarShared = {
     // consumers of "urlbar-user-start-navigation" need updating.
   }),
 
+  // This defines the source of results returned by a provider. Each provider
+  // can return results from more than one source. This is used by the
+  // ProvidersManager to decide which providers must be queried and which
+  // results can be returned.
+  // If you add new source types, consider checking if consumers of
+  // "urlbar-user-start-navigation" need update as well.
+  RESULT_SOURCE: Object.freeze({
+    BOOKMARKS: 1,
+    HISTORY: 2,
+    SEARCH: 3,
+    TABS: 4,
+    OTHER_LOCAL: 5,
+    OTHER_NETWORK: 6,
+    ADDON: 7,
+    ACTIONS: 8,
+  }),
+
   /**
    * Set of characters in RESTRICT_TOKENS that will enter search mode.
    */

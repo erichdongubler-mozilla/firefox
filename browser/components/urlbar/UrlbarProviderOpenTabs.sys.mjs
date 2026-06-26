@@ -344,7 +344,7 @@ export class UrlbarProviderOpenTabs extends UrlbarProvider {
           this,
           new lazy.UrlbarResult({
             type: lazy.UrlbarShared.RESULT_TYPE.TAB_SWITCH,
-            source: UrlbarUtils.RESULT_SOURCE.TABS,
+            source: lazy.UrlbarShared.RESULT_SOURCE.TABS,
             payload: {
               url: row.getResultByName("url"),
               userContextId: row.getResultByName("userContextId"),

@@ -147,7 +147,7 @@ export class UrlbarProviderRestrictKeywordsAutofill extends UrlbarProvider {
     if (restrictSymbol && typedKeyword == aliasKeyword) {
       let result = new lazy.UrlbarResult({
         type: lazy.UrlbarShared.RESULT_TYPE.RESTRICT,
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: lazy.UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         heuristic: true,
         hideRowLabel: true,
         payload: {
@@ -191,7 +191,7 @@ export class UrlbarProviderRestrictKeywordsAutofill extends UrlbarProvider {
 
         return new lazy.UrlbarResult({
           type: lazy.UrlbarShared.RESULT_TYPE.RESTRICT,
-          source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+          source: lazy.UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
           hideRowLabel: true,
           autofill: {
             value,
