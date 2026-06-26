@@ -133,22 +133,50 @@ flag:
 
 There is also an
 [accessibility-frontend-reviewers](https://phabricator.services.mozilla.com/tag/accessibility-frontend-reviewers/)
-group on Phabricator. This should generally only be used if:
+group on Phabricator. We recommend using the automated review tool described below before submitting
+to the review group. This group should only be used if:
 
-1. The patch is a change requested as part of an accessibility review as
-   described above; or
+1. The patch addresses a complex change requested
+   **by an accessibility team member** as part of an engineering review and
+   you aren't confident that the patch correctly addresses the change; or
 2. There is a very specific aspect of accessibility implemented in the patch and
    you would like the accessibility team to confirm whether it has been
-   implemented correctly.
+   implemented correctly. You should first discuss your approach with the team
+   in the #accessibility channel on slack.
 
-We recommend using the automated review tool described below before submitting
-to the review group.
+After tagging the accessibility-frontend-reviewers group, review-bot will
+prompt you for some additional information about your patch. **Your patch
+will be removed from our queue until you post a comment with the requested
+information, and re-add the group.**
 
-If you would instead like the accessibility team to assess **whether a feature
-or change is sufficiently accessible**, please request an accessibility
-**engineering** review as described above. Without this, the accessibility team
-will not have sufficient context or understanding of the change or how to test
-it, which is necessary to thoroughly assess its accessibility.
+Here's what you'll see:
+```markdown
+You've tagged the accessibility team for review. If you've already spoken
+to a team member about your request, please request review from the
+specific team member you spoke to.
+
+Otherwise, please do ALL of the following:
+
+    1. Post a comment describing the specific accessibility behaviour
+       you're looking for feedback about
+    2. Attach screenshots showing behaviour before and after your
+       patch (if this is a visual change)
+    3. Post a description of screen reader output/behaviour before
+       and after your patch (if this change affects assistive
+       technology users)
+
+Once you have posted all of the above, please re-add the group.
+The group will not be removed again after you re-add it if the
+above conditions are met.
+```
+
+If you would like the accessibility team to assess **whether a feature
+or change is sufficiently accessible**, this is not the right pathway.
+
+Please request an accessibility **engineering** review as described above.
+Without this, the accessibility team will not have sufficient context or
+understanding of the change or how to test it.
+This is necessary to thoroughly assess its accessibility.
 
 ## Automated Accessibility Review Skill
 
