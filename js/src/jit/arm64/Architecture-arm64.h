@@ -779,10 +779,6 @@ class ARM64Flags final {
   }
 };
 
-// ARM/D32 has double registers that cannot be treated as float32.
-// Luckily, ARMv8 doesn't have the same misfortune.
-inline bool hasUnaliasedDouble() { return false; }
-
 // ARM prior to ARMv8 also has doubles that alias multiple floats.
 // Again, ARMv8 is in the clear.
 inline bool hasMultiAlias() { return false; }

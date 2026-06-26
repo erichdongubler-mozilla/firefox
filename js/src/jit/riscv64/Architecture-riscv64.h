@@ -506,7 +506,6 @@ FloatRegister::LiveAsIndexableSet<RegTypeName::Any>(SetType set) {
   return set;
 }
 
-inline bool hasUnaliasedDouble() { return false; }
 inline bool hasMultiAlias() { return false; }
 
 static constexpr uint32_t ShadowStackSpace = 0;
