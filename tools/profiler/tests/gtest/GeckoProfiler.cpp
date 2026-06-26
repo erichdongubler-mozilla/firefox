@@ -5409,6 +5409,29 @@ void InsertLargeMarkers(uint32_t aCount) {
   }
 }
 
+struct BenchFieldsMarker : public mozilla::BaseMarkerType<BenchFieldsMarker> {
+  static constexpr const char* Name = "bench-fields";
+
+  using MS = mozilla::MarkerSchema;
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"int", MS::InputType::Int32, "Int", MS::Format::Integer},
+      {"double", MS::InputType::Double, "Double", MS::Format::Decimal},
+      {"text", MS::InputType::CString, "Text", MS::Format::String}};
+
+  static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
+                                               MS::Location::MarkerTable};
+};
+
+// Markers carrying a few typed fields and an on-demand stack capture, which is
+// the most expensive common insertion path (it walks the caller's stack).
+void InsertFieldsAndStackMarkers(uint32_t aCount) {
+  for (uint32_t i = 0; i < aCount; ++i) {
+    profiler_add_marker("M", geckoprofiler::category::OTHER,
+                        MarkerStack::Capture(), BenchFieldsMarker{}, 42, 43.0,
+                        "bench");
+  }
+}
+
 // Worker threads spawned and registered with the profiler once, then reused
 // across timed iterations so that thread startup and registration stay out of
 // the measured region.
@@ -5527,4 +5550,14 @@ MOZ_GTEST_BENCH_F(GeckoProfilerMarkerBench, MarkerInsertionMultiThreadLarge,
                   [this]() {
                     mThreadPool->InsertOnAll(kMarkerInsertionCount,
                                              &InsertLargeMarkers);
+                  });
+
+MOZ_GTEST_BENCH_F(GeckoProfilerMarkerBench,
+                  MarkerInsertionSingleThreadFieldsAndStack,
+                  []() { InsertFieldsAndStackMarkers(kMarkerInsertionCount); });
+
+MOZ_GTEST_BENCH_F(GeckoProfilerMarkerBench,
+                  MarkerInsertionMultiThreadFieldsAndStack, [this]() {
+                    mThreadPool->InsertOnAll(kMarkerInsertionCount,
+                                             &InsertFieldsAndStackMarkers);
                   });
