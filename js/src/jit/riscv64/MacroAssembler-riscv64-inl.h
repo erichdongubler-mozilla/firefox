@@ -172,7 +172,7 @@ void MacroAssembler::branchSub32(Condition cond, T src, Register dest,
     case Signed:
     case NotSigned:
       sub32(src, dest);
-      ma_b(dest, dest, label, cond, LongJump);
+      ma_b(dest, dest, label, cond, ShortJump);
       break;
     default:
       MOZ_CRASH("NYI");
@@ -190,7 +190,7 @@ void MacroAssembler::branchSubPtr(Condition cond, T src, Register dest,
     case Signed:
     case NotSigned:
       subPtr(src, dest);
-      ma_b(dest, dest, label, cond, LongJump);
+      ma_b(dest, dest, label, cond, ShortJump);
       break;
     default:
       MOZ_CRASH("NYI");

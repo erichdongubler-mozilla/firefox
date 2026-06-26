@@ -5065,7 +5065,7 @@ void MacroAssemblerRiscv64::ma_mul32TestOverflow(Register rd, Register rj,
   MOZ_ASSERT(rd != scratch);
 
   sext_w(scratch, rd);
-  ma_b(scratch, rd, overflow, Assembler::NotEqual, LongJump);
+  ma_b(scratch, rd, overflow, Assembler::NotEqual, ShortJump);
 }
 void MacroAssemblerRiscv64::ma_mul32TestOverflow(Register rd, Register rj,
                                                  Imm32 imm, Label* overflow) {
@@ -5078,7 +5078,7 @@ void MacroAssemblerRiscv64::ma_mul32TestOverflow(Register rd, Register rj,
   MOZ_ASSERT(rd != scratch);
 
   sext_w(scratch, rd);
-  ma_b(scratch, rd, overflow, Assembler::NotEqual, LongJump);
+  ma_b(scratch, rd, overflow, Assembler::NotEqual, ShortJump);
 }
 
 void MacroAssemblerRiscv64::ma_mulPtrTestOverflow(Register rd, Register rj,
@@ -5101,7 +5101,7 @@ void MacroAssemblerRiscv64::ma_mulPtrTestOverflow(Register rd, Register rj,
   mul(rd, rj, rk);
   mulh(scratch, rj, rk);
   srai(scratch2, rd, 63);
-  ma_b(scratch, Register(scratch2), overflow, Assembler::NotEqual, LongJump);
+  ma_b(scratch, Register(scratch2), overflow, Assembler::NotEqual, ShortJump);
 }
 
 bool MacroAssemblerRiscv64::UseShortBranch(
@@ -5864,7 +5864,7 @@ void MacroAssemblerRiscv64::ma_sub32TestOverflow(Register rd, Register rj,
   Register scratch = temps.Acquire();
   sub(scratch, rj, rk);
   subw(rd, rj, rk);
-  ma_b(rd, Register(scratch), overflow, Assembler::NotEqual, LongJump);
+  ma_b(rd, Register(scratch), overflow, Assembler::NotEqual, ShortJump);
 }
 
 void MacroAssemblerRiscv64::ma_sub32TestOverflow(Register rd, Register rj,
@@ -5886,7 +5886,7 @@ void MacroAssemblerRiscv64::ma_add32TestOverflow(Register rd, Register rj,
   Register scratch = temps.Acquire();
   add(scratch, rj, rk);
   addw(rd, rj, rk);
-  ma_b(rd, Register(scratch), overflow, Assembler::NotEqual, LongJump);
+  ma_b(rd, Register(scratch), overflow, Assembler::NotEqual, ShortJump);
 }
 
 void MacroAssemblerRiscv64::ma_add32TestOverflow(Register rd, Register rj,
@@ -5912,7 +5912,7 @@ void MacroAssemblerRiscv64::ma_add32TestOverflow(Register rd, Register rj,
     Register scratch = temps.Acquire();
     addi(scratch, rj, imm.value);
     addiw(rd, rj, imm.value);
-    ma_b(rd, scratch, overflow, Assembler::NotEqual, LongJump);
+    ma_b(rd, scratch, overflow, Assembler::NotEqual, ShortJump);
   } else {
     UseScratchRegisterScope temps(this);
     Register scratch2 = temps.Acquire();
@@ -5950,7 +5950,7 @@ void MacroAssemblerRiscv64::ma_subPtrTestOverflow(Register rd, Register rj,
     and_(scratch2, scratch2, scratch);
   }
 
-  ma_b(scratch2, zero, overflow, Assembler::LessThan, LongJump);
+  ma_b(scratch2, zero, overflow, Assembler::LessThan, ShortJump);
 }
 
 void MacroAssemblerRiscv64::ma_addPtrTestOverflow(Register rd, Register rj,
@@ -5968,7 +5968,7 @@ void MacroAssemblerRiscv64::ma_addPtrTestOverflow(Register rd, Register rj,
 
     add(rd, rj, rj);
     xor_(scratch, rj, rd);
-    ma_b(scratch, zero, overflow, Assembler::LessThan, LongJump);
+    ma_b(scratch, zero, overflow, Assembler::LessThan, ShortJump);
   } else {
     UseScratchRegisterScope temps(this);
     Register scratch2 = temps.Acquire();
@@ -5983,7 +5983,7 @@ void MacroAssemblerRiscv64::ma_addPtrTestOverflow(Register rd, Register rj,
     add(rd, rj, rk);
     slti(scratch, rj, 0);
     slt(scratch2, rd, rk);
-    ma_b(scratch, Register(scratch2), overflow, Assembler::NotEqual, LongJump);
+    ma_b(scratch, Register(scratch2), overflow, Assembler::NotEqual, ShortJump);
   }
 }
 
@@ -6005,10 +6005,10 @@ void MacroAssemblerRiscv64::ma_addPtrTestOverflow(Register rd, Register rj,
   ma_add64(rd, rj, imm);
 
   if (imm.value > 0) {
-    ma_b(rd, rj, overflow, Assembler::LessThan, LongJump);
+    ma_b(rd, rj, overflow, Assembler::LessThan, ShortJump);
   } else {
     MOZ_ASSERT(imm.value < 0);
-    ma_b(rd, rj, overflow, Assembler::GreaterThan, LongJump);
+    ma_b(rd, rj, overflow, Assembler::GreaterThan, ShortJump);
   }
 }
 
@@ -6033,10 +6033,10 @@ void MacroAssemblerRiscv64::ma_addPtrTestOverflow(Register rd, Register rj,
   add(rd, rj, rd);
 
   if (imm.value > 0) {
-    ma_b(rd, rj, overflow, Assembler::LessThan, LongJump);
+    ma_b(rd, rj, overflow, Assembler::LessThan, ShortJump);
   } else {
     MOZ_ASSERT(imm.value < 0);
-    ma_b(rd, rj, overflow, Assembler::GreaterThan, LongJump);
+    ma_b(rd, rj, overflow, Assembler::GreaterThan, ShortJump);
   }
 }
 
@@ -6051,7 +6051,7 @@ void MacroAssemblerRiscv64::ma_add32TestCarry(Condition cond, Register rd,
   sltu(scratch, rd, rd == rj ? rk : rj);
   ma_b(Register(scratch), Register(scratch), overflow,
        cond == Assembler::CarrySet ? Assembler::NonZero : Assembler::Zero,
-       LongJump);
+       ShortJump);
 }
 
 void MacroAssemblerRiscv64::ma_add32TestCarry(Condition cond, Register rd,
@@ -6082,7 +6082,7 @@ void MacroAssemblerRiscv64::ma_addPtrTestCarry(Condition cond, Register rd,
   sltu(scratch, rd, rk);
   ma_b(scratch, Register(scratch), overflow,
        cond == Assembler::CarrySet ? Assembler::NonZero : Assembler::Zero,
-       LongJump);
+       ShortJump);
 }
 
 void MacroAssemblerRiscv64::ma_addPtrTestCarry(Condition cond, Register rd,
@@ -6097,7 +6097,7 @@ void MacroAssemblerRiscv64::ma_addPtrTestCarry(Condition cond, Register rd,
     sltiu(scratch2, rd, imm.value);
     ma_b(scratch2, scratch2, overflow,
          cond == Assembler::CarrySet ? Assembler::NonZero : Assembler::Zero,
-         LongJump);
+         ShortJump);
   } else {
     ma_li(scratch2, imm);
     ma_addPtrTestCarry(cond, rd, rj, scratch2, overflow);
@@ -6117,7 +6117,7 @@ void MacroAssemblerRiscv64::ma_addPtrTestCarry(Condition cond, Register rd,
     sltiu(scratch2, rd, value);
     ma_b(scratch2, scratch2, overflow,
          cond == Assembler::CarrySet ? Assembler::NonZero : Assembler::Zero,
-         LongJump);
+         ShortJump);
   } else {
     ma_li(scratch2, imm);
     ma_addPtrTestCarry(cond, rd, rj, scratch2, overflow);
@@ -6130,7 +6130,7 @@ void MacroAssemblerRiscv64::ma_addPtrTestSigned(Condition cond, Register rd,
   MOZ_ASSERT(cond == Assembler::Signed || cond == Assembler::NotSigned);
 
   add(rd, rj, rk);
-  ma_b(rd, rd, taken, cond, LongJump);
+  ma_b(rd, rd, taken, cond, ShortJump);
 }
 
 void MacroAssemblerRiscv64::ma_addPtrTestSigned(Condition cond, Register rd,
@@ -6139,7 +6139,7 @@ void MacroAssemblerRiscv64::ma_addPtrTestSigned(Condition cond, Register rd,
   MOZ_ASSERT(cond == Assembler::Signed || cond == Assembler::NotSigned);
 
   ma_add64(rd, rj, imm);
-  ma_b(rd, rd, taken, cond, LongJump);
+  ma_b(rd, rd, taken, cond, ShortJump);
 }
 
 void MacroAssemblerRiscv64::ma_addPtrTestSigned(Condition cond, Register rd,
@@ -6148,7 +6148,7 @@ void MacroAssemblerRiscv64::ma_addPtrTestSigned(Condition cond, Register rd,
   MOZ_ASSERT(cond == Assembler::Signed || cond == Assembler::NotSigned);
 
   ma_add64(rd, rj, imm);
-  ma_b(rd, rd, taken, cond, LongJump);
+  ma_b(rd, rd, taken, cond, ShortJump);
 }
 
 FaultingCodeOffset MacroAssemblerRiscv64::ma_load(
