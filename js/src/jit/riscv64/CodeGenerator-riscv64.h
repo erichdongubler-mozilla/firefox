@@ -64,12 +64,6 @@ class CodeGeneratorRiscv64 : public CodeGeneratorShared {
 
   bool generateOutOfLineCode();
 
-  template <typename T>
-  void branchToBlock(Register lhs, T rhs, MBasicBlock* mir,
-                     Assembler::Condition cond) {
-    masm.ma_b(lhs, rhs, skipTrivialBlocks(mir)->lir()->label(), cond, LongJump);
-  }
-
   enum FloatFormat { SingleFloat, DoubleFloat };
   void branchToBlock(FloatFormat fmt, FloatRegister lhs, FloatRegister rhs,
                      MBasicBlock* mir, Assembler::DoubleCondition cond);
