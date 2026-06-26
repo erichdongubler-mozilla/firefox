@@ -45,6 +45,8 @@ export class UrlbarChildController {
   /** @type {UrlbarParentController} */
   #parent;
 
+  #input;
+
   /** @type {UrlbarView} */
   #view = null;
 
@@ -65,6 +67,7 @@ export class UrlbarChildController {
     if (!options.input) {
       throw new Error("Missing options: input");
     }
+    this.#input = options.input;
     let actor = /** @type {UrlbarChild} */ (
       /** @type {unknown} */ (
         options.input.window.windowGlobalChild.getActor("Urlbar")
@@ -75,10 +78,10 @@ export class UrlbarChildController {
   }
 
   get input() {
-    return this.#parent.input;
+    return this.#input;
   }
   get browserWindow() {
-    return this.#parent.browserWindow;
+    return this.#input.window;
   }
   get view() {
     return this.#view;

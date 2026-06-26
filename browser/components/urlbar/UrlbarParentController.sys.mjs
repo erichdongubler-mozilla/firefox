@@ -106,15 +106,13 @@ export class UrlbarParentController {
       throw new Error("input needs a non-empty 'sapName' property.");
     }
 
-    this.input = options.input;
-    this.browserWindow = options.input.window;
+    this.sapName = options.input.sapName;
 
     /**
      * @type {ProvidersManager}
      */
     this.manager =
-      options.manager ||
-      lazy.ProvidersManager.getInstanceForSap(options.input.sapName);
+      options.manager || lazy.ProvidersManager.getInstanceForSap(this.sapName);
 
     this.engagementEvent = new TelemetryEvent(this);
   }
@@ -133,11 +131,29 @@ export class UrlbarParentController {
   }
 
   /**
-   * The view, owned by the paired `UrlbarChildController`. The parent no
-   * longer holds the view directly; it reads it through the child for the
-   * few telemetry call sites that still need view state. This goes away
-   * together with the `#child` back-reference once telemetry stops reading
-   * the view synchronously.
+   * The input, owned by the paired `UrlbarChildController`. The parent no
+   * longer holds the input, browser window, or view directly; it reads them
+   * through the child for the query-lifecycle and telemetry call sites that
+   * still need them. These getters go away together with the `#child`
+   * back-reference once those call sites get their data another way.
+   *
+   * @type {UrlbarInput}
+   */
+  get input() {
+    return this.#child?.input;
+  }
+
+  /**
+   * The browser window the input lives in.
+   *
+   * @type {ChromeWindow}
+   */
+  get browserWindow() {
+    return this.#child?.browserWindow;
+  }
+
+  /**
+   * The view.
    *
    * @type {UrlbarView}
    */
@@ -894,7 +910,7 @@ class TelemetryEvent {
     }
     // The extra_key `location` is optional, but required for the smartbar.
     // TODO (bug 2024631): Support location for all SAPs.
-    if (this._controller.input.sapName === "smartbar" && !location) {
+    if (this._controller.sapName === "smartbar" && !location) {
       throw new Error(
         "Telemetry extra_key `location` is required for smartbar"
       );
@@ -1112,7 +1128,7 @@ class TelemetryEvent {
     try {
       const semanticManager =
         lazy.UrlbarProviderSemanticHistorySearch.semanticManager;
-      const isSmartbar = this._controller.input.sapName === "smartbar";
+      const isSmartbar = this._controller.sapName === "smartbar";
       if (
         isSmartbar
           ? semanticManager.isEnabledForSmartWindow
