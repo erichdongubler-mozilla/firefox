@@ -232,6 +232,7 @@ allowed_warnings:
     - "setup/windows_wsl_build\\.md:.*: WARNING: undefined label"
     - "WARNING: glossary terms must not be separated by empty lines"
     - "contributing/.*\\.md:.*: WARNING: undefined label"
+    - "permissions\\.py:.*: ERROR: Unknown target name: \"server-locations\\.txt\""
 exclude_patterns:
     - js/src/doc/Debugger
 
