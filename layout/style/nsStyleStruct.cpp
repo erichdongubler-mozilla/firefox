@@ -2976,8 +2976,8 @@ nsStyleTextReset::nsStyleTextReset()
       mInitialLetter{0, 0},
       mTextDecorationColor(StyleColor::CurrentColor()),
       mTextDecorationThickness(StyleTextDecorationLength::Auto()),
-      mTextDecorationInset(StyleTextDecorationInset::Length(
-          StyleLength::Zero(), StyleLength::Zero())),
+      mTextDecorationInset(StyleTextDecorationInset::LengthPercentage(
+          StyleLengthPercentage::Zero(), StyleLengthPercentage::Zero())),
       mTextBoxTrim(StyleTextBoxTrim::NONE) {
   MOZ_COUNT_CTOR(nsStyleTextReset);
 }
