@@ -5886,6 +5886,21 @@ void MacroAssemblerRiscv64::ma_add32TestOverflow(Register rd, Register rj,
 
 void MacroAssemblerRiscv64::ma_add32TestOverflow(Register rd, Register rj,
                                                  Imm32 imm, Label* overflow) {
+  if (rd != rj) {
+    if (is_int12(imm.value)) {
+      addiw(rd, rj, imm.value);
+    } else {
+      UseScratchRegisterScope temps(this);
+      Register scratch = temps.Acquire();
+      ma_li(scratch, imm);
+      addw(rd, rj, scratch);
+    }
+    ma_b(rd, rj, overflow,
+         imm.value >= 0 ? Assembler::LessThan : Assembler::GreaterThanOrEqual,
+         ShortJump);
+    return;
+  }
+
   // Check for signed range because of addi
   if (is_int12(imm.value)) {
     UseScratchRegisterScope temps(this);
