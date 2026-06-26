@@ -10,14 +10,16 @@
   border-radius: var(--border-radius-large);
 
   &:hover {
-    background-color: var(--button-background-color-ghost-hover);
+    color: var(--button-text-color-hover);
+    background-color: var(--button-background-color-hover);
 
     > .secondary-action {
       visibility: visible;
     }
   }
 
-  &:active:hover {
+  &:active {
+    color: var(--button-text-color-active);
     background-color: var(--button-background-color-active);
   }
 }
