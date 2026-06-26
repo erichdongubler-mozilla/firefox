@@ -10,8 +10,8 @@ origin:
 
   url: https://github.com/ggml-org/llama.cpp
 
-  release: d32e03f4495d3efa1c5126f53b449f1d429c5664 (2025-08-14T11:59:50Z).
-  revision: d32e03f4495d3efa1c5126f53b449f1d429c5664
+  release: 74ade52741203e5c8f81eaf06a96cb1cfe15f2a3 (2026-06-16T18:24:28Z).
+  revision: 74ade52741203e5c8f81eaf06a96cb1cfe15f2a3
 
   license: MIT
 
