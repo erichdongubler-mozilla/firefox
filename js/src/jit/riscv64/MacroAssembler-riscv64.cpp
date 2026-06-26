@@ -2344,7 +2344,7 @@ void MacroAssemblerRiscv64Compat::tagValue(JSValueType type, Register payload,
                                            ValueOperand dest) {
   MOZ_ASSERT(type != JSVAL_TYPE_UNDEFINED && type != JSVAL_TYPE_NULL);
 
-  JitSpew(JitSpew_Codegen, "[ tagValue");
+  comment("[ tagValue");
 
   if (payload == dest.valueReg()) {
     UseScratchRegisterScope temps(this);
@@ -2391,7 +2391,7 @@ void MacroAssemblerRiscv64Compat::tagValue(JSValueType type, Register payload,
     boxNonDouble(type, payload, dest);
   }
 
-  JitSpew(JitSpew_Codegen, "]");
+  comment("]");
 }
 
 void MacroAssemblerRiscv64Compat::pushValue(ValueOperand val) {
@@ -4221,7 +4221,6 @@ void MacroAssembler::PushRegsInMask(LiveRegisterSet set) {
 
 void MacroAssembler::roundFloat32ToInt32(FloatRegister src, Register dest,
                                          FloatRegister temp, Label* fail) {
-  JitSpew(JitSpew_Codegen, "[ %s", __FUNCTION__);
   Label negative, done;
 
   // Branch to a slow path if input < 0.0 due to complicated rounding rules.
@@ -4279,12 +4278,10 @@ void MacroAssembler::roundFloat32ToInt32(FloatRegister src, Register dest,
     move32SignExtendToPtr(dest, scratch);
     branchPtr(Assembler::NotEqual, dest, scratch, fail);
   }
-  JitSpew(JitSpew_Codegen, "]");
 }
 
 void MacroAssembler::roundDoubleToInt32(FloatRegister src, Register dest,
                                         FloatRegister temp, Label* fail) {
-  JitSpew(JitSpew_Codegen, "[ %s", __FUNCTION__);
   Label negative, done;
 
   // Branch to a slow path if input < 0.0 due to complicated rounding rules.
@@ -4341,7 +4338,6 @@ void MacroAssembler::roundDoubleToInt32(FloatRegister src, Register dest,
     move32SignExtendToPtr(dest, scratch);
     branchPtr(Assembler::NotEqual, dest, scratch, fail);
   }
-  JitSpew(JitSpew_Codegen, "]");
 }
 
 void MacroAssembler::setupUnalignedABICall(Register scratch) {
@@ -5026,7 +5022,7 @@ void MacroAssemblerRiscv64::ma_li(Register dest, Imm64 imm) {
   RV_li(dest, imm.value);
 }
 void MacroAssemblerRiscv64::ma_li(Register dest, CodeLabel* label) {
-  JitSpew(JitSpew_Codegen, ".load CodeLabel %p", label);
+  comment("load CodeLabel");
   BufferOffset bo = ma_liPatchable(dest, ImmPtr(/* placeholder */ nullptr));
   label->patchAt()->bind(bo.getOffset());
   label->setLinkMode(CodeLabel::MoveImmediate);

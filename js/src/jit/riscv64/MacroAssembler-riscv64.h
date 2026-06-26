@@ -723,6 +723,7 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
 
     label->patchAt()->bind(currentOffset());
     label->setLinkMode(CodeLabel::RawPointer);
+    comment(".space 64bit [0xffff'ffff, 0xffff'ffff]");
     emit(uint32_t(-1));
     emit(uint32_t(-1));
   }
