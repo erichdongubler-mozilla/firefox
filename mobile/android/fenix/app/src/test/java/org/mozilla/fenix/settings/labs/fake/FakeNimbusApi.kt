@@ -7,6 +7,7 @@ package org.mozilla.fenix.settings.labs.fake
 import android.content.Context
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
+import org.mozilla.experiments.nimbus.NimbusInterface
 import org.mozilla.experiments.nimbus.internal.FirefoxLabsEnrollStatus
 import org.mozilla.experiments.nimbus.internal.FirefoxLabsMetadata
 import org.mozilla.experiments.nimbus.internal.FirefoxLabsUnenrollStatus
@@ -14,18 +15,30 @@ import org.mozilla.fenix.nimbus.TestNimbusApi
 
 /**
  * A fake [mozilla.components.service.nimbus.NimbusApi] for exercising the Firefox Labs enroll and
- * unenroll flows in tests. It records the slugs it was asked to enroll/unenroll and returns the
- * statuses supplied by the providers.
+ * unenroll flows in tests. It records the slugs it was asked to enroll/unenroll, the observers it
+ * was asked to register/unregister, and returns the statuses supplied by the providers.
  */
 internal class FakeNimbusApi(
     context: Context,
-    private val labsProvider: () -> List<FirefoxLabsMetadata>,
-    private val enrolledSlugs: MutableList<String>,
-    private val unenrolledSlugs: MutableList<String>,
-    private val enrollStatusProvider: () -> FirefoxLabsEnrollStatus,
-    private val unenrollStatusProvider: () -> FirefoxLabsUnenrollStatus,
-    private val onUnenrollAll: () -> Unit,
+    private val labsProvider: () -> List<FirefoxLabsMetadata> = { emptyList() },
+    private val enrolledSlugs: MutableList<String> = mutableListOf(),
+    private val unenrolledSlugs: MutableList<String> = mutableListOf(),
+    private val enrollStatusProvider: () -> FirefoxLabsEnrollStatus = { FirefoxLabsEnrollStatus.ENROLLED },
+    private val unenrollStatusProvider: () -> FirefoxLabsUnenrollStatus = { FirefoxLabsUnenrollStatus.UNENROLLED },
+    private val onUnenrollAll: () -> Unit = {},
 ) : TestNimbusApi(context) {
+
+    val registeredObservers = mutableListOf<NimbusInterface.Observer>()
+    val unregisteredObservers = mutableListOf<NimbusInterface.Observer>()
+
+    override fun register(observer: NimbusInterface.Observer) {
+        registeredObservers.add(observer)
+    }
+
+    override fun unregister(observer: NimbusInterface.Observer) {
+        unregisteredObservers.add(observer)
+    }
+
     override fun getAvailableFirefoxLabs(): Deferred<List<FirefoxLabsMetadata>> =
         CompletableDeferred(labsProvider())
 

@@ -73,6 +73,18 @@ class FirefoxLabsFragment : Fragment(), SystemInsetsPaddedFragment {
         }
     }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        // Observe Nimbus so the screen reflects enrollment changes Nimbus makes mid-session, such as
+        // an unenroll forced by a failed Gecko pref update.
+        viewLifecycleOwner.lifecycle.addObserver(
+            LabsRefreshFeature(
+                store = labsStore,
+                nimbusApi = requireComponents.nimbus.sdk,
+            ),
+        )
+    }
+
     private fun openFeedbackLink(url: String) {
         SupportUtils.launchSandboxCustomTab(
             context = requireContext(),
