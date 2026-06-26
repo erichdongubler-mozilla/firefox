@@ -81,11 +81,12 @@ SpecialPowers.pushPrefEnv({"set": [["network.prefetch-next.aggressive", true]]})
 .then(() => testPrefetchEvent(SAME_ORIGIN + "?redirect=crossorigin&statusCode=200&cacheControl=max-age%3D120", false, true))
 .then(() => testPrefetchEvent(SAME_ORIGIN + "?redirect=crossorigin&statusCode=404&cacheControl=max-age%3D120", false, true))
 
-// test cross origin with CORS request but no CORS response
-.then(() => testPrefetchEvent(CROSS_ORIGIN + "?statusCode=200&cacheControl=no-cache", true, true))
-.then(() => testPrefetchEvent(CROSS_ORIGIN + "?statusCode=404&cacheControl=no-cache", true, true))
-.then(() => testPrefetchEvent(CROSS_ORIGIN + "?statusCode=200&cacheControl=max-age%3D120", true, true))
-.then(() => testPrefetchEvent(CROSS_ORIGIN + "?statusCode=404&cacheControl=max-age%3D120", true, true))
+// test cross origin with CORS request but no CORS response: the CORS check
+// fails, which is a network error, so the error event fires
+.then(() => testPrefetchEvent(CROSS_ORIGIN + "?statusCode=200&cacheControl=no-cache", true, false))
+.then(() => testPrefetchEvent(CROSS_ORIGIN + "?statusCode=404&cacheControl=no-cache", true, false))
+.then(() => testPrefetchEvent(CROSS_ORIGIN + "?statusCode=200&cacheControl=max-age%3D120", true, false))
+.then(() => testPrefetchEvent(CROSS_ORIGIN + "?statusCode=404&cacheControl=max-age%3D120", true, false))
 
 // test cross origin with CORS request and CORS response
 .then(() => testPrefetchEvent(CROSS_ORIGIN + "?statusCode=200&cacheControl=no-cache&allowOrigin=*", true, false))
