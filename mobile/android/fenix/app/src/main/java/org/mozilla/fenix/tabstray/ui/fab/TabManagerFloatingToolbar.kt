@@ -290,9 +290,8 @@ internal fun FloatingToolbarFAB(
 
     FloatingActionButton(
         icon = painterResource(id = icon),
-        modifier = Modifier
-            .testTag(TabsTrayTestTag.FAB)
-            .then(iconModifier),
+        modifier = Modifier.testTag(TabsTrayTestTag.FAB),
+        iconModifier = iconModifier,
         contentDescription = contentDescription,
         colors = colors,
         elevation = elevation,
