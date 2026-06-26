@@ -5,18 +5,18 @@
 ## Chrome
 
 main-context-menu-open-link-new-smart-window =
-    .label = Open Link in New Smart Window
+    .label = Open Link in New { -smart-window-brand-name }
     .accesskey = S
 
 appmenuitem-new-ai-window =
-    .label = New Smart Window
-    .value = New Smart Window
+    .label = New { -smart-window-brand-name }
+    .value = New { -smart-window-brand-name }
 
 appmenuitem-new-classic-window =
     .label = New Classic Window
 
 menu-file-new-ai-window =
-    .label = New Smart Window
+    .label = New { -smart-window-brand-name }
 
 menu-file-new-classic-window =
     .label = New Classic Window
@@ -27,7 +27,7 @@ menu-history-chats =
 menu-history-chats-recent =
     .label = Recent Chats
 
-smartwindow-fullpage-heading = Smart Window
+smartwindow-fullpage-heading = { -smart-window-brand-name }
 
 smartwindow-document-title = New Tab
 
@@ -46,8 +46,8 @@ ai-window-toggleview-switch-classic-description =
     .value = Standard browsing
 
 ai-window-toggleview-switch-ai =
-    .label = Smart Window
-    .value = Smart Window
+    .label = { -smart-window-brand-name }
+    .value = { -smart-window-brand-name }
 
 ai-window-toggleview-switch-ai-description =
     .label = Ask as you browse
@@ -59,7 +59,7 @@ ai-window-toggleview-switch-private =
 ai-window-toggleview-open-private =
     .label = Open New Private Window
 
-ai-window-toggleview-status-label-active = Smart Window
+ai-window-toggleview-status-label-active = { -smart-window-brand-name }
 
 ai-window-toggleview-status-label-inactive = Classic Window
 
@@ -115,9 +115,9 @@ aiwindow-website-chip-remove-button =
 
 ## Firstrun onboarding
 
-aiwindow-firstrun-title = Welcome to Smart Window
+aiwindow-firstrun-title = Welcome to { -smart-window-brand-name }
 aiwindow-firstrun-model-title = What’s important to you?
-aiwindow-firstrun-model-subtitle = Pick a model to power Smart Window. Switch anytime.
+aiwindow-firstrun-model-subtitle = Pick a model to power { -smart-window-brand-name }. Switch anytime.
 aiwindow-firstrun-model-fast-label = Fast
 aiwindow-firstrun-model-fast-body = Answers quickly
 # $model (string) - The name of the AI model
@@ -151,28 +151,28 @@ aiwindow-input-model-select-settings-link = Model settings
 ## Firstrun memories onboarding
 
 aiwindow-firstrun-memories-title = More helpful answers, on your terms
-aiwindow-firstrun-memories-subtitle = Smart Window can learn from your chats, browsing, or both to create memories. They make answers more helpful over time.
+aiwindow-firstrun-memories-subtitle = { -smart-window-brand-name } can learn from your chats, browsing, or both to create memories. They make answers more helpful over time.
 
 aiwindow-firstrun-memories-conversation-title = Keep the conversation going
 aiwindow-firstrun-memories-conversation-body = Learning from chats means you’ll have to repeat yourself less.
 
 aiwindow-firstrun-memories-relevance-title = More relevant answers
-aiwindow-firstrun-memories-relevance-body = Learning from browsing gives Smart Window the bigger picture.
+aiwindow-firstrun-memories-relevance-body = Learning from browsing gives { -smart-window-brand-name } the bigger picture.
 
 aiwindow-firstrun-memories-privacy-title = Private by design
 aiwindow-firstrun-memories-privacy-body = Memories are stored on this device. Delete or turn off anytime.
 
-aiwindow-firstrun-memories-choose-label = Choose what Smart Window learns from
-aiwindow-firstrun-memories-checkbox-chats = Chats in Smart Window
+aiwindow-firstrun-memories-choose-label = Choose what { -smart-window-brand-name } learns from
+aiwindow-firstrun-memories-checkbox-chats = Chats in { -smart-window-brand-name }
 aiwindow-firstrun-memories-checkbox-browsing = Browsing across { -brand-product-name }
 aiwindow-firstrun-memories-update-settings = Update in settings anytime.
-aiwindow-firstrun-memories-no-create = Got it. Smart Window won’t create memories. Update in settings anytime.
+aiwindow-firstrun-memories-no-create = Got it. { -smart-window-brand-name } won’t create memories. Update in settings anytime.
 
 ## Firstrun set as default onboarding
 
-aiwindow-firstrun-default-title = Make Smart Window your go-to
+aiwindow-firstrun-default-title = Make { -smart-window-brand-name } your go-to
 aiwindow-firstrun-default-subtitle = Browse, search, and ask in one place. You can still open Private and Classic Windows when you want.
-aiwindow-firstrun-default-checkbox-label = Always open { -brand-product-name } in Smart Window
+aiwindow-firstrun-default-checkbox-label = Always open { -brand-product-name } in { -smart-window-brand-name }
 aiwindow-firstrun-default-checkbox-description = Switch in settings anytime
 
 ## Ask Toolbar Button
@@ -203,11 +203,11 @@ aiwindow-close-sidebar =
 
 ## Sign out dialog
 
-fxa-signout-dialog-body-aiwindow = Synced data will remain in your account. Open Smart Windows will switch to Classic Windows.
+fxa-signout-dialog-body-aiwindow = Synced data will remain in your account. Open { -smart-window-brand-name(plural-form: "true") } will switch to Classic Windows.
 
 ## Smart Window Toggle Button (in-page)
 
-smartwindow-switch-to-smart-window = Switch to Smart Window
+smartwindow-switch-to-smart-window = Switch to { -smart-window-brand-name }
 
 ## Fullpage Footer Actions
 
@@ -251,7 +251,7 @@ firefoxview-chat-date-prev-month = { DATETIME($date, month: "long", year: "numer
 ## Message displayed in Firefox View when the user has no chat data
 
 firefoxview-chats-empty-header = Get back to your chats
-firefoxview-chats-empty-description = As you use Smart Window, your chats will be saved here.
+firefoxview-chats-empty-description = As you use { -smart-window-brand-name }, your chats will be saved here.
 
 ## Count displayed in fxview chat search results
 
@@ -282,8 +282,8 @@ smart-window-confirm-deselect-all =
     .label = Deselect all
 
 smart-window-close-confirm =
-    .tooltiptext = Close confirm
-    .aria-label = Close confirm
+    .tooltiptext = Cancel request and close
+    .aria-label = Cancel request and close
 
 smart-window-confirm-close-tab = Close
 
@@ -297,15 +297,15 @@ smart-window-confirm-close-tabs =
 
 ## Natural Language action callouts
 
-# Shown after the Smart Window closes the user's current tab in response to a
+# Shown after the Smart Window closes the user’s current tab in response to a
 # natural language prompt action, anchored to the toolbar menu button.
 smartwindow-close-tab-callout-title = Tab closed
 smartwindow-close-tab-callout-subtitle = Reopen tabs from History anytime.
 
 ## Smart Window new tab promo
 
-smart-window-default-promo-heading = Make Smart Window your default?
-smart-window-default-promo-message = { -brand-short-name } will open in Smart Window every time.
+smart-window-default-promo-heading = Make { -smart-window-brand-name } your default?
+smart-window-default-promo-message = { -brand-short-name } will open in { -smart-window-brand-name } every time.
 smart-window-default-promo-primary-button = Set as default
 smart-window-default-promo-additional-button = Not now
 
@@ -315,7 +315,7 @@ aiwindow-feedback-modal-title = Share feedback
 aiwindow-feedback-what-worked-well = What worked well? No personal info, please.
 aiwindow-feedback-choose-any = Choose any that apply
 aiwindow-feedback-add-details = Add details if you’d like. No personal info, please.
-aiwindow-feedback-disclaimer = Submitting shares your feedback and this chat to help { -brand-shorter-name } improve Smart Window. Your other chats stay private. <a data-l10n-name="learn-more">Learn more</a>
+aiwindow-feedback-disclaimer = Submitting shares your feedback and this chat to help { -brand-shorter-name } improve { -smart-window-brand-name }. Your other chats stay private. <a data-l10n-name="learn-more">Learn more</a>
 aiwindow-feedback-submit = Submit
 aiwindow-feedback-cancel = Cancel
 aiwindow-feedback-reason-incorrect-or-misleading = Incorrect or misleading

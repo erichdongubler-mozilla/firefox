@@ -24,4 +24,9 @@
 # remain unchanged across different versions (Nightly, Beta, etc.).
 -brand-product-name = Firefox
 -vendor-short-name = Mozilla
+-smart-window-brand-name =
+    { $plural-form ->
+        [true] Smart Windows
+       *[false] Smart Window
+    }
 trademarkInfo = { " " }
