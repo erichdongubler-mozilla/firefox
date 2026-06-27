@@ -199,14 +199,13 @@ class MegamorphicCache {
   // Generation counter used to invalidate all entries.
   uint16_t generation_ = 0;
 
-  // NOTE: this logic is mirrored in
-  // MacroAssembler::emitMegamorphicCacheLookupByValueCommon
+  // NOTE: this logic is mirrored in MacroAssembler::emitMegamorphicCacheLookup
   Entry& getEntry(Shape* shape, PropertyKey key) {
     static_assert(std::has_single_bit(NumEntries),
                   "NumEntries must be a power-of-two for fast modulo");
     uintptr_t hash = uintptr_t(shape) >> ShapeHashShift1;
-    hash += HashAtomOrSymbolPropertyKey(key);
     hash ^= uintptr_t(shape) >> ShapeHashShift2;
+    hash += HashAtomOrSymbolPropertyKey(key);
     return entries_[hash % NumEntries];
   }
 

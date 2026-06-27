@@ -66,9 +66,7 @@ struct Register {
   bool volatile_() const {
     return !!((SetType(1) << code()) & Registers::VolatileMask);
   }
-  constexpr bool aliases(const Register& other) const {
-    return reg_ == other.reg_;
-  }
+  bool aliases(const Register& other) const { return reg_ == other.reg_; }
   uint32_t numAliased() const { return 1; }
 
   Register aliased(uint32_t aliasIdx) const {

@@ -5789,22 +5789,31 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   void emitExtractValueFromMegamorphicCacheEntry(
       Register obj, Register entry, Register scratch1, Register scratch2,
-      ValueOperand output, Label* cacheHit, Label* cacheMissWithEntry,
+      ValueOperand output, Label* cacheHit, Label* cacheMiss,
       Label* cacheHitGetter);
 
-  void emitMegamorphicCacheLookupByValueCommon(Register obj, Register scratchId,
-                                               Register scratchIdHash,
-                                               Register outEntryPtr,
-                                               Label* cacheMissWithEntry);
+  template <typename IdOperandType>
+  void emitMegamorphicCacheLookupByValueCommon(
+      IdOperandType id, Register obj, Register scratch1, Register scratch2,
+      Register outEntryPtr, Label* cacheMiss, Label* cacheMissWithEntry);
 
-  void emitMegamorphicCacheLookupByValue(Register obj, Register scratchId,
-                                         Register scratchIdHash,
+  void emitMegamorphicCacheLookup(PropertyKey id, Register obj,
+                                  Register scratch1, Register scratch2,
+                                  Register outEntryPtr, ValueOperand output,
+                                  Label* cacheHit,
+                                  Label* cacheHitGetter = nullptr);
+
+  // NOTE: |id| must either be a ValueOperand or a Register. If it is a
+  // Register, we assume that it is an atom.
+  template <typename IdOperandType>
+  void emitMegamorphicCacheLookupByValue(IdOperandType id, Register obj,
+                                         Register scratch1, Register scratch2,
                                          Register outEntryPtr,
                                          ValueOperand output, Label* cacheHit,
                                          Label* cacheHitGetter = nullptr);
 
-  void emitMegamorphicCacheLookupExists(Register obj, Register scratchId,
-                                        Register scratchIdHash,
+  void emitMegamorphicCacheLookupExists(ValueOperand id, Register obj,
+                                        Register scratch1, Register scratch2,
                                         Register outEntryPtr, Register output,
                                         Label* cacheHit, bool hasOwn);
 

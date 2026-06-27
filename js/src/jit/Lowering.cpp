@@ -5980,9 +5980,9 @@ void LIRGenerator::visitCallSetArrayLength(MCallSetArrayLength* ins) {
 void LIRGenerator::visitMegamorphicLoadSlot(MMegamorphicLoadSlot* ins) {
   MOZ_ASSERT(ins->object()->type() == MIRType::Object);
   auto* lir = new (alloc())
-      LMegamorphicLoadSlot(useFixedAtStart(ins->object(), CallTempReg3),
+      LMegamorphicLoadSlot(useRegisterAtStart(ins->object()),
                            tempFixed(CallTempReg0), tempFixed(CallTempReg1),
-                           tempFixed(CallTempReg2), tempFixed(CallTempReg4));
+                           tempFixed(CallTempReg2), tempFixed(CallTempReg3));
   assignSnapshot(lir, ins->bailoutKind());
   defineReturn(lir, ins);
 }
@@ -5994,7 +5994,7 @@ void LIRGenerator::visitMegamorphicLoadSlotPermissive(
   static_assert(IonGenericCallArgcReg == CallTempReg2);
 
   auto* lir = new (alloc()) LMegamorphicLoadSlotPermissive(
-      useFixedAtStart(ins->object(), CallTempReg3), tempFixed(CallTempReg0),
+      useRegisterAtStart(ins->object()), tempFixed(CallTempReg0),
       tempFixed(IonGenericCallCalleeReg), tempFixed(IonGenericCallArgcReg),
       tempFixed(CallTempReg4));
   defineReturn(lir, ins);
@@ -6007,7 +6007,7 @@ void LIRGenerator::visitMegamorphicLoadSlotByValue(
   MOZ_ASSERT(ins->object()->type() == MIRType::Object);
   MOZ_ASSERT(ins->idVal()->type() == MIRType::Value);
   auto* lir = new (alloc()) LMegamorphicLoadSlotByValue(
-      useFixedAtStart(ins->object(), CallTempReg3), useBoxAtStart(ins->idVal()),
+      useRegisterAtStart(ins->object()), useBoxAtStart(ins->idVal()),
       tempFixed(CallTempReg0), tempFixed(CallTempReg1),
       tempFixed(CallTempReg2));
   assignSnapshot(lir, ins->bailoutKind());
@@ -6020,9 +6020,9 @@ void LIRGenerator::visitMegamorphicLoadSlotByValuePermissive(
   MOZ_ASSERT(ins->idVal()->type() == MIRType::Value);
 #ifdef JS_CODEGEN_X86
   auto* lir = new (alloc()) LMegamorphicLoadSlotByValuePermissive(
-      useFixedAtStart(ins->object(), CallTempReg3), useBoxAtStart(ins->idVal()),
-      tempFixed(CallTempReg0), tempFixed(CallTempReg1),
-      tempFixed(CallTempReg2));
+      useRegisterAtStart(ins->object()), useBoxAtStart(ins->idVal()),
+      tempFixed(CallTempReg0), tempFixed(IonGenericCallCalleeReg),
+      tempFixed(IonGenericCallArgcReg));
   defineReturn(lir, ins);
   assignSafepoint(lir, ins);
 #else
@@ -6030,7 +6030,7 @@ void LIRGenerator::visitMegamorphicLoadSlotByValuePermissive(
   static_assert(IonGenericCallArgcReg == CallTempReg2);
 
   auto* lir = new (alloc()) LMegamorphicLoadSlotByValuePermissive(
-      useFixedAtStart(ins->object(), CallTempReg3), useBoxAtStart(ins->idVal()),
+      useRegisterAtStart(ins->object()), useBoxAtStart(ins->idVal()),
       tempFixed(CallTempReg0), tempFixed(IonGenericCallCalleeReg),
       tempFixed(IonGenericCallArgcReg), tempFixed(CallTempReg4));
   defineReturn(lir, ins);
