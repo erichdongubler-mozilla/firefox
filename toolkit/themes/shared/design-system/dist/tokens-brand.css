@@ -92,7 +92,6 @@
     :root,
     :host(.anonymous-content-host) {
       /** text-color **/
-      --text-color: light-dark(var(--color-violet-desaturated-90), var(--color-violet-desaturated-0));
       --text-color-accent-primary-selected: light-dark(var(--color-white), var(--color-gray-55));
     }
   }

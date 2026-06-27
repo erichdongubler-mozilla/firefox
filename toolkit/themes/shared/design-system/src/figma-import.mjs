@@ -53,13 +53,9 @@ const FIGMA_IGNORES = new Set([
 const NOVA_STRUCTURAL_OVERRIDES = {
   "text/color": {
     prefersContrast: "CanvasText",
-    brand: {
-      light: "{color.violet-desaturated.90}",
-      dark: "{color.violet-desaturated.0}",
-    },
-    platform: {
-      default: "currentColor",
-    },
+    nativeTheme: "currentColor",
+    light: "{color.violet-desaturated.90}",
+    dark: "{color.violet-desaturated.0}",
   },
   "text/color/error": {
     light: "{color.red.50}",
