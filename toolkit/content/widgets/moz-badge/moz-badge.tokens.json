@@ -40,9 +40,6 @@
     "block": {
       "value": "0"
     },
-    "nova-block": {
-      "value": "1px"
-    },
     "inline": {
       "value": "{space.xsmall}"
     },
