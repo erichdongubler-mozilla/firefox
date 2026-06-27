@@ -518,14 +518,12 @@ class FloatRegisters {
   };
 
   static constexpr Encoding encoding(Code c) {
-    // assert() not available in constexpr function.
-    // assert(c < Total);
+    MOZ_ASSERT(c < Total);
     return Encoding(c & 31);
   }
 
   static constexpr Kind kind(Code c) {
-    // assert() not available in constexpr function.
-    // assert(c < Total && ((c >> 5) & 3) < NumTypes);
+    MOZ_ASSERT(c < Total && ((c >> 5) & 3) < NumTypes);
     return Kind((c >> 5) & 3);
   }
 
@@ -595,7 +593,7 @@ struct FloatRegister {
  public:
   constexpr FloatRegister(Encoding encoding, Kind kind)
       : encoding_(encoding), kind_(kind), invalid_(false) {
-    // assert(uint32_t(encoding) < Codes::TotalPhys);
+    MOZ_ASSERT(uint32_t(encoding) < Codes::TotalPhys);
   }
 
   constexpr FloatRegister()
@@ -646,7 +644,7 @@ struct FloatRegister {
   }
 
   constexpr Code code() const {
-    // assert(!invalid_);
+    MOZ_ASSERT(!invalid_);
     return Codes::fromParts(encoding_, kind_, invalid_);
   }
 
@@ -660,12 +658,7 @@ struct FloatRegister {
     MOZ_ASSERT(!invalid_);
     return !!((SetType(1) << code()) & FloatRegisters::VolatileMask);
   }
-  constexpr bool operator!=(FloatRegister other) const {
-    return code() != other.code();
-  }
-  constexpr bool operator==(FloatRegister other) const {
-    return code() == other.code();
-  }
+  constexpr bool operator==(const FloatRegister&) const = default;
 
   bool aliases(FloatRegister other) const {
     return other.encoding_ == encoding_;
