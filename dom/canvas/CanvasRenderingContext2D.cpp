@@ -4975,7 +4975,8 @@ struct MOZ_STACK_CLASS CanvasBidiProcessor final
       params.strokeOpts = &strokeOpts;
     }
 
-    mTextRun->Draw(gfxTextRun::Range(mTextRun.get()), point, params);
+    imgDrawingParams dummy;
+    mTextRun->Draw(gfxTextRun::Range(mTextRun.get()), point, params, dummy);
   }
 
   // current text run

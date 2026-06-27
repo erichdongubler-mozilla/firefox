@@ -6847,7 +6847,8 @@ static void AddHyphenToMetrics(nsTextFrame* aTextFrame, bool aIsRightToLeft,
 
 void nsTextFrame::PaintOneShadow(const PaintShadowParams& aParams,
                                  const StyleSimpleShadow& aShadowDetails,
-                                 gfxRect& aBoundingBox, uint32_t aBlurFlags) {
+                                 gfxRect& aBoundingBox, uint32_t aBlurFlags,
+                                 imgDrawingParams& aImgParams) {
   AUTO_PROFILER_LABEL("nsTextFrame::PaintOneShadow", GRAPHICS);
 
   nsPoint shadowOffset(aShadowDetails.horizontal.ToAppUnits(),
@@ -6933,7 +6934,8 @@ void nsTextFrame::PaintOneShadow(const PaintShadowParams& aParams,
   params.decorationOverrideColor = &params.textColor;
   params.fontPalette = StyleFont()->GetFontPaletteAtom();
 
-  DrawText(aParams.range, aParams.textBaselinePt + shadowGfxOffset, params);
+  DrawText(aParams.range, aParams.textBaselinePt + shadowGfxOffset, params,
+           aImgParams);
 
   contextBoxBlur.DoPaint();
   aParams.context->Restore();
@@ -7149,7 +7151,8 @@ SelectionTypeMask nsTextFrame::ResolveSelections(
 // this text.
 bool nsTextFrame::PaintTextWithSelectionColors(
     const PaintTextSelectionParams& aParams, const SelectionDetails& aDetails,
-    SelectionTypeMask* aAllSelectionTypeMask, const ClipEdges& aClipEdges) {
+    SelectionTypeMask* aAllSelectionTypeMask, const ClipEdges& aClipEdges,
+    imgDrawingParams& aImgParams) {
   bool anyBackgrounds = false;
   AutoTArray<PriorityOrderedSelectionsForRange, 8> selectionRanges;
 
@@ -7337,7 +7340,7 @@ bool nsTextFrame::PaintTextWithSelectionColors(
       shadowParams.leftSideOffset = startEdge;
       shadowParams.range = range;
       for (const Span<const StyleSimpleShadow>& shadowSpan : shadows) {
-        PaintShadows(shadowSpan, shadowParams);
+        PaintShadows(shadowSpan, shadowParams, aImgParams);
       }
     }
 
@@ -7355,7 +7358,7 @@ bool nsTextFrame::PaintTextWithSelectionColors(
         isUnselected ? aParams.textPaintStyle->GetWebkitTextStrokeWidth()
                      : 0.0f;
     params.drawSoftHyphen = hyphenWidth > 0;
-    DrawText(range, textBaselinePt, params);
+    DrawText(range, textBaselinePt, params, aImgParams);
     advance += hyphenWidth;
     iterator.UpdateWithAdvance(advance);
   }
@@ -7449,12 +7452,12 @@ void nsTextFrame::PaintTextSelectionDecorations(
 
 bool nsTextFrame::PaintTextWithSelection(
     const PaintTextSelectionParams& aParams, const ClipEdges& aClipEdges,
-    const SelectionDetails& aDetails) {
+    const SelectionDetails& aDetails, imgDrawingParams& aImgParams) {
   NS_ASSERTION(GetContent()->IsMaybeSelected(), "wrong paint path");
 
   SelectionTypeMask allSelectionTypeMask;
   if (!PaintTextWithSelectionColors(aParams, aDetails, &allSelectionTypeMask,
-                                    aClipEdges)) {
+                                    aClipEdges, aImgParams)) {
     return false;
   }
   // Iterate through just the selection rawSelectionTypes that paint decorations
@@ -7483,7 +7486,8 @@ void nsTextFrame::DrawEmphasisMarks(gfxContext* aContext, WritingMode aWM,
                                     const gfx::Point& aTextBaselinePt,
                                     const gfx::Point& aFramePt, Range aRange,
                                     const nscolor* aDecorationOverrideColor,
-                                    PropertyProvider* aProvider) {
+                                    PropertyProvider* aProvider,
+                                    image::imgDrawingParams& aImgParams) {
   const EmphasisMarkInfo* info = GetProperty(EmphasisMarkProperty());
   if (!info) {
     return;
@@ -7530,11 +7534,11 @@ void nsTextFrame::DrawEmphasisMarks(gfxContext* aContext, WritingMode aWM,
   if (!isTextCombined) {
     mTextRun->DrawEmphasisMarks(aContext, info->textRun.get(), info->advance,
                                 pt, aRange, aProvider,
-                                PresContext()->FontPaletteCache());
+                                PresContext()->FontPaletteCache(), aImgParams);
   } else {
     pt.y += (GetSize().height - info->advance) / 2;
     gfxTextRun::DrawParams params(aContext, PresContext()->FontPaletteCache());
-    info->textRun->Draw(Range(info->textRun.get()), pt, params);
+    info->textRun->Draw(Range(info->textRun.get()), pt, params, aImgParams);
   }
 }
 
@@ -7693,7 +7697,8 @@ bool nsTextFrame::MeasureCharClippedText(
 }
 
 void nsTextFrame::PaintShadows(Span<const StyleSimpleShadow> aShadows,
-                               const PaintShadowParams& aParams) {
+                               const PaintShadowParams& aParams,
+                               imgDrawingParams& aImgParams) {
   if (aShadows.IsEmpty()) {
     return;
   }
@@ -7735,7 +7740,8 @@ void nsTextFrame::PaintShadows(Span<const StyleSimpleShadow> aShadows,
   }
 
   for (const auto& shadow : Reversed(aShadows)) {
-    PaintOneShadow(aParams, shadow, shadowMetrics.mBoundingBox, blurFlags);
+    PaintOneShadow(aParams, shadow, shadowMetrics.mBoundingBox, blurFlags,
+                   aImgParams);
   }
 }
 
@@ -7744,6 +7750,7 @@ void nsTextFrame::PaintText(const PaintTextParams& aParams,
                             const nscoord aVisIEndEdge,
                             const nsPoint& aToReferenceFrame,
                             const bool aIsSelected,
+                            imgDrawingParams& aImgParams,
                             float aOpacity /* = 1.0f */) {
 #ifdef DEBUG
   if (IsInSVGTextSubtree()) {
@@ -7839,7 +7846,8 @@ void nsTextFrame::PaintText(const PaintTextParams& aParams,
     params.contentRange = contentRange;
     params.textPaintStyle = &textPaintStyle;
     params.glyphRange = range;
-    if (PaintTextWithSelection(params, clipEdges, *selectionDetails)) {
+    if (PaintTextWithSelection(params, clipEdges, *selectionDetails,
+                               aImgParams)) {
       return;
     }
   }
@@ -7873,7 +7881,7 @@ void nsTextFrame::PaintText(const PaintTextParams& aParams,
     shadowParams.callbacks = aParams.callbacks;
     shadowParams.foregroundColor = foregroundColor;
     shadowParams.clipEdges = &clipEdges;
-    PaintShadows(textStyle->mTextShadow.AsSpan(), shadowParams);
+    PaintShadows(textStyle->mTextShadow.AsSpan(), shadowParams, aImgParams);
   }
 
   gfxFloat advanceWidth;
@@ -7894,13 +7902,14 @@ void nsTextFrame::PaintText(const PaintTextParams& aParams,
   params.fontPalette = StyleFont()->GetFontPaletteAtom();
   params.hasTextShadow = !StyleText()->mTextShadow.IsEmpty();
 
-  DrawText(range, textBaselinePt, params);
+  DrawText(range, textBaselinePt, params, aImgParams);
 }
 
 static void DrawTextRun(const gfxTextRun* aTextRun,
                         const gfx::Point& aTextBaselinePt,
                         gfxTextRun::Range aRange,
                         const nsTextFrame::DrawTextRunParams& aParams,
+                        mozilla::image::imgDrawingParams& aImgParams,
                         nsTextFrame* aFrame) {
   gfxTextRun::DrawParams params(aParams.context, aParams.paletteCache);
   params.provider = aParams.provider;
@@ -7913,7 +7922,7 @@ static void DrawTextRun(const gfxTextRun* aTextRun,
     aParams.callbacks->NotifyBeforeText(aParams.paintingShadows,
                                         aParams.textColor);
     params.drawMode = DrawMode::GLYPH_PATH;
-    aTextRun->Draw(aRange, aTextBaselinePt, params);
+    aTextRun->Draw(aRange, aTextBaselinePt, params, aImgParams);
     aParams.callbacks->NotifyAfterText();
   } else {
     auto* textDrawer = aParams.context->GetTextDrawer();
@@ -7960,18 +7969,19 @@ static void DrawTextRun(const gfxTextRun* aTextRun,
       StrokeOptions strokeOpts(aParams.textStrokeWidth, JoinStyle::ROUND);
       params.textStrokeColor = aParams.textStrokeColor;
       params.strokeOpts = &strokeOpts;
-      aTextRun->Draw(aRange, aTextBaselinePt, params);
+      aTextRun->Draw(aRange, aTextBaselinePt, params, aImgParams);
     } else {
-      aTextRun->Draw(aRange, aTextBaselinePt, params);
+      aTextRun->Draw(aRange, aTextBaselinePt, params, aImgParams);
     }
   }
 }
 
 void nsTextFrame::DrawTextRun(Range aRange, const gfx::Point& aTextBaselinePt,
-                              const DrawTextRunParams& aParams) {
+                              const DrawTextRunParams& aParams,
+                              imgDrawingParams& aImgParams) {
   MOZ_ASSERT(aParams.advanceWidth, "Must provide advanceWidth");
 
-  ::DrawTextRun(mTextRun, aTextBaselinePt, aRange, aParams, this);
+  ::DrawTextRun(mTextRun, aTextBaselinePt, aRange, aParams, aImgParams, this);
 
   if (aParams.drawSoftHyphen) {
     // Don't use ctx as the context, because we need a reference context here,
@@ -7992,14 +8002,16 @@ void nsTextFrame::DrawTextRun(Range aRange, const gfx::Point& aTextBaselinePt,
         p.x += shift;
       }
       ::DrawTextRun(hyphenTextRun.get(), p, Range(hyphenTextRun.get()), params,
-                    this);
+                    aImgParams, this);
     }
   }
 }
 
-void nsTextFrame::DrawTextRunAndDecorations(
-    Range aRange, const gfx::Point& aTextBaselinePt,
-    const DrawTextParams& aParams, const TextDecorations& aDecorations) {
+void nsTextFrame::DrawTextRunAndDecorations(Range aRange,
+                                            const gfx::Point& aTextBaselinePt,
+                                            const DrawTextParams& aParams,
+                                            const TextDecorations& aDecorations,
+                                            imgDrawingParams& aImgParams) {
   const gfxFloat app = aParams.textStyle->PresContext()->AppUnitsPerDevPixel();
   // Writing mode of parent frame is used because the text frame may
   // be orthogonal to its parent when text-combine-upright is used or
@@ -8185,12 +8197,13 @@ void nsTextFrame::DrawTextRunAndDecorations(
 
     // CSS 2.1 mandates that text be painted after over/underlines,
     // and *then* line-throughs
-    DrawTextRun(aRange, aTextBaselinePt, aParams);
+    DrawTextRun(aRange, aTextBaselinePt, aParams, aImgParams);
   }
 
   // Emphasis marks
   DrawEmphasisMarks(aParams.context, wm, aTextBaselinePt, aParams.framePt,
-                    aRange, aParams.decorationOverrideColor, aParams.provider);
+                    aRange, aParams.decorationOverrideColor, aParams.provider,
+                    aImgParams);
 
   // Line-throughs
   params.decoration = StyleTextDecorationLine::LINE_THROUGH;
@@ -8200,7 +8213,8 @@ void nsTextFrame::DrawTextRunAndDecorations(
 }
 
 void nsTextFrame::DrawText(Range aRange, const gfx::Point& aTextBaselinePt,
-                           const DrawTextParams& aParams) {
+                           const DrawTextParams& aParams,
+                           imgDrawingParams& aImgParams) {
   TextDecorations decorations;
   GetTextDecorations(aParams.textStyle->PresContext(),
                      aParams.callbacks ? eUnresolvedColors : eResolvedColors,
@@ -8212,9 +8226,10 @@ void nsTextFrame::DrawText(Range aRange, const gfx::Point& aTextBaselinePt,
       (decorations.HasDecorationLines() ||
        StyleText()->HasEffectiveTextEmphasis());
   if (drawDecorations) {
-    DrawTextRunAndDecorations(aRange, aTextBaselinePt, aParams, decorations);
+    DrawTextRunAndDecorations(aRange, aTextBaselinePt, aParams, decorations,
+                              aImgParams);
   } else {
-    DrawTextRun(aRange, aTextBaselinePt, aParams);
+    DrawTextRun(aRange, aTextBaselinePt, aParams, aImgParams);
   }
 
   if (auto* textDrawer = aParams.context->GetTextDrawer()) {

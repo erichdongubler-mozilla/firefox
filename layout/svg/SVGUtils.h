@@ -488,9 +488,11 @@ class SVGUtils final {
    * Render a SVG glyph.
    * @param aElement the SVG glyph element to render
    * @param aContext the thebes aContext to draw to
+   * @param aImgParams imagelib parameters that may be used when painting
    * @return true if rendering succeeded
    */
-  static void PaintSVGGlyph(Element* aElement, gfxContext* aContext);
+  static void PaintSVGGlyph(Element* aElement, gfxContext* aContext,
+                            imgDrawingParams& aImgParams);
 
   /**
    * Get the extents of a SVG glyph.

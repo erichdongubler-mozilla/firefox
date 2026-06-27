@@ -5560,9 +5560,10 @@ void nsLayoutUtils::DrawUniDirString(const char16_t* aString, uint32_t aLength,
 
 /* static */
 void nsLayoutUtils::PaintTextShadow(
-    const nsIFrame* aFrame, gfxContext* aContext, const nsRect& aTextRect,
-    const nsRect& aDirtyRect, const nscolor& aForegroundColor,
-    TextShadowCallback aCallback, void* aCallbackData) {
+    const nsIFrame* aFrame, gfxContext* aContext, imgDrawingParams& aImgParams,
+    const nsRect& aTextRect, const nsRect& aDirtyRect,
+    const nscolor& aForegroundColor, TextShadowCallback aCallback,
+    void* aCallbackData) {
   const nsStyleText* textStyle = aFrame->StyleText();
   auto shadows = textStyle->mTextShadow.AsSpan();
   if (shadows.IsEmpty()) {
@@ -5615,7 +5616,8 @@ void nsLayoutUtils::PaintTextShadow(
     aDestCtx->SetColor(sRGBColor::FromABGR(shadowColor));
 
     // The callback will draw whatever we want to blur as a shadow.
-    aCallback(shadowContext, shadowOffset, shadowColor, aCallbackData);
+    aCallback(shadowContext, aImgParams, shadowOffset, shadowColor,
+              aCallbackData);
 
     contextBoxBlur.DoPaint();
     aDestCtx->Restore();

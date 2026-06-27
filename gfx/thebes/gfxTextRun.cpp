@@ -413,12 +413,14 @@ bool gfxTextRun::ShrinkToLigatureBoundaries(Range* aRange) const {
 void gfxTextRun::DrawGlyphs(gfxFont* aFont, Range aRange, gfx::Point* aPt,
                             const PropertyProvider* aProvider,
                             Range aSpacingRange, TextRunDrawParams& aParams,
+                            imgDrawingParams& aImgParams,
                             gfx::ShapedTextFlags aOrientation) const {
   AutoTArray<PropertyProvider::Spacing, 200> spacingBuffer;
   bool haveSpacing =
       GetAdjustedSpacingArray(aRange, aProvider, aSpacingRange, &spacingBuffer);
   aParams.spacing = haveSpacing ? spacingBuffer.Elements() : nullptr;
-  aFont->Draw(this, aRange.start, aRange.end, aPt, aParams, aOrientation);
+  aFont->Draw(this, aRange.start, aRange.end, aPt, aParams, aImgParams,
+              aOrientation);
 }
 
 static void ClipPartialLigature(const gfxTextRun* aTextRun, gfxFloat* aStart,
@@ -446,6 +448,7 @@ void gfxTextRun::DrawPartialLigature(gfxFont* aFont, Range aRange,
                                      gfx::Point* aPt,
                                      const PropertyProvider* aProvider,
                                      TextRunDrawParams& aParams,
+                                     imgDrawingParams& aImgParams,
                                      gfx::ShapedTextFlags aOrientation) const {
   if (aRange.start >= aRange.end) {
     return;
@@ -488,7 +491,8 @@ void gfxTextRun::DrawPartialLigature(gfxFont* aFont, Range aRange,
     pt = Point(aPt->x - aParams.direction * data.mPartAdvance, aPt->y);
   }
 
-  DrawGlyphs(aFont, data.mRange, &pt, aProvider, aRange, aParams, aOrientation);
+  DrawGlyphs(aFont, data.mRange, &pt, aProvider, aRange, aParams, aImgParams,
+             aOrientation);
 
   if (aParams.isVerticalRun) {
     aPt->y += aParams.direction * data.mPartWidth;
@@ -544,7 +548,8 @@ struct MOZ_STACK_CLASS BufferAlphaColor {
 };
 
 void gfxTextRun::Draw(const Range aRange, const gfx::Point aPt,
-                      const DrawParams& aParams) const {
+                      const DrawParams& aParams,
+                      imgDrawingParams& aImgParams) const {
   NS_ASSERTION(aRange.end <= GetLength(), "Substring out of range");
   NS_ASSERTION(aParams.drawMode == DrawMode::GLYPH_PATH ||
                    !(aParams.drawMode & DrawMode::GLYPH_PATH),
@@ -668,16 +673,16 @@ void gfxTextRun::Draw(const Range aRange, const gfx::Point aPt,
 
     if (drawPartial) {
       DrawPartialLigature(font, Range(runRange.start, ligatureRange.start), &pt,
-                          aParams.provider, params,
+                          aParams.provider, params, aImgParams,
                           iter.GlyphRun()->mOrientation);
     }
 
     DrawGlyphs(font, ligatureRange, &pt, aParams.provider, ligatureRange,
-               params, iter.GlyphRun()->mOrientation);
+               params, aImgParams, iter.GlyphRun()->mOrientation);
 
     if (drawPartial) {
       DrawPartialLigature(font, Range(ligatureRange.end, runRange.end), &pt,
-                          aParams.provider, params,
+                          aParams.provider, params, aImgParams,
                           iter.GlyphRun()->mOrientation);
     }
 
@@ -702,7 +707,8 @@ void gfxTextRun::Draw(const Range aRange, const gfx::Point aPt,
 void gfxTextRun::DrawEmphasisMarks(
     gfxContext* aContext, gfxTextRun* aMark, gfxFloat aMarkAdvance,
     gfx::Point aPt, Range aRange, const PropertyProvider* aProvider,
-    mozilla::gfx::PaletteCache& aPaletteCache) const {
+    mozilla::gfx::PaletteCache& aPaletteCache,
+    mozilla::image::imgDrawingParams& aImgParams) const {
   MOZ_ASSERT(aRange.end <= GetLength());
 
   EmphasisMarkDrawParams params(aContext, aPaletteCache);
@@ -732,7 +738,7 @@ void gfxTextRun::DrawEmphasisMarks(
                                                ligatureRange, &spacingBuffer);
     params.spacing = haveSpacing ? spacingBuffer.Elements() : nullptr;
     font->DrawEmphasisMarks(this, &aPt, ligatureRange.start,
-                            ligatureRange.Length(), params);
+                            ligatureRange.Length(), params, aImgParams);
 
     if (adjusted) {
       inlineCoord += direction * ComputePartialLigatureWidth(

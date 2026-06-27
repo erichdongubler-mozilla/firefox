@@ -1824,9 +1824,11 @@ class GlyphBufferAzure {
 
  public:
   GlyphBufferAzure(const TextRunDrawParams& aRunParams,
-                   const FontDrawParams& aFontParams)
+                   const FontDrawParams& aFontParams,
+                   imgDrawingParams& aImgParams)
       : mRunParams(aRunParams),
         mFontParams(aFontParams),
+        mImgParams(aImgParams),
         mBuffer(*mAutoBuffer.addr()),
         mBufSize(AUTO_BUFFER_SIZE),
         mCapacity(0),
@@ -1893,6 +1895,7 @@ class GlyphBufferAzure {
 
   const TextRunDrawParams& mRunParams;
   const FontDrawParams& mFontParams;
+  imgDrawingParams& mImgParams;
 
  private:
   static DrawMode GetStrokeMode(DrawMode aMode) {
@@ -1920,10 +1923,9 @@ class GlyphBufferAzure {
 
         RefPtr<gfxPattern> fillPattern;
         if (mFontParams.contextPaint) {
-          imgDrawingParams imgParams;
           fillPattern = mFontParams.contextPaint->GetFillPattern(
               mRunParams.context->GetDrawTarget(),
-              mRunParams.context->CurrentMatrixDouble(), imgParams);
+              mRunParams.context->CurrentMatrixDouble(), mImgParams);
         }
         if (!fillPattern) {
           if (state.pattern) {
@@ -2212,8 +2214,8 @@ void gfxFont::DrawOneGlyph(uint32_t aGlyphID, const gfx::Point& aPt,
           runParams.drawMode != DrawMode::GLYPH_PATH,
           "Rendering SVG glyph despite request for glyph path");
       if (RenderSVGGlyph(runParams.context, textDrawer, devPt, aGlyphID,
-                         fontParams.contextPaint, runParams.callbacks,
-                         *aEmittedGlyphs)) {
+                         fontParams.contextPaint, aBuffer.mImgParams,
+                         runParams.callbacks, *aEmittedGlyphs)) {
         return;
       }
     }
@@ -2306,7 +2308,8 @@ bool gfxFont::DrawMissingGlyph(const TextRunDrawParams& aRunParams,
 // This method is mostly parallel to DrawGlyphs.
 void gfxFont::DrawEmphasisMarks(const gfxTextRun* aShapedText, gfx::Point* aPt,
                                 uint32_t aOffset, uint32_t aCount,
-                                const EmphasisMarkDrawParams& aParams) {
+                                const EmphasisMarkDrawParams& aParams,
+                                imgDrawingParams& aImgParams) {
   float& inlineCoord = aParams.isVertical ? aPt->y.value : aPt->x.value;
   gfxTextRun::Range markRange(aParams.mark);
   gfxTextRun::DrawParams params(aParams.context, aParams.paletteCache);
@@ -2331,7 +2334,7 @@ void gfxFont::DrawEmphasisMarks(const gfxTextRun* aShapedText, gfx::Point* aPt,
       // Move the coord backward to get the needed start point.
       float delta = (clusterAdvance + aParams.advance) / 2;
       inlineCoord -= delta;
-      aParams.mark->Draw(markRange, *aPt, params);
+      aParams.mark->Draw(markRange, *aPt, params, aImgParams);
       inlineCoord += delta;
       shouldDrawEmphasisMark = false;
     }
@@ -2343,6 +2346,7 @@ void gfxFont::DrawEmphasisMarks(const gfxTextRun* aShapedText, gfx::Point* aPt,
 
 void gfxFont::Draw(const gfxTextRun* aTextRun, uint32_t aStart, uint32_t aEnd,
                    gfx::Point* aPt, TextRunDrawParams& aRunParams,
+                   imgDrawingParams& aImgParams,
                    gfx::ShapedTextFlags aOrientation) {
   NS_ASSERTION(aRunParams.drawMode == DrawMode::GLYPH_PATH ||
                    !(int(aRunParams.drawMode) & int(DrawMode::GLYPH_PATH)),
@@ -2610,7 +2614,7 @@ void gfxFont::Draw(const gfxTextRun* aTextRun, uint32_t aStart, uint32_t aEnd,
     // to output glyphs to the buffer, depending on complexity needed
     // for the type of font, and whether added inter-glyph spacing
     // is specified.
-    GlyphBufferAzure buffer(aRunParams, fontParams);
+    GlyphBufferAzure buffer(aRunParams, fontParams, aImgParams);
     if (fontParams.haveSVGGlyphs || fontParams.haveColorGlyphs ||
         fontParams.extraStrikes ||
         (fontParams.obliqueSkew != 0.0f && fontParams.isVerticalFont &&
@@ -2659,7 +2663,8 @@ void gfxFont::Draw(const gfxTextRun* aTextRun, uint32_t aStart, uint32_t aEnd,
 bool gfxFont::RenderSVGGlyph(gfxContext* aContext,
                              layout::TextDrawTarget* aTextDrawer,
                              gfx::Point aPoint, uint32_t aGlyphId,
-                             SVGContextPaint* aContextPaint) const {
+                             SVGContextPaint* aContextPaint,
+                             imgDrawingParams& aImgParams) const {
   if (!GetFontEntry()->HasSVGGlyph(aGlyphId)) {
     return false;
   }
@@ -2681,7 +2686,7 @@ bool gfxFont::RenderSVGGlyph(gfxContext* aContext,
 
   aContextPaint->InitStrokeGeometry(aContext, devUnitsPerSVGUnit);
 
-  GetFontEntry()->RenderSVGGlyph(aContext, aGlyphId, aContextPaint);
+  GetFontEntry()->RenderSVGGlyph(aContext, aGlyphId, aContextPaint, aImgParams);
   aContext->NewPath();
   return true;
 }
@@ -2690,13 +2695,15 @@ bool gfxFont::RenderSVGGlyph(gfxContext* aContext,
                              layout::TextDrawTarget* aTextDrawer,
                              gfx::Point aPoint, uint32_t aGlyphId,
                              SVGContextPaint* aContextPaint,
+                             imgDrawingParams& aImgParams,
                              gfxTextRunDrawCallbacks* aCallbacks,
                              bool& aEmittedGlyphs) const {
   if (aCallbacks && aEmittedGlyphs) {
     aCallbacks->NotifyGlyphPathEmitted();
     aEmittedGlyphs = false;
   }
-  return RenderSVGGlyph(aContext, aTextDrawer, aPoint, aGlyphId, aContextPaint);
+  return RenderSVGGlyph(aContext, aTextDrawer, aPoint, aGlyphId, aContextPaint,
+                        aImgParams);
 }
 
 bool gfxFont::RenderColorGlyph(DrawTarget* aDrawTarget, gfxContext* aContext,

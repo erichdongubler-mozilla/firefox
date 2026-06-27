@@ -118,7 +118,8 @@ class gfxSVGGlyphs {
    *   See |SVGContextPaint|.
    */
   void RenderGlyph(gfxContext* aContext, uint32_t aGlyphId,
-                   mozilla::SVGContextPaint* aContextPaint);
+                   mozilla::SVGContextPaint* aContextPaint,
+                   mozilla::image::imgDrawingParams& aImgParams);
 
   /**
    * Get the extents for the SVG glyph associated with |aGlyphId|

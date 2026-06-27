@@ -3278,9 +3278,11 @@ void SVGTextFrame::PaintSVG(gfxContext& aContext, const gfxMatrix& aTransform,
                                            frame, matrixForPaintServers,
                                            aImgParams, paintSVGGlyphs);
         params.callbacks = &callbacks;
-        frame->PaintText(params, startEdge, endEdge, nsPoint(), isSelected);
+        frame->PaintText(params, startEdge, endEdge, nsPoint(), isSelected,
+                         aImgParams);
       } else {
-        frame->PaintText(params, startEdge, endEdge, nsPoint(), isSelected);
+        frame->PaintText(params, startEdge, endEdge, nsPoint(), isSelected,
+                         aImgParams);
       }
     }
 

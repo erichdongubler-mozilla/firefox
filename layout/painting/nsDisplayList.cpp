@@ -7960,8 +7960,9 @@ void nsDisplayText::RenderToContext(gfxContext* aCtx,
     params.state = nsTextFrame::PaintTextParams::PaintText;
   }
 
+  imgDrawingParams imgParams(aBuilder->GetImageDecodeFlags());
   f->PaintText(params, mVisIStartEdge, mVisIEndEdge, ToReferenceFrame(),
-               f->IsSelected(), aOpacity);
+               f->IsSelected(), imgParams, aOpacity);
 }
 
 // This could go to nsDisplayListInvalidation.h, but

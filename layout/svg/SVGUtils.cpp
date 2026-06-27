@@ -1467,7 +1467,8 @@ SVGHitTestFlags SVGUtils::GetGeometryHitTestFlags(const nsIFrame* aFrame) {
   return flags;
 }
 
-void SVGUtils::PaintSVGGlyph(Element* aElement, gfxContext* aContext) {
+void SVGUtils::PaintSVGGlyph(Element* aElement, gfxContext* aContext,
+                             imgDrawingParams& aImgParams) {
   nsIFrame* frame = aElement->GetPrimaryFrame();
   ISVGDisplayableFrame* svgFrame = do_QueryFrame(frame);
   if (!svgFrame) {
@@ -1480,10 +1481,7 @@ void SVGUtils::PaintSVGGlyph(Element* aElement, gfxContext* aContext) {
     m = SVGUtils::GetTransformMatrixInUserSpace(frame);
   }
 
-  // SVG-in-OpenType is not allowed to paint external resources, so we can
-  // just pass a dummy params into PatintSVG.
-  imgDrawingParams dummy;
-  svgFrame->PaintSVG(*aContext, m, dummy);
+  svgFrame->PaintSVG(*aContext, m, aImgParams);
 }
 
 bool SVGUtils::GetSVGGlyphExtents(const Element* aElement,
