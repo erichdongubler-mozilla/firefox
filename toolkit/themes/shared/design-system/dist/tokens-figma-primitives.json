@@ -172,6 +172,7 @@
   "badge/border/radius": "{Primitives$border/radius/small}",
   "badge/border/width": 1,
   "badge/padding/block": 0,
+  "badge/padding/nova-block": 1,
   "badge/padding/inline": "{Primitives$space/xsmall}",
   "badge/padding/nova-inline/block": "calc({Primitives$space/xsmall} +",
   "badge/padding/nova-inline/inline": "{Primitives$space/xxsmall})",

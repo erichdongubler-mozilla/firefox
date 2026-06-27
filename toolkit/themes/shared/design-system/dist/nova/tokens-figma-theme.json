@@ -384,6 +384,11 @@
     "dark": "{Theme$text/color}",
     "forcedColors": "{Theme$text/color}"
   },
+  "panel/separator/color": {
+    "light": "rgba(24, 14, 48, 0.2)",
+    "dark": "rgba(242, 240, 248, 0.2)",
+    "forcedColors": "{Theme$border/color}"
+  },
   "table/row/background/color": {
     "light": "{Theme$background/color/canvas}",
     "dark": "{Theme$background/color/canvas}",

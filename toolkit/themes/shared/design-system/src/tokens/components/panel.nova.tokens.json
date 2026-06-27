@@ -37,5 +37,14 @@
         "default": "{text.color.@base}"
       }
     }
+  },
+  "separator": {
+    "color": {
+      "value": {
+        "light": "rgba(24, 14, 48, 0.2)",
+        "dark": "rgba(242, 240, 248, 0.2)",
+        "forcedColors": "{border.color.@base}"
+      }
+    }
   }
 }
