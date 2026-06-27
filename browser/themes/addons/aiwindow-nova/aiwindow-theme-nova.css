@@ -4,6 +4,20 @@
 
 body {
   --tabpanel-background-color: transparent;
+
+  /* TODO Bug 2050935 - Confirm if we need to update more than this div */
+  /* Toolbox Panel Menu Overrides from tokens-shared */
+  #mainPopupSet {
+    --panel-separator-color: light-dark(var(--color-violet-desaturated-20), var(--color-violet-desaturated-50));
+    --button-background-color-ghost-active: light-dark(
+      color-mix(in srgb, var(--color-violet-60) 30%, transparent),
+      color-mix(in srgb, var(--color-violet-30) 36%, transparent)
+    );
+    --button-background-color-ghost-hover: light-dark(
+      color-mix(in srgb, var(--color-violet-60) 15%, transparent),
+      color-mix(in srgb, var(--color-violet-30) 24%, transparent)
+    );
+  }
 }
 
 #navigator-toolbox {

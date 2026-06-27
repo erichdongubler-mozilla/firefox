@@ -40,9 +40,14 @@ def resolve_ref(path, tokens, variant):
     return resolved
 
 
+# TODO Bug 2050893 - review this function and how it ties in with additional_backgrounds_alignment
 # This resolves interpolations with the syntax on the tokens files, like:
 #   {promo.border.width} solid {promo.border.color.@base}
 def resolve_value(value, tokens, variant):
+    if isinstance(value, list):
+        return [resolve_value(item, tokens, variant) for item in value]
+    if not isinstance(value, str):
+        return value
     return re.sub(
         r"\{([^}]+)\}", lambda m: str(resolve_ref(m.group(1), tokens, variant)), value
     )
