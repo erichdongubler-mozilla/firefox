@@ -240,7 +240,6 @@
   --panel-menuitem-border-radius: var(--button-border-radius);
   --panel-padding: var(--panel-padding-block);
   --panel-padding-block: 8px;
-  --panel-separator-color: light-dark(rgba(24, 14, 48, 20%), rgba(242, 240, 248, 20%));
   --panel-text-color: var(--text-color);
   /** size **/
   --size-item-xsmall: 12px;
@@ -367,7 +366,6 @@
     --link-color-active: ActiveText;
     /** panel **/
     --panel-border-color: var(--border-color);
-    --panel-separator-color: var(--border-color);
     /** table **/
     /* TODO Bug 1821203 - Gray use needs to be consolidated */
     --table-row-background-color-alternate: var(--background-color-canvas);
