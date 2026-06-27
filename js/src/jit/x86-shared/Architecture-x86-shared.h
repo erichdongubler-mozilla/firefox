@@ -165,7 +165,7 @@ class FloatRegisters {
   // high lanes of the SIMD registers.  See the DumpAllRegs() implementations,
   // for example.
 
-  enum ContentType {
+  enum ContentType : uint8_t {
     Single,   // 32-bit float.
     Double,   // 64-bit double.
     Simd128,  // 128-bit Wasm SIMD type.
@@ -291,7 +291,7 @@ struct FloatRegister {
   // Note: These fields are using one extra bit to make the invalid enumerated
   // values fit, and thus prevent a warning.
   Codes::Encoding reg_ : 5;
-  Codes::ContentType type_ : 3;
+  Codes::ContentType type_ : 2;
   bool isInvalid_ : 1;
 
   // Constants used for exporting/importing the float register code.
