@@ -232,6 +232,9 @@
         --panel-border-color: light-dark(var(--color-gray-10), var(--color-gray-60));
         --panel-text-color: var(--text-color);
 
+        /** text-color **/
+        --text-color: light-dark(var(--color-violet-desaturated-90), var(--color-violet-desaturated-0));
+
         /** toolbar **/
         --toolbar-background-color: var(--background-color-box);
         --toolbar-field-background-color-focus: var(--background-color-box);

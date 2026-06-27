@@ -991,6 +991,7 @@
       --table-row-background-color-alternate: light-dark(var(--color-gray-20), var(--color-gray-65));
 
       /** text-color **/
+      --text-color: light-dark(var(--color-violet-desaturated-90), var(--color-violet-desaturated-0));
       --text-color-error: light-dark(var(--color-red-50), var(--color-red-20));
 
       /** toolbar **/
