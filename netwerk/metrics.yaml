@@ -1606,6 +1606,66 @@ networking:
       - omansfeld@mozilla.com
     expires: 157
 
+  http_3_rtt:
+    type: custom_distribution
+    range_min: 1
+    range_max: 10000
+    bucket_count: 100
+    histogram_type: exponential
+    unit: ms
+    description: >
+      HTTP3: The smoothed round-trip time estimate in milliseconds on the connection's primary path, sampled at connection close.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2050587
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2050587
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - necko@mozilla.com
+      - minden@mozilla.com
+    expires: never
+
+  http_3_rtt_var:
+    type: custom_distribution
+    range_min: 1
+    range_max: 10000
+    bucket_count: 100
+    histogram_type: exponential
+    unit: ms
+    description: >
+      HTTP3: The round-trip time variation in milliseconds on the connection's primary path, sampled at connection close.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2050587
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2050587
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - necko@mozilla.com
+      - minden@mozilla.com
+    expires: never
+
+  http_3_min_rtt:
+    type: custom_distribution
+    range_min: 1
+    range_max: 10000
+    bucket_count: 100
+    histogram_type: exponential
+    unit: ms
+    description: >
+      HTTP3: The minimum round-trip time in milliseconds observed on the connection's primary path, sampled at connection close.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2050587
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2050587
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - necko@mozilla.com
+      - minden@mozilla.com
+    expires: never
+
   http_3_congestion_event_count:
     type: custom_distribution
     range_min: 0

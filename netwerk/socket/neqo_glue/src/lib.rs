@@ -921,6 +921,11 @@ impl NeqoHttp3Conn {
             }
         }
 
+        let rtt_ms = |d: Duration| i64::try_from(d.as_millis()).unwrap_or(i64::MAX);
+        glean::http_3_rtt.accumulate_single_sample_signed(rtt_ms(stats.rtt));
+        glean::http_3_rtt_var.accumulate_single_sample_signed(rtt_ms(stats.rttvar));
+        glean::http_3_min_rtt.accumulate_single_sample_signed(rtt_ms(stats.min_rtt));
+
         // Ignore connections that never had loss induced congestion events (and prevent dividing by zero).
         if stats.cc.congestion_events.loss != 0 {
             if let Ok(spurious) = i64::try_from(
