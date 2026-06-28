@@ -354,6 +354,8 @@ export class MozBrowser extends MozElements.MozElementMixin(XULFrameElement) {
 
     this.mPrefs = Services.prefs;
 
+    this._audioMuted = false;
+
     this._hasAnyPlayingMediaBeenBlocked = false;
 
     this._unselectedTabHoverMessageListenerCount = 0;
@@ -781,7 +783,7 @@ export class MozBrowser extends MozElements.MozElementMixin(XULFrameElement) {
   }
 
   get audioMuted() {
-    return this.browsingContext?.mediaController?.isMuted ?? false;
+    return this._audioMuted;
   }
 
   get shouldHandleUnselectedTabHover() {
@@ -982,6 +984,21 @@ export class MozBrowser extends MozElements.MozElementMixin(XULFrameElement) {
     }
   }
 
+  audioPlaybackStarted() {
+    if (this._audioMuted) {
+      return;
+    }
+    let event = document.createEvent("Events");
+    event.initEvent("DOMAudioPlaybackStarted", true, false);
+    this.dispatchEvent(event);
+  }
+
+  audioPlaybackStopped() {
+    let event = document.createEvent("Events");
+    event.initEvent("DOMAudioPlaybackStopped", true, false);
+    this.dispatchEvent(event);
+  }
+
   /**
    * When the pref "media.block-autoplay-until-in-foreground" is on,
    * Gecko delays starting playback of media resources in tabs until the
@@ -1008,6 +1025,20 @@ export class MozBrowser extends MozElements.MozElementMixin(XULFrameElement) {
     let event = document.createEvent("Events");
     event.initEvent("DOMAudioPlaybackBlockStopped", true, false);
     this.dispatchEvent(event);
+  }
+
+  mute(transientState) {
+    if (!transientState) {
+      this._audioMuted = true;
+    }
+    let context = this.frameLoader.browsingContext;
+    context.notifyMediaMutedChanged(true);
+  }
+
+  unmute() {
+    this._audioMuted = false;
+    let context = this.frameLoader.browsingContext;
+    context.notifyMediaMutedChanged(false);
   }
 
   resumeMedia() {

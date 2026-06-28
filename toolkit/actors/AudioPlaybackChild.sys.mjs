@@ -11,12 +11,7 @@ export class AudioPlaybackChild extends JSWindowActorChild {
       } else if (data === "activeMediaBlockStop") {
         name += "ActiveMediaBlockStop";
       } else {
-        // TODO: The "active"/"inactive" data values previously drove
-        // DOMAudioPlaybackStarted/Stopped in the parent; that path is now
-        // replaced by the MediaController onaudiblechange event. The remaining
-        // media-block messages and the whole AudioPlayback actor will be
-        // removed in a follow-up.
-        return;
+        name += data === "active" ? "Start" : "Stop";
       }
       this.sendAsyncMessage(name);
     }

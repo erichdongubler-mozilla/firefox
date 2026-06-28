@@ -21,14 +21,12 @@ async function pause(tab, options) {
 
   try {
     let browser = tab.linkedBrowser;
-    let awaitAudibleChange;
+    let awaitDOMAudioPlaybackStopped;
     if (!browser.audioMuted) {
-      let mc = browser.browsingContext?.mediaController;
-      awaitAudibleChange = BrowserTestUtils.waitForEvent(
-        mc,
-        "audiblechange",
-        false,
-        () => !mc.isAudible
+      awaitDOMAudioPlaybackStopped = BrowserTestUtils.waitForEvent(
+        browser,
+        "DOMAudioPlaybackStopped",
+        "DOMAudioPlaybackStopped event should get fired after pause"
       );
     }
     await SpecialPowers.spawn(browser, [], async function () {
@@ -48,10 +46,10 @@ async function pause(tab, options) {
         "The tab should still have the soundplaying attribute immediately after pausing"
       );
 
-      await awaitAudibleChange;
+      await awaitDOMAudioPlaybackStopped;
       ok(
         tab.hasAttribute("soundplaying"),
-        "The tab should still have the soundplaying attribute immediately after audiblechange (isAudible=false)"
+        "The tab should still have the soundplaying attribute immediately after DOMAudioPlaybackStopped"
       );
     }
 

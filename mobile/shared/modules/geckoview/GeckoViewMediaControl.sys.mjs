@@ -112,9 +112,9 @@ export class GeckoViewMediaControl extends GeckoViewModule {
         break;
       case "GeckoView:MediaSession:MuteAudio":
         if (aData.mute) {
-          this.controller.mute();
+          this.browser.mute();
         } else {
-          this.controller.unmute();
+          this.browser.unmute();
         }
         break;
     }

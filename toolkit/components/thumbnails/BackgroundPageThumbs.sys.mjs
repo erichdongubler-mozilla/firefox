@@ -398,7 +398,7 @@ export const BackgroundPageThumbs = {
     this._parentWin.document.documentElement.appendChild(browser);
 
     browser.addProgressListener(this, Ci.nsIWebProgress.NOTIFY_STATE_WINDOW);
-    browser.browsingContext?.mediaController?.mute();
+    browser.mute();
 
     // an event that is sent if the remote process crashes - no need to remove
     // it as we want it to be there as long as the browser itself lives.

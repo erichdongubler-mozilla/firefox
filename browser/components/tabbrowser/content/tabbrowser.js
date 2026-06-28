@@ -426,6 +426,8 @@
       "audioPlaybackStarted",
       "audioPlaybackStopped",
       "resumeMedia",
+      "mute",
+      "unmute",
       "blockedPopups",
       "lastURI",
       "purgeSessionHistory",
@@ -5862,9 +5864,9 @@
 
       // Mute audio immediately to improve perceived speed of tab closure.
       if (!adoptedByTab && aTab.hasAttribute("soundplaying")) {
-        // Mute without persisting: a restored tab gets a fresh MediaController
-        // with mIsMuted=false, so undo-close-tab returns it to unmuted.
-        aTab.linkedBrowser.browsingContext?.mediaController?.mute();
+        // Don't persist the muted state as this wasn't a user action.
+        // This lets undo-close-tab return it to an unmuted state.
+        aTab.linkedBrowser.mute(true);
       }
 
       aTab.closing = true;
@@ -6403,7 +6405,7 @@
         aOurTab.muteReason = aOtherTab.muteReason;
         // For non-lazy tabs, mute() must be called.
         if (aOurTab.linkedPanel) {
-          ourBrowser.browsingContext?.mediaController?.mute();
+          ourBrowser.mute();
         }
         modifiedAttrs.push("muted");
       }
@@ -8880,28 +8882,62 @@
       this.addEventListener("oop-browser-crashed", onTabCrashed);
       this.addEventListener("oop-browser-buildid-mismatch", onTabCrashed);
 
-      for (let tab of this.tabs) {
-        tab.registerAudibleChangeHandler();
-      }
+      this.addEventListener("DOMAudioPlaybackStarted", event => {
+        var tab = this.getTabFromAudioEvent(event);
+        if (!tab) {
+          return;
+        }
 
-      this.tabContainer.addEventListener("TabBrowserInserted", event => {
-        event.target.registerAudibleChangeHandler();
+        clearTimeout(tab._soundPlayingAttrRemovalTimer);
+        tab._soundPlayingAttrRemovalTimer = 0;
+
+        let modifiedAttrs = [];
+        if (tab.hasAttribute("soundplaying-scheduledremoval")) {
+          tab.removeAttribute("soundplaying-scheduledremoval");
+          modifiedAttrs.push("soundplaying-scheduledremoval");
+        }
+
+        if (!tab.hasAttribute("soundplaying")) {
+          tab.toggleAttribute("soundplaying", true);
+          modifiedAttrs.push("soundplaying");
+        }
+
+        if (modifiedAttrs.length) {
+          // Flush style so that the opacity takes effect immediately, in
+          // case the media is stopped before the style flushes naturally.
+          getComputedStyle(tab).opacity;
+        }
+
+        this._tabAttrModified(tab, modifiedAttrs);
       });
 
-      // When a tab switches between remote and non-remote (e.g. about:blank →
-      // a real page, or a process-switch navigation), a new BrowsingContext is
-      // created and a new MediaController is attached to it. Re-register here
-      // so the onaudiblechange handler always points to the current controller.
-      this.tabContainer.addEventListener("TabRemotenessChange", event => {
-        event.target.registerAudibleChangeHandler();
-      });
+      this.addEventListener("DOMAudioPlaybackStopped", event => {
+        var tab = this.getTabFromAudioEvent(event);
+        if (!tab) {
+          return;
+        }
 
-      this.tabContainer.addEventListener("TabClose", event => {
-        event.target.unregisterAudibleChangeHandler();
-      });
+        if (tab.hasAttribute("soundplaying")) {
+          let removalDelay = Services.prefs.getIntPref(
+            "browser.tabs.delayHidingAudioPlayingIconMS"
+          );
 
-      this.tabContainer.addEventListener("TabBrowserDiscarded", event => {
-        event.target.unregisterAudibleChangeHandler();
+          tab.style.setProperty(
+            "--soundplaying-removal-delay",
+            `${removalDelay - 300}ms`
+          );
+          tab.toggleAttribute("soundplaying-scheduledremoval", true);
+          this._tabAttrModified(tab, ["soundplaying-scheduledremoval"]);
+
+          tab._soundPlayingAttrRemovalTimer = setTimeout(() => {
+            tab.removeAttribute("soundplaying-scheduledremoval");
+            tab.removeAttribute("soundplaying");
+            this._tabAttrModified(tab, [
+              "soundplaying",
+              "soundplaying-scheduledremoval",
+            ]);
+          }, removalDelay);
+        }
       });
 
       this.addEventListener("DOMAudioPlaybackBlockStarted", event => {
@@ -9595,7 +9631,7 @@
 
           // If the browser was previously muted, we should restore the muted state.
           if (this._tab.hasAttribute("muted")) {
-            this._tab.linkedBrowser.browsingContext?.mediaController?.mute();
+            this._tab.linkedBrowser.mute();
           }
 
           if (gBrowser.isFindBarInitialized(this._tab)) {

@@ -1,6 +1,17 @@
 const PAGE = GetTestWebBasedURL("file_mediaPlayback2.html");
 const FRAME = GetTestWebBasedURL("file_mediaPlaybackFrame2.html");
 
+function wait_for_event(browser, event) {
+  return BrowserTestUtils.waitForEvent(browser, event, false, e => {
+    is(
+      e.originalTarget,
+      browser,
+      "Event must be dispatched to correct browser."
+    );
+    return true;
+  });
+}
+
 function test_audio_in_browser() {
   function get_audio_element() {
     var doc = content.document;
@@ -25,21 +36,18 @@ function test_audio_in_browser() {
 }
 
 async function test_on_browser(url, browser) {
-  const tab = gBrowser.getTabForBrowser(browser);
   BrowserTestUtils.startLoadingURIString(browser, url);
-  await waitForTabSoundIndicatorAppears(tab);
+  await wait_for_event(browser, "DOMAudioPlaybackStarted");
 
   var result = await SpecialPowers.spawn(browser, [], test_audio_in_browser);
   is(result.computedVolume, 1, "Audio volume is 1");
   is(result.computedMuted, false, "Audio is not muted");
 
   ok(!browser.audioMuted, "Audio should not be muted by default");
-  // Use the tab-level API (which internally calls mediaController.mute()) to
-  // test the full browser-mute path as the user would trigger it.
-  tab.toggleMuteAudio();
+  browser.mute();
   ok(browser.audioMuted, "Audio should be muted now");
 
-  await waitForTabSoundIndicatorDisappears(tab);
+  await wait_for_event(browser, "DOMAudioPlaybackStopped");
 
   result = await SpecialPowers.spawn(browser, [], test_audio_in_browser);
   is(result.computedVolume, 0, "Audio volume is 0 when muted");
@@ -47,9 +55,8 @@ async function test_on_browser(url, browser) {
 }
 
 async function test_visibility(url, browser) {
-  const tab = gBrowser.getTabForBrowser(browser);
   BrowserTestUtils.startLoadingURIString(browser, url);
-  await waitForTabSoundIndicatorAppears(tab);
+  await wait_for_event(browser, "DOMAudioPlaybackStarted");
 
   var result = await SpecialPowers.spawn(browser, [], test_audio_in_browser);
   is(result.computedVolume, 1, "Audio volume is 1");
@@ -64,12 +71,10 @@ async function test_visibility(url, browser) {
   );
 
   ok(!browser.audioMuted, "Audio should not be muted by default");
-  // Use the tab-level API (which internally calls mediaController.mute()) to
-  // test the full browser-mute path as the user would trigger it.
-  tab.toggleMuteAudio();
+  browser.mute();
   ok(browser.audioMuted, "Audio should be muted now");
 
-  await waitForTabSoundIndicatorDisappears(tab);
+  await wait_for_event(browser, "DOMAudioPlaybackStopped");
 
   result = await SpecialPowers.spawn(browser, [], test_audio_in_browser);
   is(result.computedVolume, 0, "Audio volume is 0 when muted");

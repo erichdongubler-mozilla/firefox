@@ -2,9 +2,9 @@ const PAGE = "data:text/html,page";
 
 function test_on_browser(browser) {
   ok(!browser.audioMuted, "Audio should not be muted by default");
-  browser.browsingContext.mediaController.mute();
+  browser.mute();
   ok(browser.audioMuted, "Audio should be muted now");
-  browser.browsingContext.mediaController.unmute();
+  browser.unmute();
   ok(!browser.audioMuted, "Audio should be unmuted now");
 }
 
