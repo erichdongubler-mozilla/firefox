@@ -266,6 +266,9 @@ bool AndroidImageReader::UpdateTexImage(
   if (!nativeBuffer) {
     gfxCriticalNoteOnce << "AImage_getHardwareBuffer failed"
                         << static_cast<int32_t>(result);
+    AImage_delete(image);
+    // XXX Add fence handling
+    // AImage_deleteAsync(image, fence);
     return false;
   }
 
