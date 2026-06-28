@@ -11,6 +11,7 @@
 
 #include "GLImages.h"
 #include "ImageContainer.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/gfx/Types.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/layers/LayersTypes.h"
@@ -139,9 +140,14 @@ class AndroidImageReader final {
 
   void NotifyFrameAvailable();
 
+  // AndroidImageConsumer::UpdateTexImage() requests at least 2 concurrently
+  // acquired AImages.
+  const int32_t mMaxImageCount = 2;
   const GpuProcessAndroidImageReaderId mImageReaderId;
 
  protected:
+  friend class AndroidImageWrapper;
+
   virtual ~AndroidImageReader();
   bool Init();
   void ReleaseResources();
@@ -156,6 +162,8 @@ class AndroidImageReader final {
   AndroidMediaCodecFrameId mCurrentFrameId MOZ_GUARDED_BY(mMonitor);
   RefPtr<AndroidImageWrapper> mCurrentImage MOZ_GUARDED_BY(mMonitor);
   bool mWaitingFrameAvailable MOZ_GUARDED_BY(mMonitor) = false;
+
+  mozilla::Atomic<int32_t> mAcquiredImageCount{0};
 
   // mPendingFrames does not own AndroidImageReaderImage and stores only its
   // pointer.

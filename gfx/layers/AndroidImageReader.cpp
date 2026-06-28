@@ -66,12 +66,16 @@ AndroidImageWrapper::AndroidImageWrapper(AndroidImageReader* aImageReader,
       mFormat(aFormat),
       mImageReader(aImageReader),
       mImage(aImage),
-      mFence(std::move(aFence)) {}
+      mFence(std::move(aFence)) {
+  MOZ_ASSERT(mImageReader);
+  mImageReader->mAcquiredImageCount++;
+}
 
 AndroidImageWrapper::~AndroidImageWrapper() {
   AImage_delete(mImage);
   // XXX Add fence handling
   // AImage_deleteAsync(mImage fence);
+  mImageReader->mAcquiredImageCount--;
 }
 
 mozilla::UniqueFileHandle AndroidImageWrapper::CloneFence() {
@@ -123,9 +127,6 @@ bool AndroidImageReader::Init() {
   // are/maybe overriden by the producer sending buffers to this imageReader's
   // Surface.
   const int32_t width = 1, height = 1;
-  // AndroidImageConsumer::UpdateTexImage() requests at least 2 concurrently
-  // acquired AImages.
-  const uint32_t maxImageCount = 2;
   uint64_t usage = AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE;
 
   // XXX set if video could be used for overlay.
@@ -134,7 +135,7 @@ bool AndroidImageReader::Init() {
   media_status_t result;
   AImageReader* reader = nullptr;
   result = AImageReader_newWithUsage(width, height, AIMAGE_FORMAT_PRIVATE,
-                                     usage, maxImageCount, &reader);
+                                     usage, mMaxImageCount, &reader);
   if (result != AMEDIA_OK) {
     gfxCriticalNoteOnce << "AImageReader_newWithUsage failed"
                         << static_cast<int32_t>(result);
@@ -206,6 +207,8 @@ void AndroidImageReader::NotifyFrameAvailable() {
 bool AndroidImageReader::UpdateTexImage(
     const AndroidMediaCodecFrameId aFrameId) {
   MonitorAutoLock lock(mMonitor);
+
+  MOZ_ASSERT(static_cast<int32_t>(mAcquiredImageCount) <= mMaxImageCount);
 
   if (mCurrentFrameId == aFrameId) {
     return false;
@@ -283,6 +286,9 @@ bool AndroidImageReader::UpdateTexImage(
 
   mCurrentImage = new AndroidImageWrapper(this, image, nativeBuffer, size,
                                           format, std::move(fence));
+
+  MOZ_ASSERT(static_cast<int32_t>(mAcquiredImageCount) <= mMaxImageCount);
+
   return true;
 }
 
