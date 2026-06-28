@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 6.1.190
- * pdfjsBuild = a1953e7c3
+ * pdfjsVersion = 6.1.202
+ * pdfjsBuild = f2f3a7fdc
  */
 
 ;// ./web/ui_utils.js
@@ -985,7 +985,7 @@ const {
 } = globalThis.pdfjsLib;
 
 ;// ./web/internal_evt.js
-const INTERNAL_EVT = "87946206-0f79-4822-9bd0-b6543cbc415e";
+const INTERNAL_EVT = "cbe7e2e4-d795-4cce-ad51-6e6178985b77";
 const internalOpt = Object.freeze({
   internal: INTERNAL_EVT
 });
@@ -10971,7 +10971,7 @@ class BasePDFPageView extends RenderableView {
     this.pageColors = options.pageColors || null;
     this.renderingQueue = options.renderingQueue;
     this.enableOptimizedPartialRendering = options.enableOptimizedPartialRendering ?? false;
-    this.enableSelectionRendering = options.enableSelectionRendering !== false;
+    this.enableSelectionRendering = options.enableSelectionRendering !== false && FeatureTest.isBackdropFilterSupported;
     this.imagesRightClickMinSize = options.imagesRightClickMinSize ?? -1;
     this.minDurationToUpdateCanvas = options.minDurationToUpdateCanvas ?? 500;
   }
@@ -11768,7 +11768,7 @@ class TextAccessibilityManager {
       return;
     }
     const children = this.#textChildren;
-    if (!children || children.length === 0) {
+    if (!children?.length) {
       return;
     }
     const {
@@ -11813,7 +11813,7 @@ class TextAccessibilityManager {
       this.removePointerInTextLayer(element);
     }
     const children = this.#textChildren;
-    if (!children || children.length === 0) {
+    if (!children?.length) {
       return null;
     }
     const index = binarySearchFirstItem(children, node => TextAccessibilityManager.#compareElementPositions(element, node) < 0);
@@ -13183,7 +13183,7 @@ class PDFViewer {
   #savedPageViews = null;
   #deletedPageNumbers = null;
   constructor(options) {
-    const viewerVersion = "6.1.190";
+    const viewerVersion = "6.1.202";
     if (version !== viewerVersion) {
       throw new Error(`The API version "${version}" does not match the Viewer version "${viewerVersion}".`);
     }
