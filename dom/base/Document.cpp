@@ -13535,7 +13535,7 @@ bool Document::IsActive() const {
 
 uint32_t Document::LastScrollGeneration() const {
   if (nsPresContext* pc = GetPresContext()) {
-    pc->LastScrollGeneration();
+    return pc->LastScrollGeneration();
   }
 
   return 0;
@@ -13544,7 +13544,7 @@ uint32_t Document::LastScrollGeneration() const {
 bool Document::HasBeenScrolledSince(
     const uint32_t& aLastScrollGeneration) const {
   if (nsPresContext* pc = GetPresContext()) {
-    pc->HasBeenScrolledSince(aLastScrollGeneration);
+    return pc->HasBeenScrolledSince(aLastScrollGeneration);
   }
 
   return false;
