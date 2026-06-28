@@ -426,8 +426,6 @@
       "audioPlaybackStarted",
       "audioPlaybackStopped",
       "resumeMedia",
-      "mute",
-      "unmute",
       "blockedPopups",
       "lastURI",
       "purgeSessionHistory",
@@ -5864,9 +5862,9 @@
 
       // Mute audio immediately to improve perceived speed of tab closure.
       if (!adoptedByTab && aTab.hasAttribute("soundplaying")) {
-        // Don't persist the muted state as this wasn't a user action.
-        // This lets undo-close-tab return it to an unmuted state.
-        aTab.linkedBrowser.mute(true);
+        // Mute without persisting: a restored tab gets a fresh MediaController
+        // with mIsMuted=false, so undo-close-tab returns it to unmuted.
+        aTab.linkedBrowser.browsingContext?.mediaController?.mute();
       }
 
       aTab.closing = true;
@@ -6405,7 +6403,7 @@
         aOurTab.muteReason = aOtherTab.muteReason;
         // For non-lazy tabs, mute() must be called.
         if (aOurTab.linkedPanel) {
-          ourBrowser.mute();
+          ourBrowser.browsingContext?.mediaController?.mute();
         }
         modifiedAttrs.push("muted");
       }
@@ -9597,7 +9595,7 @@
 
           // If the browser was previously muted, we should restore the muted state.
           if (this._tab.hasAttribute("muted")) {
-            this._tab.linkedBrowser.mute();
+            this._tab.linkedBrowser.browsingContext?.mediaController?.mute();
           }
 
           if (gBrowser.isFindBarInitialized(this._tab)) {

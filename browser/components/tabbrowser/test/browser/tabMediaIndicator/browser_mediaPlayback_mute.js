@@ -36,6 +36,7 @@ function test_audio_in_browser() {
 }
 
 async function test_on_browser(url, browser) {
+  const tab = gBrowser.getTabForBrowser(browser);
   BrowserTestUtils.startLoadingURIString(browser, url);
   await wait_for_event(browser, "DOMAudioPlaybackStarted");
 
@@ -44,7 +45,9 @@ async function test_on_browser(url, browser) {
   is(result.computedMuted, false, "Audio is not muted");
 
   ok(!browser.audioMuted, "Audio should not be muted by default");
-  browser.mute();
+  // Use the tab-level API (which internally calls mediaController.mute()) to
+  // test the full browser-mute path as the user would trigger it.
+  tab.toggleMuteAudio();
   ok(browser.audioMuted, "Audio should be muted now");
 
   await wait_for_event(browser, "DOMAudioPlaybackStopped");
@@ -55,6 +58,7 @@ async function test_on_browser(url, browser) {
 }
 
 async function test_visibility(url, browser) {
+  const tab = gBrowser.getTabForBrowser(browser);
   BrowserTestUtils.startLoadingURIString(browser, url);
   await wait_for_event(browser, "DOMAudioPlaybackStarted");
 
@@ -71,7 +75,9 @@ async function test_visibility(url, browser) {
   );
 
   ok(!browser.audioMuted, "Audio should not be muted by default");
-  browser.mute();
+  // Use the tab-level API (which internally calls mediaController.mute()) to
+  // test the full browser-mute path as the user would trigger it.
+  tab.toggleMuteAudio();
   ok(browser.audioMuted, "Audio should be muted now");
 
   await wait_for_event(browser, "DOMAudioPlaybackStopped");
