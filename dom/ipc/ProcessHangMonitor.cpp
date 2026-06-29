@@ -373,7 +373,7 @@ void HangMonitorChild::CreateAndBind(
 
   BackgroundHangMonitor::RegisterAnnotator(*sInstance);
 
-  aMonitor->Dispatch(NewRunnableMethod<Endpoint<PProcessHangMonitorChild>>(
+  aMonitor->Dispatch(NewRunnableMethod<Endpoint<PProcessHangMonitorChild>&&>(
       "HangMonitorChild::Bind", sInstance.get(), &HangMonitorChild::Bind,
       std::move(aEndpoint)));
 }
@@ -1294,7 +1294,7 @@ static already_AddRefed<PProcessHangMonitorParent> CreateHangMonitorParent(
   parent->SetProcess(process);
 
   monitor->Dispatch(
-      NewNonOwningRunnableMethod<Endpoint<PProcessHangMonitorParent>>(
+      NewNonOwningRunnableMethod<Endpoint<PProcessHangMonitorParent>&&>(
           "HangMonitorParent::Bind", parent, &HangMonitorParent::Bind,
           std::move(aEndpoint)));
 

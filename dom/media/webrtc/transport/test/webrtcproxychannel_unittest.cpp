@@ -372,7 +372,7 @@ void WebrtcTCPSocketTestInputStream::DoCallback() {
   MutexAutoLock lock(mMutex);
   if (mCallback) {
     mCallbackTarget->Dispatch(
-        NewRunnableMethod<nsCOMPtr<nsIInputStreamCallback>>(
+        NewRunnableMethod<const nsCOMPtr<nsIInputStreamCallback>&>(
             "WebrtcTCPSocketTestInputStream::DoCallback", this,
             &WebrtcTCPSocketTestInputStream::CallCallback,
             std::move(mCallback)));
@@ -476,7 +476,7 @@ void WebrtcTCPSocketTestOutputStream::DoCallback() {
   MutexAutoLock lock(mMutex);
   if (mCallback) {
     mCallbackTarget->Dispatch(
-        NewRunnableMethod<nsCOMPtr<nsIOutputStreamCallback>>(
+        NewRunnableMethod<const nsCOMPtr<nsIOutputStreamCallback>&>(
             "WebrtcTCPSocketTestOutputStream::CallCallback", this,
             &WebrtcTCPSocketTestOutputStream::CallCallback,
             std::move(mCallback)));

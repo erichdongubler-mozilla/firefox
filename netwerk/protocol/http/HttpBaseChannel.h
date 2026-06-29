@@ -1149,7 +1149,7 @@ class HttpAsyncAborter {
   // retval isn't refcounted and is set only when event was successfully
   // posted, the event is returned for the purpose of cancelling when needed
   [[nodiscard]] virtual nsresult AsyncCall(
-      void (T::*funcPtr)(), CancelableRunnable** retval = nullptr);
+      void (T::*funcPtr)(), nsRunnableMethod<T>** retval = nullptr);
 
  private:
   T* mThis;
@@ -1198,11 +1198,11 @@ inline void HttpAsyncAborter<T>::HandleAsyncAbort() {
 
 template <class T>
 nsresult HttpAsyncAborter<T>::AsyncCall(void (T::*funcPtr)(),
-                                        CancelableRunnable** retval) {
+                                        nsRunnableMethod<T>** retval) {
   nsresult rv;
 
-  RefPtr<CancelableRunnable> event = NewCancelableRunnableMethod(
-      "net::HttpAsyncAborter::AsyncCall", mThis, funcPtr);
+  RefPtr<nsRunnableMethod<T>> event =
+      NewRunnableMethod("net::HttpAsyncAborter::AsyncCall", mThis, funcPtr);
   rv = NS_DispatchToCurrentThread(event);
   if (NS_SUCCEEDED(rv) && retval) {
     *retval = event;

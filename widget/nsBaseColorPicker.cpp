@@ -48,7 +48,7 @@ bool nsBaseColorPicker::MaybeBlockColorPicker(
     if (aCallback) {
       // Color pickers are disabled, so we answer the callback with
       // empty string.
-      NS_DispatchToCurrentThread(mozilla::NewRunnableMethod<nsString>(
+      NS_DispatchToCurrentThread(mozilla::NewRunnableMethod<const nsAString&>(
           "nsBaseColorPicker::CallbackWithEmptyString", aCallback,
           &nsIColorPickerShownCallback::Done, EmptyString()));
     }

@@ -505,7 +505,7 @@ class CDMStorageTest {
     // Collect nodeIds that are expected to remain for later comparison.
     EnumerateCDMStorageDir("id"_ns, NodeIdCollector(siteInfo.get()));
     // Invoke "Forget this site" on the main thread.
-    SchedulerGroup::Dispatch(NewRunnableMethod<UniquePtr<NodeInfo>>(
+    SchedulerGroup::Dispatch(NewRunnableMethod<UniquePtr<NodeInfo>&&>(
         "CDMStorageTest::TestForgetThisSite_Forget", this,
         &CDMStorageTest::TestForgetThisSite_Forget, std::move(siteInfo)));
   }
@@ -519,7 +519,7 @@ class CDMStorageTest {
     nsCOMPtr<nsIThread> thread;
     service->GetThread(getter_AddRefs(thread));
 
-    nsCOMPtr<nsIRunnable> r = NewRunnableMethod<UniquePtr<NodeInfo>>(
+    nsCOMPtr<nsIRunnable> r = NewRunnableMethod<UniquePtr<NodeInfo>&&>(
         "CDMStorageTest::TestForgetThisSite_Verify", this,
         &CDMStorageTest::TestForgetThisSite_Verify, std::move(aSiteInfo));
     thread->Dispatch(r, NS_DISPATCH_NORMAL);
@@ -668,7 +668,7 @@ class CDMStorageTest {
     // Collect nodeIds that are expected to remain for later comparison.
     EnumerateCDMStorageDir("id"_ns, BaseDomainNodeIdCollector(siteInfo.get()));
     // Invoke "ForgetThisBaseDomain" on the main thread.
-    SchedulerGroup::Dispatch(NewRunnableMethod<UniquePtr<BaseDomainNodeInfo>>(
+    SchedulerGroup::Dispatch(NewRunnableMethod<UniquePtr<BaseDomainNodeInfo>&&>(
         "CDMStorageTest::TestForgetThisBaseDomain_Forget", this,
         &CDMStorageTest::TestForgetThisBaseDomain_Forget, std::move(siteInfo)));
   }
@@ -683,9 +683,11 @@ class CDMStorageTest {
     nsCOMPtr<nsIThread> thread;
     service->GetThread(getter_AddRefs(thread));
 
-    nsCOMPtr<nsIRunnable> r = NewRunnableMethod<UniquePtr<BaseDomainNodeInfo>>(
-        "CDMStorageTest::TestForgetThisBaseDomain_Verify", this,
-        &CDMStorageTest::TestForgetThisBaseDomain_Verify, std::move(aSiteInfo));
+    nsCOMPtr<nsIRunnable> r =
+        NewRunnableMethod<UniquePtr<BaseDomainNodeInfo>&&>(
+            "CDMStorageTest::TestForgetThisBaseDomain_Verify", this,
+            &CDMStorageTest::TestForgetThisBaseDomain_Verify,
+            std::move(aSiteInfo));
     thread->Dispatch(r, NS_DISPATCH_NORMAL);
 
     nsCOMPtr<nsIRunnable> f = NewRunnableMethod(

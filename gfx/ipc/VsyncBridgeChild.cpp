@@ -22,7 +22,7 @@ RefPtr<VsyncBridgeChild> VsyncBridgeChild::Create(
     Endpoint<PVsyncBridgeChild>&& aEndpoint) {
   RefPtr<VsyncBridgeChild> child = new VsyncBridgeChild(aThread, aProcessToken);
 
-  RefPtr<nsIRunnable> task = NewRunnableMethod<Endpoint<PVsyncBridgeChild>>(
+  RefPtr<nsIRunnable> task = NewRunnableMethod<Endpoint<PVsyncBridgeChild>&&>(
       "gfx::VsyncBridgeChild::Open", child, &VsyncBridgeChild::Open,
       std::move(aEndpoint));
   aThread->GetThread()->Dispatch(task.forget(), nsIThread::DISPATCH_NORMAL);

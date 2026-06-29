@@ -3079,8 +3079,7 @@ static bool MaybeCheckWAICTIntegrity(nsIStreamListener* aListener,
         if (!policy->MaybeCheckResourceIntegrity(
                 originalURI, IntegrityPolicy::DestinationType::Image,
                 computedHash)) {
-          listener->OnStopRequest(request, NS_ERROR_FAILURE);
-          return;
+          return listener->OnStopRequest(request, NS_ERROR_FAILURE);
         }
         uint32_t bufferedImageLen = bufferedImage.Length();
         nsCOMPtr<nsIInputStream> stream;
@@ -3093,12 +3092,10 @@ static bool MaybeCheckWAICTIntegrity(nsIStreamListener* aListener,
           nsresult rv =
               listener->OnDataAvailable(request, stream, 0, bufferedImageLen);
           if (NS_FAILED(rv)) {
-            listener->OnStopRequest(request, rv);
-            return;
+            return listener->OnStopRequest(request, rv);
           }
         }
-        listener->OnStopRequest(request, status);
-        return;
+        return listener->OnStopRequest(request, status);
       },
       [](bool) {
         // WaitForManifestLoad always resolves, never rejects.

@@ -92,11 +92,12 @@ class MediaStreamTrack::MTGListener : public MediaTrackListener {
   void NotifyPrincipalHandleChanged(
       MediaTrackGraph* aGraph,
       const PrincipalHandle& aNewPrincipalHandle) override {
-    aGraph->DispatchToMainThreadStableState(NewRunnableMethod<PrincipalHandle>(
-        "dom::MediaStreamTrack::MTGListener::"
-        "DoNotifyPrincipalHandleChanged",
-        this, &MTGListener::DoNotifyPrincipalHandleChanged,
-        aNewPrincipalHandle));
+    aGraph->DispatchToMainThreadStableState(
+        NewRunnableMethod<StoreCopyPassByConstLRef<PrincipalHandle>>(
+            "dom::MediaStreamTrack::MTGListener::"
+            "DoNotifyPrincipalHandleChanged",
+            this, &MTGListener::DoNotifyPrincipalHandleChanged,
+            aNewPrincipalHandle));
   }
 
   void NotifyRemoved(MediaTrackGraph* aGraph) override {

@@ -352,7 +352,7 @@ class NotifyGMPProcessLoadedTask : public Runnable {
           ProfilerParent::CreateForProcess(mProcessId));
 
       gmpEventTarget->Dispatch(
-          NewRunnableMethod<ipc::Endpoint<mozilla::PProfilerChild>>(
+          NewRunnableMethod<ipc::Endpoint<mozilla::PProfilerChild>&&>(
               "GMPParent::SendInitProfiler", mGMPParent,
               &GMPParent::SendInitProfiler, std::move(profilerParent)));
     }

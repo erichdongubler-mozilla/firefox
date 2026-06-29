@@ -22,7 +22,7 @@ void OMTAController::NotifyJankedAnimations(
   }
 
   if (!CompositorThread()->IsOnCurrentThread()) {
-    CompositorThread()->Dispatch(NewRunnableMethod<JankedAnimations>(
+    CompositorThread()->Dispatch(NewRunnableMethod<JankedAnimations&&>(
         "layers::OMTAController::NotifyJankedAnimations", this,
         &OMTAController::NotifyJankedAnimations, std::move(aJankedAnimations)));
     return;

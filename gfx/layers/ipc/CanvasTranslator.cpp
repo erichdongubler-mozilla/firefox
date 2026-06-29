@@ -233,7 +233,7 @@ ipc::IPCResult CanvasTranslator::RecvAddBuffer(
         CanvasTranslatorEvent::AddBuffer(std::move(aBufferHandle)));
     PostCanvasTranslatorEvents(lock);
   } else {
-    DispatchToTaskQueue(NewRunnableMethod<ipc::ReadOnlySharedMemoryHandle>(
+    DispatchToTaskQueue(NewRunnableMethod<ipc::ReadOnlySharedMemoryHandle&&>(
         "CanvasTranslator::AddBuffer", this, &CanvasTranslator::AddBuffer,
         std::move(aBufferHandle)));
   }
@@ -297,7 +297,7 @@ ipc::IPCResult CanvasTranslator::RecvSetDataSurfaceBuffer(
     PostCanvasTranslatorEvents(lock);
   } else {
     DispatchToTaskQueue(
-        NewRunnableMethod<uint32_t, ipc::MutableSharedMemoryHandle>(
+        NewRunnableMethod<uint32_t, ipc::MutableSharedMemoryHandle&&>(
             "CanvasTranslator::SetDataSurfaceBuffer", this,
             &CanvasTranslator::SetDataSurfaceBuffer, aId,
             std::move(aBufferHandle)));
@@ -1027,7 +1027,7 @@ void CanvasTranslator::NotifyDeviceReset(const RemoteTextureOwnerIdSet& aIds) {
     idArray.AppendElement(id);
   }
   gfx::CanvasRenderThread::Dispatch(
-      NewRunnableMethod<nsTArray<RemoteTextureOwnerId>>(
+      NewRunnableMethod<nsTArray<RemoteTextureOwnerId>&&>(
           "CanvasTranslator::SendNotifyDeviceReset", this,
           &CanvasTranslator::SendNotifyDeviceReset, std::move(idArray)));
 }

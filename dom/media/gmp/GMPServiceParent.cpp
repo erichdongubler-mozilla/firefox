@@ -357,7 +357,7 @@ GeckoMediaPluginServiceParent::Observe(nsISupports* aSubject,
                               /* isSanitized */ false, Nothing(), Nothing());
       Preferences::GetPreference(&pref, GeckoProcessType_GMPlugin,
                                  /* remoteType */ ""_ns);
-      return GMPDispatch(NewRunnableMethod<mozilla::dom::Pref>(
+      return GMPDispatch(NewRunnableMethod<mozilla::dom::Pref&&>(
           "gmp::GeckoMediaPluginServiceParent::OnPreferenceChanged", this,
           &GeckoMediaPluginServiceParent::OnPreferenceChanged,
           std::move(pref)));
@@ -706,8 +706,8 @@ void GeckoMediaPluginServiceParent::SendFlushFOGData(
     promises.EmplaceBack(promise);
 
     mGMPThread->Dispatch(
-        NewRunnableMethod<ipc::ResolveCallback<ipc::ByteBuf>,
-                          ipc::RejectCallback>(
+        NewRunnableMethod<ipc::ResolveCallback<ipc::ByteBuf>&&,
+                          ipc::RejectCallback&&>(
             "GMPParent::SendFlushFOGData", gmp,
             static_cast<void (GMPParent::*)(
                 mozilla::ipc::ResolveCallback<ipc::ByteBuf>&& aResolve,
@@ -745,7 +745,7 @@ void GeckoMediaPluginServiceParent::SendGetUntrustedModulesData(
     promises.EmplaceBack(promise);
 
     mGMPThread->Dispatch(
-        NewRunnableMethod<ipc::ResolveCallback<Maybe<UntrustedModulesData>>,
+        NewRunnableMethod<ipc::ResolveCallback<Maybe<UntrustedModulesData>>&&,
                           ipc::RejectCallback&&>(
             "GMPParent::SendGetUntrustedModulesData", gmp,
             static_cast<void (GMPParent::*)(
@@ -805,7 +805,8 @@ GeckoMediaPluginServiceParent::TestTriggerMetrics() {
       promise->UseDirectTaskDispatch(__func__);
 
       mGMPThread->Dispatch(
-          NewRunnableMethod<ipc::ResolveCallback<bool>, ipc::RejectCallback>(
+          NewRunnableMethod<ipc::ResolveCallback<bool>&&,
+                            ipc::RejectCallback&&>(
               "GMPParent::SendTestTriggerMetrics", gmp,
               static_cast<void (GMPParent::*)(
                   mozilla::ipc::ResolveCallback<bool>&& aResolve,

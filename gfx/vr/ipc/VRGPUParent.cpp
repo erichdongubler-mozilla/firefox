@@ -42,9 +42,9 @@ RefPtr<VRGPUParent> VRGPUParent::CreateForGPU(
 
   RefPtr<VRGPUParent> vcp = new VRGPUParent(aEndpoint.OtherEndpointProcInfo());
   GetCurrentSerialEventTarget()->Dispatch(
-      NewRunnableMethod<Endpoint<PVRGPUParent>>("gfx::VRGPUParent::Bind", vcp,
-                                                &VRGPUParent::Bind,
-                                                std::move(aEndpoint)));
+      NewRunnableMethod<Endpoint<PVRGPUParent>&&>("gfx::VRGPUParent::Bind", vcp,
+                                                  &VRGPUParent::Bind,
+                                                  std::move(aEndpoint)));
 
   return vcp;
 }

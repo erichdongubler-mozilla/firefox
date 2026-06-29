@@ -36,7 +36,7 @@ constinit CanvasManagerParent::ManagerSet CanvasManagerParent::sManagers;
       gfx::CanvasRenderThread::GetCanvasRenderThread();
   MOZ_ASSERT(owningThread);
 
-  owningThread->Dispatch(NewRunnableMethod<Endpoint<PCanvasManagerParent>>(
+  owningThread->Dispatch(NewRunnableMethod<Endpoint<PCanvasManagerParent>&&>(
       "CanvasManagerParent::Bind", manager, &CanvasManagerParent::Bind,
       std::move(aEndpoint)));
 }

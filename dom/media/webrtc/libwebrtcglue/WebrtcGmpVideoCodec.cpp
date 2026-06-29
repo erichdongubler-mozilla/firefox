@@ -978,7 +978,7 @@ int32_t WebrtcGmpVideoDecoder::Decode(const webrtc::EncodedImage& aInputImage,
       MakeUnique<GMPDecodeData>(aInputImage, aMissingFrames, aRenderTimeMs);
 
   MOZ_ALWAYS_SUCCEEDS(
-      mGMPThread->Dispatch(NewRunnableMethod<UniquePtr<GMPDecodeData>>(
+      mGMPThread->Dispatch(NewRunnableMethod<UniquePtr<GMPDecodeData>&&>(
           __func__, this, &WebrtcGmpVideoDecoder::Decode_g,
           std::move(decodeData))));
 

@@ -155,7 +155,7 @@ bool HttpBackgroundChannelParent::OnStartRequest(
   if (!IsOnBackgroundThread()) {
     MutexAutoLock lock(mBgThreadMutex);
     nsresult rv = mBackgroundThread->Dispatch(
-        NewRunnableMethod<nsHttpResponseHead, const bool,
+        NewRunnableMethod<nsHttpResponseHead&&, const bool,
                           const nsHttpHeaderArray,
                           const HttpChannelOnStartRequestArgs,
                           const nsCOMPtr<nsICacheEntry>, TimeStamp>(

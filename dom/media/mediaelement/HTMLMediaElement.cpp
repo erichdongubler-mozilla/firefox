@@ -4044,7 +4044,7 @@ void HTMLMediaElement::AddOutputTrackSourceToOutputStream(
   switch (aMode) {
     case AddTrackMode::ASYNC:
       GetMainThreadSerialEventTarget()->Dispatch(
-          NewRunnableMethod<RefPtr<MediaStreamTrack>>(
+          NewRunnableMethod<StoreRefPtrPassByPtr<MediaStreamTrack>>(
               "DOMMediaStream::AddTrackInternal", aOutputStream.mStream,
               &DOMMediaStream::AddTrackInternal, domTrack));
       break;

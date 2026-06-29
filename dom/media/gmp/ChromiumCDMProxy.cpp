@@ -422,7 +422,8 @@ void ChromiumCDMProxy::RejectPromise(PromiseId aId, ErrorResult&& aException,
     // Use CopyableErrorResult to store our exception in the runnable,
     // because ErrorResult is not OK to move across threads.
     mMainThread->Dispatch(
-        NewRunnableMethod<PromiseId, CopyableErrorResult, nsCString>(
+        NewRunnableMethod<PromiseId, StoreCopyPassByRRef<CopyableErrorResult>,
+                          nsCString>(
             "ChromiumCDMProxy::RejectPromise", this,
             &ChromiumCDMProxy::RejectPromiseOnMainThread, aId,
             std::move(aException), aReason),

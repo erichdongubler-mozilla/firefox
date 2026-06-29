@@ -3291,12 +3291,13 @@ void HttpChannelChild::TrySendDeletingChannel() {
   (void)PHttpChannelChild::SendDeletingChannel();
 }
 
-nsresult HttpChannelChild::AsyncCallImpl(void (HttpChannelChild::*funcPtr)(),
-                                         CancelableRunnable** retval) {
+nsresult HttpChannelChild::AsyncCallImpl(
+    void (HttpChannelChild::*funcPtr)(),
+    nsRunnableMethod<HttpChannelChild>** retval) {
   nsresult rv;
 
-  RefPtr<CancelableRunnable> event = NewCancelableRunnableMethod(
-      "net::HttpChannelChild::AsyncCall", this, funcPtr);
+  RefPtr<nsRunnableMethod<HttpChannelChild>> event =
+      NewRunnableMethod("net::HttpChannelChild::AsyncCall", this, funcPtr);
   nsCOMPtr<nsISerialEventTarget> neckoTarget = GetNeckoTarget();
   MOZ_ASSERT(neckoTarget);
 

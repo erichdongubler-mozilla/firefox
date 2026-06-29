@@ -105,7 +105,7 @@ void MediaDrmCDMProxy::CreateSession(uint32_t aCreateSessionToken,
   data->mInitDataType = NS_ConvertUTF16toUTF8(aInitDataType);
   data->mInitData = std::move(aInitData);
 
-  nsCOMPtr<nsIRunnable> task(NewRunnableMethod<UniquePtr<CreateSessionData>>(
+  nsCOMPtr<nsIRunnable> task(NewRunnableMethod<UniquePtr<CreateSessionData>&&>(
       "MediaDrmCDMProxy::md_CreateSession", this,
       &MediaDrmCDMProxy::md_CreateSession, std::move(data)));
   mOwnerThread->Dispatch(task, NS_DISPATCH_NORMAL);
@@ -143,7 +143,7 @@ void MediaDrmCDMProxy::UpdateSession(const nsAString& aSessionId,
   data->mSessionId = NS_ConvertUTF16toUTF8(aSessionId);
   data->mResponse = std::move(aResponse);
 
-  nsCOMPtr<nsIRunnable> task(NewRunnableMethod<UniquePtr<UpdateSessionData>>(
+  nsCOMPtr<nsIRunnable> task(NewRunnableMethod<UniquePtr<UpdateSessionData>&&>(
       "MediaDrmCDMProxy::md_UpdateSession", this,
       &MediaDrmCDMProxy::md_UpdateSession, std::move(data)));
   mOwnerThread->Dispatch(task, NS_DISPATCH_NORMAL);
@@ -159,7 +159,7 @@ void MediaDrmCDMProxy::CloseSession(const nsAString& aSessionId,
   data->mPromiseId = aPromiseId;
   data->mSessionId = NS_ConvertUTF16toUTF8(aSessionId);
 
-  nsCOMPtr<nsIRunnable> task(NewRunnableMethod<UniquePtr<SessionOpData>>(
+  nsCOMPtr<nsIRunnable> task(NewRunnableMethod<UniquePtr<SessionOpData>&&>(
       "MediaDrmCDMProxy::md_CloseSession", this,
       &MediaDrmCDMProxy::md_CloseSession, std::move(data)));
   mOwnerThread->Dispatch(task, NS_DISPATCH_NORMAL);

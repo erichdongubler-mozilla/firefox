@@ -1310,12 +1310,12 @@ void VRManager::SubmitFrame(VRLayerParent* aLayer,
 
   mFrameStarted = false;
 
-  RefPtr<CancelableRunnable> task =
-      NewCancelableRunnableMethod<layers::SurfaceDescriptor, uint64_t,
-                                  gfx::Rect, gfx::Rect>(
-          "gfx::VRManager::SubmitFrameInternal", this,
-          &VRManager::SubmitFrameInternal, aTexture, aFrameId, aLeftEyeRect,
-          aRightEyeRect);
+  RefPtr<CancelableRunnable> task = NewCancelableRunnableMethod<
+      StoreCopyPassByConstLRef<layers::SurfaceDescriptor>, uint64_t,
+      StoreCopyPassByConstLRef<gfx::Rect>, StoreCopyPassByConstLRef<gfx::Rect>>(
+      "gfx::VRManager::SubmitFrameInternal", this,
+      &VRManager::SubmitFrameInternal, aTexture, aFrameId, aLeftEyeRect,
+      aRightEyeRect);
 
   if (!mCurrentSubmitTask) {
     mCurrentSubmitTask = task;

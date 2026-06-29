@@ -82,7 +82,7 @@ void WebrtcTCPSocket::SetTabId(dom::TabId aTabId) {
 nsresult WebrtcTCPSocket::Write(nsTArray<uint8_t>&& aWriteData) {
   LOG("WebrtcTCPSocket::Write {}\n", fmt::ptr(this));
   MOZ_ASSERT(NS_IsMainThread());
-  nsresult rv = mSocketThread->Dispatch(NewRunnableMethod<nsTArray<uint8_t>>(
+  nsresult rv = mSocketThread->Dispatch(NewRunnableMethod<nsTArray<uint8_t>&&>(
       "WebrtcTCPSocket::Write", this, &WebrtcTCPSocket::EnqueueWrite_s,
       std::move(aWriteData)));
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to dispatch to STS");
@@ -550,7 +550,7 @@ void WebrtcTCPSocket::InvokeOnRead(nsTArray<uint8_t>&& aReadData) {
 
   if (!NS_IsMainThread()) {
     MOZ_ALWAYS_SUCCEEDS(
-        mMainThread->Dispatch(NewRunnableMethod<nsTArray<uint8_t>>(
+        mMainThread->Dispatch(NewRunnableMethod<nsTArray<uint8_t>&&>(
             "WebrtcTCPSocket::InvokeOnRead", this,
             &WebrtcTCPSocket::InvokeOnRead, std::move(aReadData))));
     return;

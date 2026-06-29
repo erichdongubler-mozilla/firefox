@@ -178,8 +178,9 @@ class HttpChannelChild final : public PHttpChannelChild,
 
   virtual void DoAsyncAbort(nsresult aStatus) override;
 
-  nsresult AsyncCall(void (HttpChannelChild::*funcPtr)(),
-                     CancelableRunnable** retval = nullptr) override {
+  nsresult AsyncCall(
+      void (HttpChannelChild::*funcPtr)(),
+      nsRunnableMethod<HttpChannelChild>** retval = nullptr) override {
     // Normally, this method would just be implemented directly, but clang
     // miscompiles the corresponding non-virtual thunk on linux x86.
     // It however doesn't when going though a non-virtual method.
@@ -213,7 +214,7 @@ class HttpChannelChild final : public PHttpChannelChild,
   nsresult AsyncOpenInternal(nsIStreamListener* aListener);
 
   nsresult AsyncCallImpl(void (HttpChannelChild::*funcPtr)(),
-                         CancelableRunnable** retval);
+                         nsRunnableMethod<HttpChannelChild>** retval);
 
   // Sets the event target for future IPC messages. Messages will either be
   // directed to the TabGroup or DocGroup, depending on the LoadInfo associated

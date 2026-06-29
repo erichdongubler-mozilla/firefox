@@ -1552,7 +1552,7 @@ nsresult nsHttpChannel::ContinueConnect() {
         return NS_ERROR_OFFLINE;
       }
 
-      CancelableRunnable* event = nullptr;
+      nsRunnableMethod<nsHttpChannel>* event = nullptr;
       nsresult rv;
       if (!LoadCachedContentIsPartial()) {
         rv = AsyncCall(&nsHttpChannel::AsyncOnExamineCachedResponse, &event);
@@ -1562,7 +1562,7 @@ nsresult nsHttpChannel::ContinueConnect() {
       }
       rv = ReadFromCache();
       if (NS_FAILED(rv) && event) {
-        event->Cancel();
+        event->Revoke();
       }
 
       AccumulateCacheHitTelemetry(kCacheHit, this);
@@ -12501,9 +12501,9 @@ void nsHttpChannel::PerformBackgroundCacheRevalidation() {
   LOG(("nsHttpChannel::PerformBackgroundCacheRevalidation %p", this));
 
   (void)NS_DispatchToMainThreadQueue(
-      NewRunnableMethod("nsHttpChannel::PerformBackgroundCacheRevalidation",
-                        this,
-                        &nsHttpChannel::PerformBackgroundCacheRevalidationNow),
+      NewIdleRunnableMethod(
+          "nsHttpChannel::PerformBackgroundCacheRevalidation", this,
+          &nsHttpChannel::PerformBackgroundCacheRevalidationNow),
       EventQueuePriority::Idle);
 }
 
