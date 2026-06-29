@@ -18,6 +18,7 @@ support-files = [
   "data/cfhtml-ie.txt",
   "data/cfhtml-ooo.txt",
   "data/cfhtml-nocontext.txt",
+  "data/cfhtml-negative-endfragment.txt",
 ]
 
 ["test_abs_positioner_appearance.html"]
