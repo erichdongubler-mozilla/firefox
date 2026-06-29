@@ -67,10 +67,10 @@
     }
   },
   "engines": {
-    "firefox": ">=45.0 <=*",
+    "firefox": ">=154.0 <=*",
     "//": "when changing node versions, also edit .nvmrc",
-    "node": "16.19.*",
-    "npm": "8.19.3"
+    "node": ">=20",
+    "npm": ">=10"
   },
   "homepage": "https://github.com/mozilla/activity-stream",
   "keywords": [
