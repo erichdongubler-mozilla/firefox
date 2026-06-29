@@ -52,7 +52,10 @@ function run_test() {
   let token = Cc["@mozilla.org/security/internalkeytoken;1"].createInstance(
     Ci.nsIPKCS11Token
   );
-  token.changePassword("", "password");
+  add_test(async function setPassword() {
+    await token.changePassword("", "password");
+    run_next_test();
+  });
 
   let clientAuthRememberService = Cc[
     "@mozilla.org/security/clientAuthRememberService;1"

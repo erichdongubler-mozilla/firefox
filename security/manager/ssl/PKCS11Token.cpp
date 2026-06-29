@@ -249,21 +249,59 @@ PKCS11Token::Reset() {
   return NS_OK;
 }
 
-NS_IMETHODIMP
-PKCS11Token::ChangePassword(const nsACString& oldPassword,
-                            const nsACString& newPassword) {
-  if (oldPassword.IsEmpty() && PK11_NeedUserInit(mSlot.get())) {
+nsresult DoChangePassword(const UniquePK11SlotInfo& slot,
+                          const nsACString& oldPassword,
+                          const nsACString& newPassword) {
+  if (oldPassword.IsEmpty() && PK11_NeedUserInit(slot.get())) {
     return mozilla::MapSECStatus(
-        PK11_InitPin(mSlot.get(), "", PromiseFlatCString(newPassword).get()));
+        PK11_InitPin(slot.get(), "", PromiseFlatCString(newPassword).get()));
   }
-  SECStatus rv = PK11_CheckUserPassword(mSlot.get(),
-                                        PromiseFlatCString(oldPassword).get());
+  SECStatus rv =
+      PK11_CheckUserPassword(slot.get(), PromiseFlatCString(oldPassword).get());
   if (rv != SECSuccess) {
     return mozilla::MapSECStatus(rv);
   }
   return mozilla::MapSECStatus(
-      PK11_ChangePW(mSlot.get(), PromiseFlatCString(oldPassword).get(),
+      PK11_ChangePW(slot.get(), PromiseFlatCString(oldPassword).get(),
                     PromiseFlatCString(newPassword).get()));
+}
+
+NS_IMETHODIMP
+PKCS11Token::ChangePassword(const nsACString& oldPassword,
+                            const nsACString& newPassword, JSContext* aCx,
+                            Promise** aPromise) {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (!NS_IsMainThread()) {
+    return NS_ERROR_NOT_SAME_THREAD;
+  }
+
+  ErrorResult result;
+  RefPtr<Promise> promise =
+      Promise::Create(xpc::CurrentNativeGlobal(aCx), result);
+  if (result.Failed()) {
+    return result.StealNSResult();
+  }
+  auto promiseHolder = MakeRefPtr<nsMainThreadPtrHolder<Promise>>(
+      "ChangePassword promise", promise);
+
+  nsCOMPtr<nsIRunnable> runnable(NS_NewRunnableFunction(
+      "ChangePassword runnable",
+      [promiseHolder, oldPassword = nsCString(oldPassword),
+       newPassword = nsCString(newPassword),
+       slot = UniquePK11SlotInfo(PK11_ReferenceSlot(mSlot.get()))]() {
+        nsresult rv = DoChangePassword(slot, oldPassword, newPassword);
+        NS_DispatchToMainThread(NS_NewRunnableFunction(
+            "ChangePassword callback", [rv, promiseHolder] {
+              if (NS_SUCCEEDED(rv)) {
+                promiseHolder->get()->MaybeResolveWithUndefined();
+              } else {
+                promiseHolder->get()->MaybeReject(rv);
+              }
+            }));
+      }));
+
+  promise.forget(aPromise);
+  return NS_DispatchBackgroundTask(runnable.forget());
 }
 
 // Two PKCS#11 flags are relevant here: CKF_LOGIN_REQUIRED and

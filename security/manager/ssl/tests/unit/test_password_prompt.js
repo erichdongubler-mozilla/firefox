@@ -57,7 +57,7 @@ add_task(async function run_test() {
   let token = Cc["@mozilla.org/security/internalkeytoken;1"].createInstance(
     Ci.nsIPKCS11Token
   );
-  token.changePassword("", "hunter2");
+  await token.changePassword("", "hunter2");
   await token.logout();
 
   // Try with the correct password.
