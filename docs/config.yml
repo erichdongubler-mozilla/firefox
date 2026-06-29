@@ -155,7 +155,7 @@ allowed_warnings:
     - "dom/navigation/nav_replace\\.rst:.*: WARNING: undefined label"
     - "devtools-user/page_inspector/how_to/work_with_animations/index\\.(rst|md):.*: WARNING: undefined label"
     - "js/build\\.rst:.*: WARNING: undefined label"
-    - "layout/Reftest\\.rst:.*: WARNING: undefined label"
+    - "layout/Reftest\\.md:.*: WARNING: undefined label"
     - "mots/index.rst:.*: WARNING: undefined label"
     - "nspr/.* WARNING: undefined label"
     - "taskcluster/release-promotion-action\\.rst:.*: WARNING: undefined label"
@@ -233,6 +233,7 @@ allowed_warnings:
     - "WARNING: glossary terms must not be separated by empty lines"
     - "contributing/.*\\.md:.*: WARNING: undefined label"
     - "permissions\\.py:.*: ERROR: Unknown target name: \"server-locations\\.txt\""
+    - "layout/Reftest\\.md:.*: WARNING: undefined label"
 exclude_patterns:
     - js/src/doc/Debugger
 
