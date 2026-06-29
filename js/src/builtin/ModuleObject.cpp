@@ -1585,6 +1585,10 @@ ModuleNamespaceObject* ModuleObject::createNamespace(
   return ns;
 }
 
+void ModuleObject::clearNamespaceOnFailure() {
+  setReservedSlot(NamespaceSlot, UndefinedValue());
+}
+
 /* static */
 bool ModuleObject::createEnvironment(JSContext* cx,
                                      Handle<ModuleObject*> self) {
