@@ -52,6 +52,7 @@ private val EmptyPageWidth = 170.dp
  * @param dragAndDropEnabled Whether the grid supports dragging and dropping for tab groups.
  * @param displayTabGroupOnboarding Whether onboarding for tab groups should be shown.
  * @param liveReorderEnabled Whether tab reorders should happen 'live' during a drag.
+ * @param dragProcessingState The lifecycle state of tab-group drag handling
  * @param tabInteractionHandler Handles tab interactions, such as moves and drag and drop.
  * @param enteringGroupId The id of a group entering composition, if any.  Can be null.
  * @param trackersBlockedCount The number of trackers blocked to display in the footer card.
@@ -94,6 +95,7 @@ internal fun NormalTabsPage(
     dragAndDropEnabled: Boolean,
     displayTabGroupOnboarding: Boolean,
     liveReorderEnabled: Boolean,
+    dragProcessingState: TabsTrayState.DragProcessingState,
     tabInteractionHandler: TabInteractionHandler,
     enteringGroupId: String?,
     trackersBlockedCount: Int? = null,
@@ -183,6 +185,7 @@ internal fun NormalTabsPage(
             onPrivacyReportTapped = onPrivacyReportTapped,
             enteringGroupId = enteringGroupId,
             onGroupEntranceAnimationPlayed = onEnteringGroupAnimationPlayed,
+            dragProcessingState = dragProcessingState,
         )
     } else {
         EmptyNormalTabsPage(

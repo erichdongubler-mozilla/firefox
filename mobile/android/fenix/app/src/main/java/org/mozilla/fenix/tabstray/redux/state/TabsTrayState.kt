@@ -111,8 +111,6 @@ data class TabsTrayState(
          *
          * @property sourceId: The ID of the tab item being dragged
          * @property destinationId: The ID of a tab item the source item is being dragged onto, if any.
-         * Currently this is non-null but will be expanded to allow for updating focus state when mode is drag and drop
-         * during a drag action.
          */
         data class DragAndDrop(
             val sourceId: String,
@@ -213,6 +211,7 @@ data class TabsTrayState(
      * @property hasRecordedOnboardingImpression Whether an onboarding impression has been recorded this session.
      * @property enteringGroupId Recently created group id, to be referenced for animations.  Cleared after
      * entrance animations are played.
+     * @property dragProcessingState The lifecycle state of tab-group drag handling
      */
     data class TabGroupState(
         val groups: List<TabsTrayItem.TabGroup> = emptyList(),
@@ -223,7 +222,18 @@ data class TabsTrayState(
         internal val hasViewedTabGroupsPage: Boolean = false,
         internal val hasRecordedOnboardingImpression: Boolean = false,
         val enteringGroupId: String? = null,
+        val dragProcessingState: DragProcessingState = DragProcessingState.UNINITIALIZED,
     )
+
+    /**
+     * State for the drag handling flow for Tab Groups.
+     */
+    enum class DragProcessingState {
+        UNINITIALIZED,
+        DRAG_IN_PROGRESS,
+        EDIT_IN_PROGRESS,
+        COMPLETED,
+    }
 
     /**
      * Whether the Tab Search button is visible.

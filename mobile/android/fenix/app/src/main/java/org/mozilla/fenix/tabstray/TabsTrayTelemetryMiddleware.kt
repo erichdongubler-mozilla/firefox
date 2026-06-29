@@ -183,7 +183,7 @@ class TabsTrayTelemetryMiddleware(
         action: TabGroupAction,
     ) {
         val selectedTabsCount = store.state.mode.selectedTabs.size
-        val isDraggingOntoTab = if (action is TabGroupAction.DragAndDropCompleted) {
+        val isDraggingOntoTab = if (action is TabGroupAction.DragAndDropInitiated) {
             store.state.normalTabsState.items.find { it.id == action.destinationId } is TabsTrayItem.Tab
         } else {
             false
@@ -237,7 +237,7 @@ class TabsTrayTelemetryMiddleware(
                 TabsTray.tabGroupClosed.record(NoExtras())
             }
 
-            is TabGroupAction.DragAndDropCompleted -> {
+            is TabGroupAction.DragAndDropInitiated -> {
                 if (isDraggingOntoTab) {
                     Metrics.tabGroupCreationMode["drag_and_drop"].add()
                 }

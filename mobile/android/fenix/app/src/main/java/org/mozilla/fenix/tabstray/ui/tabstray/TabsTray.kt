@@ -303,6 +303,7 @@ fun TabsTray(
                             onEnteringGroupAnimationPlayed = {
                                 tabsTrayStore.dispatch(TabGroupAction.NewGroupAnimationFinished)
                             },
+                            dragProcessingState = tabsTrayState.tabGroupState.dragProcessingState,
                         )
                     }
 

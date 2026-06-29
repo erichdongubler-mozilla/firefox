@@ -474,7 +474,7 @@ class TabsTrayTelemetryMiddlewareTest {
             ),
         )
 
-        store.dispatch(TabGroupAction.DragAndDropCompleted(sourceId = "source_id", destinationId = "target_id"))
+        store.dispatch(TabGroupAction.DragAndDropInitiated(sourceId = "source_id", destinationId = "target_id"))
 
         assertEquals(1, Metrics.tabGroupCreationMode["drag_and_drop"].testGetValue())
     }

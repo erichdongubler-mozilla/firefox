@@ -161,6 +161,11 @@ interface GridInteractionState {
      * Updates the stored layout coordinates in order to map grid space to screen space.
      */
     fun updateGridLayoutCoordinates(coordinates: LayoutCoordinates)
+
+    /**
+     * Called to indicate to the grid that the drop handling has been completed and the state can be reset.
+     */
+    fun reset()
 }
 
 /**
@@ -252,11 +257,14 @@ class GridInteractionStateImpl internal constructor(
         if (draggedItem is InteractionState.Grid.Active) {
             handleDragEnd(interactionMode)
         }
-        resetState()
     }
 
     override fun updateGridLayoutCoordinates(coordinates: LayoutCoordinates) {
         gridLayoutCoordinates = coordinates
+    }
+
+    override fun reset() {
+        resetState()
     }
 
     private fun doReorder(mode: InteractionMode.Grid.Reordering) {
@@ -286,6 +294,7 @@ class GridInteractionStateImpl internal constructor(
                     doReorder(mode)
                 }
                 tabInteractionHandler.onDragCancel()
+                resetState()
             }
 
             is InteractionMode.Grid.Scroll, is InteractionMode.Grid.None -> {
@@ -293,6 +302,7 @@ class GridInteractionStateImpl internal constructor(
                 if (moved) {
                     tabInteractionHandler.onDragCancel()
                 }
+                resetState()
             }
         }
     }

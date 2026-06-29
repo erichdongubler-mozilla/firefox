@@ -139,6 +139,11 @@ interface ListInteractionState {
      * @param index the item's index
      */
     fun computeItemOffset(index: Int): Float
+
+    /**
+     * Called to indicate to the list that the drop handling has been completed and the state can be reset.
+     */
+    fun reset()
 }
 
 /**
@@ -216,11 +221,14 @@ class ListInteractionStateImpl internal constructor(
         }
     }
 
+    override fun reset() {
+        resetState()
+    }
+
     override fun onDragEnd() {
         if (draggedItem is InteractionState.List.Active) {
             handleDragEnd(interactionMode)
         }
-        resetState()
     }
 
     private fun doReorder(mode: InteractionMode.List.Reordering) {
@@ -240,8 +248,8 @@ class ListInteractionStateImpl internal constructor(
         when (mode) {
             is InteractionMode.List.DragAndDrop -> {
                 tabInteractionHandler.onDrop(
-                    mode.source.key,
-                    mode.target.key,
+                    sourceKey = mode.source.key,
+                    targetKey = mode.target.key,
                 )
             }
 
@@ -250,6 +258,7 @@ class ListInteractionStateImpl internal constructor(
                     doReorder(mode)
                 }
                 tabInteractionHandler.onDragCancel()
+                resetState()
             }
 
             is InteractionMode.List.Scroll, is InteractionMode.List.None -> {
@@ -257,6 +266,7 @@ class ListInteractionStateImpl internal constructor(
                 if (moved) {
                     tabInteractionHandler.onDragCancel()
                 }
+                resetState()
             }
         }
     }

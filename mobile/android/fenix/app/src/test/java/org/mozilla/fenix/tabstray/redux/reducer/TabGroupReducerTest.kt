@@ -70,6 +70,7 @@ class TabGroupReducerTest {
             mode = Mode.Select(selectedTabs = setOf()),
             tabGroupState = TabsTrayState.TabGroupState(
                 formState = formState,
+                dragProcessingState = TabsTrayState.DragProcessingState.COMPLETED,
             ),
             backStack = listOf(
                 TabsTrayState().backStack.first(),
@@ -112,6 +113,7 @@ class TabGroupReducerTest {
         val expectedState = initialState.copy(
             mode = Mode.Normal,
             backStack = TabsTrayState().backStack,
+            tabGroupState = initialState.tabGroupState.copy(dragProcessingState = TabsTrayState.DragProcessingState.COMPLETED),
         )
 
         assertEquals(expectedState, resultState)
@@ -331,6 +333,7 @@ class TabGroupReducerTest {
                     theme = TabGroupTheme.Pink,
                     edited = false,
                 ),
+                dragProcessingState = TabsTrayState.DragProcessingState.EDIT_IN_PROGRESS,
             ),
             backStack = initialState.backStack + EditTabGroup,
         )
@@ -365,6 +368,7 @@ class TabGroupReducerTest {
                     theme = TabGroupTheme.Yellow,
                     edited = false,
                 ),
+                dragProcessingState = TabsTrayState.DragProcessingState.EDIT_IN_PROGRESS,
             ),
             backStack = initialState.backStack + EditTabGroup,
         )
@@ -426,6 +430,7 @@ class TabGroupReducerTest {
         val expectedState = initialState.copy(
             tabGroupState = initialState.tabGroupState.copy(
                 formState = initialState.initializeTabGroupForm(),
+                dragProcessingState = TabsTrayState.DragProcessingState.EDIT_IN_PROGRESS,
             ),
             backStack = initialState.backStack + EditTabGroup,
         )
@@ -630,7 +635,7 @@ class TabGroupReducerTest {
         )
         val resultState = TabGroupActionReducer.reduce(
             state = TabsTrayState(),
-            action = TabGroupAction.DragAndDropCompleted(sourceId = "54321", destinationId = "12345"),
+            action = TabGroupAction.DragAndDropInitiated(sourceId = "54321", destinationId = "12345"),
         )
         assertEquals(expected = expectedState, actual = resultState)
     }
@@ -649,6 +654,7 @@ class TabGroupReducerTest {
                     theme = TabGroupTheme.Yellow,
                     edited = false,
                 ),
+                dragProcessingState = TabsTrayState.DragProcessingState.EDIT_IN_PROGRESS,
             ),
             backStack = listOf(TabManagerNavDestination.Root, EditTabGroup),
             mode = Mode.DragAndDrop(
@@ -712,5 +718,46 @@ class TabGroupReducerTest {
         )
 
         assertNull(resultState.tabGroupState.enteringGroupId)
+    }
+
+    @Test
+    fun `WHEN SaveClicked THEN creation state is completed`() {
+        val formState = TabGroupFormState(
+            tabGroupId = "1",
+            name = "Tab Group 1",
+            edited = true,
+        )
+        val initialState = TabsTrayState(
+            mode = Mode.Select(selectedTabs = setOf()),
+            tabGroupState = TabsTrayState.TabGroupState(
+                formState = formState,
+            ),
+            backStack = listOf(
+                TabsTrayState().backStack.first(),
+                AddToTabGroup,
+                EditTabGroup,
+            ),
+        )
+
+        val resultState = TabGroupActionReducer.reduce(initialState, TabGroupAction.SaveClicked)
+
+        assertEquals(expected = TabsTrayState.DragProcessingState.COMPLETED, resultState.tabGroupState.dragProcessingState)
+    }
+
+    @Test
+    fun `WHEN DragAndDropHandlingCompleted THEN drag handling state is COMPLETED`() {
+        val initialState = TabsTrayState()
+
+        val resultState = TabGroupActionReducer.reduce(initialState, TabGroupAction.DragAndDropProcessed)
+
+        assertEquals(expected = TabsTrayState.DragProcessingState.COMPLETED, resultState.tabGroupState.dragProcessingState)
+    }
+
+    @Test
+    fun `WHEN AddToNewGroup THEN drag handling state is set to EDIT_IN_PROGRESS`() {
+        val initialState = TabsTrayState()
+        val resultState = TabGroupActionReducer.reduce(initialState, TabGroupAction.AddToNewTabGroup)
+
+        assertEquals(expected = TabsTrayState.DragProcessingState.EDIT_IN_PROGRESS, resultState.tabGroupState.dragProcessingState)
     }
 }

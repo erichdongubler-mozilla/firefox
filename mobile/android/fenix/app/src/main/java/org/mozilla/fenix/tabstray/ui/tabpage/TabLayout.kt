@@ -181,6 +181,7 @@ private val ignoredItems = setOf(HEADER_ITEM_KEY, SPAN_ITEM_KEY, TAB_GROUP_ONBOA
  * @param modifier [Modifier] to be applied to the layout.
  * @param reorderingEnabled Whether tabs can be reordered by dragging.
  * @param trackersBlockedCount The number of trackers blocked to display in the footer card.
+ * @param dragProcessingState The lifecycle state of tab-group drag handling
  * @param onTabClose Invoked when the user clicks to close a tab.
  * @param onItemClick Invoked when the user clicks on a tab.
  * @param onItemLongClick Invoked when the user long clicks a tab.
@@ -210,6 +211,7 @@ fun TabLayout(
     modifier: Modifier = Modifier,
     reorderingEnabled: Boolean = true,
     trackersBlockedCount: Int? = null,
+    dragProcessingState: TabsTrayState.DragProcessingState = TabsTrayState.DragProcessingState.UNINITIALIZED,
     onTabClose: (TabsTrayItem.Tab) -> Unit,
     onItemClick: (TabsTrayItem) -> Unit,
     onItemLongClick: (TabsTrayItem) -> Unit,
@@ -250,6 +252,7 @@ fun TabLayout(
             liveReorderEnabled = liveReorderEnabled,
             enteringGroupId = enteringGroupId,
             onGroupEntranceAnimationPlayed = onGroupEntranceAnimationPlayed,
+            dragProcessingState = dragProcessingState,
         )
     } else {
         TabList(
@@ -276,6 +279,7 @@ fun TabLayout(
             liveReorderEnabled = liveReorderEnabled,
             enteringGroupId = enteringGroupId,
             onGroupEntranceAnimationPlayed = onGroupEntranceAnimationPlayed,
+            dragProcessingState = dragProcessingState,
         )
     }
 }
@@ -306,6 +310,7 @@ private fun TabList(
     header: (@Composable () -> Unit)? = null,
     onPrivacyReportTapped: (() -> Unit)? = null,
     onGroupEntranceAnimationPlayed: () -> Unit,
+    dragProcessingState: TabsTrayState.DragProcessingState = TabsTrayState.DragProcessingState.UNINITIALIZED,
 ) {
     if (dragAndDropEnabled) {
         InteractableTabList(
@@ -331,6 +336,7 @@ private fun TabList(
             liveReorderEnabled = liveReorderEnabled,
             enteringGroupId = enteringGroupId,
             onGroupEntranceAnimationPlayed = onGroupEntranceAnimationPlayed,
+            dragProcessingState = dragProcessingState,
         )
     } else {
         ReorderableTabList(
@@ -383,6 +389,7 @@ private fun TabGrid(
     contentPadding: PaddingValues = defaultTabLayoutContentPadding(),
     onPrivacyReportTapped: (() -> Unit)? = null,
     onGroupEntranceAnimationPlayed: () -> Unit,
+    dragProcessingState: TabsTrayState.DragProcessingState = TabsTrayState.DragProcessingState.UNINITIALIZED,
 ) {
     if (dragAndDropEnabled) {
         InteractableTabGrid(
@@ -408,6 +415,7 @@ private fun TabGrid(
             liveReorderEnabled = liveReorderEnabled,
             enteringGroupId = enteringGroupId,
             onGroupEntranceAnimationPlayed = onGroupEntranceAnimationPlayed,
+            dragProcessingState = dragProcessingState,
         )
     } else {
         ReorderableTabGrid(
@@ -639,6 +647,7 @@ private fun InteractableTabGrid(
     onPrivacyReportTapped: (() -> Unit)? = null,
     enteringGroupId: String? = null,
     onGroupEntranceAnimationPlayed: () -> Unit,
+    dragProcessingState: TabsTrayState.DragProcessingState,
 ) {
     val gridState = rememberLazyGridState()
     val tabGridBottomPadding = dimensionResource(id = R.dimen.tab_tray_grid_bottom_padding)
@@ -681,6 +690,13 @@ private fun InteractableTabGrid(
             isInMultiSelectMode = selectionMode is TabsTrayState.Mode.Select
         }
     }
+
+    LaunchedEffect(dragProcessingState) {
+        if (dragProcessingState == TabsTrayState.DragProcessingState.COMPLETED) {
+            gridInteractionState.reset()
+        }
+    }
+
     BoxWithConstraints(
         modifier = Modifier
             .onGloballyPositioned {
@@ -1111,6 +1127,7 @@ private fun InteractableTabList(
     onPrivacyReportTapped: (() -> Unit)? = null,
     enteringGroupId: String?,
     onGroupEntranceAnimationPlayed: () -> Unit,
+    dragProcessingState: TabsTrayState.DragProcessingState,
 ) {
     val state = rememberLazyListState()
     val tabListBottomPadding = dimensionResource(id = R.dimen.tab_tray_list_bottom_padding)
@@ -1150,6 +1167,11 @@ private fun InteractableTabList(
     LaunchedEffect(selectionMode, listInteractionState.draggedItem.key) {
         if (listInteractionState.draggedItem.key == null) {
             isInMultiSelectMode = selectionMode is TabsTrayState.Mode.Select
+        }
+    }
+    LaunchedEffect(dragProcessingState) {
+        if (dragProcessingState == TabsTrayState.DragProcessingState.COMPLETED) {
+            listInteractionState.reset()
         }
     }
     Box(
@@ -1675,6 +1697,7 @@ private fun TabListPreview(
                 onTabGroupOnboardingDismiss = {},
                 focusEnabled = true,
                 onGroupEntranceAnimationPlayed = {},
+                dragProcessingState = TabsTrayState.DragProcessingState.UNINITIALIZED,
             )
         }
     }
@@ -1714,6 +1737,7 @@ private fun TabGridPreview(
             onTabGroupOnboardingDismiss = {},
             focusEnabled = true,
             onGroupEntranceAnimationPlayed = {},
+            dragProcessingState = TabsTrayState.DragProcessingState.UNINITIALIZED,
         )
     }
 }
@@ -1750,6 +1774,7 @@ private fun TabListWindowSizePreview() {
                 onTabGroupOnboardingDismiss = {},
                 focusEnabled = true,
                 onGroupEntranceAnimationPlayed = {},
+                dragProcessingState = TabsTrayState.DragProcessingState.UNINITIALIZED,
             )
         }
     }
@@ -1787,6 +1812,7 @@ private fun TabGridWindowSizePreview() {
             onTabGroupOnboardingDismiss = {},
             focusEnabled = true,
             onGroupEntranceAnimationPlayed = {},
+            dragProcessingState = TabsTrayState.DragProcessingState.UNINITIALIZED,
         )
     }
 }
@@ -1870,6 +1896,7 @@ private fun MultiSelectPreview(
             focusEnabled = true,
             liveReorderEnabled = false,
             onGroupEntranceAnimationPlayed = {},
+            dragProcessingState = TabsTrayState.DragProcessingState.UNINITIALIZED,
         )
     }
 }
