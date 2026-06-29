@@ -10,6 +10,7 @@ mod profiler;
 use nserror::{nsresult, NS_ERROR_INVALID_ARG, NS_ERROR_UNEXPECTED, NS_OK};
 use nsstring::{nsACString, nsCString};
 use std::net::{Ipv4Addr, Ipv6Addr};
+use std::num::NonZeroU32;
 use std::ptr;
 use std::time::{Duration, Instant};
 use thin_vec::ThinVec;
@@ -68,8 +69,6 @@ pub unsafe extern "C" fn happy_eyeballs_create(
     alt_svc: *const ThinVec<AltSvc>,
     ip_preference: IpPreference,
     http_versions: HttpVersions,
-    resolution_delay_ms: u32,
-    connection_attempt_delay_ms: u32,
 ) -> nsresult {
     *result = ptr::null_mut();
 
@@ -96,12 +95,26 @@ pub unsafe extern "C" fn happy_eyeballs_create(
 
     let metrics = metrics::Metrics::new(&alt_svc_vec);
 
+    // Clamp the delays to at least 10ms to avoid excessive connection attempts,
+    // and the multiplier to at least 1 (it is a non-zero factor).
+    let resolution_delay_ms =
+        std::cmp::max(10, static_prefs::pref!("network.http.happy_eyeballs_resolution_delay"));
+    let connection_attempt_delay_ms = std::cmp::max(
+        10,
+        static_prefs::pref!("network.http.happy_eyeballs_connection_attempt_delay"),
+    );
+    let connection_attempt_delay_multiplier = NonZeroU32::new(static_prefs::pref!(
+        "network.http.happy_eyeballs_connection_attempt_delay_multiplier"
+    ) as u32)
+    .unwrap_or(NonZeroU32::MIN);
+
     let network_config = happy_eyeballs::NetworkConfig {
         alt_svc: alt_svc_vec,
         ip: ip_preference.into(),
         http_versions: http_versions.into(),
         resolution_delay: Duration::from_millis(resolution_delay_ms as u64),
         connection_attempt_delay: Duration::from_millis(connection_attempt_delay_ms as u64),
+        connection_attempt_delay_multiplier,
         ..Default::default()
     };
 

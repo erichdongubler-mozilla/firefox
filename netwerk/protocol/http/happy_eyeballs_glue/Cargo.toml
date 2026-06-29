@@ -14,6 +14,7 @@ log = "0.4"
 nserror = { path = "../../../../xpcom/rust/nserror" }
 serde = { version = "1.0", features = ["derive"] }
 nsstring = { path = "../../../../xpcom/rust/nsstring" }
+static_prefs = { path = "../../../../modules/libpref/init/static_prefs" }
 xpcom = { path = "../../../../xpcom/rust/xpcom" }
 thin-vec = { version = "0.2.1", features = ["gecko-ffi"] }
 

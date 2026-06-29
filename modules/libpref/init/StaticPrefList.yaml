@@ -16823,12 +16823,24 @@
   type: RelaxedAtomicUint32
   value: 50
   mirror: always
+  rust: true
 
 # The time to wait between successive connection attempts (ms).
 - name: network.http.happy_eyeballs_connection_attempt_delay
   type: RelaxedAtomicUint32
-  value: 250
+  value: 50
   mirror: always
+  rust: true
+
+# Multiplier applied to the connection attempt delay for each additional
+# concurrent attempt, growing the delay exponentially. A value of 1 keeps the
+# delay constant. With a 50ms base delay and a multiplier of 2, attempts are
+# scheduled at t=0, 50, 150, 350, 750, ... ms.
+- name: network.http.happy_eyeballs_connection_attempt_delay_multiplier
+  type: RelaxedAtomicUint32
+  value: 2
+  mirror: always
+  rust: true
 
 # If true, it will include extra tags to be sniffed by nsUnknownDecoder
 # These tags were previously sniffed by Firefox for legacy/webcompat but

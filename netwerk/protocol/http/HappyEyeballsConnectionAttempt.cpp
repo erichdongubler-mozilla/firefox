@@ -173,12 +173,6 @@ nsresult HappyEyeballsConnectionAttempt::CreateHappyEyeballs(
     ipPref = happy_eyeballs::IpPreference::DualStackPreferV4;
   }
 
-  // Clamp delays to at least 10ms to avoid excessive connection attempts.
-  uint32_t resolutionDelay = std::max(
-      10u, StaticPrefs::network_http_happy_eyeballs_resolution_delay());
-  uint32_t connectionAttemptDelay = std::max(
-      10u, StaticPrefs::network_http_happy_eyeballs_connection_attempt_delay());
-
   // Restrict the protocols the Happy Eyeballs engine may attempt to those
   // enabled by prefs, so disabled protocols are never raced (from HTTPS
   // records, IP hints, or alt-svc). NS_HTTP_DISALLOW_HTTP3 is set for
@@ -191,10 +185,7 @@ nsresult HappyEyeballsConnectionAttempt::CreateHappyEyeballs(
           !(mCaps & NS_HTTP_DISALLOW_HTTP3),
   };
 
-  LOG(
-      ("CreateHappyEyeballs ipPref=%d resolutionDelay=%u "
-       "connectionAttemptDelay=%u",
-       static_cast<uint32_t>(ipPref), resolutionDelay, connectionAttemptDelay));
+  LOG(("CreateHappyEyeballs ipPref=%d", static_cast<uint32_t>(ipPref)));
 
   // An explicit HTTP/3 connection info (an alt-svc HTTP/3 route, or a direct
   // HTTP/3 connection such as WebTransport) must race HTTP/3. When there's an
@@ -213,23 +204,20 @@ nsresult HappyEyeballsConnectionAttempt::CreateHappyEyeballs(
     altSvcArray.AppendElement(altsvc);
     return HappyEyeballs::Init(getter_AddRefs(mHappyEyeballs), mHost,
                                static_cast<uint16_t>(mConnInfo->OriginPort()),
-                               &altSvcArray, ipPref, httpVersions,
-                               resolutionDelay, connectionAttemptDelay);
+                               &altSvcArray, ipPref, httpVersions);
   }
 
   if (mConnInfo->GetRoutedHost().IsEmpty()) {
     nsTArray<happy_eyeballs::AltSvc> emptyAltSvc;
     return HappyEyeballs::Init(getter_AddRefs(mHappyEyeballs), mHost,
                                static_cast<uint16_t>(mConnInfo->OriginPort()),
-                               &emptyAltSvc, ipPref, httpVersions,
-                               resolutionDelay, connectionAttemptDelay);
+                               &emptyAltSvc, ipPref, httpVersions);
   }
 
   nsTArray<happy_eyeballs::AltSvc> emptyAltSvc;
   return HappyEyeballs::Init(getter_AddRefs(mHappyEyeballs), mHost,
                              static_cast<uint16_t>(mConnInfo->RoutedPort()),
-                             &emptyAltSvc, ipPref, httpVersions,
-                             resolutionDelay, connectionAttemptDelay);
+                             &emptyAltSvc, ipPref, httpVersions);
 }
 
 nsresult HappyEyeballsConnectionAttempt::Init(ConnectionEntry* ent) {
