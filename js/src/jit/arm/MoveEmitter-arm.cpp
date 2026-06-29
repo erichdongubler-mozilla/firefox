@@ -73,8 +73,8 @@ Register MoveEmitterARM::tempReg() {
   return spilledReg_;
 }
 
-void MoveEmitterARM::breakCycle(const MoveOperand& from, const MoveOperand& to,
-                                MoveOp::Type type, uint32_t slotId) {
+void MoveEmitterARM::breakCycle(const MoveOperand& to, MoveOp::Type type,
+                                uint32_t slotId) {
   // There is some pattern:
   //   (A -> B)
   //   (B -> A)
@@ -355,7 +355,7 @@ void MoveEmitterARM::emit(const MoveOp& move) {
   if (move.isCycleEnd() && move.isCycleBegin()) {
     // A fun consequence of aliased registers is you can have multiple
     // cycles at once, and one can end exactly where another begins.
-    breakCycle(from, to, move.endCycleType(), move.cycleBeginSlot());
+    breakCycle(to, move.endCycleType(), move.cycleBeginSlot());
     completeCycle(from, to, move.type(), move.cycleEndSlot());
     return;
   }
@@ -369,7 +369,7 @@ void MoveEmitterARM::emit(const MoveOp& move) {
   }
 
   if (move.isCycleBegin()) {
-    breakCycle(from, to, move.endCycleType(), move.cycleBeginSlot());
+    breakCycle(to, move.endCycleType(), move.cycleBeginSlot());
     inCycle_++;
   }
 

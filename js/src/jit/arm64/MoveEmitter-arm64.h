@@ -70,8 +70,7 @@ class MoveEmitterARM64 {
   void emitGeneralMove(const MoveOperand& from, const MoveOperand& to);
 
   void emitMove(const MoveOp& move);
-  void breakCycle(const MoveOperand& from, const MoveOperand& to,
-                  MoveOp::Type type);
+  void breakCycle(const MoveOperand& to, MoveOp::Type type);
   void completeCycle(const MoveOperand& from, const MoveOperand& to,
                      MoveOp::Type type);
 

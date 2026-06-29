@@ -9,8 +9,7 @@
 using namespace js;
 using namespace js::jit;
 
-void MoveEmitterMIPS64::breakCycle(const MoveOperand& from,
-                                   const MoveOperand& to, MoveOp::Type type,
+void MoveEmitterMIPS64::breakCycle(const MoveOperand& to, MoveOp::Type type,
                                    uint32_t slotId) {
   // There is some pattern:
   //   (A -> B)

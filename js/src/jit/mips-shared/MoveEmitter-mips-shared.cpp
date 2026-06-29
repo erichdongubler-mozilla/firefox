@@ -157,7 +157,7 @@ void MoveEmitterMIPSShared::emit(const MoveOp& move) {
   if (move.isCycleEnd() && move.isCycleBegin()) {
     // A fun consequence of aliased registers is you can have multiple
     // cycles at once, and one can end exactly where another begins.
-    breakCycle(from, to, move.endCycleType(), move.cycleBeginSlot());
+    breakCycle(to, move.endCycleType(), move.cycleBeginSlot());
     completeCycle(from, to, move.type(), move.cycleEndSlot());
     return;
   }
@@ -171,7 +171,7 @@ void MoveEmitterMIPSShared::emit(const MoveOp& move) {
   }
 
   if (move.isCycleBegin()) {
-    breakCycle(from, to, move.endCycleType(), move.cycleBeginSlot());
+    breakCycle(to, move.endCycleType(), move.cycleBeginSlot());
     inCycle_++;
   }
 

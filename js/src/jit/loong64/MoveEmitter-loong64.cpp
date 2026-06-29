@@ -9,8 +9,7 @@
 using namespace js;
 using namespace js::jit;
 
-void MoveEmitterLOONG64::breakCycle(const MoveOperand& from,
-                                    const MoveOperand& to, MoveOp::Type type,
+void MoveEmitterLOONG64::breakCycle(const MoveOperand& to, MoveOp::Type type,
                                     uint32_t slotId) {
   // There is some pattern:
   //   (A -> B)
@@ -289,7 +288,7 @@ void MoveEmitterLOONG64::emit(const MoveOp& move) {
   if (move.isCycleEnd() && move.isCycleBegin()) {
     // A fun consequence of aliased registers is you can have multiple
     // cycles at once, and one can end exactly where another begins.
-    breakCycle(from, to, move.endCycleType(), move.cycleBeginSlot());
+    breakCycle(to, move.endCycleType(), move.cycleBeginSlot());
     completeCycle(from, to, move.type(), move.cycleEndSlot());
     return;
   }
@@ -303,7 +302,7 @@ void MoveEmitterLOONG64::emit(const MoveOp& move) {
   }
 
   if (move.isCycleBegin()) {
-    breakCycle(from, to, move.endCycleType(), move.cycleBeginSlot());
+    breakCycle(to, move.endCycleType(), move.cycleBeginSlot());
     inCycle_++;
   }
 

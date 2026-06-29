@@ -40,8 +40,8 @@ class MoveEmitterMIPSShared {
   void emitFloat32Move(const MoveOperand& from, const MoveOperand& to);
   virtual void emitDoubleMove(const MoveOperand& from,
                               const MoveOperand& to) = 0;
-  virtual void breakCycle(const MoveOperand& from, const MoveOperand& to,
-                          MoveOp::Type type, uint32_t slot) = 0;
+  virtual void breakCycle(const MoveOperand& to, MoveOp::Type type,
+                          uint32_t slot) = 0;
   virtual void completeCycle(const MoveOperand& from, const MoveOperand& to,
                              MoveOp::Type type, uint32_t slot) = 0;
   void emit(const MoveOp& move);

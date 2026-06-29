@@ -50,7 +50,7 @@ void MoveEmitterARM64::emitMove(const MoveOp& move) {
 
   if (move.isCycleBegin()) {
     MOZ_ASSERT(!inCycle_ && !move.isCycleEnd());
-    breakCycle(from, to, move.endCycleType());
+    breakCycle(to, move.endCycleType());
     inCycle_ = true;
   } else if (move.isCycleEnd()) {
     MOZ_ASSERT(inCycle_);
@@ -224,8 +224,7 @@ MemOperand MoveEmitterARM64::cycleSlot() {
                     masm.framePushed() - pushedAtCycle_);
 }
 
-void MoveEmitterARM64::breakCycle(const MoveOperand& from,
-                                  const MoveOperand& to, MoveOp::Type type) {
+void MoveEmitterARM64::breakCycle(const MoveOperand& to, MoveOp::Type type) {
   switch (type) {
     case MoveOp::FLOAT32:
       if (to.isMemory()) {

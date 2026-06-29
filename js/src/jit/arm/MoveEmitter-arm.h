@@ -43,8 +43,7 @@ class MoveEmitterARM {
   void emitMove(const MoveOperand& from, const MoveOperand& to);
   void emitFloat32Move(const MoveOperand& from, const MoveOperand& to);
   void emitDoubleMove(const MoveOperand& from, const MoveOperand& to);
-  void breakCycle(const MoveOperand& from, const MoveOperand& to,
-                  MoveOp::Type type, uint32_t slot);
+  void breakCycle(const MoveOperand& to, MoveOp::Type type, uint32_t slot);
   void completeCycle(const MoveOperand& from, const MoveOperand& to,
                      MoveOp::Type type, uint32_t slot);
   void emit(const MoveOp& move);
