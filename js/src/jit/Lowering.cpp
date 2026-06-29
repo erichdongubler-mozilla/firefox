@@ -8391,6 +8391,10 @@ void LIRGenerator::visitConstantProto(MConstantProto* ins) {
 }
 
 void LIRGenerator::visitWasmNullConstant(MWasmNullConstant* ins) {
+  if (ins->canEmitAtUses()) {
+    emitAtUses(ins);
+    return;
+  }
   define(new (alloc()) LWasmNullConstant(), ins);
 }
 
