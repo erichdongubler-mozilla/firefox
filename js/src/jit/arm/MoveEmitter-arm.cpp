@@ -32,8 +32,6 @@ void MoveEmitterARM::emit(const MoveResolver& moves) {
   }
 }
 
-MoveEmitterARM::~MoveEmitterARM() { assertDone(); }
-
 Address MoveEmitterARM::cycleSlot(uint32_t slot, uint32_t subslot) const {
   int32_t offset = masm.framePushed() - pushedAtCycle_;
   MOZ_ASSERT(offset < 4096 && offset > -4096);
@@ -397,8 +395,6 @@ void MoveEmitterARM::emit(const MoveOp& move) {
       MOZ_CRASH("Unexpected move type");
   }
 }
-
-void MoveEmitterARM::assertDone() { MOZ_ASSERT(inCycle_ == 0); }
 
 void MoveEmitterARM::finish() {
   assertDone();

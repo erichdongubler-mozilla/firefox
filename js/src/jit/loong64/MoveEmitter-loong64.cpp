@@ -323,8 +323,6 @@ void MoveEmitterLOONG64::emit(const MoveOp& move) {
   }
 }
 
-void MoveEmitterLOONG64::assertDone() { MOZ_ASSERT(inCycle_ == 0); }
-
 void MoveEmitterLOONG64::finish() {
   assertDone();
 

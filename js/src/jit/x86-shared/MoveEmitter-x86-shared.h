@@ -36,7 +36,7 @@ class MoveEmitterX86 {
   mozilla::Maybe<Register> scratchRegister_;
 #endif
 
-  void assertDone();
+  void assertDone() { MOZ_ASSERT(!inCycle_); }
   Address cycleSlot();
   Address toAddress(const MoveOperand& operand) const;
   Operand toOperand(const MoveOperand& operand) const;
@@ -59,7 +59,7 @@ class MoveEmitterX86 {
 
  public:
   explicit MoveEmitterX86(MacroAssembler& masm);
-  ~MoveEmitterX86();
+  ~MoveEmitterX86() { assertDone(); }
   void emit(const MoveResolver& moves);
   void finish();
 

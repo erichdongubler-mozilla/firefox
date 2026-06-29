@@ -192,8 +192,6 @@ void MoveEmitterMIPSShared::emit(const MoveOp& move) {
   }
 }
 
-void MoveEmitterMIPSShared::assertDone() { MOZ_ASSERT(inCycle_ == 0); }
-
 void MoveEmitterMIPSShared::finish() {
   assertDone();
 

@@ -37,7 +37,7 @@ class MoveEmitterLOONG64 {
   Register spilledReg_;
   FloatRegister spilledFloatReg_;
 
-  void assertDone();
+  void assertDone() { MOZ_ASSERT(inCycle_ == 0); }
   Register tempReg();
   FloatRegister tempFloatReg();
   Address cycleSlot(uint32_t slot, uint32_t subslot = 0) const;

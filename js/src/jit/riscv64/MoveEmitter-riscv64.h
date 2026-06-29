@@ -41,6 +41,8 @@ class MoveEmitterRiscv64 {
         pushedAtCycle_(-1),
         spilledReg_(InvalidReg),
         spilledFloatReg_(InvalidFloatReg) {}
+  ~MoveEmitterRiscv64() { assertDone(); }
+
   void emit(const MoveResolver&);
   void emit(const MoveOp& move);
   void emitMove(const MoveOperand& from, const MoveOperand& to);
@@ -48,7 +50,7 @@ class MoveEmitterRiscv64 {
   void emitFloat32Move(const MoveOperand& from, const MoveOperand& to);
   void emitDoubleMove(const MoveOperand& from, const MoveOperand& to);
   void finish();
-  void assertDone();
+  void assertDone() { MOZ_ASSERT(inCycle_ == 0); }
   Address cycleSlot(uint32_t slot, uint32_t subslot = 0) const;
   int32_t getAdjustedOffset(const MoveOperand& operand);
   Address getAdjustedAddress(const MoveOperand& operand);

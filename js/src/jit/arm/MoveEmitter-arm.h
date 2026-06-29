@@ -35,7 +35,7 @@ class MoveEmitterARM {
   Register spilledReg_;
   FloatRegister spilledFloatReg_;
 
-  void assertDone();
+  void assertDone() { MOZ_ASSERT(inCycle_ == 0); }
   Register tempReg();
   FloatRegister tempFloatReg();
   Address cycleSlot(uint32_t slot, uint32_t subslot) const;
@@ -53,7 +53,7 @@ class MoveEmitterARM {
 
  public:
   explicit MoveEmitterARM(MacroAssembler& masm);
-  ~MoveEmitterARM();
+  ~MoveEmitterARM() { assertDone(); }
   void emit(const MoveResolver& moves);
   void finish();
 };

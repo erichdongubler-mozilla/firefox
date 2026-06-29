@@ -322,8 +322,6 @@ Address MoveEmitterRiscv64::getAdjustedAddress(const MoveOperand& operand) {
   return Address(operand.base(), getAdjustedOffset(operand));
 }
 
-void MoveEmitterRiscv64::assertDone() { MOZ_ASSERT(inCycle_ == 0); }
-
 void MoveEmitterRiscv64::finish() {
   assertDone();
 
