@@ -4480,6 +4480,15 @@
     denominator: int64_t
   mir_op: Div
 
+- name: DivPowTwoI64
+  result_type: WordSized
+  operands:
+    numerator: WordSized
+  arguments:
+    shift: int32_t
+    negativeDivisor: bool
+  mir_op: Div
+
 - name: ModI64
   result_type: Int64
   operands:
@@ -4493,6 +4502,14 @@
     numerator: WordSized
   arguments:
     denominator: int64_t
+  mir_op: Mod
+
+- name: ModPowTwoI64
+  result_type: WordSized
+  operands:
+    input: WordSized
+  arguments:
+    shift: int32_t
   mir_op: Mod
 
 - name: UDivI64

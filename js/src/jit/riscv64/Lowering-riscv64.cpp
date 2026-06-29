@@ -218,6 +218,14 @@ void LIRGeneratorRiscv64::lowerDivI64(MDiv* div) {
   if (div->rhs()->isConstant()) {
     int64_t rhs = div->rhs()->toConstant()->toInt64();
 
+    if (std::has_single_bit(mozilla::Abs(rhs))) {
+      int32_t shift = mozilla::FloorLog2(mozilla::Abs(rhs));
+      auto lhs = useRegisterAtStart(div->lhs());
+      auto* lir = new (alloc()) LDivPowTwoI64(lhs, shift, rhs < 0);
+      define(lir, div);
+      return;
+    }
+
     auto lhs = useRegister(div->lhs());
     auto* lir = new (alloc()) LDivConstantI64(lhs, rhs);
     define(lir, div);
@@ -284,6 +292,14 @@ void LIRGeneratorRiscv64::lowerModI64(MMod* mod) {
   if (mod->rhs()->isConstant()) {
     int64_t rhs = mod->rhs()->toConstant()->toInt64();
 
+    if (std::has_single_bit(mozilla::Abs(rhs))) {
+      int32_t shift = mozilla::FloorLog2(mozilla::Abs(rhs));
+      auto lhs = useRegisterAtStart(mod->lhs());
+      auto* lir = new (alloc()) LModPowTwoI64(lhs, shift);
+      define(lir, mod);
+      return;
+    }
+
     auto lhs = useRegister(mod->lhs());
     auto* lir = new (alloc()) LModConstantI64(lhs, rhs);
     define(lir, mod);
@@ -341,6 +357,14 @@ void LIRGeneratorRiscv64::lowerUDivI64(MDiv* div) {
     // NOTE: the result of toInt64 is coerced to uint64_t.
     uint64_t rhs = div->rhs()->toConstant()->toInt64();
 
+    if (std::has_single_bit(rhs)) {
+      int32_t shift = mozilla::FloorLog2(rhs);
+      auto lhs = useRegisterAtStart(div->lhs());
+      auto* lir = new (alloc()) LDivPowTwoI64(lhs, shift, false);
+      define(lir, div);
+      return;
+    }
+
     auto lhs = useRegister(div->lhs());
     auto* lir = new (alloc()) LUDivConstantI64(lhs, rhs);
     define(lir, div);
@@ -389,6 +413,14 @@ void LIRGeneratorRiscv64::lowerUModI64(MMod* mod) {
   if (mod->rhs()->isConstant()) {
     // NOTE: the result of toInt64 is coerced to uint64_t.
     uint64_t rhs = mod->rhs()->toConstant()->toInt64();
+
+    if (std::has_single_bit(rhs)) {
+      int32_t shift = mozilla::FloorLog2(rhs);
+      auto lhs = useRegisterAtStart(mod->lhs());
+      auto* lir = new (alloc()) LModPowTwoI64(lhs, shift);
+      define(lir, mod);
+      return;
+    }
 
     auto lhs = useRegister(mod->lhs());
     auto* lir = new (alloc()) LUModConstantI64(lhs, rhs);
