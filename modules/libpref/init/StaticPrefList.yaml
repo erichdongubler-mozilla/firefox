@@ -11688,13 +11688,13 @@
 
 # Is support for CSS Typed Object Model API enabled?
 #
-# Note that this feature is experimental and under active development.
-# Enabling this pref will only expose some interfaces that are already
-# implemented and is intended solely to enable WPT coverage during
-# incremental development.
+# This feature is still under development. The pref is enabled on Nightly so
+# Firefox results show up on wpt.fyi alongside other engines, and to gather
+# real-world feedback. Only interfaces that are implemented are exposed.
+# Color interfaces are additionally gated by layout.css.typed-om-color.enabled.
 - name: layout.css.typed-om.enabled
   type: RelaxedAtomicBool
-  value: false
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
   rust: true
 
