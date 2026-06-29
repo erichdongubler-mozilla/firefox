@@ -322,9 +322,10 @@ export class BrowserToolboxLauncher extends EventEmitter {
       // Never enable Marionette for the new process.
       MOZ_MARIONETTE: null,
       // Don't inherit debug settings from the process launching us.  This can
-      // cause errors when log files collide.
-      MOZ_LOG: null,
-      MOZ_LOG_FILE: null,
+      // cause errors when log files collide. But allow logging via and env var
+      // so that we can debug the toolbox when needed.
+      MOZ_LOG: Services.env.get("MOZ_BROWSER_TOOLBOX_LOG"),
+      MOZ_LOG_FILE: Services.env.get("MOZ_BROWSER_TOOLBOX_LOG_FILE"),
       XPCOM_MEM_BLOAT_LOG: null,
       XPCOM_MEM_LEAK_LOG: null,
       XPCOM_MEM_LOG_CLASSES: null,
