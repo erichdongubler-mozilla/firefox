@@ -78,10 +78,10 @@ const MANAGE_CREDITCARDS_L10N_IDS = [
   "autofill-manage-payment-methods-title",
 ];
 const EDIT_CREDITCARD_L10N_IDS = [
-  "autofill-card-number",
-  "autofill-card-name-on-card",
-  "autofill-card-expires-month",
-  "autofill-card-expires-year",
+  "autofill-card-number-2",
+  "autofill-card-name-on-card-2",
+  "autofill-card-expires-month-2",
+  "autofill-card-expires-year-2",
   "autofill-card-network",
 
   // This string isn't ever displayed, but is used to make the payment methods
