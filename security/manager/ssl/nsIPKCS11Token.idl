@@ -51,10 +51,12 @@ interface nsIPKCS11Token : nsISupports
   Promise logout();
 
   /**
-   * Reset password
+   * Returns a promise that resolves when the token has been reset. If there
+   * was a pin (password), it will have been removed. All secrets stored on the
+   * token will have been deleted or rendered inaccessible.
    */
-  [must_use]
-  void reset();
+  [implicit_jscontext, must_use]
+  Promise reset();
 
   /**
    * Returns a promise that resolves when the user pin (password) has been

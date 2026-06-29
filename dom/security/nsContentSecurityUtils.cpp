@@ -1320,6 +1320,7 @@ static nsLiteralCString sStyleSrcUnsafeInlineAllowList[] = {
     "chrome://pippki/content/downloadcert.xhtml"_ns,
     "chrome://pippki/content/editcacert.xhtml"_ns,
     "chrome://pippki/content/load_device.xhtml"_ns,
+    "chrome://pippki/content/resetpassword.xhtml"_ns,
     "chrome://pippki/content/setp12password.xhtml"_ns,
 };
 // img-src moz-remote-image:
