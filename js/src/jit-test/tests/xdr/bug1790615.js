@@ -1,4 +1,4 @@
-// |jit-test| --fuzzing-safe; --cpu-count=2; --ion-offthread-compile=off; skip-if: !isAsmJSCompilationAvailable()
+// |jit-test| --fuzzing-safe; --cpu-count=2; --ion-offthread-compile=off
 
 load(libdir + "asserts.js");
 

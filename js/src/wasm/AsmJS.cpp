@@ -7285,45 +7285,6 @@ bool js::IsAsmJSCompilationAvailable(JSContext* cx) {
   return cx->options().asmJS() && IsAsmJSCompilerAvailable(cx);
 }
 
-bool js::IsAsmJSCompilationAvailable(JSContext* cx, unsigned argc, Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-  bool available = IsAsmJSCompilationAvailable(cx);
-  args.rval().set(BooleanValue(available));
-  return true;
-}
-
-static JSFunction* MaybeWrappedNativeFunction(const Value& v) {
-  if (!v.isObject()) {
-    return nullptr;
-  }
-
-  return v.toObject().maybeUnwrapIf<JSFunction>();
-}
-
-bool js::IsAsmJSModule(JSContext* cx, unsigned argc, Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-
-  bool rval = false;
-  if (JSFunction* fun = MaybeWrappedNativeFunction(args.get(0))) {
-    rval = IsAsmJSModule(fun);
-  }
-
-  args.rval().set(BooleanValue(rval));
-  return true;
-}
-
-bool js::IsAsmJSFunction(JSContext* cx, unsigned argc, Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-
-  bool rval = false;
-  if (JSFunction* fun = MaybeWrappedNativeFunction(args.get(0))) {
-    rval = IsAsmJSFunction(fun);
-  }
-
-  args.rval().set(BooleanValue(rval));
-  return true;
-}
-
 /*****************************************************************************/
 // asm.js toString/toSource support
 

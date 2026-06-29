@@ -1,5 +1,3 @@
-// |jit-test| skip-if: !isAsmJSCompilationAvailable()
-
 load(libdir + "asm.js");
 
 var g = newGlobal({alwaysUseFdlibm: true})

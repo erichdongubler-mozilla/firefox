@@ -10827,24 +10827,9 @@ gc::ZealModeHelpText),
 "  inferred name based on where the function was defined. This can be\n"
 "  different from the 'name' property on the function."),
 
-    JS_FN_HELP("isAsmJSCompilationAvailable", IsAsmJSCompilationAvailable, 0, 0,
-"isAsmJSCompilationAvailable",
-"  Returns whether asm.js compilation is currently available or whether it is disabled\n"
-"  (e.g., by the debugger)."),
-
     JS_FN_HELP("getJitCompilerOptions", GetJitCompilerOptions, 0, 0,
 "getJitCompilerOptions()",
 "  Return an object describing some of the JIT compiler options.\n"),
-
-    JS_FN_HELP("isAsmJSModule", IsAsmJSModule, 1, 0,
-"isAsmJSModule(fn)",
-"  Returns whether the given value is a function containing \"use asm\" that has been\n"
-"  validated according to the asm.js spec."),
-
-    JS_FN_HELP("isAsmJSFunction", IsAsmJSFunction, 1, 0,
-"isAsmJSFunction(fn)",
-"  Returns whether the given value is a nested function in an asm.js module that has been\n"
-"  both compile- and link-time validated."),
 
     JS_FN_HELP("isAvxPresent", IsAvxPresent, 0, 0,
 "isAvxPresent([minVersion])",

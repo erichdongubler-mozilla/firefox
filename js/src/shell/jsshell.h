@@ -106,7 +106,6 @@ extern bool enableDisassemblyDumps;
 extern bool offthreadBaselineCompilation;
 extern bool offthreadIonCompilation;
 extern JS::DelazificationOption defaultDelazificationMode;
-extern bool enableAsmJS;
 extern bool enableWasm;
 extern bool enableSharedMemory;
 extern bool enableWasmBaseline;
