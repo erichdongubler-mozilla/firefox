@@ -61,11 +61,10 @@ void ChromeProcessController::InitializeRoot() {
 void ChromeProcessController::NotifyLayerTransforms(
     nsTArray<MatrixMessage>&& aTransforms) {
   if (!mUIThread->IsOnCurrentThread()) {
-    mUIThread->Dispatch(
-        NewRunnableMethod<StoreCopyPassByRRef<nsTArray<MatrixMessage>>>(
-            "layers::ChromeProcessController::NotifyLayerTransforms", this,
-            &ChromeProcessController::NotifyLayerTransforms,
-            std::move(aTransforms)));
+    mUIThread->Dispatch(NewRunnableMethod<nsTArray<MatrixMessage>>(
+        "layers::ChromeProcessController::NotifyLayerTransforms", this,
+        &ChromeProcessController::NotifyLayerTransforms,
+        std::move(aTransforms)));
     return;
   }
 

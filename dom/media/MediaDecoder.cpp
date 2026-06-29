@@ -1143,7 +1143,7 @@ void MediaDecoder::NotifyCompositor() {
   RefPtr<KnowsCompositor> knowsCompositor = GetCompositor();
   if (knowsCompositor) {
     nsCOMPtr<nsIRunnable> r =
-        NewRunnableMethod<already_AddRefed<KnowsCompositor>&&>(
+        NewRunnableMethod<already_AddRefed<KnowsCompositor>>(
             "MediaFormatReader::UpdateCompositor", mReader,
             &MediaFormatReader::UpdateCompositor, knowsCompositor.forget());
     (void)mReader->OwnerThread()->Dispatch(r.forget());

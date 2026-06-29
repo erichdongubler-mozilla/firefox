@@ -1646,7 +1646,7 @@ auto MediaTrackGraphImpl::OneIterationImpl(
   if (Switching()) {
     RefPtr<GraphDriver> nextDriver = std::move(mNextDriver);
     return IterationResult::CreateSwitchDriver(
-        nextDriver, NewRunnableMethod<StoreRefPtrPassByPtr<GraphDriver>>(
+        nextDriver, NewRunnableMethod<RefPtr<GraphDriver>>(
                         "MediaTrackGraphImpl::SetCurrentDriver", this,
                         &MediaTrackGraphImpl::SetCurrentDriver, nextDriver));
   }
@@ -3869,8 +3869,7 @@ void MediaTrackGraphImpl::NotifyWhenPrimaryDeviceStarted(
               }));
         } else {
           DispatchToMainThreadStableState(
-              NewRunnableMethod<
-                  StoreCopyPassByRRef<MozPromiseHolder<GraphStartedPromise>>>(
+              NewRunnableMethod<MozPromiseHolder<GraphStartedPromise>>(
                   "MediaTrackGraphImpl::NotifyWhenPrimaryDeviceStarted", this,
                   &MediaTrackGraphImpl::NotifyWhenPrimaryDeviceStarted,
                   std::move(holder)));

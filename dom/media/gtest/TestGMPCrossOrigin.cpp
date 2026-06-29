@@ -181,7 +181,7 @@ void GMPTestRunner::DoTest(
   EXPECT_NS_SUCCEEDED(service->GetThread(getter_AddRefs(thread)));
 
   GMPTestMonitor monitor;
-  thread->Dispatch(NewRunnableMethod<GMPTestMonitor&>(
+  thread->Dispatch(NewRunnableMethod<std::reference_wrapper<GMPTestMonitor>>(
                        "GMPTestRunner::DoTest", this, aTestMethod, monitor),
                    NS_DISPATCH_NORMAL);
   monitor.AwaitFinished();

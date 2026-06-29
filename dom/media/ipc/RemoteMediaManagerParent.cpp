@@ -160,7 +160,7 @@ bool RemoteMediaManagerParent::CreateForContent(
       new RemoteMediaManagerParent(sRemoteMediaManagerParentThread, aChildId);
 
   RefPtr<Runnable> task =
-      NewRunnableMethod<Endpoint<PRemoteMediaManagerParent>&&>(
+      NewRunnableMethod<Endpoint<PRemoteMediaManagerParent>>(
           "dom::RemoteMediaManagerParent::Open", parent,
           &RemoteMediaManagerParent::Open, std::move(aEndpoint));
   MOZ_ALWAYS_SUCCEEDS(sRemoteMediaManagerParentThread->Dispatch(task.forget()));

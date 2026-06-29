@@ -186,10 +186,10 @@ void WMFCDMProxy::RejectPromise(PromiseId aId, ErrorResult&& aException,
     // Use CopyableErrorResult to store our exception in the runnable,
     // because ErrorResult is not OK to move across threads.
     mMainThread->Dispatch(
-        NewRunnableMethod<PromiseId, StoreCopyPassByRRef<CopyableErrorResult>,
-                          nsCString>("WMFCDMProxy::RejectPromise", this,
-                                     &WMFCDMProxy::RejectPromiseOnMainThread,
-                                     aId, std::move(aException), aReason),
+        NewRunnableMethod<PromiseId, CopyableErrorResult, nsCString>(
+            "WMFCDMProxy::RejectPromise", this,
+            &WMFCDMProxy::RejectPromiseOnMainThread, aId, std::move(aException),
+            aReason),
         NS_DISPATCH_NORMAL);
     return;
   }

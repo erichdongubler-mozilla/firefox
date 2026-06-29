@@ -144,9 +144,9 @@ void StreamFilterParent::Attach(nsIChannel* aChannel,
   auto self = MakeRefPtr<StreamFilterParent>();
 
   self->ActorThread()->Dispatch(
-      NewRunnableMethod<ParentEndpoint&&>("StreamFilterParent::Bind", self,
-                                          &StreamFilterParent::Bind,
-                                          std::move(aEndpoint)),
+      NewRunnableMethod<ParentEndpoint>("StreamFilterParent::Bind", self,
+                                        &StreamFilterParent::Bind,
+                                        std::move(aEndpoint)),
       NS_DISPATCH_NORMAL);
 
   // If aChannel is a HttpChannelChild, ask HttpChannelChild to hold a weak
@@ -440,9 +440,9 @@ void StreamFilterParent::FinishDisconnect() {
 IPCResult StreamFilterParent::RecvWrite(Data&& aData) {
   AssertIsActorThread();
 
-  RunOnIOThread(NewRunnableMethod<Data&&>("StreamFilterParent::WriteMove", this,
-                                          &StreamFilterParent::WriteMove,
-                                          std::move(aData)));
+  RunOnIOThread(NewRunnableMethod<Data>("StreamFilterParent::WriteMove", this,
+                                        &StreamFilterParent::WriteMove,
+                                        std::move(aData)));
   return IPC_OK();
 }
 
@@ -809,9 +809,9 @@ StreamFilterParent::OnDataAvailable(nsIRequest* aRequest,
     return NS_ERROR_FAILURE;
   } else {
     ActorThread()->Dispatch(
-        NewRunnableMethod<Data&&>("StreamFilterParent::DoSendData", this,
-                                  &StreamFilterParent::DoSendData,
-                                  std::move(data)),
+        NewRunnableMethod<Data>("StreamFilterParent::DoSendData", this,
+                                &StreamFilterParent::DoSendData,
+                                std::move(data)),
         NS_DISPATCH_NORMAL);
   }
   return NS_OK;

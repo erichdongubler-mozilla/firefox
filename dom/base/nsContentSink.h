@@ -264,8 +264,7 @@ class nsContentSink : public nsICSSLoaderObserver,
 
   uint32_t mPendingSheetCount;
 
-  nsRevocableEventPtr<nsRunnableMethod<nsContentSink, void, false> >
-      mProcessLinkHeaderEvent;
+  nsRevocableEventPtr<mozilla::CancelableRunnable> mProcessLinkHeaderEvent;
 };
 
 #endif  // _nsContentSink_h_

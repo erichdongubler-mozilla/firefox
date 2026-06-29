@@ -82,7 +82,7 @@ bool VRManagerParent::CreateForContent(Endpoint<PVRManagerParent>&& aEndpoint,
 
   RefPtr<VRManagerParent> vmp = new VRManagerParent(
       aEndpoint.OtherEndpointProcInfo(), aChildId, aNamespace, true);
-  CompositorThread()->Dispatch(NewRunnableMethod<Endpoint<PVRManagerParent>&&>(
+  CompositorThread()->Dispatch(NewRunnableMethod<Endpoint<PVRManagerParent>>(
       "gfx::VRManagerParent::Bind", vmp, &VRManagerParent::Bind,
       std::move(aEndpoint)));
 
@@ -123,7 +123,7 @@ bool VRManagerParent::CreateForGPUProcess(
       new VRManagerParent(aEndpoint.OtherEndpointProcInfo(),
                           dom::ContentParentId(), aNamespace, false);
   vmp->mCompositorThreadHolder = CompositorThreadHolder::GetSingleton();
-  CompositorThread()->Dispatch(NewRunnableMethod<Endpoint<PVRManagerParent>&&>(
+  CompositorThread()->Dispatch(NewRunnableMethod<Endpoint<PVRManagerParent>>(
       "gfx::VRManagerParent::Bind", vmp, &VRManagerParent::Bind,
       std::move(aEndpoint)));
   return true;

@@ -106,7 +106,7 @@ LocalStorageCache::Release(void) {
     return;
   }
 
-  RefPtr<nsRunnableMethod<LocalStorageCacheBridge, void, false>> event =
+  nsCOMPtr<nsIRunnable> event =
       NewNonOwningRunnableMethod("dom::LocalStorageCacheBridge::Release",
                                  static_cast<LocalStorageCacheBridge*>(this),
                                  &LocalStorageCacheBridge::Release);

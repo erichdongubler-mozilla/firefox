@@ -819,8 +819,7 @@ void CompositorBridgeParent::SetConfirmedTargetAPZC(
       uint64_t, const nsTArray<ScrollableLayerGuid>&) =
       &APZCTreeManager::SetTargetAPZC;
   RefPtr<Runnable> task =
-      NewRunnableMethod<uint64_t,
-                        StoreCopyPassByRRef<nsTArray<ScrollableLayerGuid>>>(
+      NewRunnableMethod<uint64_t, nsTArray<ScrollableLayerGuid>>(
           "layers::CompositorBridgeParent::SetConfirmedTargetAPZC",
           mApzcTreeManager.get(), setTargetApzcFunc, aInputBlockId,
           std::move(aTargets));

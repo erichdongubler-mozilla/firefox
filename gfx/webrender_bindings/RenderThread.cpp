@@ -724,10 +724,9 @@ void RenderThread::SetProfilerUI(wr::WindowId aWindowId,
 
 void RenderThread::PostEvent(wr::WindowId aWindowId,
                              UniquePtr<RendererEvent> aEvent) {
-  PostRunnable(
-      NewRunnableMethod<wr::WindowId, UniquePtr<RendererEvent>&&, bool>(
-          "wr::RenderThread::PostEvent", this, &RenderThread::RunEvent,
-          aWindowId, std::move(aEvent), /* aViaWebRender */ false));
+  PostRunnable(NewRunnableMethod<wr::WindowId, UniquePtr<RendererEvent>, bool>(
+      "wr::RenderThread::PostEvent", this, &RenderThread::RunEvent, aWindowId,
+      std::move(aEvent), /* aViaWebRender */ false));
 }
 
 void RenderThread::RunEvent(wr::WindowId aWindowId,

@@ -57,7 +57,7 @@ UiCompositorControllerChild::CreateForGPUProcess(
       new UiCompositorControllerChild(aProcessToken, aWidget);
 
   RefPtr<nsIRunnable> task =
-      NewRunnableMethod<Endpoint<PUiCompositorControllerChild>&&>(
+      NewRunnableMethod<Endpoint<PUiCompositorControllerChild>>(
           "layers::UiCompositorControllerChild::OpenForGPUProcess", child,
           &UiCompositorControllerChild::OpenForGPUProcess,
           std::move(aEndpoint));

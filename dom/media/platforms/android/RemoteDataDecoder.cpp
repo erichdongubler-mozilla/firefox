@@ -383,7 +383,7 @@ class RemoteVideoDecoder final : public RemoteDataDecoder {
   void ProcessOutput(java::Sample::GlobalRef&& aSample) {
     if (!mThread->IsOnCurrentThread()) {
       nsresult rv =
-          mThread->Dispatch(NewRunnableMethod<java::Sample::GlobalRef&&>(
+          mThread->Dispatch(NewRunnableMethod<java::Sample::GlobalRef>(
               "RemoteVideoDecoder::ProcessOutput", this,
               &RemoteVideoDecoder::ProcessOutput, std::move(aSample)));
       MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
@@ -785,7 +785,7 @@ class RemoteAudioDecoder final : public RemoteDataDecoder {
                      java::SampleBuffer::GlobalRef&& aBuffer) {
     if (!mThread->IsOnCurrentThread()) {
       nsresult rv =
-          mThread->Dispatch(NewRunnableMethod<java::Sample::GlobalRef&&,
+          mThread->Dispatch(NewRunnableMethod<java::Sample::GlobalRef,
                                               java::SampleBuffer::GlobalRef&&>(
               "RemoteAudioDecoder::ProcessOutput", this,
               &RemoteAudioDecoder::ProcessOutput, std::move(aSample),

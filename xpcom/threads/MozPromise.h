@@ -16,7 +16,6 @@
 #include "mozilla/Mutex.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticString.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/Variant.h"
 #include "nsIDirectTaskDispatcher.h"
 #include "nsISerialEventTarget.h"
@@ -1388,191 +1387,60 @@ class MozPromiseRequestHolder {
 // resulting promise to the one that the caller received, so that resolve/
 // reject values are forwarded through.
 
-namespace detail {
-
-// Non-templated base class to allow us to use MOZ_COUNT_{C,D}TOR, which cause
-// assertions when used on templated types.
-class MethodCallBase {
- public:
-  MOZ_COUNTED_DEFAULT_CTOR(MethodCallBase)
-  MOZ_COUNTED_DTOR_VIRTUAL(MethodCallBase)
-};
-
-template <typename PromiseType, typename MethodType, typename ThisType,
-          typename... Storages>
-class MethodCall : public MethodCallBase {
- public:
-  template <typename... Args>
-  MethodCall(MethodType aMethod, ThisType* aThisVal, Args&&... aArgs)
-      : mMethod(aMethod),
-        mThisVal(aThisVal),
-        mArgs(std::forward<Args>(aArgs)...) {
-    static_assert(sizeof...(Storages) == sizeof...(Args),
-                  "Storages and Args should have equal sizes");
-  }
-
-  RefPtr<PromiseType> Invoke() { return mArgs.apply(mThisVal.get(), mMethod); }
-
- private:
-  MethodType mMethod;
-  RefPtr<ThisType> mThisVal;
-  RunnableMethodArguments<Storages...> mArgs;
-};
-
-template <typename PromiseType, typename MethodType, typename ThisType,
-          typename... Storages>
-class ProxyRunnable : public CancelableRunnable {
- public:
-  ProxyRunnable(
-      typename PromiseType::Private* aProxyPromise,
-      MethodCall<PromiseType, MethodType, ThisType, Storages...>* aMethodCall)
-      : CancelableRunnable("detail::ProxyRunnable"),
-        mProxyPromise(aProxyPromise),
-        mMethodCall(aMethodCall) {}
-
-  NS_IMETHOD Run() override {
-    RefPtr<PromiseType> p = mMethodCall->Invoke();
-    mMethodCall = nullptr;
-    p->ChainTo(mProxyPromise.forget(), "<Proxy Promise>");
-    return NS_OK;
-  }
-
-  nsresult Cancel() override { return Run(); }
-
- private:
-  RefPtr<typename PromiseType::Private> mProxyPromise;
-  UniquePtr<MethodCall<PromiseType, MethodType, ThisType, Storages...>>
-      mMethodCall;
-};
-
-template <typename... Storages, typename PromiseType, typename ThisType,
-          typename... ArgTypes, typename... ActualArgTypes>
-static RefPtr<PromiseType> InvokeAsyncImpl(
-    nsISerialEventTarget* aTarget, ThisType* aThisVal, StaticString aCallerName,
-    RefPtr<PromiseType> (ThisType::*aMethod)(ArgTypes...),
-    ActualArgTypes&&... aArgs) {
-  MOZ_ASSERT(aTarget);
-
-  typedef RefPtr<PromiseType> (ThisType::*MethodType)(ArgTypes...);
-  typedef detail::MethodCall<PromiseType, MethodType, ThisType, Storages...>
-      MethodCallType;
-  typedef detail::ProxyRunnable<PromiseType, MethodType, ThisType, Storages...>
-      ProxyRunnableType;
-
-  MethodCallType* methodCall = new MethodCallType(
-      aMethod, aThisVal, std::forward<ActualArgTypes>(aArgs)...);
-  RefPtr<typename PromiseType::Private> p =
-      new (typename PromiseType::Private)(aCallerName);
-  RefPtr<ProxyRunnableType> r = new ProxyRunnableType(p, methodCall);
-  aTarget->Dispatch(r.forget());
-  return p;
-}
-
-constexpr bool Any() { return false; }
-
-template <typename T1>
-constexpr bool Any(T1 a) {
-  return static_cast<bool>(a);
-}
-
-template <typename T1, typename... Ts>
-constexpr bool Any(T1 a, Ts... aOthers) {
-  return a || Any(aOthers...);
-}
-
-}  // namespace detail
-
-// InvokeAsync with explicitly-specified storages.
-// See ParameterStorage in nsThreadUtils.h for help.
-template <typename... Storages, typename PromiseType, typename ThisType,
-          typename... ArgTypes, typename... ActualArgTypes,
-          std::enable_if_t<sizeof...(Storages) != 0, int> = 0>
-static RefPtr<PromiseType> InvokeAsync(
-    nsISerialEventTarget* aTarget, ThisType* aThisVal, StaticString aCallerName,
-    RefPtr<PromiseType> (ThisType::*aMethod)(ArgTypes...),
-    ActualArgTypes&&... aArgs) {
-  static_assert(
-      sizeof...(Storages) == sizeof...(ArgTypes),
-      "Provided Storages and method's ArgTypes should have equal sizes");
-  static_assert(sizeof...(Storages) == sizeof...(ActualArgTypes),
-                "Provided Storages and ActualArgTypes should have equal sizes");
-  return detail::InvokeAsyncImpl<Storages...>(
-      aTarget, aThisVal, aCallerName, aMethod,
-      std::forward<ActualArgTypes>(aArgs)...);
-}
-
-// InvokeAsync with no explicitly-specified storages, will copy arguments and
-// then move them out of the runnable into the target method parameters.
-template <typename... Storages, typename PromiseType, typename ThisType,
-          typename... ArgTypes, typename... ActualArgTypes,
-          std::enable_if_t<sizeof...(Storages) == 0, int> = 0>
-static RefPtr<PromiseType> InvokeAsync(
-    nsISerialEventTarget* aTarget, ThisType* aThisVal, StaticString aCallerName,
-    RefPtr<PromiseType> (ThisType::*aMethod)(ArgTypes...),
-    ActualArgTypes&&... aArgs) {
-  static_assert(
-      !detail::Any(
-          std::is_pointer_v<std::remove_reference_t<ActualArgTypes>>...),
-      "Cannot pass pointer types through InvokeAsync, Storages must be "
-      "provided");
-  static_assert(sizeof...(ArgTypes) == sizeof...(ActualArgTypes),
-                "Method's ArgTypes and ActualArgTypes should have equal sizes");
-  return detail::InvokeAsyncImpl<
-      StoreCopyPassByRRef<std::decay_t<ActualArgTypes>>...>(
-      aTarget, aThisVal, aCallerName, aMethod,
-      std::forward<ActualArgTypes>(aArgs)...);
-}
-
-namespace detail {
-
-template <typename Function, typename PromiseType>
-class ProxyFunctionRunnable : public CancelableRunnable {
-  using FunctionStorage = std::decay_t<Function>;
-
- public:
-  template <typename F>
-  ProxyFunctionRunnable(typename PromiseType::Private* aProxyPromise,
-                        F&& aFunction)
-      : CancelableRunnable("detail::ProxyFunctionRunnable"),
-        mProxyPromise(aProxyPromise),
-        mFunction(new FunctionStorage(std::forward<F>(aFunction))) {}
-
-  NS_IMETHOD Run() override {
-    RefPtr<PromiseType> p = (*mFunction)();
-    mFunction = nullptr;
-    p->ChainTo(mProxyPromise.forget(), "<Proxy Promise>");
-    return NS_OK;
-  }
-
-  nsresult Cancel() override { return Run(); }
-
- private:
-  RefPtr<typename PromiseType::Private> mProxyPromise;
-  UniquePtr<FunctionStorage> mFunction;
-};
-
-}  // namespace detail
-
 // Invoke a function object (e.g., lambda) asynchronously.
 // Return a promise that the function should eventually resolve or reject.
-template <typename Function>
+template <std::invocable Function>
 static auto InvokeAsync(nsISerialEventTarget* aTarget, StaticString aCallerName,
-                        Function&& aFunction) -> decltype(aFunction()) {
+                        Function&& aFunction)
+    -> std::invoke_result_t<Function> {
   static_assert(!std::is_lvalue_reference_v<Function>,
                 "Function object must not be passed by lvalue-ref (to avoid "
                 "unplanned copies); Consider move()ing the object.");
 
-  static_assert(detail::IsRefPtrMozPromise<decltype(aFunction())>,
+  static_assert(detail::IsRefPtrMozPromise<std::invoke_result_t<Function>>,
                 "Function object must return RefPtr<MozPromise>");
   MOZ_ASSERT(aTarget);
-  typedef RemoveSmartPointer<decltype(aFunction())> PromiseType;
-  typedef detail::ProxyFunctionRunnable<Function, PromiseType>
-      ProxyRunnableType;
 
-  auto p = MakeRefPtr<typename PromiseType::Private>(aCallerName);
-  auto r = MakeRefPtr<ProxyRunnableType>(p, std::forward<Function>(aFunction));
-  aTarget->Dispatch(r.forget());
-  return p;
+  auto promise = MakeRefPtr<
+      typename RemoveSmartPointer<std::invoke_result_t<Function>>::Private>(
+      aCallerName);
+  aTarget->Dispatch(NS_NewCancelableRunnableFunction(
+      "InvokeAsync",
+      [promise, function = std::forward<Function>(aFunction)]() mutable {
+        auto result = std::invoke(std::move(function));
+        result->ChainTo(promise.forget(), "<Proxy Promise>");
+      }));
+  return promise;
+}
+
+// InvokeAsync on a method with optional explicitly-specified storages.
+// See WrapAsFunctor in nsThreadUtils.h for help.
+template <typename... Storages, typename PromiseType, typename ThisType,
+          typename... ArgTypes, typename... ActualArgTypes>
+static RefPtr<PromiseType> InvokeAsync(
+    nsISerialEventTarget* aTarget, ThisType* aThisVal, StaticString aCallerName,
+    RefPtr<PromiseType> (ThisType::*aMethod)(ArgTypes...),
+    ActualArgTypes&&... aArgs) {
+  static_assert(sizeof...(ArgTypes) == sizeof...(ActualArgTypes),
+                "Method's ArgTypes and ActualArgTypes should have equal sizes");
+  if constexpr (sizeof...(Storages) == 0) {
+    static_assert(
+        (!std::is_pointer_v<std::remove_reference_t<ActualArgTypes>> && ...),
+        "Cannot pass pointer types through InvokeAsync, Storages must be "
+        "provided");
+    return InvokeAsync(
+        aTarget, aCallerName,
+        detail::WrapAsFunctor<std::decay_t<ActualArgTypes>...>(
+            aThisVal, aMethod, std::forward<ActualArgTypes>(aArgs)...));
+  } else {
+    static_assert(
+        sizeof...(Storages) == sizeof...(ArgTypes),
+        "Provided Storages and method's ArgTypes should have equal sizes");
+    return InvokeAsync(
+        aTarget, aCallerName,
+        detail::WrapAsFunctor<Storages...>(
+            aThisVal, aMethod, std::forward<ActualArgTypes>(aArgs)...));
+  }
 }
 
 #undef PROMISE_LOG

@@ -703,8 +703,7 @@ class IdleObject final {
                                 nsITimer::TYPE_ONE_SHOT,
                                 "IdleObject::Method3"_ns);
     NS_DispatchToCurrentThreadQueue(
-        NewIdleRunnableMethodWithTimer("IdleObject::Method5", this,
-                                       &IdleObject::Method5),
+        NewRunnableMethod("IdleObject::Method5", this, &IdleObject::Method5),
         50, EventQueuePriority::Idle);
     NS_DispatchToCurrentThreadQueue(
         NewRunnableMethod("IdleObject::Method6", this, &IdleObject::Method6),
@@ -1246,35 +1245,37 @@ class ThreadUtilsRefCountedDerived : public ThreadUtilsRefCountedBase {};
 
 class ThreadUtilsNonRefCounted {};
 
+template <typename T>
+using StoreParamType =
+    decltype(mozilla::detail::StoreParam<T>(std::declval<T>()));
+
+template <typename T, typename U>
+static constexpr bool StoreParamTypeIs = std::is_same_v<StoreParamType<T>, U>;
+
+template <typename T>
+static constexpr bool IsParamStorageAllowed =
+    requires { mozilla::detail::StoreParam<T>(std::declval<T>()); };
+
+template <typename T>
+struct CanReceiveParamTypeAsHelper {
+  void Receive(T);
+};
+
+template <typename Storage, typename As>
+static constexpr bool CanReceiveParamTypeAs =
+    requires(CanReceiveParamTypeAsHelper<As>* receiver) {
+      {
+        mozilla::detail::WrapAsFunctorNonOwning<Storage>(
+            receiver, &CanReceiveParamTypeAsHelper<As>::Receive,
+            std::declval<Storage>())
+      } -> std::invocable;
+    };
+
 }  // namespace TestThreadUtils
 
 TEST(ThreadUtils, main)
 {
   using namespace TestThreadUtils;
-
-  static_assert(!IsParameterStorageClass<int>::value,
-                "'int' should not be recognized as Storage Class");
-  static_assert(
-      IsParameterStorageClass<StoreCopyPassByConstLRef<int>>::value,
-      "StoreCopyPassByConstLRef<int> should be recognized as Storage Class");
-  static_assert(
-      IsParameterStorageClass<StoreCopyPassByRRef<int>>::value,
-      "StoreCopyPassByRRef<int> should be recognized as Storage Class");
-  static_assert(
-      IsParameterStorageClass<StoreRefPassByLRef<int>>::value,
-      "StoreRefPassByLRef<int> should be recognized as Storage Class");
-  static_assert(
-      IsParameterStorageClass<StoreConstRefPassByConstLRef<int>>::value,
-      "StoreConstRefPassByConstLRef<int> should be recognized as Storage "
-      "Class");
-  static_assert(
-      IsParameterStorageClass<StoreRefPtrPassByPtr<int>>::value,
-      "StoreRefPtrPassByPtr<int> should be recognized as Storage Class");
-  static_assert(IsParameterStorageClass<StorePtrPassByPtr<int>>::value,
-                "StorePtrPassByPtr<int> should be recognized as Storage Class");
-  static_assert(
-      IsParameterStorageClass<StoreConstPtrPassByConstPtr<int>>::value,
-      "StoreConstPtrPassByConstPtr<int> should be recognized as Storage Class");
 
   RefPtr<ThreadUtilsObject> rpt(new ThreadUtilsObject);
   int count = 0;
@@ -1309,10 +1310,7 @@ TEST(ThreadUtils, main)
   r1->Run();
   EXPECT_EQ(count += 1, rpt->mCount);
 
-  static_assert(std::is_same_v<::detail::ParameterStorage<int>::Type,
-                               StoreCopyPassByConstLRef<int>>,
-                "detail::ParameterStorage<int>::Type should be "
-                "StoreCopyPassByConstLRef<int>");
+  static_assert(StoreParamTypeIs<int, int>, "int should be stored as int");
 
   r1 = NewRunnableMethod<int>("TestThreadUtils::ThreadUtilsObject::Test1i", rpt,
                               &ThreadUtilsObject::Test1i, 12);
@@ -1357,29 +1355,14 @@ TEST(ThreadUtils, main)
   EXPECT_EQ(si, rpt->mA0);
 
   // Raw pointer, possible cv-qualified.
-  static_assert(
-      std::is_same_v<::detail::ParameterStorage<int*>::Type,
-                     StorePtrPassByPtr<int>>,
-      "detail::ParameterStorage<int*>::Type should be StorePtrPassByPtr<int>");
-  static_assert(std::is_same_v<::detail::ParameterStorage<int* const>::Type,
-                               StorePtrPassByPtr<int>>,
-                "detail::ParameterStorage<int* const>::Type should be "
-                "StorePtrPassByPtr<int>");
-  static_assert(std::is_same_v<::detail::ParameterStorage<int* volatile>::Type,
-                               StorePtrPassByPtr<int>>,
-                "detail::ParameterStorage<int* volatile>::Type should be "
-                "StorePtrPassByPtr<int>");
-  static_assert(
-      std::is_same_v<::detail::ParameterStorage<int* const volatile>::Type,
-                     StorePtrPassByPtr<int>>,
-      "detail::ParameterStorage<int* const volatile>::Type should be "
-      "StorePtrPassByPtr<int>");
-  static_assert(
-      std::is_same_v<::detail::ParameterStorage<int*>::Type::stored_type, int*>,
-      "detail::ParameterStorage<int*>::Type::stored_type should be int*");
-  static_assert(
-      std::is_same_v<::detail::ParameterStorage<int*>::Type::passed_type, int*>,
-      "detail::ParameterStorage<int*>::Type::passed_type should be int*");
+  static_assert(StoreParamTypeIs<int*, int*>);
+  static_assert(StoreParamTypeIs<int* const, int*>);
+  static_assert(StoreParamTypeIs<int* volatile, int*>);
+  static_assert(StoreParamTypeIs<int* const volatile, int*>);
+  static_assert(CanReceiveParamTypeAs<int*, int*&&>);
+  static_assert(CanReceiveParamTypeAs<int*, int*>);
+  static_assert(CanReceiveParamTypeAs<int*, int* const&>);
+  static_assert(!CanReceiveParamTypeAs<int*, bool*>);
   {
     int i = 12;
     r1 = NewRunnableMethod<int*>("TestThreadUtils::ThreadUtilsObject::Test1pi",
@@ -1390,35 +1373,11 @@ TEST(ThreadUtils, main)
   }
 
   // Raw pointer to const.
-  static_assert(std::is_same_v<::detail::ParameterStorage<const int*>::Type,
-                               StoreConstPtrPassByConstPtr<int>>,
-                "detail::ParameterStorage<const int*>::Type should be "
-                "StoreConstPtrPassByConstPtr<int>");
-  static_assert(
-      std::is_same_v<::detail::ParameterStorage<const int* const>::Type,
-                     StoreConstPtrPassByConstPtr<int>>,
-      "detail::ParameterStorage<const int* const>::Type should be "
-      "StoreConstPtrPassByConstPtr<int>");
-  static_assert(
-      std::is_same_v<::detail::ParameterStorage<const int* volatile>::Type,
-                     StoreConstPtrPassByConstPtr<int>>,
-      "detail::ParameterStorage<const int* volatile>::Type should be "
-      "StoreConstPtrPassByConstPtr<int>");
-  static_assert(std::is_same_v<
-                    ::detail::ParameterStorage<const int* const volatile>::Type,
-                    StoreConstPtrPassByConstPtr<int>>,
-                "detail::ParameterStorage<const int* const volatile>::Type "
-                "should be StoreConstPtrPassByConstPtr<int>");
-  static_assert(
-      std::is_same_v<::detail::ParameterStorage<const int*>::Type::stored_type,
-                     const int*>,
-      "detail::ParameterStorage<const int*>::Type::stored_type should be const "
-      "int*");
-  static_assert(
-      std::is_same_v<::detail::ParameterStorage<const int*>::Type::passed_type,
-                     const int*>,
-      "detail::ParameterStorage<const int*>::Type::passed_type should be const "
-      "int*");
+  static_assert(StoreParamTypeIs<const int*, const int*>);
+  static_assert(StoreParamTypeIs<const int* const, const int*>);
+  static_assert(StoreParamTypeIs<const int* volatile, const int*>);
+  static_assert(StoreParamTypeIs<const int* const volatile, const int*>);
+  static_assert(CanReceiveParamTypeAs<const int*, const int*&&>);
   {
     int i = 1201;
     r1 = NewRunnableMethod<const int*>(
@@ -1430,142 +1389,103 @@ TEST(ThreadUtils, main)
   }
 
   // nsRefPtr to pointer.
+  static_assert(IsParamStorageAllowed<RefPtr<SpyWithISupports>>);
+  static_assert(IsParamStorageAllowed<SpyWithISupports*>);
   static_assert(
-      std::is_same_v<::detail::ParameterStorage<
-                         StoreRefPtrPassByPtr<SpyWithISupports>>::Type,
-                     StoreRefPtrPassByPtr<SpyWithISupports>>,
-      "ParameterStorage<StoreRefPtrPassByPtr<SpyWithISupports>>::Type should "
-      "be StoreRefPtrPassByPtr<SpyWithISupports>");
+      StoreParamTypeIs<RefPtr<SpyWithISupports>, RefPtr<SpyWithISupports>>);
+  static_assert(CanReceiveParamTypeAs<RefPtr<SpyWithISupports>,
+                                      RefPtr<SpyWithISupports>&&>);
+  static_assert(CanReceiveParamTypeAs<RefPtr<SpyWithISupports>,
+                                      const RefPtr<SpyWithISupports>&>);
   static_assert(
-      std::is_same_v<::detail::ParameterStorage<SpyWithISupports*>::Type,
-                     StoreRefPtrPassByPtr<SpyWithISupports>>,
-      "ParameterStorage<SpyWithISupports*>::Type should be "
-      "StoreRefPtrPassByPtr<SpyWithISupports>");
-  static_assert(
-      std::is_same_v<StoreRefPtrPassByPtr<SpyWithISupports>::stored_type,
-                     RefPtr<SpyWithISupports>>,
-      "StoreRefPtrPassByPtr<SpyWithISupports>::stored_type should be "
-      "RefPtr<SpyWithISupports>");
-  static_assert(
-      std::is_same_v<StoreRefPtrPassByPtr<SpyWithISupports>::passed_type,
-                     SpyWithISupports*>,
-      "StoreRefPtrPassByPtr<SpyWithISupports>::passed_type should be "
-      "SpyWithISupports*");
+      CanReceiveParamTypeAs<RefPtr<SpyWithISupports>, SpyWithISupports*>);
+
+  static_assert(StoreParamTypeIs<SpyWithISupports*, RefPtr<SpyWithISupports>>);
+  static_assert(CanReceiveParamTypeAs<RefPtr<SpyWithISupports>,
+                                      RefPtr<SpyWithISupports>&&>);
+  static_assert(CanReceiveParamTypeAs<RefPtr<SpyWithISupports>,
+                                      const RefPtr<SpyWithISupports>&>);
   // (more nsRefPtr tests below)
 
   // nsRefPtr for ref-countable classes that do not derive from ISupports.
-  static_assert(::detail::HasRefCountMethods<ThreadUtilsRefCountedFinal>,
+  static_assert(IsParamStorageAllowed<RefPtr<ThreadUtilsRefCountedFinal>>);
+  static_assert(IsParamStorageAllowed<ThreadUtilsRefCountedFinal*>);
+  static_assert(mozilla::detail::HasRefCountMethods<ThreadUtilsRefCountedFinal>,
                 "ThreadUtilsRefCountedFinal has AddRef() and Release()");
-  static_assert(
-      std::is_same_v<
-          ::detail::ParameterStorage<ThreadUtilsRefCountedFinal*>::Type,
-          StoreRefPtrPassByPtr<ThreadUtilsRefCountedFinal>>,
-      "ParameterStorage<ThreadUtilsRefCountedFinal*>::Type should be "
-      "StoreRefPtrPassByPtr<ThreadUtilsRefCountedFinal>");
-  static_assert(::detail::HasRefCountMethods<ThreadUtilsRefCountedBase>,
-                "ThreadUtilsRefCountedBase has AddRef() and Release()");
-  static_assert(
-      std::is_same_v<
-          ::detail::ParameterStorage<ThreadUtilsRefCountedBase*>::Type,
-          StoreRefPtrPassByPtr<ThreadUtilsRefCountedBase>>,
-      "ParameterStorage<ThreadUtilsRefCountedBase*>::Type should be "
-      "StoreRefPtrPassByPtr<ThreadUtilsRefCountedBase>");
-  static_assert(::detail::HasRefCountMethods<ThreadUtilsRefCountedDerived>,
-                "ThreadUtilsRefCountedDerived has AddRef() and Release()");
-  static_assert(
-      std::is_same_v<
-          ::detail::ParameterStorage<ThreadUtilsRefCountedDerived*>::Type,
-          StoreRefPtrPassByPtr<ThreadUtilsRefCountedDerived>>,
-      "ParameterStorage<ThreadUtilsRefCountedDerived*>::Type should be "
-      "StoreRefPtrPassByPtr<ThreadUtilsRefCountedDerived>");
+  static_assert(StoreParamTypeIs<ThreadUtilsRefCountedFinal*,
+                                 RefPtr<ThreadUtilsRefCountedFinal>>);
 
-  static_assert(!::detail::HasRefCountMethods<ThreadUtilsNonRefCounted>,
+  static_assert(IsParamStorageAllowed<RefPtr<ThreadUtilsRefCountedBase>>);
+  static_assert(IsParamStorageAllowed<ThreadUtilsRefCountedBase*>);
+  static_assert(mozilla::detail::HasRefCountMethods<ThreadUtilsRefCountedBase>,
+                "ThreadUtilsRefCountedBase has AddRef() and Release()");
+  static_assert(StoreParamTypeIs<ThreadUtilsRefCountedBase*,
+                                 RefPtr<ThreadUtilsRefCountedBase>>);
+
+  static_assert(IsParamStorageAllowed<RefPtr<ThreadUtilsRefCountedDerived>>);
+  static_assert(IsParamStorageAllowed<ThreadUtilsRefCountedDerived*>);
+  static_assert(
+      mozilla::detail::HasRefCountMethods<ThreadUtilsRefCountedDerived>,
+      "ThreadUtilsRefCountedDerived has AddRef() and Release()");
+  static_assert(StoreParamTypeIs<ThreadUtilsRefCountedDerived*,
+                                 RefPtr<ThreadUtilsRefCountedDerived>>);
+
+  static_assert(IsParamStorageAllowed<ThreadUtilsNonRefCounted*>);
+  static_assert(!mozilla::detail::HasRefCountMethods<ThreadUtilsNonRefCounted>,
                 "ThreadUtilsNonRefCounted doesn't have AddRef() and Release()");
-  static_assert(!std::is_same_v<
-                    ::detail::ParameterStorage<ThreadUtilsNonRefCounted*>::Type,
-                    StoreRefPtrPassByPtr<ThreadUtilsNonRefCounted>>,
-                "ParameterStorage<ThreadUtilsNonRefCounted*>::Type should NOT "
-                "be StoreRefPtrPassByPtr<ThreadUtilsNonRefCounted>");
+  static_assert(
+      StoreParamTypeIs<ThreadUtilsNonRefCounted*, ThreadUtilsNonRefCounted*>);
 
   // Lvalue reference.
+  static_assert(!IsParamStorageAllowed<int&>);
+  static_assert(!IsParamStorageAllowed<int&&>);
+  static_assert(!IsParamStorageAllowed<const int&>);
+  static_assert(!IsParamStorageAllowed<const int&&>);
+
+  static_assert(IsParamStorageAllowed<std::reference_wrapper<int>>);
+  static_assert(StoreParamTypeIs<std::reference_wrapper<int>,
+                                 std::reference_wrapper<int>>);
+  static_assert(CanReceiveParamTypeAs<std::reference_wrapper<int>, int&>);
+  static_assert(CanReceiveParamTypeAs<std::reference_wrapper<int>, const int&>);
+  static_assert(!CanReceiveParamTypeAs<std::reference_wrapper<int>, int&&>);
   static_assert(
-      std::is_same_v<::detail::ParameterStorage<int&>::Type,
-                     StoreRefPassByLRef<int>>,
-      "ParameterStorage<int&>::Type should be StoreRefPassByLRef<int>");
+      !CanReceiveParamTypeAs<std::reference_wrapper<int>, const int&&>);
+
+  static_assert(IsParamStorageAllowed<std::reference_wrapper<const int>>);
+  static_assert(StoreParamTypeIs<std::reference_wrapper<const int>,
+                                 std::reference_wrapper<const int>>);
   static_assert(
-      std::is_same_v<::detail::ParameterStorage<int&>::Type::stored_type,
-                     StoreRefPassByLRef<int>::stored_type>,
-      "ParameterStorage<int&>::Type::stored_type should be "
-      "StoreRefPassByLRef<int>::stored_type");
+      !CanReceiveParamTypeAs<std::reference_wrapper<const int>, int&>);
   static_assert(
-      std::is_same_v<::detail::ParameterStorage<int&>::Type::stored_type, int&>,
-      "ParameterStorage<int&>::Type::stored_type should be int&");
+      CanReceiveParamTypeAs<std::reference_wrapper<const int>, const int&>);
   static_assert(
-      std::is_same_v<::detail::ParameterStorage<int&>::Type::passed_type, int&>,
-      "ParameterStorage<int&>::Type::passed_type should be int&");
+      !CanReceiveParamTypeAs<std::reference_wrapper<const int>, int&&>);
+  static_assert(
+      !CanReceiveParamTypeAs<std::reference_wrapper<const int>, const int&&>);
+
   {
     int i = 13;
-    r1 = NewRunnableMethod<int&>("TestThreadUtils::ThreadUtilsObject::Test1ri",
-                                 rpt, &ThreadUtilsObject::Test1ri, i);
+    r1 = NewRunnableMethod<std::reference_wrapper<int>>(
+        "TestThreadUtils::ThreadUtilsObject::Test1ri", rpt,
+        &ThreadUtilsObject::Test1ri, i);
     r1->Run();
     EXPECT_EQ(count += 2, rpt->mCount);
     EXPECT_EQ(i, rpt->mA0);
   }
 
-  // Rvalue reference -- Actually storing a copy and then moving it.
-  static_assert(
-      std::is_same_v<::detail::ParameterStorage<int&&>::Type,
-                     StoreCopyPassByRRef<int>>,
-      "ParameterStorage<int&&>::Type should be StoreCopyPassByRRef<int>");
-  static_assert(
-      std::is_same_v<::detail::ParameterStorage<int&&>::Type::stored_type,
-                     StoreCopyPassByRRef<int>::stored_type>,
-      "ParameterStorage<int&&>::Type::stored_type should be "
-      "StoreCopyPassByRRef<int>::stored_type");
-  static_assert(
-      std::is_same_v<::detail::ParameterStorage<int&&>::Type::stored_type, int>,
-      "ParameterStorage<int&&>::Type::stored_type should be int");
-  static_assert(
-      std::is_same_v<::detail::ParameterStorage<int&&>::Type::passed_type,
-                     int&&>,
-      "ParameterStorage<int&&>::Type::passed_type should be int&&");
-  {
-    int i = 14;
-    r1 = NewRunnableMethod<int&&>(
-        "TestThreadUtils::ThreadUtilsObject::Test1rri", rpt,
-        &ThreadUtilsObject::Test1rri, std::move(i));
-  }
-  r1->Run();
-  EXPECT_EQ(count += 2, rpt->mCount);
-  EXPECT_EQ(14, rpt->mA0);
-
   // Null unique pointer, by semi-implicit store&move with "T&&" syntax.
-  static_assert(std::is_same_v<
-                    ::detail::ParameterStorage<mozilla::UniquePtr<int>&&>::Type,
-                    StoreCopyPassByRRef<mozilla::UniquePtr<int>>>,
-                "ParameterStorage<UniquePtr<int>&&>::Type should be "
-                "StoreCopyPassByRRef<UniquePtr<int>>");
+  static_assert(IsParamStorageAllowed<mozilla::UniquePtr<int>>);
   static_assert(
-      std::is_same_v<::detail::ParameterStorage<
-                         mozilla::UniquePtr<int>&&>::Type::stored_type,
-                     StoreCopyPassByRRef<mozilla::UniquePtr<int>>::stored_type>,
-      "ParameterStorage<UniquePtr<int>&&>::Type::stored_type should be "
-      "StoreCopyPassByRRef<UniquePtr<int>>::stored_type");
+      StoreParamTypeIs<mozilla::UniquePtr<int>, mozilla::UniquePtr<int>>);
   static_assert(
-      std::is_same_v<::detail::ParameterStorage<
-                         mozilla::UniquePtr<int>&&>::Type::stored_type,
-                     mozilla::UniquePtr<int>>,
-      "ParameterStorage<UniquePtr<int>&&>::Type::stored_type should be "
-      "UniquePtr<int>");
-  static_assert(
-      std::is_same_v<::detail::ParameterStorage<
-                         mozilla::UniquePtr<int>&&>::Type::passed_type,
-                     mozilla::UniquePtr<int>&&>,
-      "ParameterStorage<UniquePtr<int>&&>::Type::passed_type should be "
-      "UniquePtr<int>&&");
+      CanReceiveParamTypeAs<mozilla::UniquePtr<int>, mozilla::UniquePtr<int>>);
+  static_assert(CanReceiveParamTypeAs<mozilla::UniquePtr<int>,
+                                      mozilla::UniquePtr<int>&&>);
+  static_assert(CanReceiveParamTypeAs<mozilla::UniquePtr<int>,
+                                      const mozilla::UniquePtr<int>&>);
   {
     mozilla::UniquePtr<int> upi;
-    r1 = NewRunnableMethod<mozilla::UniquePtr<int>&&>(
+    r1 = NewRunnableMethod<mozilla::UniquePtr<int>>(
         "TestThreadUtils::ThreadUtilsObject::Test1upi", rpt,
         &ThreadUtilsObject::Test1upi, std::move(upi));
   }
@@ -1574,56 +1494,10 @@ TEST(ThreadUtils, main)
   EXPECT_EQ(-1, rpt->mA0);
   rpt->mA0 = 0;
 
-  // Null unique pointer, by explicit store&move with "StoreCopyPassByRRef<T>"
-  // syntax.
-  static_assert(
-      std::is_same_v<::detail::ParameterStorage<StoreCopyPassByRRef<
-                         mozilla::UniquePtr<int>>>::Type::stored_type,
-                     StoreCopyPassByRRef<mozilla::UniquePtr<int>>::stored_type>,
-      "ParameterStorage<StoreCopyPassByRRef<UniquePtr<int>>>::Type::stored_"
-      "type should be StoreCopyPassByRRef<UniquePtr<int>>::stored_type");
-  static_assert(
-      std::is_same_v<::detail::ParameterStorage<StoreCopyPassByRRef<
-                         mozilla::UniquePtr<int>>>::Type::stored_type,
-                     StoreCopyPassByRRef<mozilla::UniquePtr<int>>::stored_type>,
-      "ParameterStorage<StoreCopyPassByRRef<UniquePtr<int>>>::Type::stored_"
-      "type should be StoreCopyPassByRRef<UniquePtr<int>>::stored_type");
-  static_assert(
-      std::is_same_v<::detail::ParameterStorage<StoreCopyPassByRRef<
-                         mozilla::UniquePtr<int>>>::Type::stored_type,
-                     mozilla::UniquePtr<int>>,
-      "ParameterStorage<StoreCopyPassByRRef<UniquePtr<int>>>::Type::stored_"
-      "type should be UniquePtr<int>");
-  static_assert(
-      std::is_same_v<::detail::ParameterStorage<StoreCopyPassByRRef<
-                         mozilla::UniquePtr<int>>>::Type::passed_type,
-                     mozilla::UniquePtr<int>&&>,
-      "ParameterStorage<StoreCopyPassByRRef<UniquePtr<int>>>::Type::passed_"
-      "type should be UniquePtr<int>&&");
-  {
-    mozilla::UniquePtr<int> upi;
-    r1 = NewRunnableMethod<StoreCopyPassByRRef<mozilla::UniquePtr<int>>>(
-        "TestThreadUtils::ThreadUtilsObject::Test1upi", rpt,
-        &ThreadUtilsObject::Test1upi, std::move(upi));
-  }
-  r1->Run();
-  EXPECT_EQ(count += 2, rpt->mCount);
-  EXPECT_EQ(-1, rpt->mA0);
-
   // Unique pointer as xvalue.
   {
     mozilla::UniquePtr<int> upi = mozilla::MakeUnique<int>(1);
-    r1 = NewRunnableMethod<mozilla::UniquePtr<int>&&>(
-        "TestThreadUtils::ThreadUtilsObject::Test1upi", rpt,
-        &ThreadUtilsObject::Test1upi, std::move(upi));
-  }
-  r1->Run();
-  EXPECT_EQ(count += 2, rpt->mCount);
-  EXPECT_EQ(1, rpt->mA0);
-
-  {
-    mozilla::UniquePtr<int> upi = mozilla::MakeUnique<int>(1);
-    r1 = NewRunnableMethod<StoreCopyPassByRRef<mozilla::UniquePtr<int>>>(
+    r1 = NewRunnableMethod<mozilla::UniquePtr<int>>(
         "TestThreadUtils::ThreadUtilsObject::Test1upi", rpt,
         &ThreadUtilsObject::Test1upi, std::move(upi));
   }
@@ -1632,7 +1506,7 @@ TEST(ThreadUtils, main)
   EXPECT_EQ(1, rpt->mA0);
 
   // Unique pointer as prvalue.
-  r1 = NewRunnableMethod<mozilla::UniquePtr<int>&&>(
+  r1 = NewRunnableMethod<mozilla::UniquePtr<int>>(
       "TestThreadUtils::ThreadUtilsObject::Test1upi", rpt,
       &ThreadUtilsObject::Test1upi, mozilla::MakeUnique<int>(2));
   r1->Run();
@@ -1642,7 +1516,7 @@ TEST(ThreadUtils, main)
   // Unique pointer as lvalue to lref.
   {
     mozilla::UniquePtr<int> upi;
-    r1 = NewRunnableMethod<mozilla::UniquePtr<int>&>(
+    r1 = NewRunnableMethod<std::reference_wrapper<mozilla::UniquePtr<int>>>(
         "TestThreadUtils::ThreadUtilsObject::Test1rupi", rpt,
         &ThreadUtilsObject::Test1rupi, upi);
     // Passed as lref, so Run() must be called while local upi is still alive!
@@ -1674,7 +1548,7 @@ TEST(ThreadUtils, main)
             " s)\n",
             __LINE__);
       }
-      r5 = NewRunnableMethod<StoreCopyPassByConstLRef<Spy>>(
+      r5 = NewRunnableMethod<Spy>(
           "TestThreadUtils::ThreadUtilsObject::TestByConstLRef", rpt,
           &ThreadUtilsObject::TestByConstLRef, s);
       EXPECT_EQ(2, gAlive);
@@ -1719,7 +1593,7 @@ TEST(ThreadUtils, main)
           "Spy(21))\n",
           __LINE__);
     }
-    nsCOMPtr<nsIRunnable> r6 = NewRunnableMethod<StoreCopyPassByConstLRef<Spy>>(
+    nsCOMPtr<nsIRunnable> r6 = NewRunnableMethod<Spy>(
         "TestThreadUtils::ThreadUtilsObject::TestByConstLRef", rpt,
         &ThreadUtilsObject::TestByConstLRef, Spy(21));
     EXPECT_EQ(1, gAlive);
@@ -1764,7 +1638,7 @@ TEST(ThreadUtils, main)
             "NewRunnableMethod<StoreCopyPassByRRef<Spy>>(&TestByRRef, s)\n",
             __LINE__);
       }
-      r7 = NewRunnableMethod<StoreCopyPassByRRef<Spy>>(
+      r7 = NewRunnableMethod<Spy>(
           "TestThreadUtils::ThreadUtilsObject::TestByRRef", rpt,
           &ThreadUtilsObject::TestByRRef, s);
       EXPECT_EQ(2, gAlive);
@@ -1809,9 +1683,9 @@ TEST(ThreadUtils, main)
           "Spy(31))\n",
           __LINE__);
     }
-    nsCOMPtr<nsIRunnable> r8 = NewRunnableMethod<StoreCopyPassByRRef<Spy>>(
-        "TestThreadUtils::ThreadUtilsObject::TestByRRef", rpt,
-        &ThreadUtilsObject::TestByRRef, Spy(31));
+    nsCOMPtr<nsIRunnable> r8 =
+        NewRunnableMethod<Spy>("TestThreadUtils::ThreadUtilsObject::TestByRRef",
+                               rpt, &ThreadUtilsObject::TestByRRef, Spy(31));
     EXPECT_EQ(1, gAlive);
     EXPECT_EQ(1, gConstructions);
     EXPECT_LE(1, gMoveConstructions);
@@ -1851,7 +1725,7 @@ TEST(ThreadUtils, main)
     if (gDebug) {
       printf("%d - r9 = NewRunnableMethod<Spy&>(&TestByLRef, s)\n", __LINE__);
     }
-    nsCOMPtr<nsIRunnable> r9 = NewRunnableMethod<Spy&>(
+    nsCOMPtr<nsIRunnable> r9 = NewRunnableMethod<std::reference_wrapper<Spy>>(
         "TestThreadUtils::ThreadUtilsObject::TestByLRef", rpt,
         &ThreadUtilsObject::TestByLRef, s);
     EXPECT_EQ(0, gAllConstructions);
@@ -1897,11 +1771,11 @@ TEST(ThreadUtils, main)
       if (gDebug) {
         printf(
             "%d - r10 = "
-            "NewRunnableMethod<StoreRefPtrPassByPtr<Spy>>(&TestByRRef, "
+            "NewRunnableMethod<RefPtr<Spy>>(&TestByRRef, "
             "s.get())\n",
             __LINE__);
       }
-      r10 = NewRunnableMethod<StoreRefPtrPassByPtr<SpyWithISupports>>(
+      r10 = NewRunnableMethod<RefPtr<SpyWithISupports>>(
           "TestThreadUtils::ThreadUtilsObject::TestByPointer", rpt,
           &ThreadUtilsObject::TestByPointer, s.get());
       EXPECT_LE(0, gAllConstructions);

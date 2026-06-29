@@ -328,8 +328,8 @@ nsStringBundle::~nsStringBundle() = default;
 NS_IMETHODIMP
 nsStringBundleBase::AsyncPreload() {
   return NS_DispatchToCurrentThreadQueue(
-      NewIdleRunnableMethod("nsStringBundleBase::LoadProperties", this,
-                            &nsStringBundleBase::LoadProperties),
+      NewRunnableMethod("nsStringBundleBase::LoadProperties", this,
+                        &nsStringBundleBase::LoadProperties),
       EventQueuePriority::Idle);
 }
 

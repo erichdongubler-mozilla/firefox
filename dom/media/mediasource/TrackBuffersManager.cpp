@@ -116,9 +116,9 @@ RefPtr<TrackBuffersManager::AppendPromise> TrackBuffersManager::AppendData(
 
   Reopen();
 
-  return InvokeAsync(static_cast<AbstractThread*>(GetTaskQueueSafe().get()),
-                     this, __func__, &TrackBuffersManager::DoAppendData,
-                     data.forget(), aAttributes);
+  return InvokeAsync<already_AddRefed<MediaByteBuffer>, SourceBufferAttributes>(
+      GetTaskQueueSafe().get(), this, __func__,
+      &TrackBuffersManager::DoAppendData, data.forget(), aAttributes);
 }
 
 RefPtr<TrackBuffersManager::AppendPromise> TrackBuffersManager::DoAppendData(

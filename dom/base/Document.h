@@ -5724,7 +5724,7 @@ class Document : public nsINode,
 
   nsTArray<RefPtr<nsFrameLoader>> mInitializableFrameLoaders;
   nsTArray<nsCOMPtr<nsIRunnable>> mFrameLoaderFinalizers;
-  RefPtr<nsRunnableMethod<Document>> mFrameLoaderRunner;
+  nsCOMPtr<nsIRunnable> mFrameLoaderRunner;
 
   nsTArray<PendingFrameStaticClone> mPendingFrameStaticClones;
 

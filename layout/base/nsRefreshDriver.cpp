@@ -2775,7 +2775,7 @@ void nsRefreshDriver::Thaw() {
     // updates our mMostRecentRefresh, but the DoRefresh call won't run
     // and notify our observers until we get back to the event loop.
     // Thus MostRecentRefresh() will lie between now and the DoRefresh.
-    RefPtr<nsRunnableMethod<nsRefreshDriver>> event = NewRunnableMethod(
+    nsCOMPtr<nsIRunnable> event = NewRunnableMethod(
         "nsRefreshDriver::DoRefresh", this, &nsRefreshDriver::DoRefresh);
     if (nsPresContext* pc = GetPresContext()) {
       pc->Document()->Dispatch(event.forget());

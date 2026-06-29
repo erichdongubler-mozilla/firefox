@@ -1102,7 +1102,6 @@ class nsPresContext : public nsISupports,
 
  protected:
   void DoUpdateHiddenByContentVisibilityForAnimations();
-  friend class nsRunnableMethod<nsPresContext>;
   void ThemeChangedInternal();
   void RefreshSystemMetrics();
 

@@ -1833,11 +1833,11 @@ void nsWebBrowserPersist::FinishSaveDocumentInternal(nsIURI* aFile,
   if (mWalkStack.Length() > 0) {
     mozilla::UniquePtr<WalkData> toWalk = mWalkStack.PopLastElement();
     // Bounce this off the event loop to avoid stack overflow.
-    using WalkStorage = StoreCopyPassByRRef<decltype(toWalk)>;
     auto saveMethod = &nsWebBrowserPersist::SaveDocumentDeferred;
-    nsCOMPtr<nsIRunnable> saveLater = NewRunnableMethod<WalkStorage>(
-        "nsWebBrowserPersist::FinishSaveDocumentInternal", this, saveMethod,
-        std::move(toWalk));
+    nsCOMPtr<nsIRunnable> saveLater =
+        NewRunnableMethod<mozilla::UniquePtr<WalkData>>(
+            "nsWebBrowserPersist::FinishSaveDocumentInternal", this, saveMethod,
+            std::move(toWalk));
     NS_DispatchToCurrentThread(saveLater);
   } else {
     // Done walking DOMs; on to the serialization phase.

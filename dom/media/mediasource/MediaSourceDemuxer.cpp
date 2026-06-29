@@ -157,7 +157,7 @@ UniquePtr<EncryptionInfo> MediaSourceDemuxer::GetCrypto() {
 
 void MediaSourceDemuxer::AttachSourceBuffer(
     const RefPtr<TrackBuffersManager>& aSourceBuffer) {
-  nsCOMPtr<nsIRunnable> task = NewRunnableMethod<RefPtr<TrackBuffersManager>&&>(
+  nsCOMPtr<nsIRunnable> task = NewRunnableMethod<RefPtr<TrackBuffersManager>>(
       "MediaSourceDemuxer::DoAttachSourceBuffer", this,
       &MediaSourceDemuxer::DoAttachSourceBuffer, aSourceBuffer);
   nsresult rv = GetTaskQueue()->Dispatch(task.forget());

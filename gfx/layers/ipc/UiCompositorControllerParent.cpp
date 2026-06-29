@@ -45,7 +45,7 @@ RefPtr<UiCompositorControllerParent> UiCompositorControllerParent::Start(
       new UiCompositorControllerParent(aRootLayerTreeId);
 
   RefPtr<Runnable> task =
-      NewRunnableMethod<Endpoint<PUiCompositorControllerParent>&&>(
+      NewRunnableMethod<Endpoint<PUiCompositorControllerParent>>(
           "layers::UiCompositorControllerParent::Open", parent,
           &UiCompositorControllerParent::Open, std::move(aEndpoint));
   CompositorThread()->Dispatch(task.forget());

@@ -769,10 +769,9 @@ TimeDuration StorageDBThread::TimeUntilFlush() {
 void StorageDBThread::NotifyFlushCompletion() {
 #ifdef DOM_STORAGE_TESTS
   if (!NS_IsMainThread()) {
-    RefPtr<nsRunnableMethod<StorageDBThread, void, false>> event =
-        NewNonOwningRunnableMethod(
-            "dom::StorageDBThread::NotifyFlushCompletion", this,
-            &StorageDBThread::NotifyFlushCompletion);
+    nsCOMPtr<nsIRunnable> event = NewNonOwningRunnableMethod(
+        "dom::StorageDBThread::NotifyFlushCompletion", this,
+        &StorageDBThread::NotifyFlushCompletion);
     NS_DispatchToMainThread(event);
     return;
   }

@@ -698,7 +698,7 @@ void gfxUserFontEntry::StartPlatformFontLoadOnBackgroundThread(
 
   nsCOMPtr<nsIRunnable> event =
       NewRunnableMethod<uint32_t, const uint8_t*, uint32_t, gfxUserFontType,
-                        const uint8_t*, uint32_t, nsTArray<OTSMessage>&&,
+                        const uint8_t*, uint32_t, nsTArray<OTSMessage>,
                         nsMainThreadPtrHandle<nsIFontLoadCompleteCallback>>(
           "gfxUserFontEntry::ContinuePlatformFontLoadOnMainThread", this,
           &gfxUserFontEntry::ContinuePlatformFontLoadOnMainThread, aSrcIndex,

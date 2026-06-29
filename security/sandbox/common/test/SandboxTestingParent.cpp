@@ -20,7 +20,7 @@ already_AddRefed<SandboxTestingParent> SandboxTestingParent::Create(
     return nullptr;
   }
   RefPtr<SandboxTestingParent> instance = new SandboxTestingParent(thread);
-  thread->Dispatch(NewRunnableMethod<Endpoint<PSandboxTestingParent>&&>(
+  thread->Dispatch(NewRunnableMethod<Endpoint<PSandboxTestingParent>>(
       "SandboxTestingParent::Bind", instance, &SandboxTestingParent::Bind,
       std::move(aParentEnd)));
   return instance.forget();

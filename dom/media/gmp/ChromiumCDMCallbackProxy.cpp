@@ -46,12 +46,11 @@ void ChromiumCDMCallbackProxy::RejectPromise(uint32_t aPromiseId,
                                              const nsCString& aErrorMessage) {
   // Use CopyableErrorResult to store our exception in the runnable,
   // because ErrorResult is not OK to move across threads.
-  DispatchToMainThread<decltype(&ChromiumCDMProxy::RejectPromiseOnMainThread),
-                       int32_t, StoreCopyPassByRRef<CopyableErrorResult>,
-                       const nsCString&>(
-      "ChromiumCDMProxy::RejectPromise",
-      &ChromiumCDMProxy::RejectPromiseOnMainThread, aPromiseId,
-      std::move(aException), aErrorMessage);
+  mMainThread->Dispatch(
+      NewRunnableMethod<int32_t, CopyableErrorResult, nsCString>(
+          "ChromiumCDMProxy::RejectPromise", mProxy,
+          &ChromiumCDMProxy::RejectPromiseOnMainThread, aPromiseId,
+          std::move(aException), aErrorMessage));
 }
 
 static dom::MediaKeyMessageType ToDOMMessageType(

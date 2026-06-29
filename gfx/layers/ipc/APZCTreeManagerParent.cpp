@@ -79,12 +79,10 @@ mozilla::ipc::IPCResult APZCTreeManagerParent::RecvContentReceivedInputBlock(
 mozilla::ipc::IPCResult APZCTreeManagerParent::RecvSetTargetAPZC(
     const uint64_t& aInputBlockId, nsTArray<ScrollableLayerGuid>&& aTargets) {
   mUpdater->RunOnUpdaterThread(
-      mLayersId,
-      NewRunnableMethod<uint64_t,
-                        StoreCopyPassByRRef<nsTArray<ScrollableLayerGuid>>>(
-          "layers::IAPZCTreeManager::SetTargetAPZC", mTreeManager,
-          &IAPZCTreeManager::SetTargetAPZC, aInputBlockId,
-          std::move(aTargets)));
+      mLayersId, NewRunnableMethod<uint64_t, nsTArray<ScrollableLayerGuid>>(
+                     "layers::IAPZCTreeManager::SetTargetAPZC", mTreeManager,
+                     &IAPZCTreeManager::SetTargetAPZC, aInputBlockId,
+                     std::move(aTargets)));
 
   return IPC_OK();
 }
@@ -112,12 +110,10 @@ mozilla::ipc::IPCResult APZCTreeManagerParent::RecvSetDPI(
 mozilla::ipc::IPCResult APZCTreeManagerParent::RecvSetAllowedTouchBehavior(
     const uint64_t& aInputBlockId, nsTArray<TouchBehaviorFlags>&& aValues) {
   mUpdater->RunOnUpdaterThread(
-      mLayersId,
-      NewRunnableMethod<uint64_t,
-                        StoreCopyPassByRRef<nsTArray<TouchBehaviorFlags>>>(
-          "layers::IAPZCTreeManager::SetAllowedTouchBehavior", mTreeManager,
-          &IAPZCTreeManager::SetAllowedTouchBehavior, aInputBlockId,
-          std::move(aValues)));
+      mLayersId, NewRunnableMethod<uint64_t, nsTArray<TouchBehaviorFlags>>(
+                     "layers::IAPZCTreeManager::SetAllowedTouchBehavior",
+                     mTreeManager, &IAPZCTreeManager::SetAllowedTouchBehavior,
+                     aInputBlockId, std::move(aValues)));
 
   return IPC_OK();
 }

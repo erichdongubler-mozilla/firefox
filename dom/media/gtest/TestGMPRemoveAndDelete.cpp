@@ -264,8 +264,10 @@ bool GMPRemoveTest::CreateVideoDecoder(nsCString aNodeId) {
   nsTArray<uint8_t> empty;
   NS_DispatchAndSpinEventLoopUntilComplete(
       "GMPVideoDecoderProxy::InitDecode"_ns, mGMPThread,
-      NewNonOwningRunnableMethod<const GMPVideoCodec&, const nsTArray<uint8_t>&,
-                                 GMPVideoDecoderCallbackProxy*, int32_t>(
+      NewNonOwningRunnableMethod<
+          std::reference_wrapper<const GMPVideoCodec>,
+          std::reference_wrapper<const nsTArray<uint8_t>>,
+          GMPVideoDecoderCallbackProxy*, int32_t>(
           "GMPVideoDecoderProxy::InitDecode", decoder,
           &GMPVideoDecoderProxy::InitDecode, codec, empty, this,
           1 /* core count */));

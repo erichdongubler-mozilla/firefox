@@ -16,7 +16,7 @@ RefPtr<VsyncBridgeParent> VsyncBridgeParent::Start(
     Endpoint<PVsyncBridgeParent>&& aEndpoint) {
   RefPtr<VsyncBridgeParent> parent = new VsyncBridgeParent();
 
-  RefPtr<Runnable> task = NewRunnableMethod<Endpoint<PVsyncBridgeParent>&&>(
+  RefPtr<Runnable> task = NewRunnableMethod<Endpoint<PVsyncBridgeParent>>(
       "gfx::VsyncBridgeParent::Open", parent, &VsyncBridgeParent::Open,
       std::move(aEndpoint));
   layers::CompositorThread()->Dispatch(task.forget());

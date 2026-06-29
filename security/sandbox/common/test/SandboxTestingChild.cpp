@@ -36,7 +36,7 @@ bool SandboxTestingChild::Initialize(
   }
   sInstance =
       new SandboxTestingChild(thread, std::move(aSandboxTestingEndpoint));
-  thread->Dispatch(NewRunnableMethod<Endpoint<PSandboxTestingChild>&&>(
+  thread->Dispatch(NewRunnableMethod<Endpoint<PSandboxTestingChild>>(
       "SandboxTestingChild::Bind", sInstance.get(), &SandboxTestingChild::Bind,
       std::move(aSandboxTestingEndpoint)));
   return true;

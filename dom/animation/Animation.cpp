@@ -29,7 +29,7 @@
 #include "nsDOMCSSAttrDeclaration.h"  // For nsDOMCSSAttributeDeclaration
 #include "nsDOMMutationObserver.h"    // For nsAutoAnimationMutationBatch
 #include "nsIFrame.h"
-#include "nsThreadUtils.h"  // For nsRunnableMethod and nsRevocableEventPtr
+#include "nsThreadUtils.h"        // For nsRevocableEventPtr
 #include "nsTransitionManager.h"  // For CSSTransition
 
 namespace mozilla::dom {

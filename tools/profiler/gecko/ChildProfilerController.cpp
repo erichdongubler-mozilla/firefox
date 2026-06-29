@@ -44,7 +44,7 @@ void ChildProfilerController::Init(Endpoint<PProfilerChild>&& aEndpoint) {
     }
     // Now that mThread has been set, run SetupProfilerChild on the thread.
     newProfilerChildThread->Dispatch(
-        NewRunnableMethod<Endpoint<PProfilerChild>&&>(
+        NewRunnableMethod<Endpoint<PProfilerChild>>(
             "ChildProfilerController::SetupProfilerChild", this,
             &ChildProfilerController::SetupProfilerChild, std::move(aEndpoint)),
         NS_DISPATCH_NORMAL);

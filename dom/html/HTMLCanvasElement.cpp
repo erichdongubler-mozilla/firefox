@@ -394,7 +394,7 @@ void HTMLCanvasPrintState::Done() {
     if (mCanvas) {
       mCanvas->InvalidateCanvas();
     }
-    RefPtr<nsRunnableMethod<HTMLCanvasPrintState>> doneEvent =
+    nsCOMPtr<nsIRunnable> doneEvent =
         NewRunnableMethod("dom::HTMLCanvasPrintState::NotifyDone", this,
                           &HTMLCanvasPrintState::NotifyDone);
     if (NS_SUCCEEDED(NS_DispatchToCurrentThread(doneEvent))) {
@@ -651,7 +651,7 @@ nsresult HTMLCanvasElement::DispatchPrintCallback(nsITimerCallback* aCallback) {
   }
   mPrintState = new HTMLCanvasPrintState(this, mCurrentContext, aCallback);
 
-  RefPtr<nsRunnableMethod<HTMLCanvasElement>> renderEvent =
+  nsCOMPtr<nsIRunnable> renderEvent =
       NewRunnableMethod<RefPtr<HTMLCanvasPrintState>>(
           "dom::HTMLCanvasElement::CallPrintCallback", this,
           &HTMLCanvasElement::CallPrintCallback, mPrintState);

@@ -167,7 +167,7 @@ ZoomConstraintsClient::Observe(nsISupports* aSubject, const char* aTopic,
     // StaticPrefs::browser_ui_zoom_force_user_scalable() returns the updated
     // value.
 
-    RefPtr<nsRunnableMethod<ZoomConstraintsClient>> event =
+    nsCOMPtr<nsIRunnable> event =
         NewRunnableMethod("ZoomConstraintsClient::RefreshZoomConstraints", this,
                           &ZoomConstraintsClient::RefreshZoomConstraints);
     mDocument->Dispatch(event.forget());

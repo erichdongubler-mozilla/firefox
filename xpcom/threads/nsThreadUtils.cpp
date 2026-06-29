@@ -101,6 +101,8 @@ NS_IMPL_ISUPPORTS_INHERITED(DiscardableRunnable, Runnable,
 NS_IMPL_ISUPPORTS_INHERITED(CancelableRunnable, DiscardableRunnable,
                             nsICancelableRunnable)
 
+void CancelableRunnable::Revoke() { OnDiscard(); }
+
 void CancelableRunnable::OnDiscard() {
   // Tasks that implement Cancel() can be safely cleaned up if it turns out
   // that the task will not run.

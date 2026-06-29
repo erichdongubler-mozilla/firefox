@@ -80,11 +80,11 @@ TestInterfaceAsyncIterableSingle::GetNextIterationResult(
   }
 
   nsCOMPtr<nsIRunnable> callResolvePromise =
-      NewRunnableMethod<RefPtr<IterableIteratorBase>, IteratorData&,
-                        RefPtr<Promise>>(
+      NewRunnableMethod<RefPtr<IterableIteratorBase>,
+                        std::reference_wrapper<IteratorData>, RefPtr<Promise>>(
           "TestInterfaceAsyncIterableSingle::GetNextIterationResult", this,
-          &TestInterfaceAsyncIterableSingle::ResolvePromise, aIterator, aData,
-          promise);
+          &TestInterfaceAsyncIterableSingle::ResolvePromise,
+          std::ref(aIterator), aData, promise);
   if (aData.mBlockingPromisesIndex < aData.mBlockingPromises.Length()) {
     aData.mBlockingPromises[aData.mBlockingPromisesIndex]
         ->AddCallbacksWithCycleCollectedArgs(

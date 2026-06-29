@@ -408,14 +408,13 @@ JumpListBuilder::PopulateJumpList(JS::Handle<JS::Value> aTaskDescriptions,
       new nsMainThreadPtrHolder<Promise>(
           "JumpListBuilder::PopulateJumpList promise", promise));
 
-  nsCOMPtr<nsIRunnable> runnable = NewRunnableMethod<
-      StoreCopyPassByRRef<nsTArray<WindowsJumpListShortcutDescription>>,
-      nsString,
-      StoreCopyPassByRRef<nsTArray<WindowsJumpListShortcutDescription>>,
-      nsMainThreadPtrHandle<Promise>>(
-      "PopulateJumpList", this, &JumpListBuilder::DoPopulateJumpList,
-      std::move(taskDescs), aCustomTitle, std::move(customDescs),
-      std::move(promiseHolder));
+  nsCOMPtr<nsIRunnable> runnable =
+      NewRunnableMethod<nsTArray<WindowsJumpListShortcutDescription>, nsString,
+                        nsTArray<WindowsJumpListShortcutDescription>,
+                        nsMainThreadPtrHandle<Promise>>(
+          "PopulateJumpList", this, &JumpListBuilder::DoPopulateJumpList,
+          std::move(taskDescs), aCustomTitle, std::move(customDescs),
+          std::move(promiseHolder));
   nsresult rv = mIOThread->Dispatch(runnable, NS_DISPATCH_NORMAL);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
