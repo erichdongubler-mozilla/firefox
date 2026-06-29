@@ -2308,24 +2308,6 @@ const char* wasm::ThunkedNativeToDescription(SymbolicAddress func) {
       return "call to native newCell<BigInt, NoGC> (in wasm)";
     case SymbolicAddress::ModD:
       return "call to native f64 % (mod) (in wasm)";
-    case SymbolicAddress::SinNativeD:
-      return "call to native f64 Math.sin (in wasm)";
-    case SymbolicAddress::SinFdlibmD:
-      return "call to fdlibm f64 Math.sin (in wasm)";
-    case SymbolicAddress::CosNativeD:
-      return "call to native f64 Math.cos (in wasm)";
-    case SymbolicAddress::CosFdlibmD:
-      return "call to fdlibm f64 Math.cos (in wasm)";
-    case SymbolicAddress::TanNativeD:
-      return "call to native f64 Math.tan (in wasm)";
-    case SymbolicAddress::TanFdlibmD:
-      return "call to fdlibm f64 Math.tan (in wasm)";
-    case SymbolicAddress::ASinD:
-      return "call to native f64 Math.asin (in wasm)";
-    case SymbolicAddress::ACosD:
-      return "call to native f64 Math.acos (in wasm)";
-    case SymbolicAddress::ATanD:
-      return "call to native f64 Math.atan (in wasm)";
     case SymbolicAddress::CeilD:
       return "call to native f64.ceil (in wasm)";
     case SymbolicAddress::CeilF:
@@ -2342,14 +2324,6 @@ const char* wasm::ThunkedNativeToDescription(SymbolicAddress func) {
       return "call to native f64.nearest (in wasm)";
     case SymbolicAddress::NearbyIntF:
       return "call to native f32.nearest (in wasm)";
-    case SymbolicAddress::ExpD:
-      return "call to asm.js native f64 Math.exp";
-    case SymbolicAddress::LogD:
-      return "call to asm.js native f64 Math.log";
-    case SymbolicAddress::PowD:
-      return "call to asm.js native f64 Math.pow";
-    case SymbolicAddress::ATan2D:
-      return "call to asm.js native f64 Math.atan2";
     case SymbolicAddress::AddSubI128:
       return "call to native 128-bit add/sub function";
     case SymbolicAddress::MulI64Wide:
