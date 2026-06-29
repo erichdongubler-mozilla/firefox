@@ -1484,8 +1484,7 @@ class PendingSourceCompressionEntry {
 // [SMDOC] Script Representation (js::BaseScript)
 //
 // A "script" corresponds to a JavaScript function or a top-level (global, eval,
-// module) body that will be executed using SpiderMonkey bytecode. Note that
-// special forms such as asm.js do not use bytecode or the BaseScript type.
+// module) body that will be executed using SpiderMonkey bytecode.
 //
 // BaseScript may be generated directly from the parser/emitter, or by cloning
 // or deserializing another script. Cloning is typically used when a script is

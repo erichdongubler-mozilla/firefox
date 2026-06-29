@@ -2809,9 +2809,8 @@ MDefinition* MBinaryBitwiseInstruction::foldsTo(TempAllocator& alloc) {
 }
 
 MDefinition* MBinaryBitwiseInstruction::foldUnnecessaryBitop() {
-  // It's probably OK to perform this optimization only for int32, as it will
-  // have the greatest effect for asm.js code that is compiled with the JS
-  // pipeline, and that code will not see int64 values.
+  // It's probably OK to perform this optimization only for int32, as JS
+  // bytecode does not see int64 values.
 
   if (type() != MIRType::Int32) {
     return this;
@@ -3066,9 +3065,8 @@ MDefinition* MRsh::foldsTo(TempAllocator& alloc) {
   MDefinition* lhs = getOperand(0);
   MDefinition* rhs = getOperand(1);
 
-  // It's probably OK to perform this optimization only for int32, as it will
-  // have the greatest effect for asm.js code that is compiled with the JS
-  // pipeline, and that code will not see int64 values.
+  // It's probably OK to perform this optimization only for int32, as JS
+  // bytecode does not see int64 values.
 
   if (!lhs->isLsh() || !rhs->isConstant() || rhs->type() != MIRType::Int32) {
     return this;

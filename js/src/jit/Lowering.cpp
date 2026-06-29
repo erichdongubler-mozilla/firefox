@@ -1986,7 +1986,7 @@ void LIRGenerator::visitMinMax(MMinMax* ins) {
   }
 
   // Input reuse is OK (for now) even on ARM64: floating min/max are fairly
-  // expensive due to SNaN -> QNaN conversion, and int min/max is for asm.js.
+  // expensive due to SNaN -> QNaN conversion.
   defineReuseInput(lir, ins, 0);
 }
 

@@ -6624,8 +6624,7 @@ void MacroAssemblerARM::wasmStoreImpl(const wasm::MemoryAccessDesc& access,
         }
       }
     } else {
-      bool isSigned = type == Scalar::Uint32 ||
-                      type == Scalar::Int32;  // see AsmJSStoreHeap;
+      bool isSigned = type == Scalar::Uint32 || type == Scalar::Int32;
       Register val = value.gpr();
 
       store = ma_dataTransferN(IsStore, 8 * byteSize /* bits */, isSigned,

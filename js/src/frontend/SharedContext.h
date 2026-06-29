@@ -382,9 +382,6 @@ class FunctionBox : public SuspendableContext {
   MemberInitializers memberInitializers_ = MemberInitializers::Invalid();
 
  public:
-  // Back pointer used by asm.js for error messages.
-  FunctionNode* functionNode = nullptr;
-
   // True if bytecode will be emitted for this function in the current
   // compilation.
   bool emitBytecode : 1;
@@ -478,9 +475,6 @@ class FunctionBox : public SuspendableContext {
       copyUpdatedWasEmitted();
     }
   }
-
-  [[nodiscard]] bool setAsmJSModule(const JS::WasmModule* module);
-  bool isAsmJSModule() const { return flags_.isAsmJSNative(); }
 
   bool hasEnclosingScopeIndex() const { return enclosingScopeIndex_.isSome(); }
   ScopeIndex getEnclosingScopeIndex() const { return *enclosingScopeIndex_; }

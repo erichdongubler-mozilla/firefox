@@ -2371,11 +2371,6 @@ bool JSStructuredCloneWriter::transferOwnership() {
         return false;
       }
 
-      if (arrayBuffer->isPreparedForAsmJS()) {
-        reportDataCloneError(JS_SCERR_WASM_NO_TRANSFER);
-        return false;
-      }
-
       if (scope == JS::StructuredCloneScope::DifferentProcess ||
           scope == JS::StructuredCloneScope::DifferentProcessForIndexedDB ||
           arrayBuffer->isResizable()) {

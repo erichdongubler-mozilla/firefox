@@ -661,8 +661,7 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
     AutoForbidNops afn(this);
 
     // It is unclear why this sync is necessary:
-    // * PSP and SP have been observed to be different in testcase
-    //   tests/asm.js/testBug1046688.js.
+    // * PSP and SP have been observed to be different. See bug 1046688.
     // * Removing the sync causes no failures in all of jit-tests.
     //
     // Also see branch(JitCode*) below. This version of jump() is called only

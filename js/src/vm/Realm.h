@@ -696,7 +696,7 @@ class JS::Realm : public JS::shadow::Realm {
   //    parsing are disabled.
   //
   //    Whether AOT wasm is disabled is togglable by the Debugger API. By
-  //    default it is disabled. See debuggerObservesAsmJS below.
+  //    default it is disabled. See debuggerObservesWasm below.
   //
   // 2. When a realm's debuggerObservesAllExecution() == true, all of
   //    the realm's scripts are considered debuggee scripts.

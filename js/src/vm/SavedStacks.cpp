@@ -1893,13 +1893,9 @@ bool SavedStacks::getLocation(JSContext* cx, const FrameIter& iter,
   // that doesn't employ memoization, and update |locationp|'s slots directly.
 
   if (iter.isWasm()) {
-    // Only asm.js has a displayURL.
-    if (const char16_t* displayURL = iter.displayURL()) {
-      locationp.setSource(AtomizeChars(cx, displayURL, js_strlen(displayURL)));
-    } else {
-      const char* filename = iter.filename() ? iter.filename() : "";
-      locationp.setSource(AtomizeUTF8Chars(cx, filename, strlen(filename)));
-    }
+    MOZ_ASSERT(!iter.displayURL(), "wasm script source has no displayURL.");
+    const char* filename = iter.filename() ? iter.filename() : "";
+    locationp.setSource(AtomizeUTF8Chars(cx, filename, strlen(filename)));
     if (!locationp.source()) {
       return false;
     }

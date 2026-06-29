@@ -2129,7 +2129,6 @@ static JSFunction* CreateFunctionFast(JSContext* cx,
       !scriptExtra.immutableFlags.hasFlag(ImmutableScriptFlagsEnum::IsAsync));
   MOZ_ASSERT(!scriptExtra.immutableFlags.hasFlag(
       ImmutableScriptFlagsEnum::IsGenerator));
-  MOZ_ASSERT(!script.functionFlags.isAsmJSNative());
 
   FunctionFlags flags = script.functionFlags;
   gc::AllocKind allocKind = flags.isExtended()
@@ -2281,8 +2280,7 @@ static bool InstantiateFunctions(JSContext* cx, FrontendContext* fc,
     // Plain functions can use a fast path.
     bool useFastPath =
         !scriptExtra.immutableFlags.hasFlag(ImmutableFlags::IsAsync) &&
-        !scriptExtra.immutableFlags.hasFlag(ImmutableFlags::IsGenerator) &&
-        !scriptStencil.functionFlags.isAsmJSNative();
+        !scriptExtra.immutableFlags.hasFlag(ImmutableFlags::IsGenerator);
 
     JSFunction* fun;
     if (useFastPath) {
@@ -2384,8 +2382,6 @@ static bool InstantiateScriptStencils(JSContext* cx,
         MOZ_ASSERT(script->isRelazifiable());
         script->setAllowRelazify();
       }
-    } else if (scriptStencil.functionFlags.isAsmJSNative()) {
-      MOZ_ASSERT(fun->isAsmJSNative());
     } else {
       MOZ_ASSERT(fun->isIncomplete());
       if (!CreateLazyScript(cx, atomCache, stencil, gcOutput, scriptStencil,
@@ -2405,11 +2401,6 @@ static bool InstantiateTopLevel(JSContext* cx, CompilationInput& input,
                                 CompilationGCOutput& gcOutput) {
   const ScriptStencil& scriptStencil =
       stencil.scriptData[CompilationStencil::TopLevelIndex];
-
-  // Top-level asm.js does not generate a JSScript.
-  if (scriptStencil.functionFlags.isAsmJSNative()) {
-    return true;
-  }
 
   MOZ_ASSERT(scriptStencil.hasSharedData());
   MOZ_ASSERT(stencil.sharedData.get(CompilationStencil::TopLevelIndex));
@@ -2487,8 +2478,7 @@ static void UpdateEmittedInnerFunctions(JSContext* cx,
       continue;
     }
 
-    if (scriptStencil.functionFlags.isAsmJSNative() ||
-        fun->baseScript()->hasBytecode()) {
+    if (fun->baseScript()->hasBytecode()) {
       // Non-lazy inner functions don't use the enclosingScope_ field.
       MOZ_ASSERT(!scriptStencil.hasLazyFunctionEnclosingScopeIndex());
     } else {
@@ -2649,7 +2639,6 @@ void CompilationStencil::borrowFromExtensibleCompilationStencil(
 
   // Share ref-counted data.
   source = extensibleStencil.source;
-  asmJS = extensibleStencil.asmJS;
   moduleMetadata = extensibleStencil.moduleMetadata;
 }
 
@@ -2677,7 +2666,6 @@ void CompilationStencil::assertBorrowingFromExtensibleCompilationStencil(
   MOZ_ASSERT(sharedData.asBorrow() == &extensibleStencil.sharedData);
 
   MOZ_ASSERT(source == extensibleStencil.source);
-  MOZ_ASSERT(asmJS == extensibleStencil.asmJS);
   MOZ_ASSERT(moduleMetadata == extensibleStencil.moduleMetadata);
 }
 #endif
@@ -2897,13 +2885,6 @@ bool CompilationStencil::instantiateStencilAfterPreparation(
     if (isInitialParse) {
       LinkEnclosingLazyScript(stencil, gcOutput);
     }
-  }
-
-  // Trigger the use counter for asm.js. This should fire even if asm.js
-  // optimizations are disabled, see the comment in FunctionBox::setUseAsm()
-  // for how we do that.
-  if (stencil.hasAsmJS()) {
-    cx->runtime()->setUseCounter(cx->global(), JSUseCounter::USE_ASM);
   }
 
   return true;
@@ -3696,11 +3677,10 @@ bool ExtensibleCompilationStencil::cloneFromImpl(FrontendContext* fc,
     return false;
   }
 
-  // Note: moduleMetadata and asmJS are known after the first parse, and are
+  // Note: moduleMetadata is known after the first parse, and is
   // not mutated by any delazifications later on. Thus we can safely increment
-  // the reference counter and keep these as-is.
+  // the reference counter and keep it as-is.
   moduleMetadata = other.moduleMetadata;
-  asmJS = other.asmJS;
 
 #ifdef DEBUG
   assertNoExternalDependency();
@@ -3751,7 +3731,6 @@ bool ExtensibleCompilationStencil::steal(FrontendContext* fc,
 
     sharedData = std::move(otherExtensible->sharedData);
     moduleMetadata = std::move(otherExtensible->moduleMetadata);
-    asmJS = std::move(otherExtensible->asmJS);
 
 #ifdef DEBUG
     assertNoExternalDependency();
@@ -3827,7 +3806,6 @@ bool ExtensibleCompilationStencil::steal(FrontendContext* fc,
 
   sharedData = std::move(other->sharedData);
   moduleMetadata = std::move(other->moduleMetadata);
-  asmJS = std::move(other->asmJS);
 
 #ifdef DEBUG
   assertNoExternalDependency();
@@ -3842,14 +3820,6 @@ bool CompilationStencil::isModule() const {
 
 bool ExtensibleCompilationStencil::isModule() const {
   return scriptExtra[CompilationStencil::TopLevelIndex].isModule();
-}
-
-bool CompilationStencil::hasAsmJS() const { return asmJS; }
-
-bool ExtensibleCompilationStencil::hasAsmJS() const { return asmJS; }
-
-bool InitialStencilAndDelazifications::hasAsmJS() const {
-  return initial_->hasAsmJS();
 }
 
 InitialStencilAndDelazifications::~InitialStencilAndDelazifications() {
@@ -4129,10 +4099,8 @@ bool InitialStencilAndDelazifications::instantiateStencils(
     RefPtr<InitialStencilAndDelazifications> stencilsPtr = &stencils;
     ScriptSourceObject* sso = gcOutput.script->sourceObject();
     MOZ_ASSERT(!sso->maybeGetStencils());
-    if (!stencils.hasAsmJS()) {
-      sso->setStencils(stencilsPtr.forget());
-      sso->setSharingDelazifications();
-    }
+    sso->setStencils(stencilsPtr.forget());
+    sso->setSharingDelazifications();
   }
 
   // At this point, gcOutput.script contains the top-level script, and
@@ -4895,9 +4863,6 @@ void js::DumpFunctionFlagsItems(js::JSONPrinter& json,
     case FunctionFlags::FunctionKind::NormalFunction:
       json.value("NORMAL_KIND");
       break;
-    case FunctionFlags::FunctionKind::AsmJS:
-      json.value("ASMJS_KIND");
-      break;
     case FunctionFlags::FunctionKind::Wasm:
       json.value("WASM_KIND");
       break;
@@ -5448,14 +5413,6 @@ void CompilationStencil::dumpFields(js::JSONPrinter& json) const {
     json.endObject();
   }
 
-  json.beginObjectProperty("asmJS");
-  if (asmJS) {
-    for (auto iter = asmJS->moduleMap.iter(); !iter.done(); iter.next()) {
-      SprintfLiteral(index, "ScriptIndex(%u)", iter.get().key().index);
-      json.formatProperty(index, "asm.js");
-    }
-  }
-  json.endObject();
 }
 
 void CompilationStencil::dumpAtom(TaggedParserAtomIndex index) const {
@@ -5712,18 +5669,11 @@ bool CompilationState::appendGCThings(
 }
 
 CompilationState::CompilationStatePosition CompilationState::getPosition() {
-  return CompilationStatePosition{scriptData.length(),
-                                  asmJS ? asmJS->moduleMap.count() : 0};
+  return CompilationStatePosition{scriptData.length()};
 }
 
 void CompilationState::rewind(
     const CompilationState::CompilationStatePosition& pos) {
-  if (asmJS && asmJS->moduleMap.count() != pos.asmJSCount) {
-    for (size_t i = pos.scriptDataLength; i < scriptData.length(); i++) {
-      asmJS->moduleMap.remove(ScriptIndex(i));
-    }
-    MOZ_ASSERT(asmJS->moduleMap.count() == pos.asmJSCount);
-  }
   // scriptExtra is empty for delazification.
   if (scriptExtra.length()) {
     MOZ_ASSERT(scriptExtra.length() == scriptData.length());
@@ -6150,16 +6100,12 @@ bool CompilationStencilMerger::addDelazification(
                        i == CompilationStencil::TopLevelIndex);
   }
 
-  // WARNING: moduleMetadata and asmJS fields are known at script/module
+  // WARNING: moduleMetadata field is known at script/module
   // top-level parsing, any mutation made in this function should be reflected
   // to ExtensibleCompilationStencil::steal and CompilationStencil::clone.
 
   // Function shouldn't be a module.
   MOZ_ASSERT(!delazification.moduleMetadata);
-
-  // asm.js shouldn't appear inside delazification, given asm.js forces
-  // full-parse.
-  MOZ_ASSERT(!delazification.hasAsmJS());
 
   failureCase.release();
   return true;
@@ -6246,13 +6192,7 @@ JS::InstantiationStorage::~InstantiationStorage() {
   }
 }
 
-bool JS::IsStencilCacheable(JS::Stencil* stencil) {
-  if (stencil->hasAsmJS()) {
-    return false;
-  }
-
-  return true;
-}
+bool JS::IsStencilCacheable(JS::Stencil* stencil) { return true; }
 
 JS_PUBLIC_API size_t JS::GetScriptSourceLength(JS::Stencil* stencil) {
   const ScriptSource* source = stencil->getInitial()->source;

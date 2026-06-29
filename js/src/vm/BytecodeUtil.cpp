@@ -3006,10 +3006,7 @@ static bool GenerateLcovInfo(JSContext* cx, JS::Realm* realm,
       }
       fun = &obj->as<JSFunction>();
 
-      // Ignore asm.js functions
-      if (!fun->isInterpreted()) {
-        continue;
-      }
+      MOZ_ASSERT(fun->isInterpreted());
 
       // Queue the script in the list of script associated to the
       // current source.

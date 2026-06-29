@@ -141,10 +141,9 @@ static bool IsSloppyNormalFunction(JSFunction* fun) {
 
 // Beware: this function can be invoked on *any* function! That includes
 // natives, strict mode functions, bound functions, arrow functions,
-// self-hosted functions and constructors, asm.js functions, functions with
-// destructuring arguments and/or a rest argument, and probably a few more I
-// forgot. Turn back and save yourself while you still can. It's too late for
-// me.
+// self-hosted functions and constructors, functions with destructuring
+// arguments and/or a rest argument, and probably a few more I forgot.
+// Turn back and save yourself while you still can. It's too late for me.
 static bool ArgumentsRestrictions(JSContext* cx, HandleFunction fun) {
   // Throw unless the function is a sloppy, normal function.
   // TODO (bug 1057208): ensure semantics are correct for all possible
@@ -223,10 +222,9 @@ static bool ArgumentsSetter(JSContext* cx, unsigned argc, Value* vp) {
 
 // Beware: this function can be invoked on *any* function! That includes
 // natives, strict mode functions, bound functions, arrow functions,
-// self-hosted functions and constructors, asm.js functions, functions with
-// destructuring arguments and/or a rest argument, and probably a few more I
-// forgot. Turn back and save yourself while you still can. It's too late for
-// me.
+// self-hosted functions and constructors, functions with destructuring
+// arguments and/or a rest argument, and probably a few more I forgot.
+// Turn back and save yourself while you still can. It's too late for me.
 static bool CallerRestrictions(JSContext* cx, HandleFunction fun) {
   // Throw unless the function is a sloppy, normal function.
   // TODO (bug 1057208): ensure semantics are correct for all possible
@@ -337,7 +335,7 @@ static const JSPropertySpec function_properties[] = {
 static bool ResolveInterpretedFunctionPrototype(JSContext* cx,
                                                 HandleFunction fun,
                                                 HandleId id) {
-  MOZ_ASSERT(fun->isInterpreted() || fun->isAsmJSNative());
+  MOZ_ASSERT(fun->isInterpreted());
   MOZ_ASSERT(id == NameToId(cx->names().prototype));
 
   // Assert that fun is not a compiler-created function object, which
@@ -439,7 +437,7 @@ bool JSFunction::hasNonConfigurablePrototypeDataProperty() {
 }
 
 uint32_t JSFunction::wasmFuncIndex() const {
-  MOZ_ASSERT(isWasm() || isAsmJSNative());
+  MOZ_ASSERT(isWasm());
   if (!isNativeWithJitEntry()) {
     uintptr_t tagged = uintptr_t(nativeJitInfoOrInterpretedScript());
     MOZ_ASSERT(tagged & 1);
@@ -451,7 +449,7 @@ uint32_t JSFunction::wasmFuncIndex() const {
 void JSFunction::initWasm(uint32_t funcIndex, wasm::Instance* instance,
                           const wasm::SuperTypeVector* superTypeVector,
                           void* uncheckedCallEntry) {
-  MOZ_ASSERT(isWasm() || isAsmJSNative());
+  MOZ_ASSERT(isWasm());
   MOZ_ASSERT(!isWasmWithJitEntry());
   MOZ_ASSERT(!nativeJitInfoOrInterpretedScript());
 
@@ -787,9 +785,9 @@ inline void JSFunction::trace(JSTracer* trc) {
       }
     }
   }
-  // wasm/asm.js exported functions need to keep WasmInstantObject alive,
+  // wasm exported functions need to keep WasmInstantObject alive,
   // access it via WASM_INSTANCE_SLOT extended slot.
-  if (isAsmJSNative() || isWasm()) {
+  if (isWasm()) {
     const Value& v = getExtendedSlot(FunctionExtended::WASM_INSTANCE_SLOT);
     if (!v.isUndefined()) {
       auto* instance = static_cast<wasm::Instance*>(v.toPrivate());

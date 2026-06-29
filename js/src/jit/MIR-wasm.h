@@ -709,9 +709,9 @@ class MWasmHeapReg : public MNullaryInstruction {
   AliasSet getAliasSet() const override { return aliases_; }
 };
 
-// For memory32, bounds check nodes are of type Int32 on 32-bit systems for both
-// wasm and asm.js code, as well as on 64-bit systems for asm.js code and for
-// wasm code that is known to have a bounds check limit that fits into 32 bits.
+// For memory32, bounds check nodes are of type Int32 on 32-bit systems and
+// on 64-bit systems for wasm code that is known to have a bounds check limit
+// that fits into 32 bits.
 // They are of type Int64 only on 64-bit systems for wasm code with 4GB heaps.
 // There is no way for nodes of both types to be present in the same function.
 // Should this change, then BCE must be updated to take type into account.

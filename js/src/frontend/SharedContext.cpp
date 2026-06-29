@@ -161,14 +161,10 @@ void FunctionBox::initWithEnclosingParseContext(ParseContext* enclosing,
   } else {
     if (IsConstructorKind(kind)) {
       // Record this function into the enclosing class statement so that
-      // finishClassConstructor can final processing. Due to aborted syntax
-      // parses (eg, because of asm.js), this may have already been set with an
-      // early FunctionBox. In that case, the FunctionNode should still match.
+      // finishClassConstructor can do its final processing.
       auto classStmt =
           enclosing->findInnermostStatement<ParseContext::ClassStatement>();
       MOZ_ASSERT(classStmt);
-      MOZ_ASSERT(classStmt->constructorBox == nullptr ||
-                 classStmt->constructorBox->functionNode == this->functionNode);
       classStmt->constructorBox = this;
     }
 
@@ -262,25 +258,6 @@ void FunctionBox::setEnclosingScopeForInnerLazyFunction(ScopeIndex scopeIndex) {
   if (isFunctionFieldCopiedToStencil) {
     copyUpdatedEnclosingScopeIndex();
   }
-}
-
-bool FunctionBox::setAsmJSModule(const JS::WasmModule* module) {
-  MOZ_ASSERT(!isFunctionFieldCopiedToStencil);
-
-  MOZ_ASSERT(flags_.kind() == FunctionFlags::NormalFunction);
-
-  // Update flags we will use to allocate the JSFunction.
-  flags_.clearBaseScript();
-  flags_.setIsExtended();
-  flags_.setKind(FunctionFlags::AsmJS);
-
-  // The asm.js stencil container should have been initialized in `setUseAsm`
-  // above.
-  if (!compilationState_.asmJS->moduleMap.putNew(index(), module)) {
-    js::ReportOutOfMemory(fc_);
-    return false;
-  }
-  return true;
 }
 
 ModuleSharedContext::ModuleSharedContext(
