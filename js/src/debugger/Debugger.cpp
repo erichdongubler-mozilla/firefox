@@ -542,7 +542,6 @@ Debugger::Debugger(JSContext* cx, NativeObject* dbg)
     : object(dbg),
       debuggees(cx->zone()),
       uncaughtExceptionHook(nullptr),
-      allowUnobservedAsmJS(false),
       allowUnobservedWasm(false),
       exclusiveDebuggerOnEval(false),
       inspectNativeCallArguments(false),
@@ -802,12 +801,6 @@ bool DebugAPI::debuggerObservesAllExecution(GlobalObject* global) {
 bool DebugAPI::debuggerObservesCoverage(GlobalObject* global) {
   return DebuggerExists(global,
                         [=](Debugger* dbg) { return dbg->observesCoverage(); });
-}
-
-/* static */
-bool DebugAPI::debuggerObservesAsmJS(GlobalObject* global) {
-  return DebuggerExists(global,
-                        [=](Debugger* dbg) { return dbg->observesAsmJS(); });
 }
 
 /* static */
@@ -3564,13 +3557,6 @@ Debugger::IsObserving Debugger::observesAllExecution() const {
   return NotObserving;
 }
 
-Debugger::IsObserving Debugger::observesAsmJS() const {
-  if (!allowUnobservedAsmJS) {
-    return Observing;
-  }
-  return NotObserving;
-}
-
 Debugger::IsObserving Debugger::observesWasm() const {
   if (!allowUnobservedWasm) {
     return Observing;
@@ -3671,19 +3657,6 @@ bool Debugger::updateObservesCoverageOnDebuggees(JSContext* cx,
   }
 
   return true;
-}
-
-void Debugger::updateObservesAsmJSOnDebuggees(IsObserving observing) {
-  for (auto iter = debuggees.iter(); !iter.done(); iter.next()) {
-    GlobalObject* global = iter.get();
-    Realm* realm = global->realm();
-
-    if (realm->debuggerObservesAsmJS() == observing) {
-      continue;
-    }
-
-    realm->updateDebuggerObservesAsmJS();
-  }
 }
 
 void Debugger::updateObservesWasmOnDebuggees(IsObserving observing) {
@@ -4631,7 +4604,7 @@ bool Debugger::CallData::setUncaughtExceptionHook() {
 }
 
 bool Debugger::CallData::getAllowUnobservedAsmJS() {
-  args.rval().setBoolean(dbg->allowUnobservedAsmJS);
+  args.rval().setBoolean(false);
   return true;
 }
 
@@ -4639,14 +4612,6 @@ bool Debugger::CallData::setAllowUnobservedAsmJS() {
   if (!args.requireAtLeast(cx, "Debugger.set allowUnobservedAsmJS", 1)) {
     return false;
   }
-  dbg->allowUnobservedAsmJS = ToBoolean(args[0]);
-
-  for (auto iter = dbg->debuggees.iter(); !iter.done(); iter.next()) {
-    GlobalObject* global = iter.get();
-    Realm* realm = global->realm();
-    realm->updateDebuggerObservesAsmJS();
-  }
-
   args.rval().setUndefined();
   return true;
 }
@@ -5182,7 +5147,6 @@ bool Debugger::addDebuggeeGlobal(JSContext* cx, Handle<GlobalObject*> global) {
   // (5)
   AutoRestoreRealmDebugMode debugModeGuard(debuggeeRealm);
   debuggeeRealm->setIsDebuggee();
-  debuggeeRealm->updateDebuggerObservesAsmJS();
   debuggeeRealm->updateDebuggerObservesWasm();
   debuggeeRealm->updateDebuggerObservesCoverage();
   if (observesAllExecution() &&
@@ -5304,7 +5268,6 @@ void Debugger::removeDebuggeeGlobal(JS::GCContext* gcx, GlobalObject* global,
     global->realm()->unsetIsDebuggee();
   } else {
     global->realm()->updateDebuggerObservesAllExecution();
-    global->realm()->updateDebuggerObservesAsmJS();
     global->realm()->updateDebuggerObservesWasm();
     global->realm()->updateDebuggerObservesCoverage();
   }

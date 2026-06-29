@@ -319,9 +319,6 @@ class DebugAPI {
   // Whether any debugger is observing JS execution coverage in a global.
   static bool debuggerObservesCoverage(GlobalObject* global);
 
-  // Whether any Debugger is observing asm.js execution in a global.
-  static bool debuggerObservesAsmJS(GlobalObject* global);
-
   // Whether any Debugger is observing WebAssembly execution in a global.
   static bool debuggerObservesWasm(GlobalObject* global);
 

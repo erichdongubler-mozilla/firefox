@@ -446,7 +446,7 @@ void Realm::updateDebuggerObservesFlag(unsigned flag) {
   MOZ_ASSERT(isDebuggee());
   MOZ_ASSERT(flag == DebuggerObservesAllExecution ||
              flag == DebuggerObservesCoverage ||
-             flag == DebuggerObservesAsmJS || flag == DebuggerObservesWasm ||
+             flag == DebuggerObservesWasm ||
              flag == DebuggerObservesNativeCall);
 
   GlobalObject* global =
@@ -459,8 +459,6 @@ void Realm::updateDebuggerObservesFlag(unsigned flag) {
                isTracingExecution_;
   } else if (flag == DebuggerObservesCoverage) {
     observes = DebugAPI::debuggerObservesCoverage(global);
-  } else if (flag == DebuggerObservesAsmJS) {
-    observes = DebugAPI::debuggerObservesAsmJS(global);
   } else if (flag == DebuggerObservesWasm) {
     observes = DebugAPI::debuggerObservesWasm(global);
   } else if (flag == DebuggerObservesNativeCall) {

@@ -2627,8 +2627,7 @@ JS::CompileOptions::CompileOptions(JSContext* cx) {
   if (cx->options().asmJSOption() == AsmJSOption::Enabled) {
     if (!js::IsAsmJSCompilationAvailable(cx)) {
       prefableOptions_.setAsmJSOption(AsmJSOption::DisabledByNoWasmCompiler);
-    } else if (cx->realm() && (cx->realm()->debuggerObservesWasm() ||
-                               cx->realm()->debuggerObservesAsmJS())) {
+    } else if (cx->realm() && cx->realm()->debuggerObservesWasm()) {
       prefableOptions_.setAsmJSOption(AsmJSOption::DisabledByDebugger);
     }
   }

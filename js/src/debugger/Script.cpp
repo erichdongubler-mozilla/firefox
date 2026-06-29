@@ -494,7 +494,6 @@ bool DebuggerScript::CallData::getFormat() {
 
 static bool PushFunctionScript(JSContext* cx, Debugger* dbg, HandleFunction fun,
                                HandleObject array) {
-  // Ignore asm.js natives.
   if (!IsInterpretedNonSelfHostedFunction(fun)) {
     return true;
   }
