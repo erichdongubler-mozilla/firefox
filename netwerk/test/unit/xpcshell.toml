@@ -1397,6 +1397,8 @@ run-if = [
 
 ["test_no_cookies_after_last_pb_exit.js"]
 
+["test_no_vary_search_telemetry.js"]
+
 ["test_node_execute.js"]
 
 ["test_node_execute_npm.js"]
