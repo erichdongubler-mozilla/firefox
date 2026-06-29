@@ -30,8 +30,7 @@ static void CollectInnerListStrings(const SFV::InnerListResult& aList,
   }
 }
 
-NoVarySearchData ParseNoVarySearchHeader(const nsACString& aHeader,
-                                         bool* aParseError) {
+NoVarySearchData ParseNoVarySearchHeader(const nsACString& aHeader) {
   NoVarySearchData data;
   if (aHeader.IsEmpty()) {
     return data;
@@ -39,9 +38,6 @@ NoVarySearchData ParseNoVarySearchHeader(const nsACString& aHeader,
 
   auto dict = SFV::ParseDict(aHeader);
   if (!dict.IsValid()) {
-    if (aParseError) {
-      *aParseError = true;
-    }
     return data;  // spec §5.1: parse error → default config (ExactMatch)
   }
 
@@ -79,39 +75,17 @@ NoVarySearchData ParseNoVarySearchHeader(const nsACString& aHeader,
     }
   } else if (paramsInnerList.IsValid()) {
     if (hasExcept) {
-      if (aParseError) {
-        *aParseError = true;
-      }
       return NoVarySearchData{};  // params=(...) + except → invalid →
                                   // ExactMatch
     }
     data.paramsRule = NoVarySearchData::ParamsRule::Blocklist;
     CollectInnerListStrings(paramsInnerList, data.paramNames);
   } else if (hasExcept) {
-    if (aParseError) {
-      *aParseError = true;
-    }
     return NoVarySearchData{};  // except without valid params → invalid →
                                 // ExactMatch
   }
 
   return data;
-}
-
-nsLiteralCString NoVarySearchRuleLabel(NoVarySearchData::ParamsRule aRule) {
-  switch (aRule) {
-    case NoVarySearchData::ParamsRule::ExactMatch:
-      return "exact_match"_ns;
-    case NoVarySearchData::ParamsRule::IgnoreAll:
-      return "ignore_all"_ns;
-    case NoVarySearchData::ParamsRule::Blocklist:
-      return "blocklist"_ns;
-    case NoVarySearchData::ParamsRule::Allowlist:
-      return "allowlist"_ns;
-    default:
-      MOZ_ASSERT_UNREACHABLE("Unknown NoVarySearch ParamsRule");
-      return "exact_match"_ns;
-  }
 }
 
 using Param = std::pair<nsCString, nsCString>;

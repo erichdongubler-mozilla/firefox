@@ -16680,7 +16680,7 @@
 # Can be set to false to disable the feature if regressions are observed.
 - name: network.cache.no_vary_search
   type: RelaxedAtomicBool
-  value: true 
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
 
 # When this pref is true, AddStorageEntry will return an error if the
