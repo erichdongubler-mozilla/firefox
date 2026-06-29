@@ -63,11 +63,9 @@ class MoveEmitterX86 {
   void emit(const MoveResolver& moves);
   void finish();
 
-  void setScratchRegister(Register reg) {
 #ifdef JS_CODEGEN_X86
-    scratchRegister_.emplace(reg);
+  void setScratchRegister(Register reg) { scratchRegister_.emplace(reg); }
 #endif
-  }
 
   mozilla::Maybe<Register> findScratchRegister(const MoveResolver& moves,
                                                size_t i);

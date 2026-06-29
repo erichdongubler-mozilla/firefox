@@ -56,8 +56,6 @@ class MoveEmitterARM {
   ~MoveEmitterARM();
   void emit(const MoveResolver& moves);
   void finish();
-
-  void setScratchRegister(Register reg) {}
 };
 
 using MoveEmitter = MoveEmitterARM;

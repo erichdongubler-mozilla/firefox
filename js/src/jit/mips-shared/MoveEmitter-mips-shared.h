@@ -61,8 +61,6 @@ class MoveEmitterMIPSShared {
   ~MoveEmitterMIPSShared() { assertDone(); }
   void emit(const MoveResolver& moves);
   void finish();
-
-  void setScratchRegister(Register reg) {}
 };
 
 }  // namespace jit

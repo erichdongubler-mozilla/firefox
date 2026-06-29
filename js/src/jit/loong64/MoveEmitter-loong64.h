@@ -63,7 +63,6 @@ class MoveEmitterLOONG64 {
 
   void emit(const MoveResolver& moves);
   void finish();
-  void setScratchRegister(Register reg) {}
 };
 
 typedef MoveEmitterLOONG64 MoveEmitter;
