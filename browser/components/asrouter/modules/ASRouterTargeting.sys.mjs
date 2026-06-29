@@ -521,7 +521,6 @@ export const QueryCache = {
             bs = lazy.BackupService.init();
           }
           return bs.findBackupsInWellKnownLocations({
-            validateFile: true,
             source: "onboarding",
           });
         },
@@ -1491,6 +1490,14 @@ const TargetingGetters = {
   },
 
   get backupsInfo() {
+    // We're going to skip searching for backups on MacOS and as such not show the
+    // restore screen in about:welcome - Bug 2033325
+    if (AppConstants.platform === "macosx") {
+      return Promise.resolve({
+        found: false,
+      });
+    }
+
     return QueryCache.getters.backupsInfo.get().catch(() => null);
   },
 

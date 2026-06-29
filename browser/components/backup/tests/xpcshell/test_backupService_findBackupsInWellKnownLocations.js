@@ -66,7 +66,10 @@ add_task(
     const TWO = "FirefoxBackup_two_20241202-130000.000.html";
     await touchBackupFile(BACKUP_DIR, TWO);
 
-    let result2 = await bs.findBackupsInWellKnownLocations();
+    let result2 = await bs.findBackupsInWellKnownLocations({
+      validateFile: false,
+      multipleFiles: false,
+    });
     Assert.ok(
       !result2.found,
       "Found should be false when multiple candidates exist and validateFile=false"

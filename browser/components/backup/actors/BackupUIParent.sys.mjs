@@ -260,9 +260,19 @@ export class BackupUIParent extends JSWindowActorParent {
     } else if (message.name == "FindBackupsInWellKnownLocations") {
       let { source } = message.data;
       await this.#bs.findBackupsInWellKnownLocations({
-        validateFile: true,
         source,
       });
+    } else if (message.name == "ProbeDefaultBackupDir") {
+      let readAccessGranted = await this.#bs.probeDefaultDirAccess(
+        message.data?.parentDirPath
+      );
+      return { readAccessGranted };
+    } else if (message.name == "PrepareRestoreDialog") {
+      let { source } = message.data;
+      let result = await this.#bs.findBackupsInWellKnownLocations({
+        source,
+      });
+      return result;
     } else if (message.name == "RestoreFromBackupChooseFile") {
       const window = this.browsingContext.topChromeWindow;
       this.#bs.filePickerForRestore(window);
