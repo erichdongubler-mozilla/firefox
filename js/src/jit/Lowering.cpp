@@ -7073,6 +7073,11 @@ void LIRGenerator::visitWasmStoreRef(MWasmStoreRef* ins) {
 
 void LIRGenerator::visitWasmPostWriteBarrierWholeCell(
     MWasmPostWriteBarrierWholeCell* ins) {
+  // No post-write barrier needed for null stores.
+  if (ins->value()->isWasmNullConstant()) {
+    return;
+  }
+
   LWasmPostWriteBarrierWholeCell* lir = new (alloc())
       LWasmPostWriteBarrierWholeCell(useFixed(ins->instance(), InstanceReg),
                                      useRegister(ins->object()),
@@ -7083,6 +7088,11 @@ void LIRGenerator::visitWasmPostWriteBarrierWholeCell(
 
 void LIRGenerator::visitWasmPostWriteBarrierEdgeAtIndex(
     MWasmPostWriteBarrierEdgeAtIndex* ins) {
+  // No post-write barrier needed for null stores.
+  if (ins->value()->isWasmNullConstant()) {
+    return;
+  }
+
   LWasmPostWriteBarrierEdgeAtIndex* lir =
       new (alloc()) LWasmPostWriteBarrierEdgeAtIndex(
           useFixed(ins->instance(), InstanceReg), useRegister(ins->object()),
