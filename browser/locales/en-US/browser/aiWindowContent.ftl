@@ -2,7 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-smartwindow-messages-document-title = Smart window chat messages
+smartwindow-messages-document-title = { -smart-window-brand-name } chat messages
 
 ## Context chips in the chat content
 
@@ -17,15 +17,13 @@ smart-window-context-chips-tag-count = { $tags ->
 
 smartwindow-assistant-error-generic-header = Something went wrong. Please try again.
 smartwindow-assistant-error-budget-header = You’ve reached today’s chat limit.
-smartwindow-assistant-error-account-header = To use Smart Window, you’ll need to sign in.
-smartwindow-assistant-error-capacity-header = Smart Window is at capacity right now. Please try again later.
+smartwindow-assistant-error-account-header = To use { -smart-window-brand-name }, you’ll need to sign in.
+smartwindow-assistant-error-capacity-header = { -smart-window-brand-name } is at capacity right now. Please try again later.
 
-## TODO: ET timezone should be replaced before rolling to other locales: https://bugzilla.mozilla.org/show_bug.cgi?id=2017944
-
-smartwindow-assistant-error-budget-body = You can still browse in this window. Chat will be available again after midnight ET.
+smartwindow-assistant-error-budget-body = You can still browse in this window. Chat will be available again once your daily limit resets.
 smartwindow-assistant-error-many-requests-header = Please wait a moment and try again. Too many messages were sent in a short time.
 smartwindow-assistant-error-max-length-header = It’s time to start a new chat. This one’s reached its length limit.
-smartwindow-assistant-error-request-blocked-header = Smart Window couldn’t reach the server. Try a different network, or disable your VPN.
+smartwindow-assistant-error-request-blocked-header = { -smart-window-brand-name } couldn’t reach the server. Try a different network, or disable your VPN.
 # Variables:
 #   $status (Number) - HTTP status code returned by the inference back-end
 smartwindow-assistant-error-http-header = Server error (HTTP { $status }). Please try again.
@@ -190,6 +188,6 @@ action-log-completed-steps =
 ## Assistant Loader
 
 # Shown while the assistant analyzes search results that it loaded into the
-# current tab on the user's behalf. Communicates both that the tab's content
+# current tab on the user’s behalf. Communicates both that the tab’s content
 # changed and that the assistant is reviewing the results before responding.
 smartwindow-search-loader-text = Loaded search results in this tab. Analyzing…
