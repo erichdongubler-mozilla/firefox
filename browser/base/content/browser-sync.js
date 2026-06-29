@@ -505,7 +505,7 @@ var gSync = {
         "browser/sync.ftl",
         "browser/syncedTabs.ftl",
         "browser/newtab/asrouter.ftl",
-        "browser/aiWindow.ftl",
+        "preview/aiWindow.ftl",
       ],
       true
     ));
