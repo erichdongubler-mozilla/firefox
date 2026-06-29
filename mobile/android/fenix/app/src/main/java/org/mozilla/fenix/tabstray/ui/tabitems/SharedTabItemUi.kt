@@ -69,7 +69,7 @@ import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.base.theme.AcornCorners
 import mozilla.components.compose.base.theme.layout.AcornLayout
 import mozilla.components.support.utils.ext.isLandscape
-import mozilla.components.ui.colors.PhotonColors
+import mozilla.components.ui.colors.NovaColors
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.browser.compose.TabItemInteractionState
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
@@ -208,8 +208,8 @@ fun Modifier.tabItemClickable(
 private val clickRipple: Indication
     @Composable get() = ripple(
         color = when (isSystemInDarkTheme()) {
-            true -> PhotonColors.White
-            false -> PhotonColors.Black
+            true -> NovaColors.White
+            false -> NovaColors.Black
         },
     )
 
