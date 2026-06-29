@@ -115,31 +115,51 @@ var gSearchResultsPane = {
     return content.toLowerCase().includes(query.toLowerCase());
   },
 
-  categoriesInitialized: false,
+  /**
+   * Becomes a Promise on the first call so concurrent callers await the
+   * same initialization rather than racing past a half-finished setup.
+   *
+   * @type {null|Promise<void>}
+   */
+  _categoriesInitialized: null,
 
   /**
    * Will attempt to initialize all uninitialized categories
    */
-  async initializeCategories() {
-    //  Initializing all the JS for all the tabs
-    if (!this.categoriesInitialized) {
-      this.categoriesInitialized = true;
-      // Each element of gCategoryInits is a name
-      for (let category of gCategoryInits.values()) {
-        category.init();
-      }
-      if (document.hasPendingL10nMutations) {
-        await new Promise(r =>
-          document.addEventListener("L10nMutationsFinished", r, { once: true })
-        );
-      }
-      queueMicrotask(() =>
-        Services.obs.notifyObservers(
-          window,
-          "preferences-MaybeCategoriesInitializedSLOW"
-        )
+  initializeCategories() {
+    if (!this._categoriesInitialized) {
+      this._categoriesInitialized = this.runCategoryInitialization();
+    }
+    return this._categoriesInitialized;
+  },
+
+  /**
+   * Runs init() on every registered category, then waits for the work that
+   * init triggers to settle: Lit-driven setting-pane / setting-group renders
+   * (so setting-controls are in the DOM) and any pending L10n mutations (so
+   * their translated text is in place) before resolving. Callers should
+   * await the returned promise before searching.
+   */
+  async runCategoryInitialization() {
+    for (let category of gCategoryInits.values()) {
+      category.init();
+    }
+    await Promise.all(
+      [...document.querySelectorAll("setting-pane, setting-group")].map(
+        el => el.updateComplete
+      )
+    );
+    if (document.hasPendingL10nMutations) {
+      await new Promise(r =>
+        document.addEventListener("L10nMutationsFinished", r, { once: true })
       );
     }
+    queueMicrotask(() =>
+      Services.obs.notifyObservers(
+        window,
+        "preferences-MaybeCategoriesInitializedSLOW"
+      )
+    );
   },
 
   /**
