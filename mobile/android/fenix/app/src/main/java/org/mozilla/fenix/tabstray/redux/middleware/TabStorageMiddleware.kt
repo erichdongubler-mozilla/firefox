@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.tabstray.redux.middleware
 
+import androidx.annotation.VisibleForTesting
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -40,11 +41,11 @@ import org.mozilla.fenix.tabstray.redux.state.TabGroupFormState
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 
 private typealias TabItemId = String
-private typealias TabGroupMap = HashMap<TabItemId, TabsTrayItem.TabGroup>
+private typealias TabGroupMap = HashMap<TabItemId, MutableTabGroup>
 
 /**
  * Value class representing the combined data model of all data inputs before being transformed.
- **/
+ */
 @JvmInline
 private value class CombinedTabData(
     private val combinedData: Pair<TabData, TabGroupData>,
@@ -60,6 +61,22 @@ private value class CombinedTabData(
 
     val tabGroupAssignments: Map<String, String> // tab ID -> tab group ID
         get() = combinedData.second.tabGroupAssignments
+}
+
+/**
+ * Value class representing a tab group while the final data model is being constructed.
+ */
+@VisibleForTesting
+internal data class MutableTabGroup(
+    val metaData: TabGroup,
+    val theme: TabGroupTheme,
+) {
+
+    val tabs: MutableList<TabsTrayItem.Tab> = mutableListOf()
+
+    var isFocused: Boolean = false
+
+    var initialScrollIndex: Int = 0
 }
 
 /**
@@ -151,8 +168,8 @@ class TabStorageMiddleware(
             TabGroupAction.SaveClicked -> handleSaveClicked(store)
 
             is TabGroupAction.SelectedTabsAddedToGroup -> {
-                val selectedTabIds = store.state.mode.selectedTabIds
-                val selectedTabGroupIds = store.state.mode.selectedTabGroupIds - action.groupId
+                val selectedTabIds = store.state.mode.selectedTabs.map { it.id }
+                val selectedTabGroupIds = store.state.mode.selectedTabGroups.map { it.id } - action.groupId
 
                 scope.launch {
                     addTabItemsToTabGroup(
@@ -513,7 +530,7 @@ class TabStorageMiddleware(
         tabGroups: List<TabGroup>,
         tabGroupAssignments: Map<TabItemId, String>, // tab ID -> tab group ID
     ): TabStorageUpdate {
-        val normalItems: MutableList<TabsTrayItem> = mutableListOf()
+        val normalItems: MutableList<Any> = mutableListOf()
         val inactiveTabs: MutableList<TabsTrayItem.Tab> = mutableListOf()
         val privateTabs: MutableList<TabsTrayItem> = mutableListOf()
         val transformedTabGroups = constructTabGroupMaps(tabGroups = tabGroups)
@@ -532,7 +549,7 @@ class TabStorageMiddleware(
 
             when {
                 assignedGroup != null -> {
-                    if (!assignedGroup.closed) {
+                    if (!assignedGroup.metaData.closed) {
                         normalTabCount++
                     }
                     addToTabGroup(
@@ -556,32 +573,67 @@ class TabStorageMiddleware(
 
                 else -> {
                     normalTabCount++
-                    addToNormalTabs(
-                        tab = displayTab,
-                        normalTabs = normalItems,
-                        updateSelectedTabIndex = { selectedNormalTabIndex = it },
-                    )
+                    normalItems.add(displayTab)
+                    if (displayTab.isFocused) {
+                        selectedNormalTabIndex = normalItems.lastIndex
+                    }
                 }
             }
         }
 
+        // bondbond todo: do a before/after of the recomposition counts
+        val (displayTabGroups, displayNormalItems) = generateUiFriendlyModels(
+            normalItems = normalItems,
+            tabGroupMap = transformedTabGroups,
+        )
+
         return TabStorageUpdate(
             selectedTabId = selectedTabId,
-            normalItems = normalItems,
+            normalItems = displayNormalItems,
             normalTabCount = normalTabCount,
             selectedNormalItemIndex = selectedNormalTabIndex,
             inactiveTabs = inactiveTabs,
             privateTabs = privateTabs,
             selectedPrivateItemIndex = selectedPrivateTabIndex,
-            tabGroups = transformedTabGroups.values.toList().sortedByDescending { it.lastModified },
+            tabGroups = displayTabGroups,
         )
+    }
+
+    private fun generateUiFriendlyModels(
+        normalItems: MutableList<Any>,
+        tabGroupMap: TabGroupMap,
+    ): Pair<List<TabsTrayItem.TabGroup>, List<TabsTrayItem>> {
+        val displayTabGroupMap = tabGroupMap.mapValues {
+            TabsTrayItem.TabGroup(
+                id = it.value.metaData.id,
+                title = it.value.metaData.title,
+                theme = it.value.theme,
+                tabs = it.value.tabs,
+                closed = it.value.metaData.closed,
+                lastModified = it.value.metaData.lastModified,
+                isFocused = it.value.isFocused,
+                initialScrollIndex = it.value.initialScrollIndex,
+            )
+        }
+        val displayTabGroups = displayTabGroupMap.values.sortedByDescending { it.lastModified }
+        val displayNormalItems = mutableListOf<TabsTrayItem>()
+        normalItems.forEach { item ->
+            when (item) {
+                is MutableTabGroup -> {
+                    displayTabGroupMap[item.metaData.id]?.let { displayNormalItems.add(it) }
+                }
+                is TabsTrayItem.Tab -> displayNormalItems.add(item)
+            }
+        }
+
+        return displayTabGroups to displayNormalItems
     }
 
     private fun addToTabGroup(
         tab: TabsTrayItem.Tab,
-        assignedGroup: TabsTrayItem.TabGroup,
+        assignedGroup: MutableTabGroup,
         groupsIncludedInNormalTabs: HashSet<TabItemId>,
-        normalTabs: MutableList<TabsTrayItem>,
+        normalTabs: MutableList<Any>,
         updateSelectedTabIndex: (Int) -> Unit,
     ) {
         assignedGroup.tabs.add(tab)
@@ -589,26 +641,15 @@ class TabStorageMiddleware(
         // We need to separately check & track if the group has already been added to the
         // collection of Normal tab items because normalTabs does not maintain a sort key
         // and cannot be backed by a Map/Set.
-        if (!assignedGroup.closed && assignedGroup.id !in groupsIncludedInNormalTabs) {
+        if (!assignedGroup.metaData.closed && assignedGroup.metaData.id !in groupsIncludedInNormalTabs) {
             normalTabs.add(assignedGroup)
-            groupsIncludedInNormalTabs.add(assignedGroup.id)
+            groupsIncludedInNormalTabs.add(assignedGroup.metaData.id)
         }
 
         if (tab.isFocused) {
             updateSelectedTabIndex(normalTabs.size - 1)
             assignedGroup.isFocused = true
             assignedGroup.initialScrollIndex = assignedGroup.tabs.lastIndex
-        }
-    }
-
-    private fun addToNormalTabs(
-        tab: TabsTrayItem.Tab,
-        normalTabs: MutableList<TabsTrayItem>,
-        updateSelectedTabIndex: (Int) -> Unit,
-    ) {
-        normalTabs.add(tab)
-        if (tab.isFocused) {
-            updateSelectedTabIndex(normalTabs.size - 1)
         }
     }
 
@@ -631,13 +672,9 @@ class TabStorageMiddleware(
         tabGroups.forEach { tabGroup ->
             val safeTheme = tabGroup.theme.toTabGroupTheme()
 
-            transformedTabGroups[tabGroup.id] = TabsTrayItem.TabGroup(
-                id = tabGroup.id,
+            transformedTabGroups[tabGroup.id] = MutableTabGroup(
+                metaData = tabGroup,
                 theme = safeTheme,
-                title = tabGroup.title,
-                tabs = mutableListOf(),
-                closed = tabGroup.closed,
-                lastModified = tabGroup.lastModified,
             )
         }
 
@@ -650,7 +687,7 @@ class TabStorageMiddleware(
         val formState = store.state.tabGroupState.formState ?: return
         val mode = store.state.mode
         // Capture the selection synchronously to prevent selection loss by the Reducer
-        val selectedTabIds = mode.selectedTabIds
+        val selectedTabIds = mode.selectedTabs.map { it.id }
         scope.launch {
             val newGroupId = when (mode) {
                 is TabsTrayState.Mode.DragAndDrop -> {

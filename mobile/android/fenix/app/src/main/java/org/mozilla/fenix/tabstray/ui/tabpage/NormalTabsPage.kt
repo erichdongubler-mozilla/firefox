@@ -32,7 +32,11 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.controller.TabInteractionHandler
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
-import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
+import org.mozilla.fenix.tabstray.redux.state.TabsTrayState.DragProcessingState
+import org.mozilla.fenix.tabstray.redux.state.TabsTrayState.InactiveTabsState
+import org.mozilla.fenix.tabstray.redux.state.TabsTrayState.Mode
+import org.mozilla.fenix.tabstray.redux.state.TabsTrayState.NormalTabsState
+import org.mozilla.fenix.tabstray.redux.state.TabsTrayState.TabsTrayConfig
 import org.mozilla.fenix.tabstray.ui.inactivetabs.InactiveTabsList
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.trackingprotection.TrackersBlockedCard
@@ -43,15 +47,11 @@ private val EmptyPageWidth = 170.dp
 /**
  * UI for displaying the Normal Tabs Page in the Tab Manager.
  *
- * @param items The list of active tabs to display.
- * @param inactiveTabs The list of inactive tabs to display.
- * @param selectedItemIndex The index of the currently selected tab. This will be scrolled to on first-render.
- * @param selectionMode [TabsTrayState.Mode] indicating whether the Tab Manager is in single selection.
- * @param inactiveTabsExpanded Whether the Inactive Tabs section is expanded.
- * @param displayTabsInGrid Whether the normal and private tabs should be displayed in a grid.
- * @param dragAndDropEnabled Whether the grid supports dragging and dropping for tab groups.
+ * @param normalTabsState The current snapshot of [NormalTabsState].
+ * @param inactiveTabsState The current snapshot of [InactiveTabsState].
+ * @param selectionMode The current selection [Mode].
+ * @param tabsTrayConfig The current snapshot of [TabsTrayConfig].
  * @param displayTabGroupOnboarding Whether onboarding for tab groups should be shown.
- * @param liveReorderEnabled Whether tab reorders should happen 'live' during a drag.
  * @param dragProcessingState The lifecycle state of tab-group drag handling
  * @param tabInteractionHandler Handles tab interactions, such as moves and drag and drop.
  * @param enteringGroupId The id of a group entering composition, if any.  Can be null.
@@ -86,16 +86,12 @@ private val EmptyPageWidth = 170.dp
 @Composable
 @Suppress("LongParameterList")
 internal fun NormalTabsPage(
-    items: List<TabsTrayItem>,
-    inactiveTabs: List<TabsTrayItem.Tab>,
-    selectedItemIndex: Int,
-    selectionMode: TabsTrayState.Mode,
-    inactiveTabsExpanded: Boolean,
-    displayTabsInGrid: Boolean,
-    dragAndDropEnabled: Boolean,
+    normalTabsState: NormalTabsState,
+    inactiveTabsState: InactiveTabsState,
+    selectionMode: Mode,
+    tabsTrayConfig: TabsTrayConfig,
     displayTabGroupOnboarding: Boolean,
-    liveReorderEnabled: Boolean,
-    dragProcessingState: TabsTrayState.DragProcessingState,
+    dragProcessingState: DragProcessingState,
     tabInteractionHandler: TabInteractionHandler,
     enteringGroupId: String?,
     trackersBlockedCount: Int? = null,
@@ -123,16 +119,16 @@ internal fun NormalTabsPage(
     onPrivacyReportTapped: (() -> Unit)? = null,
     onEnteringGroupAnimationPlayed: () -> Unit,
 ) {
-    if (items.isNotEmpty() || inactiveTabs.isNotEmpty()) {
+    if (normalTabsState.items.isNotEmpty() || inactiveTabsState.tabs.isNotEmpty()) {
         var showAutoCloseDialog by remember { mutableStateOf(shouldShowInactiveTabsAutoCloseDialog) }
 
-        val optionalInactiveTabsHeader: (@Composable () -> Unit)? = if (inactiveTabs.isEmpty()) {
+        val optionalInactiveTabsHeader: (@Composable () -> Unit)? = if (inactiveTabsState.tabs.isEmpty()) {
             null
         } else {
             {
                 InactiveTabsList(
-                    inactiveTabs = inactiveTabs,
-                    expanded = inactiveTabsExpanded,
+                    inactiveTabs = inactiveTabsState.tabs,
+                    expanded = inactiveTabsState.isExpanded,
                     showAutoCloseDialog = showAutoCloseDialog,
                     showCFR = shouldShowInactiveTabsCFR,
                     onHeaderClick = onInactiveTabsHeaderClick,
@@ -151,7 +147,7 @@ internal fun NormalTabsPage(
                     onCFRClick = onInactiveTabsCFRClick,
                     onCFRDismiss = onInactiveTabsCFRDismiss,
                 )
-                if (!displayTabsInGrid) {
+                if (!tabsTrayConfig.displayTabsInGrid) {
                     Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static200))
                 }
             }
@@ -162,12 +158,12 @@ internal fun NormalTabsPage(
         }
 
         TabLayout(
-            tabs = items,
-            displayTabsInGrid = displayTabsInGrid,
-            dragAndDropEnabled = dragAndDropEnabled,
-            liveReorderEnabled = liveReorderEnabled,
+            tabs = normalTabsState.items,
+            displayTabsInGrid = tabsTrayConfig.displayTabsInGrid,
+            dragAndDropEnabled = tabsTrayConfig.tabGroupsDragAndDropEnabled,
+            liveReorderEnabled = tabsTrayConfig.tabGroupsLiveReorderEnabled,
             displayTabGroupOnboarding = displayTabGroupOnboarding,
-            selectedItemIndex = selectedItemIndex,
+            selectedItemIndex = normalTabsState.selectedItemIndex,
             selectionMode = selectionMode,
             trackersBlockedCount = trackersBlockedCount,
             modifier = Modifier.testTag(TabsTrayTestTag.NORMAL_TABS_LIST),

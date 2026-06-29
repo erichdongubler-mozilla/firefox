@@ -604,7 +604,6 @@ private fun ReorderableTabGrid(
                     focusEnabled = focusEnabled,
                     isMultiSelected = selectionMode.contains(tab),
                     reorderState = reorderState,
-                    gridState = gridState,
                     onTabClose = onTabClose,
                     onItemClick = onItemClick,
                     onDeleteTabGroupClick = onDeleteTabGroupClick,
@@ -758,7 +757,6 @@ private fun InteractableTabGrid(
                     focusEnabled = focusEnabled,
                     isMultiSelected = selectionMode.contains(tab),
                     reorderState = gridInteractionState,
-                    gridState = gridState,
                     onTabClose = onTabClose,
                     onItemClick = onItemClick,
                     onDeleteTabGroupClick = onDeleteTabGroupClick,
@@ -856,7 +854,6 @@ private fun LazyGridItemScope.ReorderableTabGridItemContent(
     focusEnabled: Boolean,
     isMultiSelected: Boolean,
     reorderState: GridReorderState,
-    gridState: LazyGridState,
     onTabClose: (TabsTrayItem.Tab) -> Unit,
     onItemClick: (TabsTrayItem) -> Unit,
     onDeleteTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
@@ -866,10 +863,10 @@ private fun LazyGridItemScope.ReorderableTabGridItemContent(
     val decayAnimationSpec: DecayAnimationSpec<Float> = rememberSplineBasedDecay()
     val density = LocalDensity.current
     val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-    val swipeState = remember(isInMultiSelectMode, !gridState.isScrollInProgress) {
+    val swipeState = remember(isInMultiSelectMode) {
         SwipeToDismissState2(
             density = density,
-            enabled = !isInMultiSelectMode && !gridState.isScrollInProgress,
+            enabled = !isInMultiSelectMode,
             decayAnimationSpec = decayAnimationSpec,
             isRtl = isRtl,
         )
@@ -934,7 +931,6 @@ private fun LazyGridItemScope.InteractableTabGridItemContent(
     focusEnabled: Boolean,
     isMultiSelected: Boolean,
     reorderState: GridInteractionState,
-    gridState: LazyGridState,
     onTabClose: (TabsTrayItem.Tab) -> Unit,
     onItemClick: (TabsTrayItem) -> Unit,
     onDeleteTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
@@ -946,10 +942,10 @@ private fun LazyGridItemScope.InteractableTabGridItemContent(
     val decayAnimationSpec: DecayAnimationSpec<Float> = rememberSplineBasedDecay()
     val density = LocalDensity.current
     val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-    val swipeState = remember(isInMultiSelectMode, !gridState.isScrollInProgress) {
+    val swipeState = remember(isInMultiSelectMode) {
         SwipeToDismissState2(
             density = density,
-            enabled = !isInMultiSelectMode && !gridState.isScrollInProgress,
+            enabled = !isInMultiSelectMode,
             decayAnimationSpec = decayAnimationSpec,
             isRtl = isRtl,
         )
@@ -1030,7 +1026,6 @@ private fun TabListItemContent(
     selectionState: TabsTrayItemSelectionState,
     tabInteractionState: TabItemInteractionState,
     listInteractionState: ListInteractionState,
-    lazyListState: LazyListState,
     onTabClose: (TabsTrayItem.Tab) -> Unit,
     onItemClick: (TabsTrayItem) -> Unit,
     onDeleteTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
@@ -1051,7 +1046,6 @@ private fun TabListItemContent(
                 selectionState = selectionState,
                 interactionState = tabInteractionState,
                 shouldClickListen = shouldClickListen,
-                swipingEnabled = !lazyListState.isScrollInProgress,
                 onCloseClick = onTabClose,
                 onClick = onItemClick,
             )
@@ -1208,7 +1202,6 @@ private fun InteractableTabList(
                 isInMultiSelectMode = isInMultiSelectMode,
                 selectionMode = selectionMode,
                 focusEnabled = focusEnabled,
-                lazyListState = state,
                 onTabClose = onTabClose,
                 onItemClick = onItemClick,
                 onDeleteTabGroupClick = onDeleteTabGroupClick,
@@ -1234,7 +1227,6 @@ private fun LazyListScope.interactableTabListContent(
     isInMultiSelectMode: Boolean,
     selectionMode: TabsTrayState.Mode,
     focusEnabled: Boolean,
-    lazyListState: LazyListState,
     onTabClose: (TabsTrayItem.Tab) -> Unit,
     onItemClick: (TabsTrayItem) -> Unit,
     onDeleteTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
@@ -1290,7 +1282,6 @@ private fun LazyListScope.interactableTabListContent(
                 ),
                 tabInteractionState = tabInteractionState.copy(isHeld = isHeld),
                 listInteractionState = listInteractionState,
-                lazyListState = lazyListState,
                 onTabClose = onTabClose,
                 onItemClick = onItemClick,
                 onDeleteTabGroupClick = onDeleteTabGroupClick,
@@ -1516,7 +1507,6 @@ private fun ReorderableTabList(
                                     ),
                                 selectionState = selectionState,
                                 shouldClickListen = shouldClickListen,
-                                swipingEnabled = !state.isScrollInProgress,
                                 onCloseClick = onTabClose,
                                 onClick = onItemClick,
                             )

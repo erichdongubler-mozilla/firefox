@@ -994,24 +994,30 @@ class TabStorageMiddlewareTest {
                 theme = TabGroupTheme.Red.name,
                 lastModified = 0L,
             )
-            val tabGroups = List(size = 3) {
+            val tabGroupData = List(size = 3) {
                 TabGroup(
                     title = "Group $it",
                     theme = TabGroupTheme.Red.name,
                     lastModified = 0L,
                 )
             }
-            val selectedTabGroups = tabGroups.map {
-                createTabGroup(
-                    id = it.id,
-                    title = it.title,
+            val interstitialTabGroups = tabGroupData.map {
+                MutableTabGroup(
+                    metaData = it,
                     theme = TabGroupTheme.valueOf(it.theme),
                 )
             }
             // Assign tabs to the 3 multi-selected groups
-            selectedTabGroups[0].tabs.addAll(selectedTabs.subList(10, 20))
-            selectedTabGroups[1].tabs.addAll(selectedTabs.subList(20, 30))
-            selectedTabGroups[2].tabs.addAll(selectedTabs.subList(30, 40))
+            interstitialTabGroups[0].tabs.addAll(selectedTabs.subList(10, 20))
+            interstitialTabGroups[1].tabs.addAll(selectedTabs.subList(20, 30))
+            interstitialTabGroups[2].tabs.addAll(selectedTabs.subList(30, 40))
+            val selectedTabGroups = tabGroupData.mapIndexed { index, group ->
+                createTabGroup(
+                    id = group.id,
+                    title = group.title,
+                    tabs = interstitialTabGroups[index].tabs.toList(),
+                )
+            }
             val initialTabAssignments = mutableListOf<Pair<String, String>>()
             selectedTabGroups.forEach { group ->
                 group.tabs.forEach { tab ->
@@ -1028,7 +1034,7 @@ class TabStorageMiddlewareTest {
                 tabGroupsEnabled = true,
                 tabDataFlow = flowOf(tabData),
                 tabGroupRepository = createRepository(
-                    initialTabGroups = tabGroups + destinationTabGroup,
+                    initialTabGroups = tabGroupData + destinationTabGroup,
                     initialTabGroupAssignments = initialTabAssignments,
                 ),
             )
@@ -1066,31 +1072,38 @@ class TabStorageMiddlewareTest {
             val tabs = MutableList(size = 40) { createTab(url = "") }
             val selectedTabs = MutableList(size = 40) { TabsTrayItem.Tab(tabs[it]) }
             val tabData = TabData(tabs = tabs)
-            val tabGroups = List(size = 3) {
+            val tabGroupData = List(size = 3) {
                 TabGroup(
                     title = "Group $it",
                     theme = TabGroupTheme.Red.name,
                     lastModified = 0L,
                 )
             }
-            val selectedTabGroups = tabGroups.map {
-                createTabGroup(
-                    id = it.id,
-                    title = it.title,
+            val interstitialTabGroups = tabGroupData.map {
+                MutableTabGroup(
+                    metaData = it,
                     theme = TabGroupTheme.valueOf(it.theme),
                 )
             }
-            val destinationTabGroup = selectedTabGroups.first()
             // Assign tabs to the 3 multi-selected groups
-            selectedTabGroups[0].tabs.addAll(selectedTabs.subList(10, 20))
-            selectedTabGroups[1].tabs.addAll(selectedTabs.subList(20, 30))
-            selectedTabGroups[2].tabs.addAll(selectedTabs.subList(30, 40))
+            interstitialTabGroups[0].tabs.addAll(selectedTabs.subList(10, 20))
+            interstitialTabGroups[1].tabs.addAll(selectedTabs.subList(20, 30))
+            interstitialTabGroups[2].tabs.addAll(selectedTabs.subList(30, 40))
+            val selectedTabGroups = tabGroupData.mapIndexed { index, group ->
+                createTabGroup(
+                    id = group.id,
+                    title = group.title,
+                    tabs = interstitialTabGroups[index].tabs.toList(),
+                    theme = TabGroupTheme.valueOf(group.theme),
+                )
+            }
             val initialTabAssignments = mutableListOf<Pair<String, String>>()
             selectedTabGroups.forEach { group ->
                 group.tabs.forEach { tab ->
                     initialTabAssignments.add(tab.id to group.id)
                 }
             }
+            val destinationTabGroup = selectedTabGroups.first()
             val store = createStore(
                 initialState = TabsTrayState(
                     mode = Mode.Select(
@@ -1101,7 +1114,7 @@ class TabStorageMiddlewareTest {
                 tabGroupsEnabled = true,
                 tabDataFlow = flowOf(tabData),
                 tabGroupRepository = createRepository(
-                    initialTabGroups = tabGroups,
+                    initialTabGroups = tabGroupData,
                     initialTabGroupAssignments = initialTabAssignments,
                 ),
             )

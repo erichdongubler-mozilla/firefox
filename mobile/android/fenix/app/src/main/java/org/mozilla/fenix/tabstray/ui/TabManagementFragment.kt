@@ -326,8 +326,9 @@ class TabManagementFragment : Fragment() {
                         entryProvider = entryProvider {
                             entry<TabManagerNavDestination.Root> {
                                 TabsTray(
-                                    tabsTrayStore = tabsTrayStore,
+                                    state = state,
                                     snackbarHostState = snackbarHostState,
+                                    onAction = tabsTrayStore::dispatch,
                                     onTabPageClick = { page ->
                                         onTabPageClick(
                                             tabsTrayInteractor = tabManagerInteractor,
@@ -434,7 +435,10 @@ class TabManagementFragment : Fragment() {
                             }
 
                             entry<TabManagerNavDestination.TabSearch> {
-                                TabSearchScreen(store = tabsTrayStore)
+                                TabSearchScreen(
+                                    state = state.tabSearchState,
+                                    onAction = tabsTrayStore::dispatch,
+                                )
                             }
 
                             entry<TabManagerNavDestination.ExpandedTabGroup>(
@@ -505,7 +509,23 @@ class TabManagementFragment : Fragment() {
                                     showBetaLabel = true,
                                 ),
                             ) {
-                                EditTabGroup(tabsTrayStore = tabsTrayStore)
+                                val formState = state.tabGroupState.formState
+                                requireNotNull(formState) {
+                                    "Form state must not be null when navigating to the edit sheet"
+                                }
+
+                                EditTabGroup(
+                                    formState = formState,
+                                    onTabGroupNameChange = { newName ->
+                                        tabsTrayStore.dispatch(TabGroupAction.NameChanged(newName))
+                                    },
+                                    onTabGroupThemeChange = { newTheme ->
+                                        tabsTrayStore.dispatch(TabGroupAction.ThemeChanged(newTheme))
+                                    },
+                                    onConfirmSave = {
+                                        tabsTrayStore.dispatch(TabGroupAction.SaveClicked)
+                                    },
+                                )
                             }
 
                             entry<TabManagerNavDestination.AddToTabGroup>(
