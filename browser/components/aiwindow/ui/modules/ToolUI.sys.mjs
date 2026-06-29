@@ -86,48 +86,34 @@ export const CONFIRMATION_UI_TYPES = [
  */
 export class ToolUI {
   /**
-   * Get a tab by its linked panel ID
+   * Per-confirmation map of selection token to browser permanentKey, keyed by
+   * toolCallId. Populated when a tab confirmation is shown and read back when
+   * the user confirms, so each selected tab can be resolved back to a stable
+   * identity
    *
-   * @param {ChromeWindow} win - The browser window object
-   * @param {string} linkedPanel - The ID of the linked panel
-   * @returns {object|null} The tab object if found, otherwise null
+   * @type {Map<string, Map<string, object>>} toolCallId -> (token -> permanentKey)
    */
-  static #getTabByLinkedPanel(win, linkedPanel) {
-    const tab =
-      win.gBrowser.tabs.find(t => t.linkedPanel === linkedPanel) ?? null;
-    return tab;
+  static #tabKeysByToolCall = new Map();
+
+  /**
+   * Register the token to permanentKey map for a close tabs confirmation.
+   *
+   * @param {string} toolCallId
+   * @param {Map<string, object>} tokenToKey
+   */
+  static registerTabKeys(toolCallId, tokenToKey) {
+    if (toolCallId && tokenToKey?.size) {
+      this.#tabKeysByToolCall.set(toolCallId, tokenToKey);
+    }
   }
 
   /**
-   * Verify that a tab matches the expected selection data
+   * Drop a confirmation's token map once it resolves or is cancelled
    *
-   * @param {MozTabbrowserTab} tab - The browser tab object
-   * @param {TabSelectionData} selectionData - The expected tab data from the selection
-   * @returns {boolean} True if the tab matches the expected data
+   * @param {string} toolCallId
    */
-  static #verifyTabMatch(tab, selectionData) {
-    if (!tab || !selectionData) {
-      return false;
-    }
-
-    // Check linkedPanel matches
-    if (tab.linkedPanel !== selectionData.linkedPanel) {
-      lazy.console.warn(
-        `Tab linkedPanel mismatch: expected ${selectionData.linkedPanel}, got ${tab.linkedPanel}`
-      );
-      return false;
-    }
-
-    // Check URL matches
-    const tabUrl = tab.linkedBrowser?.currentURI?.spec;
-    if (tabUrl !== selectionData.url) {
-      lazy.console.warn(
-        `Tab URL mismatch for panel ${selectionData.linkedPanel}: expected ${selectionData.url}, got ${tabUrl}`
-      );
-      return false;
-    }
-
-    return true;
+  static clearTabKeys(toolCallId) {
+    this.#tabKeysByToolCall.delete(toolCallId);
   }
 
   static #getConfirmationReason(tabs) {
@@ -144,37 +130,87 @@ export class ToolUI {
   }
 
   /**
-   * Verifies and collects tab objects from selected tabs
+   * Resolve selected tabs to live tab objects in the given window by
+   * permanentKey
    *
-   * @param {Array<TabSelectionData>} selectedTabs - Array of selected tab objects with linkedPanel
+   * @param {Array<TabSelectionData>} selectedTabs - Selected tabs
+   * @param {Map<string, object>} tokenToKey - token -> permanentKey for this operation
    * @param {ChromeWindow} win - The browser window object
    * @returns {Array<Tab>|null} Verified tab objects or null if none valid
    * @private
    */
-  static #verifyAndCollectTabs(selectedTabs, win) {
-    // Verify we have a valid window
+  static #verifyAndCollectTabs(selectedTabs = [], tokenToKey = null, win) {
     if (!win) {
       lazy.console.error("No browser window provided");
       return null;
     }
+    if (!tokenToKey?.size) {
+      lazy.console.warn("No tab-key map for this operation");
+      return null;
+    }
 
+    const claimedTabs = new Set();
     const verifiedTabObjects = [];
 
     for (const selectedTab of selectedTabs) {
-      const tab = this.#getTabByLinkedPanel(win, selectedTab.linkedPanel);
+      const permanentKey =
+        selectedTab.token && tokenToKey.get(selectedTab.token);
+      const tab =
+        permanentKey &&
+        win.gBrowser.tabs.find(
+          t => !claimedTabs.has(t) && t.permanentKey === permanentKey
+        );
 
-      if (tab && this.#verifyTabMatch(tab, selectedTab)) {
-        verifiedTabObjects.push(tab);
+      if (!tab) {
+        lazy.console.warn(
+          `No live tab for selection ${selectedTab.url} (token ${selectedTab.token})`
+        );
+        continue;
       }
+
+      claimedTabs.add(tab);
+      verifiedTabObjects.push(tab);
     }
 
-    // Only proceed if we have verified tabs
     if (verifiedTabObjects.length === 0) {
       lazy.console.warn("No valid tabs after verification");
       return null;
     }
 
     return verifiedTabObjects;
+  }
+
+  /**
+   * Close the selected tabs after resolving them by permanentKey
+   *
+   * @param {Array<TabSelectionData>} selectedTabs - Selected tabs
+   * @param {Map<string, object>} tokenToKey - token -> permanentKey for this operation
+   * @param {ChromeWindow} win - The browser window object
+   * @returns {Promise<{operationId: string, closedTabs: Array, failedTabs: Array}|null>}
+   */
+  static async closeSelectedTabs(selectedTabs = [], tokenToKey, win) {
+    const verifiedTabObjects = this.#verifyAndCollectTabs(
+      selectedTabs,
+      tokenToKey,
+      win
+    );
+    if (!verifiedTabObjects) {
+      return null;
+    }
+
+    const activeTab = verifiedTabObjects.find(
+      tab => tab === win.gBrowser.selectedTab
+    );
+    if (activeTab) {
+      activeTab.smartWindowActionSource = "close_current_tab";
+    }
+
+    const result = await lazy.tabManagementService.closeTabs({
+      tabs: verifiedTabObjects,
+      window: win,
+    });
+
+    return result;
   }
 
   /* ========================================================================
@@ -200,7 +236,13 @@ export class ToolUI {
     } = context;
     const { selectedTabs = [] } = updateData ?? {};
 
-    const result = await this.closeSelectedTabs(selectedTabs, window);
+    const tokenToKey = this.#tabKeysByToolCall.get(toolCallId);
+    const result = await this.closeSelectedTabs(
+      selectedTabs,
+      tokenToKey,
+      window
+    );
+    this.clearTabKeys(toolCallId);
     if (!result) {
       return false;
     }
@@ -280,6 +322,8 @@ export class ToolUI {
       reason,
     });
 
+    this.clearTabKeys(toolCallId);
+
     conversation.updateToolUI(
       message,
       originalData,
@@ -311,11 +355,14 @@ export class ToolUI {
     } = context;
     const { selectedTabs = [], tabGroupLabel = "Tab Group" } = updateData ?? {};
 
+    const tokenToKey = this.#tabKeysByToolCall.get(toolCallId);
     const result = await this.createTabGroup({
       tabs: selectedTabs,
+      tokenToKey,
       window,
       label: tabGroupLabel,
     });
+    this.clearTabKeys(toolCallId);
     if (!result?.success) {
       return false;
     }
@@ -582,7 +629,8 @@ export class ToolUI {
    * Creates a tab group from selected tabs after verification.
    *
    * @param {object} options - Options for creating the tab group
-   * @param {Array<TabSelectionData>} options.tabs - Array of selected tab objects with linkedPanel, url, title
+   * @param {Array<TabSelectionData>} options.tabs - Selected tabs (each carrying a `token`)
+   * @param {Map<string, object>} options.tokenToKey - token -> permanentKey for this operation
    * @param {ChromeWindow} options.window - The browser window object
    * @param {string} [options.label="Tab Group"] - Label for the tab group
    * @returns {Promise<{
@@ -600,8 +648,17 @@ export class ToolUI {
    *   error?: string
    * } | null>} Creation result with group details and success status, or null if no valid tabs
    */
-  static async createTabGroup({ tabs = [], window: win, label }) {
-    const verifiedTabObjects = this.#verifyAndCollectTabs(tabs, win);
+  static async createTabGroup({
+    tabs = [],
+    tokenToKey = null,
+    window: win,
+    label,
+  }) {
+    const verifiedTabObjects = this.#verifyAndCollectTabs(
+      tabs,
+      tokenToKey,
+      win
+    );
     if (!verifiedTabObjects) {
       return null;
     }
@@ -610,34 +667,6 @@ export class ToolUI {
       tabs: verifiedTabObjects,
       window: win,
       label,
-    });
-
-    return result;
-  }
-
-  /**
-   * Close the selected tabs after verification
-   *
-   * @param {Array<TabSelectionData>} selectedTabs - Array of selected tab objects
-   * @param {ChromeWindow} win - The browser window object
-   * @returns {Promise<{operationId: string, closedTabs: Array, failedTabs: Array}|null>} Result object with operation details if successful, null otherwise
-   */
-  static async closeSelectedTabs(selectedTabs = [], win) {
-    const verifiedTabObjects = this.#verifyAndCollectTabs(selectedTabs, win);
-    if (!verifiedTabObjects) {
-      return null;
-    }
-
-    const activeTab = verifiedTabObjects.find(
-      tab => tab === win.gBrowser.selectedTab
-    );
-    if (activeTab) {
-      activeTab.smartWindowActionSource = "close_current_tab";
-    }
-
-    const result = await lazy.tabManagementService.closeTabs({
-      tabs: verifiedTabObjects,
-      window: win,
     });
 
     return result;

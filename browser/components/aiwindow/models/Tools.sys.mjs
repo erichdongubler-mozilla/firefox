@@ -1219,6 +1219,8 @@ function getActionType(conversation, action) {
  * @param {ChatConversation} conversation
  * @param {string} [mode] - Location/mode of the AI Window for telemetry
  * @param {string} [model] - Identifier of the model that invoked the tool
+ * @param {string} [toolCallId] - Id of the tool call, used to register the
+ *   confirmation's token -> permanentKey map
  * @returns {Promise<{ toolResult: object, uiData: ?object }>}
  *   `toolResult` is appended as the body of the `role: "tool"` message sent
  *   to the model. `uiData` is attached to the assistant message for UI
@@ -1228,7 +1230,8 @@ export async function manageTabs(
   toolParams,
   conversation,
   mode = "",
-  model = ""
+  model = "",
+  toolCallId = ""
 ) {
   const params = toolParams && typeof toolParams === "object" ? toolParams : {};
   const { action, ask_confirmation = true, url_tokens = [] } = params;
@@ -1291,7 +1294,7 @@ export async function manageTabs(
 
   if (action === "close_tabs") {
     return closeTabsAction(
-      { validUrls, ask_confirmation, mode, model },
+      { validUrls, ask_confirmation, mode, model, toolCallId },
       conversation
     );
   }
