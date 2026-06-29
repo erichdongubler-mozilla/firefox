@@ -76,7 +76,7 @@
 }
 
 #send-tab-button {
-  list-style-image: url("chrome://browser/skin/send-tab-20.svg");
+  list-style-image: url("chrome://browser/skin/send-tab.svg");
 
   &:-moz-locale-dir(rtl) {
     transform: scaleX(-1);
