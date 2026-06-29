@@ -17,8 +17,7 @@
 namespace js {
 namespace jit {
 
-static const uint32_t SimdMemoryAlignment =
-    16;  // Make it 4 to avoid a bunch of div-by-zero warnings
+static const uint32_t SimdMemoryAlignment = 16;
 
 // RISCV64 has 32 64-bit integer registers, x0 though x31.
 //  The program counter is not accessible as a register.
@@ -447,8 +446,6 @@ struct FloatRegister {
   }
   static Code FromName(const char* name);
 
-  // This is used in static initializers, so produce a bogus value instead of
-  // crashing.
   static uint32_t GetPushSizeInBytes(const TypedRegisterSet<FloatRegister>& s);
 
  private:
