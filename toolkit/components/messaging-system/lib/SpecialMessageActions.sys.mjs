@@ -450,6 +450,21 @@ export const SpecialMessageActions = {
   },
 
   /**
+   * Destroy UI widgets with special message actions
+   *
+   * @param {string} widgetId - The ID of the widget to be destroyed.
+   */
+  destroyUIWidget(widgetId) {
+    const allowedWidgetIds = ["fxms-bmb-button"];
+
+    if (!allowedWidgetIds.includes(widgetId)) {
+      return;
+    }
+
+    lazy.CustomizableUI.destroyWidget(widgetId);
+  },
+
+  /**
    * Open an FxA sign-in page and automatically close it once sign-in
    * completes.
    *
@@ -991,6 +1006,9 @@ export const SpecialMessageActions = {
         break;
       case "BLOCK_MESSAGE":
         await this.blockMessageById(action.data.id);
+        break;
+      case "DESTROY_UIWIDGET":
+        this.destroyUIWidget(action.data.widget_id);
         break;
       case "SET_PREF":
         this.setPref(action.data.pref, action.data.onImpression);

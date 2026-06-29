@@ -2764,7 +2764,6 @@ const BASE_MESSAGES = () => [
                   action: {
                     type: "SHOW_MIGRATION_WIZARD",
                   },
-                  showExternalLinkIcon: true,
                 },
                 {
                   id: "action-checklist-explore-extensions",
@@ -2796,7 +2795,6 @@ const BASE_MESSAGES = () => [
                       ],
                     },
                   },
-                  showExternalLinkIcon: true,
                 },
                 {
                   id: "action-checklist-sign-in",
@@ -2816,28 +2814,61 @@ const BASE_MESSAGES = () => [
                       },
                     },
                   },
-                  showExternalLinkIcon: true,
                 },
               ],
             },
-            dismiss_button: {
-              action: {
-                type: "MULTI_ACTION",
-                dismiss: true,
-                data: {
-                  actions: [
-                    {
-                      type: "SET_PREF",
-                      data: {
-                        pref: {
-                          name: "easyChecklist.open",
-                          value: false,
+            more_button: {
+              submenu: [
+                {
+                  type: "action",
+                  label: { string_id: "onboarding-checklist-minimize" },
+                  action: {
+                    type: "MULTI_ACTION",
+                    dismiss: true,
+                    data: {
+                      actions: [
+                        {
+                          type: "SET_PREF",
+                          data: {
+                            pref: {
+                              name: "messaging-system-action.easyChecklist.open",
+                              value: false,
+                            },
+                          },
                         },
-                      },
+                      ],
                     },
-                  ],
+                  },
+                  id: "minimize",
                 },
-              },
+                {
+                  type: "action",
+                  label: {
+                    string_id: "onboarding-checklist-remove",
+                  },
+                  action: {
+                    type: "MULTI_ACTION",
+                    dismiss: true,
+                    data: {
+                      actions: [
+                        {
+                          type: "BLOCK_MESSAGE",
+                          data: {
+                            id: "FINISH_SETUP_CHECKLIST",
+                          },
+                        },
+                        {
+                          type: "DESTROY_UIWIDGET",
+                          data: {
+                            widget_id: "fxms-bmb-button",
+                          },
+                        },
+                      ],
+                    },
+                  },
+                  id: "remove_checklist",
+                },
+              ],
             },
           },
         },
@@ -2968,7 +2999,6 @@ const BASE_MESSAGES = () => [
                   action: {
                     type: "SHOW_MIGRATION_WIZARD",
                   },
-                  showExternalLinkIcon: true,
                 },
                 {
                   id: "action-checklist-explore-extensions",
@@ -3000,7 +3030,6 @@ const BASE_MESSAGES = () => [
                       ],
                     },
                   },
-                  showExternalLinkIcon: true,
                 },
                 {
                   id: "action-checklist-sign-in",
@@ -3020,28 +3049,61 @@ const BASE_MESSAGES = () => [
                       },
                     },
                   },
-                  showExternalLinkIcon: true,
                 },
               ],
             },
-            dismiss_button: {
-              action: {
-                type: "MULTI_ACTION",
-                dismiss: true,
-                data: {
-                  actions: [
-                    {
-                      type: "SET_PREF",
-                      data: {
-                        pref: {
-                          name: "easyChecklist.open",
-                          value: false,
+            more_button: {
+              submenu: [
+                {
+                  type: "action",
+                  label: { string_id: "onboarding-checklist-minimize" },
+                  action: {
+                    type: "MULTI_ACTION",
+                    dismiss: true,
+                    data: {
+                      actions: [
+                        {
+                          type: "SET_PREF",
+                          data: {
+                            pref: {
+                              name: "messaging-system-action.easyChecklist.open",
+                              value: false,
+                            },
+                          },
                         },
-                      },
+                      ],
                     },
-                  ],
+                  },
+                  id: "minimize",
                 },
-              },
+                {
+                  type: "action",
+                  label: {
+                    string_id: "onboarding-checklist-remove",
+                  },
+                  action: {
+                    type: "MULTI_ACTION",
+                    dismiss: true,
+                    data: {
+                      actions: [
+                        {
+                          type: "BLOCK_MESSAGE",
+                          data: {
+                            id: "FINISH_SETUP_CHECKLIST",
+                          },
+                        },
+                        {
+                          type: "DESTROY_UIWIDGET",
+                          data: {
+                            widget_id: "fxms-bmb-button",
+                          },
+                        },
+                      ],
+                    },
+                  },
+                  id: "remove_checklist",
+                },
+              ],
             },
           },
         },

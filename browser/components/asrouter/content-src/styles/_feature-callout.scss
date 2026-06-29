@@ -835,34 +835,20 @@
             .action-checklist-label-container {
               display: flex;
               align-items: center;
+              justify-content: space-between;
+              flex: 1;
 
               span {
                 text-align: start;
               }
 
               .check-icon-container {
-                margin-block-start: 2px;
-              }
-
-              .check-empty, .check-filled {
-                margin-inline-end: 8px;
-                flex-shrink: 0;
-              }
-
-              .check-empty {
-                border-radius: 50%;
-                width: 0.75em;
-                height: 0.75em;
-                border: 2px solid color-mix(in srgb, var(--fc-color) 25%, transparent);
-              }
-
-              .check-filled {
-                background-image: url('chrome://global/skin/icons/check-filled.svg');
-                fill: var(--fc-icon-success-color);
+                order: 1;
+                margin-inline-start: 8px;
               }
             }
 
-            .external-link-icon, .check-filled {
+            .action-arrow, .check-filled {
               border: none;
               width: 1em;
               height: 1em;
@@ -870,13 +856,21 @@
               background-position: center;
               background-size: contain;
               -moz-context-properties: fill;
+              flex-shrink: 0;
             }
 
-            .external-link-icon-container {
-              .external-link-icon {
-                background-image: url('chrome://global/skin/icons/open-in-new.svg');
-                fill: var(--fc-color);
+            .action-arrow {
+              background-image: url('chrome://global/skin/icons/arrow-right.svg');
+              fill: currentColor;
+
+              &:dir(rtl) {
+                background-image: url('chrome://global/skin/icons/arrow-left.svg');
               }
+            }
+
+            .check-filled {
+              background-image: url('chrome://global/skin/icons/check-filled.svg');
+              fill: var(--fc-accent-color);
             }
 
             background: none;

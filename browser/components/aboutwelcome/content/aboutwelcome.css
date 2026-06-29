@@ -951,28 +951,17 @@ div#feature-callout.hidden {
 #feature-callout .screen[pos=callout] .action-checklist .action-checklist-items button .action-checklist-label-container {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  flex: 1;
 }
 #feature-callout .screen[pos=callout] .action-checklist .action-checklist-items button .action-checklist-label-container span {
   text-align: start;
 }
 #feature-callout .screen[pos=callout] .action-checklist .action-checklist-items button .action-checklist-label-container .check-icon-container {
-  margin-block-start: 2px;
+  order: 1;
+  margin-inline-start: 8px;
 }
-#feature-callout .screen[pos=callout] .action-checklist .action-checklist-items button .action-checklist-label-container .check-empty, #feature-callout .screen[pos=callout] .action-checklist .action-checklist-items button .action-checklist-label-container .check-filled {
-  margin-inline-end: 8px;
-  flex-shrink: 0;
-}
-#feature-callout .screen[pos=callout] .action-checklist .action-checklist-items button .action-checklist-label-container .check-empty {
-  border-radius: 50%;
-  width: 0.75em;
-  height: 0.75em;
-  border: 2px solid color-mix(in srgb, var(--fc-color) 25%, transparent);
-}
-#feature-callout .screen[pos=callout] .action-checklist .action-checklist-items button .action-checklist-label-container .check-filled {
-  background-image: url("chrome://global/skin/icons/check-filled.svg");
-  fill: var(--fc-icon-success-color);
-}
-#feature-callout .screen[pos=callout] .action-checklist .action-checklist-items button .external-link-icon, #feature-callout .screen[pos=callout] .action-checklist .action-checklist-items button .check-filled {
+#feature-callout .screen[pos=callout] .action-checklist .action-checklist-items button .action-arrow, #feature-callout .screen[pos=callout] .action-checklist .action-checklist-items button .check-filled {
   border: none;
   width: 1em;
   height: 1em;
@@ -980,10 +969,18 @@ div#feature-callout.hidden {
   background-position: center;
   background-size: contain;
   -moz-context-properties: fill;
+  flex-shrink: 0;
 }
-#feature-callout .screen[pos=callout] .action-checklist .action-checklist-items button .external-link-icon-container .external-link-icon {
-  background-image: url("chrome://global/skin/icons/open-in-new.svg");
-  fill: var(--fc-color);
+#feature-callout .screen[pos=callout] .action-checklist .action-checklist-items button .action-arrow {
+  background-image: url("chrome://global/skin/icons/arrow-right.svg");
+  fill: currentColor;
+}
+#feature-callout .screen[pos=callout] .action-checklist .action-checklist-items button .action-arrow:dir(rtl) {
+  background-image: url("chrome://global/skin/icons/arrow-left.svg");
+}
+#feature-callout .screen[pos=callout] .action-checklist .action-checklist-items button .check-filled {
+  background-image: url("chrome://global/skin/icons/check-filled.svg");
+  fill: var(--fc-accent-color);
 }
 panel#feature-callout:is([side=top], [side=bottom]):not([hide-arrow=permanent]) {
   margin-inline: var(--panel-margin-offset);

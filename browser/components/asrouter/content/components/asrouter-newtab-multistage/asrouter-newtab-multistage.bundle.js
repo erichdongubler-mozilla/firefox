@@ -1875,8 +1875,7 @@ async function evaluateTargeting(targeting) {
 const ActionChecklistItem = ({
   item,
   index,
-  handleAction,
-  showExternalLinkIcon
+  handleAction
 }) => {
   const [actionTargeting, setActionTargeting] = (0,external_React_namespaceObject.useState)(true);
   (0,external_React_namespaceObject.useEffect)(() => {
@@ -1905,19 +1904,15 @@ const ActionChecklistItem = ({
       onClick: onButtonClick
     }, /*#__PURE__*/external_React_default().createElement("div", {
       className: "action-checklist-label-container"
-    }, /*#__PURE__*/external_React_default().createElement("div", {
+    }, /*#__PURE__*/external_React_default().createElement(Localized, {
+      text: item.label
+    }, /*#__PURE__*/external_React_default().createElement("span", null)), /*#__PURE__*/external_React_default().createElement("div", {
       className: "check-icon-container"
     }, actionTargeting ? /*#__PURE__*/external_React_default().createElement("div", {
       className: "check-filled"
     }) : /*#__PURE__*/external_React_default().createElement("div", {
-      className: "check-empty"
-    })), /*#__PURE__*/external_React_default().createElement(Localized, {
-      text: item.label
-    }, /*#__PURE__*/external_React_default().createElement("span", null))), !actionTargeting && showExternalLinkIcon && /*#__PURE__*/external_React_default().createElement("div", {
-      className: "external-link-icon-container"
-    }, /*#__PURE__*/external_React_default().createElement("div", {
-      className: "external-link-icon"
-    })))
+      className: "action-arrow"
+    }))))
   );
 };
 const ActionChecklistProgressBar = ({

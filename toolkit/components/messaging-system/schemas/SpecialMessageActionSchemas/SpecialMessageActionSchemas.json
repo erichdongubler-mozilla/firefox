@@ -674,6 +674,29 @@
             "data": {
               "type": "object",
               "properties": {
+                "widget_id": {
+                  "type": "string",
+                  "description": "The id of the widget to destroy"
+                }
+              },
+              "required": ["widget_id"],
+              "additionalProperties": false
+            },
+            "type": {
+              "type": "string",
+              "enum": ["DESTROY_UIWIDGET"]
+            }
+          },
+          "required": ["data", "type"],
+          "additionalProperties": false,
+          "description": "Destroys a customizable UI widget"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "data": {
+              "type": "object",
+              "properties": {
                 "orderedExecution": {
                   "type": "boolean",
                   "description": "Optional - if true, actions will execute sequentially"

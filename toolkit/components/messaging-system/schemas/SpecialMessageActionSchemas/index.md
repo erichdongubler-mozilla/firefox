@@ -383,6 +383,17 @@ Example:
 }
 ```
 
+### `DESTROY_UIWIDGET`
+
+Destroys a customizable UI widget by ID. Only widgets in the allowlist are permitted.
+
+- args:
+```ts
+{
+  widget_id: string; // The id of the widget to destroy (e.g. "fxms-bmb-button")
+}
+```
+
 ### `MULTI_ACTION`
 
 Action for running multiple actions. Actions should be included in an array of actions.
