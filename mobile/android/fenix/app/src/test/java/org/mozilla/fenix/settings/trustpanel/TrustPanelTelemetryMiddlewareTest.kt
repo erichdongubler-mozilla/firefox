@@ -89,6 +89,26 @@ class TrustPanelTelemetryMiddlewareTest {
         )
     }
 
+    @Test
+    fun `WHEN qwac navigate action is dispatched THEN record qwac telemetry`() {
+        val store = createStore()
+        assertNull(TrustPanel.qwac.testGetValue())
+
+        store.dispatch(TrustPanelAction.Navigate.QWAC)
+
+        assertNotNull(TrustPanel.qwac.testGetValue())
+    }
+
+    @Test
+    fun `WHEN privacy security settings navigate action is dispatched THEN record panel settings telemetry`() {
+        val store = createStore()
+        assertNull(TrackingProtection.panelSettings.testGetValue())
+
+        store.dispatch(TrustPanelAction.Navigate.PrivacySecuritySettings)
+
+        assertNotNull(TrackingProtection.panelSettings.testGetValue())
+    }
+
     private fun createStore(
         trustPanelState: TrustPanelState = TrustPanelState(),
     ) = TrustPanelStore(
