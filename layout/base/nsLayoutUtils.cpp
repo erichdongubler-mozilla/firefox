@@ -8906,6 +8906,8 @@ ScrollMetadata nsLayoutUtils::ComputeScrollMetadata(
     metadata.SetOverflow({scrollStyles.mHorizontal, scrollStyles.mVertical});
     metadata.SetScrollUpdates(scrollContainerFrame->GetScrollUpdates());
     metadata.SetWritingMode(scrollContainerFrame->GetWritingMode());
+    metadata.SetScrollGenerationOnApz(
+        scrollContainerFrame->ScrollGenerationOnApz());
   }
 
   // If we have the scrollparent being the same as the scroll id, the

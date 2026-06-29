@@ -452,6 +452,7 @@ struct ParamTraits<mozilla::layers::ScrollMetadata>
     WriteParam(aWriter, aParam.mOverflow);
     WriteParam(aWriter, aParam.mScrollUpdates);
     WriteParam(aWriter, aParam.mWritingMode);
+    WriteParam(aWriter, aParam.mScrollGenerationOnApz);
   }
 
   static bool ReadContentDescription(MessageReader* aReader,
@@ -494,7 +495,8 @@ struct ParamTraits<mozilla::layers::ScrollMetadata>
            ReadParam(aReader, &aResult->mOverscrollBehavior) &&
            ReadParam(aReader, &aResult->mOverflow) &&
            ReadParam(aReader, &aResult->mScrollUpdates) &&
-           ReadParam(aReader, &aResult->mWritingMode);
+           ReadParam(aReader, &aResult->mWritingMode) &&
+           ReadParam(aReader, &aResult->mScrollGenerationOnApz);
   }
 };
 
