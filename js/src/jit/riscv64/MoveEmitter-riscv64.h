@@ -26,6 +26,10 @@ class MoveEmitterRiscv64 {
   // stack space has been allocated for that particular spill.
   int32_t pushedAtCycle_ = -1;
 
+  // A scratch general register used to break cycles. `InvalidReg` if no cycles
+  // are present or no spare scratch registers are available.
+  Register cycleGeneralReg_ = InvalidReg;
+
   bool inCycle_ = false;
 
   void assertDone() { MOZ_ASSERT(!inCycle_); }

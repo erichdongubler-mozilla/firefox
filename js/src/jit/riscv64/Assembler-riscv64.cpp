@@ -1567,6 +1567,10 @@ bool UseScratchRegisterScope::hasAvailable() const {
   return (available_->size()) != 0;
 }
 
+uint32_t UseScratchRegisterScope::countAvailable() const {
+  return available_->size();
+}
+
 void Assembler::retarget(Label* label, Label* target) {
 #ifdef JS_DISASM_RISCV64
   spew_.spewRetarget(label, target);

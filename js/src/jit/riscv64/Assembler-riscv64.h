@@ -595,6 +595,7 @@ class UseScratchRegisterScope {
   void Acquire(Register reg);
   void Release(Register reg);
   bool hasAvailable() const;
+  uint32_t countAvailable() const;
 
  private:
   GeneralRegisterSet* available_;

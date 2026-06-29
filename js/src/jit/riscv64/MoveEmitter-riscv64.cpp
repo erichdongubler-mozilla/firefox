@@ -18,47 +18,82 @@ void MoveEmitterRiscv64::breakCycle(const MoveOperand& to, MoveOp::Type type) {
   //
   // This case handles (A -> B), which we reach first. We save B, then allow
   // the original move to continue.
-  switch (type) {
-    case MoveOp::FLOAT32:
-      if (to.isMemory()) {
-        ScratchFloat32Scope fpscratch32(masm);
-        masm.loadFloat32(getAdjustedAddress(to), fpscratch32);
-        masm.storeFloat32(fpscratch32, cycleSlot());
-      } else {
-        masm.storeFloat32(to.floatReg(), cycleSlot());
-      }
-      break;
-    case MoveOp::DOUBLE:
-      if (to.isMemory()) {
-        ScratchDoubleScope fpscratch64(masm);
-        masm.loadDouble(getAdjustedAddress(to), fpscratch64);
-        masm.storeDouble(fpscratch64, cycleSlot());
-      } else {
-        masm.storeDouble(to.floatReg(), cycleSlot());
-      }
-      break;
-    case MoveOp::INT32:
-      if (to.isMemory()) {
-        UseScratchRegisterScope temps(&masm);
-        Register scratch2 = temps.Acquire();
-        masm.load32(getAdjustedAddress(to), scratch2);
-        masm.store32(scratch2, cycleSlot());
-      } else {
-        masm.store32(to.reg(), cycleSlot());
-      }
-      break;
-    case MoveOp::GENERAL:
-      if (to.isMemory()) {
-        UseScratchRegisterScope temps(&masm);
-        Register scratch2 = temps.Acquire();
-        masm.loadPtr(getAdjustedAddress(to), scratch2);
-        masm.storePtr(scratch2, cycleSlot());
-      } else {
-        masm.storePtr(to.reg(), cycleSlot());
-      }
-      break;
-    default:
-      MOZ_CRASH("Unexpected move type");
+  if (cycleGeneralReg_ != InvalidReg) {
+    switch (type) {
+      case MoveOp::FLOAT32:
+        if (to.isMemory()) {
+          masm.load32(getAdjustedAddress(to), cycleGeneralReg_);
+        } else {
+          masm.moveFloat32ToGPR(to.floatReg(), cycleGeneralReg_);
+        }
+        break;
+      case MoveOp::DOUBLE:
+        if (to.isMemory()) {
+          masm.loadPtr(getAdjustedAddress(to), cycleGeneralReg_);
+        } else {
+          masm.moveDoubleToGPR64(to.floatReg(), Register64(cycleGeneralReg_));
+        }
+        break;
+      case MoveOp::INT32:
+        if (to.isMemory()) {
+          masm.load32(getAdjustedAddress(to), cycleGeneralReg_);
+        } else {
+          masm.move32(to.reg(), cycleGeneralReg_);
+        }
+        break;
+      case MoveOp::GENERAL:
+        if (to.isMemory()) {
+          masm.loadPtr(getAdjustedAddress(to), cycleGeneralReg_);
+        } else {
+          masm.movePtr(to.reg(), cycleGeneralReg_);
+        }
+        break;
+      default:
+        MOZ_CRASH("Unexpected move type");
+    }
+  } else {
+    switch (type) {
+      case MoveOp::FLOAT32:
+        if (to.isMemory()) {
+          ScratchFloat32Scope fpscratch32(masm);
+          masm.loadFloat32(getAdjustedAddress(to), fpscratch32);
+          masm.storeFloat32(fpscratch32, cycleSlot());
+        } else {
+          masm.storeFloat32(to.floatReg(), cycleSlot());
+        }
+        break;
+      case MoveOp::DOUBLE:
+        if (to.isMemory()) {
+          ScratchDoubleScope fpscratch64(masm);
+          masm.loadDouble(getAdjustedAddress(to), fpscratch64);
+          masm.storeDouble(fpscratch64, cycleSlot());
+        } else {
+          masm.storeDouble(to.floatReg(), cycleSlot());
+        }
+        break;
+      case MoveOp::INT32:
+        if (to.isMemory()) {
+          UseScratchRegisterScope temps(&masm);
+          Register scratch2 = temps.Acquire();
+          masm.load32(getAdjustedAddress(to), scratch2);
+          masm.store32(scratch2, cycleSlot());
+        } else {
+          masm.store32(to.reg(), cycleSlot());
+        }
+        break;
+      case MoveOp::GENERAL:
+        if (to.isMemory()) {
+          UseScratchRegisterScope temps(&masm);
+          Register scratch2 = temps.Acquire();
+          masm.loadPtr(getAdjustedAddress(to), scratch2);
+          masm.storePtr(scratch2, cycleSlot());
+        } else {
+          masm.storePtr(to.reg(), cycleSlot());
+        }
+        break;
+      default:
+        MOZ_CRASH("Unexpected move type");
+    }
   }
 }
 
@@ -71,68 +106,113 @@ void MoveEmitterRiscv64::completeCycle(const MoveOperand& from,
   //
   // This case handles (B -> A), which we reach last. We emit a move from the
   // saved value of B, to A.
-  switch (type) {
-    case MoveOp::FLOAT32:
-      if (to.isMemory()) {
-        ScratchFloat32Scope fpscratch32(masm);
-        masm.loadFloat32(cycleSlot(), fpscratch32);
-        masm.storeFloat32(fpscratch32, getAdjustedAddress(to));
-      } else {
-        masm.loadFloat32(cycleSlot(), to.floatReg());
-      }
-      break;
-    case MoveOp::DOUBLE:
-      if (to.isMemory()) {
-        ScratchDoubleScope fpscratch64(masm);
-        masm.loadDouble(cycleSlot(), fpscratch64);
-        masm.storeDouble(fpscratch64, getAdjustedAddress(to));
-      } else {
-        masm.loadDouble(cycleSlot(), to.floatReg());
-      }
-      break;
-    case MoveOp::INT32:
-      if (to.isMemory()) {
-        UseScratchRegisterScope temps(&masm);
-        Register scratch2 = temps.Acquire();
-        masm.load32(cycleSlot(), scratch2);
-        masm.store32(scratch2, getAdjustedAddress(to));
-      } else {
-        masm.load32(cycleSlot(), to.reg());
-      }
-      break;
-    case MoveOp::GENERAL:
-      if (to.isMemory()) {
-        UseScratchRegisterScope temps(&masm);
-        Register scratch2 = temps.Acquire();
-        masm.loadPtr(cycleSlot(), scratch2);
-        masm.storePtr(scratch2, getAdjustedAddress(to));
-      } else {
-        masm.loadPtr(cycleSlot(), to.reg());
-      }
-      break;
-    default:
-      MOZ_CRASH("Unexpected move type");
+  if (cycleGeneralReg_ != InvalidReg) {
+    switch (type) {
+      case MoveOp::FLOAT32:
+        if (to.isMemory()) {
+          masm.store32(cycleGeneralReg_, getAdjustedAddress(to));
+        } else {
+          masm.moveGPRToFloat32(cycleGeneralReg_, to.floatReg());
+        }
+        break;
+      case MoveOp::DOUBLE:
+        if (to.isMemory()) {
+          masm.storePtr(cycleGeneralReg_, getAdjustedAddress(to));
+        } else {
+          masm.moveGPR64ToDouble(Register64(cycleGeneralReg_), to.floatReg());
+        }
+        break;
+      case MoveOp::INT32:
+        if (to.isMemory()) {
+          masm.store32(cycleGeneralReg_, getAdjustedAddress(to));
+        } else {
+          masm.move32(cycleGeneralReg_, to.reg());
+        }
+        break;
+      case MoveOp::GENERAL:
+        if (to.isMemory()) {
+          masm.storePtr(cycleGeneralReg_, getAdjustedAddress(to));
+        } else {
+          masm.movePtr(cycleGeneralReg_, to.reg());
+        }
+        break;
+      default:
+        MOZ_CRASH("Unexpected move type");
+    }
+  } else {
+    switch (type) {
+      case MoveOp::FLOAT32:
+        if (to.isMemory()) {
+          ScratchFloat32Scope fpscratch32(masm);
+          masm.loadFloat32(cycleSlot(), fpscratch32);
+          masm.storeFloat32(fpscratch32, getAdjustedAddress(to));
+        } else {
+          masm.loadFloat32(cycleSlot(), to.floatReg());
+        }
+        break;
+      case MoveOp::DOUBLE:
+        if (to.isMemory()) {
+          ScratchDoubleScope fpscratch64(masm);
+          masm.loadDouble(cycleSlot(), fpscratch64);
+          masm.storeDouble(fpscratch64, getAdjustedAddress(to));
+        } else {
+          masm.loadDouble(cycleSlot(), to.floatReg());
+        }
+        break;
+      case MoveOp::INT32:
+        if (to.isMemory()) {
+          UseScratchRegisterScope temps(&masm);
+          Register scratch2 = temps.Acquire();
+          masm.load32(cycleSlot(), scratch2);
+          masm.store32(scratch2, getAdjustedAddress(to));
+        } else {
+          masm.load32(cycleSlot(), to.reg());
+        }
+        break;
+      case MoveOp::GENERAL:
+        if (to.isMemory()) {
+          UseScratchRegisterScope temps(&masm);
+          Register scratch2 = temps.Acquire();
+          masm.loadPtr(cycleSlot(), scratch2);
+          masm.storePtr(scratch2, getAdjustedAddress(to));
+        } else {
+          masm.loadPtr(cycleSlot(), to.reg());
+        }
+        break;
+      default:
+        MOZ_CRASH("Unexpected move type");
+    }
   }
 }
 
 void MoveEmitterRiscv64::emit(const MoveResolver& moves) {
+  UseScratchRegisterScope temps(&masm);
+
   // At least two scratch registers need to be available:
   // - One scratch register for UseScratchRegisterScope uses within the move
   //   emitter itself.
   // - One scratch register for memory loads when the address doesn't fit into
   //   imm12, cf. `MacroAssemblerRiscv64::computeAddress()`.
-  MOZ_ASSERT(masm.GetScratchRegisterList()->size() >= 2);
+  MOZ_ASSERT(temps.countAvailable() >= 2);
 
   if (moves.numCycles()) {
-    // Reserve stack for cycle resolution
-    static_assert(SpillSlotSize == 8);
-    masm.reserveStack(SpillSlotSize);
-    pushedAtCycle_ = masm.framePushed();
+    if (temps.countAvailable() > 2) {
+      // We're lucky to have more than two spare scratch registers still
+      // available. Grab another one as temporary storage for breaking cycles.
+      cycleGeneralReg_ = temps.Acquire();
+    } else {
+      // Reserve stack for cycle resolution
+      static_assert(SpillSlotSize == 8);
+      masm.reserveStack(SpillSlotSize);
+      pushedAtCycle_ = masm.framePushed();
+    }
   }
 
   for (size_t i = 0; i < moves.numMoves(); i++) {
     emit(moves.getMove(i));
   }
+
+  cycleGeneralReg_ = InvalidReg;
 }
 
 void MoveEmitterRiscv64::emit(const MoveOp& move) {
