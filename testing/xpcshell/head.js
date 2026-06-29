@@ -632,26 +632,21 @@ function _execute_test() {
     PerTestCoverageUtils.beforeTestSync();
   }
 
-  let timer;
-  if (
-    _Services.profiler.IsActive() &&
-    !_Services.env.exists("MOZ_PROFILER_SHUTDOWN") &&
-    _Services.env.exists("MOZ_UPLOAD_DIR") &&
-    _Services.env.exists("MOZ_TEST_TIMEOUT_INTERVAL")
-  ) {
-    timer = _Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-    timer.initWithCallback(
-      function upload_test_timeout_profile() {
-        ChromeUtils.addProfilerMarker(
-          "xpcshell-test",
-          { category: "Test", startTime },
-          _TEST_NAME
-        );
-        _do_upload_profile();
-      },
-      parseInt(_Services.env.get("MOZ_TEST_TIMEOUT_INTERVAL")) * 1000 * 0.9, // Keep 10% of the time to gather the profile.
-      timer.TYPE_ONE_SHOT
-    );
+  // If we don't finish before the harness's timeout, the profiler writes a
+  // profile from its sampler thread, so a test that wedges its main thread
+  // (e.g. a long synchronous run that never returns to the event loop) still
+  // leaves a profile. Unlike a main-thread nsITimer this fires regardless of
+  // what the main thread is doing. The harness picks the output path (in
+  // MOZ_TEST_TIMEOUT_PROFILE_PATH) and reports the written file when it times
+  // the test out.
+  let scheduledProfileDump = false;
+  let timeoutProfilePath = _Services.env.get("MOZ_TEST_TIMEOUT_PROFILE_PATH");
+  if (timeoutProfilePath && _Services.profiler.IsActive()) {
+    // Keep 10% of the time to write the profile before the harness kills us.
+    let delaySeconds =
+      parseInt(_Services.env.get("MOZ_TEST_TIMEOUT_INTERVAL")) * 0.9;
+    _Services.profiler.scheduleDumpToFile(delaySeconds, timeoutProfilePath);
+    scheduledProfileDump = true;
   }
 
   try {
@@ -798,8 +793,8 @@ function _execute_test() {
     _PromiseTestUtils.uninit();
   }
 
-  if (timer) {
-    timer.cancel();
+  if (scheduledProfileDump) {
+    _Services.profiler.cancelScheduledDump();
   }
 
   // If MOZ_PROFILER_SHUTDOWN is set, the profiler got started from --profiler
