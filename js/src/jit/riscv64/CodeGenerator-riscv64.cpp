@@ -933,41 +933,72 @@ void CodeGenerator::visitDivPowTwoI(LDivPowTwoI* ins) {
   Register dest = ToRegister(ins->output());
   int32_t shift = ins->shift();
   MOZ_ASSERT(0 <= shift && shift <= 31);
+  bool negativeDivisor = ins->negativeDivisor();
+  MDiv* mir = ins->mir();
+
+  if (!mir->isTruncated() && negativeDivisor) {
+    // 0 divided by a negative number returns a -0 double.
+    bailoutTest32(Assembler::Zero, lhs, lhs, ins->snapshot());
+  }
 
   if (shift != 0) {
     UseScratchRegisterScope temps(masm);
     Register tmp = temps.Acquire();
 
-    MDiv* mir = ins->mir();
     if (!mir->isTruncated()) {
       // If the remainder is going to be != 0, bailout since this must
       // be a double.
       masm.slliw(tmp, lhs, (32 - shift));
-      bailoutCmp32(Assembler::NonZero, tmp, tmp, ins->snapshot());
+      bailoutTest32(Assembler::NonZero, tmp, tmp, ins->snapshot());
     }
 
-    if (!mir->canBeNegativeDividend()) {
-      // Numerator is unsigned, so needs no adjusting. Do the shift.
-      masm.sraiw(dest, lhs, shift);
-      return;
-    }
-
-    // Adjust the value so that shifting produces a correctly rounded result
-    // when the numerator is negative. See 10-1 "Signed Division by a Known
-    // Power of 2" in Henry S. Warren, Jr.'s Hacker's Delight.
-    if (shift > 1) {
-      masm.sraiw(tmp, lhs, 31);
-      masm.srliw(tmp, tmp, (32 - shift));
-      masm.add32(lhs, tmp);
+    if (mir->isUnsigned()) {
+      // shift right
+      masm.srliw(dest, lhs, shift);
     } else {
-      masm.srliw(tmp, lhs, (32 - shift));
-      masm.add32(lhs, tmp);
-    }
+      if (mir->canBeNegativeDividend() && mir->isTruncated()) {
+        // Adjust the value so that shifting produces a correctly rounded result
+        // when the numerator is negative. See 10-1 "Signed Division by a Known
+        // Power of 2" in Henry S. Warren, Jr.'s Hacker's Delight.
+        if (shift > 1) {
+          masm.sraiw(tmp, lhs, 31);
+          masm.srliw(tmp, tmp, (32 - shift));
+        } else {
+          masm.srliw(tmp, lhs, (32 - shift));
+        }
+        masm.addw(tmp, tmp, lhs);
 
-    // Do the shift.
-    masm.sraiw(dest, tmp, shift);
+        // Do the shift.
+        masm.sraiw(dest, tmp, shift);
+      } else {
+        // Numerator is unsigned, so needs no adjusting. Do the shift.
+        masm.sraiw(dest, lhs, shift);
+      }
+
+      if (negativeDivisor) {
+        masm.negw(dest, dest);
+      }
+    }
   } else {
-    masm.move32(lhs, dest);
+    if (negativeDivisor) {
+      // INT32_MIN / -1 overflows.
+      if (mir->trapOnError()) {
+        Label ok;
+        masm.branch32(Assembler::NotEqual, lhs, Imm32(INT32_MIN), &ok);
+        masm.wasmTrap(wasm::Trap::IntegerOverflow, mir->trapSiteDesc());
+        masm.bind(&ok);
+      } else if (!mir->isTruncated()) {
+        bailoutCmp32(Assembler::Equal, lhs, Imm32(INT32_MIN), ins->snapshot());
+      }
+      masm.negw(dest, lhs);
+    } else {
+      if (mir->isUnsigned() && !mir->isTruncated()) {
+        // Unsigned division by 1 can overflow if output is not truncated, as we
+        // do not have an Unsigned type for MIR instructions.
+        bailoutTest32(Assembler::Signed, lhs, lhs, ins->snapshot());
+      }
+      masm.move32(lhs, dest);
+    }
   }
 }
 

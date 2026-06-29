@@ -3723,7 +3723,7 @@
 #endif
   arguments:
     shift: int32_t
-#if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_ARM64)
+#if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_ARM64) || defined(JS_CODEGEN_RISCV64)
     # Negative divisor case not implemented for all targets.
     negativeDivisor: bool
 #endif

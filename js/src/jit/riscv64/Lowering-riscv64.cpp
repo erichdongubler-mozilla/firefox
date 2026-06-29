@@ -171,15 +171,15 @@ void LIRGeneratorRiscv64::lowerDivI(MDiv* div) {
   // rewritten to use other instructions.
   if (div->rhs()->isConstant()) {
     int32_t rhs = div->rhs()->toConstant()->toInt32();
-    // Check for division by a positive power of two, which is an easy and
-    // important case to optimize. Note that other optimizations are also
-    // possible; division by negative powers of two can be optimized in a
-    // similar manner as positive powers of two, and division by other
-    // constants can be optimized by a reciprocal multiplication technique.
-    if (rhs > 0 && std::has_single_bit(mozilla::Abs(rhs))) {
-      int32_t shift = mozilla::FloorLog2(uint32_t(rhs));
-      auto* lir =
-          new (alloc()) LDivPowTwoI(useRegisterAtStart(div->lhs()), shift);
+
+    // Check for division by a power of two, which is an easy and important case
+    // to optimize. Note that other optimizations are also
+    // possible; division by other constants can be optimized by a reciprocal
+    // multiplication technique.
+    if (std::has_single_bit(mozilla::Abs(rhs))) {
+      int32_t shift = mozilla::FloorLog2(mozilla::Abs(rhs));
+      auto lhs = useRegisterAtStart(div->lhs());
+      auto* lir = new (alloc()) LDivPowTwoI(lhs, shift, rhs < 0);
       if (div->fallible()) {
         assignSnapshot(lir, div->bailoutKind());
       }
@@ -259,6 +259,22 @@ void LIRGeneratorRiscv64::lowerModI64(MMod* mod) {
 }
 
 void LIRGeneratorRiscv64::lowerUDiv(MDiv* div) {
+  if (div->rhs()->isConstant()) {
+    // NOTE: the result of toInt32 is coerced to uint32_t.
+    uint32_t rhs = div->rhs()->toConstant()->toInt32();
+
+    if (std::has_single_bit(rhs)) {
+      int32_t shift = mozilla::FloorLog2(rhs);
+      auto lhs = useRegisterAtStart(div->lhs());
+      auto* lir = new (alloc()) LDivPowTwoI(lhs, shift, false);
+      if (div->fallible()) {
+        assignSnapshot(lir, div->bailoutKind());
+      }
+      define(lir, div);
+      return;
+    }
+  }
+
   LAllocation lhs, rhs;
   if (!div->canTruncateRemainder()) {
     lhs = useRegister(div->lhs());
