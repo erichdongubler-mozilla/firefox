@@ -28,6 +28,36 @@ describe("Reducers", () => {
 
       assert.propertyVal(nextState, "initialized", true);
     });
+    it("should show the customize panel on SHOW_PERSONALIZE", () => {
+      const nextState = App(undefined, { type: at.SHOW_PERSONALIZE });
+
+      assert.propertyVal(nextState, "customizeMenuVisible", true);
+      assert.propertyVal(nextState, "customizePanelWallpaperCategory", null);
+    });
+    it("should store the deep-linked wallpaper category on SHOW_PERSONALIZE", () => {
+      const nextState = App(undefined, {
+        type: at.SHOW_PERSONALIZE,
+        data: { wallpaperCategory: "firefox" },
+      });
+
+      assert.propertyVal(
+        nextState,
+        "customizePanelWallpaperCategory",
+        "firefox"
+      );
+    });
+    it("should clear customize panel state on HIDE_PERSONALIZE", () => {
+      const nextState = App(
+        {
+          customizeMenuVisible: true,
+          customizePanelWallpaperCategory: "firefox",
+        },
+        { type: at.HIDE_PERSONALIZE }
+      );
+
+      assert.propertyVal(nextState, "customizeMenuVisible", false);
+      assert.propertyVal(nextState, "customizePanelWallpaperCategory", null);
+    });
   });
   describe("TopSites", () => {
     it("should return the initial state", () => {

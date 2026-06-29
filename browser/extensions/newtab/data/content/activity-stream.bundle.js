@@ -6640,6 +6640,10 @@ const INITIAL_STATE = {
       Wallpaper: false,
     },
     customizeMenuVisible: false,
+    // When the customize panel is opened via a CTA that should deep-link into a
+    // specific wallpaper category (e.g. "firefox"), this holds that category id
+    // so WallpaperCategories can open it. Cleared when the panel closes.
+    customizePanelWallpaperCategory: null,
   },
   Ads: {
     initialized: false,
@@ -6910,10 +6914,12 @@ function App(prevState = INITIAL_STATE.App, action) {
     case actionTypes.SHOW_PERSONALIZE:
       return Object.assign({}, prevState, {
         customizeMenuVisible: true,
+        customizePanelWallpaperCategory: action.data?.wallpaperCategory ?? null,
       });
     case actionTypes.HIDE_PERSONALIZE:
       return Object.assign({}, prevState, {
         customizeMenuVisible: false,
+        customizePanelWallpaperCategory: null,
       });
     default:
       return prevState;
@@ -23366,6 +23372,57 @@ async function calculateTheme(win, blob) {
   return averageLuminance <= CONTRAST_BRIGHTTEXT_THRESHOLD ? "dark" : "light";
 }
 
+;// CONCATENATED MODULE: ./content-src/lib/constants.mjs
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+const IS_NEWTAB =
+  globalThis.document && globalThis.document.documentURI === "about:newtab";
+const NEWTAB_DARK_THEME = {
+  ntp_background: {
+    r: 42,
+    g: 42,
+    b: 46,
+    a: 1,
+  },
+  ntp_card_background: {
+    r: 66,
+    g: 65,
+    b: 77,
+    a: 1,
+  },
+  ntp_text: {
+    r: 249,
+    g: 249,
+    b: 250,
+    a: 1,
+  },
+  sidebar: {
+    r: 56,
+    g: 56,
+    b: 61,
+    a: 1,
+  },
+  sidebar_text: {
+    r: 249,
+    g: 249,
+    b: 250,
+    a: 1,
+  },
+};
+
+// Wallpaper category ids. These must match the `category` values the
+// wallpaper feed provides; prefer this map over bare category strings.
+const WALLPAPER_CATEGORIES = {
+  Abstracts: "abstracts",
+  Celestial: "celestial",
+  Photographs: "photographs",
+  SolidColors: "solid-colors",
+  Firefox: "firefox",
+  CustomWallpaper: "custom-wallpaper",
+};
+
 ;// CONCATENATED MODULE: ./content-src/components/WallpaperCategories/WallpaperCategories.jsx
 function WallpaperCategories_extends() { return WallpaperCategories_extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, WallpaperCategories_extends.apply(null, arguments); }
 /* This Source Code Form is subject to the terms of the Mozilla Public
@@ -23376,6 +23433,7 @@ function WallpaperCategories_extends() { return WallpaperCategories_extends = Ob
 
 
 // eslint-disable-next-line no-shadow
+
 
 
 const PREF_WALLPAPER_UPLOADED_PREVIOUSLY = "newtabWallpapers.customWallpaper.uploadedPreviously";
@@ -23435,6 +23493,29 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
     if (this.props.exitEventFired && this.props.exitEventFired !== prevProps.exitEventFired) {
       this.handleBack();
     }
+
+    // A CTA can deep-link into a specific wallpaper category by dispatching
+    // SHOW_PERSONALIZE with a wallpaperCategory. Open it once when it appears.
+    const requestedCategory = this.props.customizePanelWallpaperCategory;
+    if (requestedCategory && requestedCategory !== prevProps.customizePanelWallpaperCategory) {
+      this.openRequestedCategory(requestedCategory);
+    }
+  }
+  openRequestedCategory(categoryId) {
+    const {
+      categories
+    } = this.props.Wallpapers;
+    const index = categories?.indexOf(categoryId) ?? -1;
+    // Category may not be available in every build/region; bail if missing.
+    if (index === -1) {
+      return;
+    }
+    this.setState({
+      focusedCategoryIndex: index
+    });
+    this.openCategory(categoryId, {
+      fromUser: false
+    });
   }
   handleColorInput(event) {
     let {
@@ -23588,38 +23669,44 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
       had_uploaded_previously: !!uploadedPreviously
     });
   }
-  handleCategory = event => {
+  categoryFluentID(categoryId) {
+    switch (categoryId) {
+      case WALLPAPER_CATEGORIES.Abstracts:
+        return "newtab-wallpaper-category-title-abstract";
+      case WALLPAPER_CATEGORIES.Celestial:
+        return "newtab-wallpaper-category-title-celestial";
+      case WALLPAPER_CATEGORIES.Photographs:
+        return "newtab-wallpaper-category-title-photographs";
+      case WALLPAPER_CATEGORIES.SolidColors:
+        // @nova-cleanup(remove-conditional): Remove novaEnabled conditional and always use newtab-wallpaper-colors
+        return this.props.Prefs.values["nova.enabled"] ? "newtab-wallpaper-colors" : "newtab-wallpaper-category-title-colors";
+      case WALLPAPER_CATEGORIES.Firefox:
+        return "newtab-wallpaper-category-title-firefox";
+      default:
+        return undefined;
+    }
+  }
+
+  // Open a wallpaper category subpanel. `fromUser` distinguishes a real category
+  // click (records telemetry) from a programmatic deep-link via a CTA.
+  openCategory(categoryId, {
+    fromUser = true
+  } = {}) {
     this.setState({
-      activeCategory: event.target.id
+      activeCategory: categoryId,
+      activeCategoryFluentID: this.categoryFluentID(categoryId)
     });
-    this.handleUserEvent(actionTypes.WALLPAPER_CATEGORY_CLICK, event.target.id);
+    if (fromUser) {
+      this.handleUserEvent(actionTypes.WALLPAPER_CATEGORY_CLICK, categoryId);
+    }
 
     // Notify parent menu when subpanel opens
     if (this.props.onSubpanelToggle) {
       this.props.onSubpanelToggle(true);
     }
-    let fluent_id;
-    switch (event.target.id) {
-      case "abstracts":
-        fluent_id = "newtab-wallpaper-category-title-abstract";
-        break;
-      case "celestial":
-        fluent_id = "newtab-wallpaper-category-title-celestial";
-        break;
-      case "photographs":
-        fluent_id = "newtab-wallpaper-category-title-photographs";
-        break;
-      case "solid-colors":
-        // @nova-cleanup(remove-conditional): Remove novaEnabled conditional and always use newtab-wallpaper-colors
-        fluent_id = this.props.Prefs.values["nova.enabled"] ? "newtab-wallpaper-colors" : "newtab-wallpaper-category-title-colors";
-        break;
-      case "firefox":
-        fluent_id = "newtab-wallpaper-category-title-firefox";
-        break;
-    }
-    this.setState({
-      activeCategoryFluentID: fluent_id
-    });
+  }
+  handleCategory = event => {
+    this.openCategory(event.target.id);
   };
 
   // Custom wallpaper image upload
@@ -23882,27 +23969,11 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
         const isCustomSolidColor = category === "solid-colors" && activeWallpaper.startsWith("solid-color-picker");
         const thumbnail = activeWallpaperObj || sortedList[0];
         let fluent_id;
-        switch (category) {
-          case "abstracts":
-            fluent_id = "newtab-wallpaper-category-title-abstract";
-            break;
-          case "celestial":
-            fluent_id = "newtab-wallpaper-category-title-celestial";
-            break;
-          case "custom-wallpaper":
-            // @nova-cleanup(remove-conditional): Remove novaEnabled conditional and always use newtab-wallpaper-add-an-image
-            fluent_id = novaEnabled ? "newtab-wallpaper-add-an-image" : "newtab-wallpaper-upload-image";
-            break;
-          case "photographs":
-            fluent_id = "newtab-wallpaper-category-title-photographs";
-            break;
-          case "solid-colors":
-            // @nova-cleanup(remove-conditional): Remove novaEnabled conditional and always use newtab-wallpaper-colors
-            fluent_id = novaEnabled ? "newtab-wallpaper-colors" : "newtab-wallpaper-category-title-colors";
-            break;
-          case "firefox":
-            fluent_id = "newtab-wallpaper-category-title-firefox";
-            break;
+        if (category === WALLPAPER_CATEGORIES.CustomWallpaper) {
+          // @nova-cleanup(remove-conditional): Remove novaEnabled conditional and always use newtab-wallpaper-add-an-image
+          fluent_id = novaEnabled ? "newtab-wallpaper-add-an-image" : "newtab-wallpaper-upload-image";
+        } else {
+          fluent_id = this.categoryFluentID(category);
         }
         let style = {};
         if (thumbnail?.wallpaperUrl) {
@@ -24045,7 +24116,8 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
 const WallpaperCategories = (0,external_ReactRedux_namespaceObject.connect)(state => {
   return {
     Wallpapers: state.Wallpapers,
-    Prefs: state.Prefs
+    Prefs: state.Prefs,
+    customizePanelWallpaperCategory: state.App.customizePanelWallpaperCategory
   };
 })(_WallpaperCategories);
 ;// CONCATENATED MODULE: ./content-src/components/Nova/CustomizeMenu/WidgetsManagementPanel/WidgetsManagementPanel.jsx
@@ -27278,6 +27350,7 @@ function DownloadMobilePromoHighlight({
 
 
 
+
 function WallpaperFeatureHighlight({
   position,
   dispatch,
@@ -27292,8 +27365,12 @@ function WallpaperFeatureHighlight({
     handleBlock();
   }, [handleDismiss, handleBlock]);
   const onToggleClick = (0,external_React_namespaceObject.useCallback)(elementId => {
+    // Deep-link the customize panel into the Firefox wallpaper category.
     dispatch({
-      type: actionTypes.SHOW_PERSONALIZE
+      type: actionTypes.SHOW_PERSONALIZE,
+      data: {
+        wallpaperCategory: WALLPAPER_CATEGORIES.Firefox
+      }
     });
     dispatch(actionCreators.UserEvent({
       event: "SHOW_PERSONALIZE"

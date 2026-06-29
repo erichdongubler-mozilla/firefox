@@ -1,7 +1,8 @@
-import { render } from "@testing-library/react";
+import { render, fireEvent } from "@testing-library/react";
 import { WrapWithProvider } from "test/jest/test-utils";
 import { WallpaperFeatureHighlight } from "content-src/components/DiscoveryStreamComponents/FeatureHighlight/WallpaperFeatureHighlight";
 import { INITIAL_STATE } from "common/Reducers.sys.mjs";
+import { actionTypes as at } from "common/Actions.mjs";
 
 describe("<WallpaperFeatureHighlight>", () => {
   it("should render when messageData has content", () => {
@@ -131,5 +132,43 @@ describe("<WallpaperFeatureHighlight>", () => {
     expect(
       container.querySelector(".wallpaper-feature-highlight.world-cup-variant")
     ).not.toBeInTheDocument();
+  });
+
+  it("deep-links the CTA into the Firefox wallpaper category", () => {
+    const dispatch = jest.fn();
+    const state = {
+      ...INITIAL_STATE,
+      Prefs: {
+        ...INITIAL_STATE.Prefs,
+        values: {
+          ...INITIAL_STATE.Prefs.values,
+          "nova.enabled": true,
+        },
+      },
+      Messages: {
+        ...INITIAL_STATE.Messages,
+        messageData: {
+          content: {
+            feature: "WALLPAPER",
+            messageType: "WorldCupSemiFinalWallpaperHighlight",
+          },
+        },
+      },
+    };
+    const { container } = render(
+      <WrapWithProvider state={state}>
+        <WallpaperFeatureHighlight
+          dispatch={dispatch}
+          handleDismiss={jest.fn()}
+          handleClick={jest.fn()}
+          handleBlock={jest.fn()}
+        />
+      </WrapWithProvider>
+    );
+    fireEvent.click(container.querySelector(".button-wrapper moz-button"));
+    expect(dispatch).toHaveBeenCalledWith({
+      type: at.SHOW_PERSONALIZE,
+      data: { wallpaperCategory: "firefox" },
+    });
   });
 });

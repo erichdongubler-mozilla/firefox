@@ -25,6 +25,10 @@ export const INITIAL_STATE = {
       Wallpaper: false,
     },
     customizeMenuVisible: false,
+    // When the customize panel is opened via a CTA that should deep-link into a
+    // specific wallpaper category (e.g. "firefox"), this holds that category id
+    // so WallpaperCategories can open it. Cleared when the panel closes.
+    customizePanelWallpaperCategory: null,
   },
   Ads: {
     initialized: false,
@@ -295,10 +299,12 @@ function App(prevState = INITIAL_STATE.App, action) {
     case at.SHOW_PERSONALIZE:
       return Object.assign({}, prevState, {
         customizeMenuVisible: true,
+        customizePanelWallpaperCategory: action.data?.wallpaperCategory ?? null,
       });
     case at.HIDE_PERSONALIZE:
       return Object.assign({}, prevState, {
         customizeMenuVisible: false,
+        customizePanelWallpaperCategory: null,
       });
     default:
       return prevState;

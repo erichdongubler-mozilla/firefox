@@ -5,6 +5,7 @@
 import React, { useCallback } from "react";
 import { useSelector } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
+import { WALLPAPER_CATEGORIES } from "content-src/lib/constants.mjs";
 import { FeatureHighlight } from "./FeatureHighlight";
 
 export function WallpaperFeatureHighlight({
@@ -23,7 +24,11 @@ export function WallpaperFeatureHighlight({
 
   const onToggleClick = useCallback(
     elementId => {
-      dispatch({ type: at.SHOW_PERSONALIZE });
+      // Deep-link the customize panel into the Firefox wallpaper category.
+      dispatch({
+        type: at.SHOW_PERSONALIZE,
+        data: { wallpaperCategory: WALLPAPER_CATEGORIES.Firefox },
+      });
       dispatch(ac.UserEvent({ event: "SHOW_PERSONALIZE" }));
       handleClick(elementId);
       onDismiss();
