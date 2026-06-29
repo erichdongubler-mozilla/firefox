@@ -5126,28 +5126,6 @@ void SharedDataContainer::dumpFields(js::JSONPrinter& json) const {
 struct DumpOptionsFields {
   js::JSONPrinter& json;
 
-  void operator()(const char* name, JS::AsmJSOption value) {
-    const char* valueStr = nullptr;
-    switch (value) {
-      case JS::AsmJSOption::Enabled:
-        valueStr = "JS::AsmJSOption::Enabled";
-        break;
-      case JS::AsmJSOption::DisabledByAsmJSPref:
-        valueStr = "JS::AsmJSOption::DisabledByAsmJSPref";
-        break;
-      case JS::AsmJSOption::DisabledByLinker:
-        valueStr = "JS::AsmJSOption::DisabledByLinker";
-        break;
-      case JS::AsmJSOption::DisabledByNoWasmCompiler:
-        valueStr = "JS::AsmJSOption::DisabledByNoWasmCompiler";
-        break;
-      case JS::AsmJSOption::DisabledByDebugger:
-        valueStr = "JS::AsmJSOption::DisabledByDebugger";
-        break;
-    }
-    json.property(name, valueStr);
-  }
-
   void operator()(const char* name, JS::DelazificationOption value) {
     const char* valueStr = nullptr;
     switch (value) {

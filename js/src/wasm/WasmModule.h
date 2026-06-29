@@ -189,8 +189,6 @@ class Module : public JS::WasmModule {
   // JS API and JS::WasmModule implementation:
 
   JSObject* createObject(JSContext* cx) const override;
-  // Deprecated: kept for API compatibility, just calls createObject()
-  JSObject* createObjectForAsmJS(JSContext* cx) const override;
 
   // about:memory reporting:
 

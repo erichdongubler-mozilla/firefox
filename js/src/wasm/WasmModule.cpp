@@ -228,13 +228,6 @@ JSObject* Module::createObject(JSContext* cx) const {
   return WasmModuleObject::create(cx, *this, proto);
 }
 
-/* virtual */
-JSObject* Module::createObjectForAsmJS(JSContext* cx) const {
-  // Use nullptr to get the default object prototype. These objects are never
-  // exposed to script for asm.js.
-  return WasmModuleObject::create(cx, *this, nullptr);
-}
-
 bool wasm::GetOptimizedEncodingBuildId(JS::BuildIdCharVector* buildId) {
   // From a JS API perspective, the "build id" covers everything that can
   // cause machine code to become invalid, so include both the actual build-id

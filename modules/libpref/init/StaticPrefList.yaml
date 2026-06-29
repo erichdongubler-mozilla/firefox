@@ -10100,25 +10100,6 @@
   value: true
   mirror: always
 
-# asm.js
-- name: javascript.options.asmjs
-  type: bool
-  value: false
-  mirror: always
-
-# Whether to throw a TypeError if asm.js code hits validation failure.
-- name: javascript.options.throw_on_asmjs_validation_failure
-  type: bool
-  value: false
-  mirror: always
-
-# Whether to show a warning if asm.js is used.
-- name: javascript.options.warn_asmjs_deprecation
-  type: bool
-  value: true
-  mirror: always
-  set_spidermonkey_pref: always
-
 # Whether to disable the jit within the main process
 - name: javascript.options.main_process_disable_jit
   type: bool

@@ -1706,12 +1706,6 @@ static void ReportClassStats(const ClassInfo& classInfo, const nsACString& path,
                  "JS array buffer elements allocated in the malloc heap.");
   }
 
-  if (classInfo.objectsMallocHeapElementsAsmJS > 0) {
-    REPORT_BYTES(path + "objects/malloc-heap/elements/asm.js"_ns, KIND_HEAP,
-                 classInfo.objectsMallocHeapElementsAsmJS,
-                 "asm.js array buffer elements allocated in the malloc heap.");
-  }
-
   if (classInfo.objectsMallocHeapGlobalData > 0) {
     REPORT_BYTES(path + "objects/malloc-heap/global-data"_ns, KIND_HEAP,
                  classInfo.objectsMallocHeapGlobalData,
@@ -2891,14 +2885,8 @@ static void AccumulateTelemetryCallback(JSMetric id,
 
 static void SetUseCounterCallback(JSObject* obj, JSUseCounter counter) {
   switch (counter) {
-    case JSUseCounter::ASMJS:
-      SetUseCounter(obj, eUseCounter_custom_JS_asmjs);
-      return;
     case JSUseCounter::WASM:
       SetUseCounter(obj, eUseCounter_custom_JS_wasm);
-      return;
-    case JSUseCounter::USE_ASM:
-      SetUseCounter(obj, eUseCounter_custom_JS_use_asm);
       return;
     case JSUseCounter::WASM_LEGACY_EXCEPTIONS:
       SetUseCounter(obj, eUseCounter_custom_JS_wasm_legacy_exceptions);
