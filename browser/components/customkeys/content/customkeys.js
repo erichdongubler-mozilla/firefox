@@ -193,12 +193,22 @@ function onSearchInput(event) {
 
 async function onResetAll() {
   Glean.browserCustomkeys.actions.reset_all.add();
+  const [title, body, buttonCancel, buttonConfirm] =
+    await document.l10n.formatValues([
+      { id: "customkeys-reset-all-confirm-title" },
+      { id: "customkeys-reset-all-confirm-body" },
+      { id: "customkeys-reset-all-confirm-button-cancel" },
+      { id: "customkeys-reset-all-confirm-button-confirm" },
+    ]);
   if (
-    !window.confirm(
-      await document.l10n.formatValue("customkeys-reset-all-confirm")
-    )
+    !(await RPMSendQuery("CustomKeys:Confirm", {
+      title,
+      body,
+      buttonCancel,
+      buttonConfirm,
+    }))
   ) {
-    return;
+    return; // user cancels
   }
   await RPMSendQuery("CustomKeys:ResetAll");
   const keysByCat = await RPMSendQuery("CustomKeys:GetKeys");
@@ -222,6 +232,9 @@ buildTable();
 table.addEventListener("click", onAction);
 RPMAddMessageListener("CustomKeys:CapturedKey", onKey);
 table.addEventListener("focusout", onFocusLost);
-document.getElementById("search").addEventListener("input", onSearchInput);
-document.getElementById("resetAll").addEventListener("click", onResetAll);
+customElements.whenDefined("customkeys-sidebar").then(async () => {
+  await document.querySelector("customkeys-sidebar").updateComplete;
+  document.getElementById("search").addEventListener("input", onSearchInput);
+  document.getElementById("resetAll").addEventListener("click", onResetAll);
+});
 Glean.browserCustomkeys.opened.add();

@@ -3,18 +3,39 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 customkeys-title = Keyboard Shortcuts
-customkeys-search = Search:
+
+## Sidebar
+
+customkeys-sidebar =
+  .aria-label = Sidebar
+customkeys-title-heading =
+  .heading = Keyboard Shortcuts
+# Search is a verb, as in "search through shortcuts".
+customkeys-search-input =
+  .aria-label = Search shortcuts
+  .placeholder = Search shortcuts
+customkeys-description = Control how you move around and interact with { -brand-short-name }.
+customkeys-support-link-text = Learn more
+customkeys-reset-all-button = Restore defaults
+
+## Shortcut actions
+
 customkeys-change = Change
 customkeys-reset = Reset
 customkeys-clear = Clear
 customkeys-new-key = Press new key:
-customkeys-reset-all = Reset all shortcuts to defaults
 
+## Confirmation dialogs
+
+customkeys-conflict-confirm-title = Remove another shortcut?
 # Variables
 # $conflict (string) - The title of the conflicting shortcut.
 customkeys-conflict-confirm = This key is already assigned to { $conflict }. Do you want to replace it?
 
-customkeys-reset-all-confirm = Are you sure you wish to reset all keyboard shortcuts to their defaults?
+customkeys-reset-all-confirm-title = Restore defaults?
+customkeys-reset-all-confirm-body = Any custom keyboard shortcuts you’ve created will be removed.
+customkeys-reset-all-confirm-button-confirm = Restore defaults
+customkeys-reset-all-confirm-button-cancel = Cancel
 
 customkeys-file-duplicate-tab = Duplicate Tab
 customkeys-file-focus-search = Focus the Search Bar
@@ -61,8 +82,6 @@ customkeys-nav-toggle-mute = Mute/Unmute Audio
 customkeys-edit-find-previous = Find Previous
 
 customkeys-tools-screenshot = Take a Screenshot
-
-customkeys-caution-message = This feature is experimental and may not work as expected.
 
 # Displayed in the new key field when the key that was pressed isn't valid.
 customkeys-key-invalid = Invalid

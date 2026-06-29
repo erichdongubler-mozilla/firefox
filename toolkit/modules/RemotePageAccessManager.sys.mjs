@@ -86,10 +86,12 @@ export let RemotePageAccessManager = {
     },
     "about:keyboard": {
       RPMAddMessageListener: ["CustomKeys:CapturedKey"],
+      RPMGetFormatURLPref: ["app.support.baseURL"],
       RPMSendAsyncMessage: ["CustomKeys:CaptureKey"],
       RPMSendQuery: [
         "CustomKeys:ChangeKey",
         "CustomKeys:ClearKey",
+        "CustomKeys:Confirm",
         "CustomKeys:GetDefaultKey",
         "CustomKeys:GetKeys",
         "CustomKeys:ResetAll",

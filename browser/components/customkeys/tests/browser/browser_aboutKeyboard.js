@@ -33,6 +33,7 @@ function addAboutKbTask(task) {
             true
           );
         }
+        await content.customElements.whenDefined("moz-input-search");
       });
       await Services.fog.testFlushAllChildren();
       await task(tab);
@@ -116,8 +117,10 @@ addAboutKbTask(async function testSearch(tab) {
       0,
       "No hidden categories or keys"
     );
-    const search = content.document.getElementById("search");
+    const search = content.document.getElementById("search").wrappedJSObject;
+    let focused = ContentTaskUtils.waitForEvent(search, "focus");
     search.focus();
+    await focused;
 
     info("Searching for zzz");
     let updated = ContentTaskUtils.waitForEvent(

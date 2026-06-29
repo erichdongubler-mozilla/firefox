@@ -2,6 +2,44 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/* General page layout */
+
+body {
+  display: grid;
+  grid-template-columns: var(--size-sidebar) 1fr;
+  padding-inline-start: calc(var(--space-xlarge) * 4);
+  padding-inline-end: calc(var(--space-xlarge) * 2);
+  gap: calc(var(--space-xlarge) * 2);
+}
+
+.main-container {
+  max-width: var(--page-main-content-width);
+  padding-block: var(--space-xxlarge);
+}
+
+@media (max-width: 950px) {
+  body {
+    display: block;
+    padding-inline: var(--space-xxlarge);
+  }
+
+  .main-container {
+    max-width: unset;
+    padding-block-start: var(--space-xxlarge);
+    padding-block-end: unset;
+    padding-inline: calc(var(--space-xlarge) * 2);
+    box-sizing: border-box;
+  }
+}
+
+@media (max-width: 600px) {
+  .main-container {
+    padding-inline: var(--space-large);
+  }
+}
+
+/* Shortcuts table styling */
+
 th {
   text-align: start;
 }
