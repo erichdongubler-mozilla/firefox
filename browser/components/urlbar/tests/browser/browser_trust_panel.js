@@ -1166,3 +1166,55 @@ add_task(async function clear_cookie_hidden_in_private_browsing() {
 
   await BrowserTestUtils.closeWindow(privateWin);
 });
+
+add_task(async function test_close_on_tab_switch() {
+  const tab1 = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    TEST_ORIGIN,
+    true
+  );
+  const tab2 = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "https://example.org",
+    true
+  );
+
+  const scenarios = [
+    {
+      initialTab: tab1,
+      key: "VK_PAGE_DOWN",
+      modifiers: { ctrlKey: true },
+      desc: "Ctrl+PageDown",
+    },
+    {
+      initialTab: tab2,
+      key: "VK_PAGE_UP",
+      modifiers: { ctrlKey: true },
+      desc: "Ctrl+PageUp",
+    },
+  ];
+
+  const popup = document.getElementById("trustpanel-popup");
+  for (const scenario of scenarios) {
+    gBrowser.selectedTab = scenario.initialTab;
+    await UrlbarTestUtils.openTrustPanel(window);
+    Assert.equal(
+      popup.state,
+      "open",
+      `Trust Panel is open before ${scenario.desc}`
+    );
+
+    let popupHidden = BrowserTestUtils.waitForEvent(popup, "popuphidden");
+    EventUtils.synthesizeKey(scenario.key, scenario.modifiers);
+    await popupHidden;
+
+    Assert.equal(
+      popup.state,
+      "closed",
+      `Trust Panel closed after ${scenario.desc}`
+    );
+  }
+
+  BrowserTestUtils.removeTab(tab2);
+  BrowserTestUtils.removeTab(tab1);
+});
