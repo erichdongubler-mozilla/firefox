@@ -11698,6 +11698,17 @@
   mirror: always
   rust: true
 
+# Is support for CSS Typed Object Model color interfaces enabled?
+#
+# Additional gate on top of layout.css.typed-om.enabled. Color interfaces
+# (CSSColorValue and related) require both prefs to be true. Kept separate so
+# color work can progress independently from the rest of Typed OM.
+- name: layout.css.typed-om-color.enabled
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+  rust: true
+
 # Whether frame visibility tracking is enabled globally.
 - name: layout.framevisibility.enabled
   type: bool
