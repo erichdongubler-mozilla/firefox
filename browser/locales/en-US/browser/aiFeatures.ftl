@@ -2,33 +2,33 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-preferences-ai-controls-block-confirmation-smart-window = Smart Window
-smart-window-block-title = Block Smart Window?
-smart-window-block-description-both = This will delete your Smart Window chats and memories.
-smart-window-block-description-chats = This will delete your Smart Window chats.
-smart-window-block-description-memories = This will delete your Smart Window memories.
+preferences-ai-controls-block-confirmation-smart-window = { -smart-window-brand-name }
+smart-window-block-title = Block { -smart-window-brand-name }?
+smart-window-block-description-both = This will delete your { -smart-window-brand-name } chats and memories.
+smart-window-block-description-chats = This will delete your { -smart-window-brand-name } chats.
+smart-window-block-description-memories = This will delete your { -smart-window-brand-name } memories.
 
 ai-window-features-group =
-    .label = Smart Window
+    .label = { -smart-window-brand-name }
     .description = Ask questions, compare pages, and get personalized suggestions with a built-in assistant.
 
 smart-window-select-label =
-    .label = Smart Window
+    .label = { -smart-window-brand-name }
 
 ai-window-activate-link =
     .label = Get started
 
 ai-window-personalize-button =
-    .label = Smart Window settings
+    .label = { -smart-window-brand-name } settings
 
 ai-window-personalize-header =
-    .heading = Smart Window
+    .heading = { -smart-window-brand-name }
 
 ai-window-default-section =
     .label = Default settings
 ai-window-is-default-window =
-    .label = Use Smart Window by default
-    .description = Open Smart Window when {-brand-short-name} starts, restarts, or opens links from other apps.
+    .label = Use { -smart-window-brand-name } by default
+    .description = Open { -smart-window-brand-name } when { -brand-short-name } starts, restarts, or opens links from other apps.
 ai-window-open-sidebar =
     .label = Open assistant automatically
     .description = Show the assistant sidebar on each new tab. Close it anytime.
@@ -62,7 +62,7 @@ smart-window-model-custom-url =
 smart-window-model-custom-token =
     .label = API key or auth token, if required
 smart-window-model-custom-info =
-    .message = When you use a custom model, Smart Window may not work as expected.
+    .message = When you use a custom model, { -smart-window-brand-name } may not work as expected.
 smart-window-model-custom-more-link = More about custom models
 smart-window-model-custom-save =
     .label = Save
@@ -73,31 +73,33 @@ ai-window-memories-section =
     .description = { -brand-short-name } can learn from your activity to create memories. They’re used to help personalize responses and are stored locally on this device.
 
 ai-window-learn-from-chat-activity =
-    .label = Learn from chats in Smart Window
+    .label = Learn from chats in { -smart-window-brand-name }
 
 ai-window-learn-from-browsing-activity =
-    .label = Learn from browsing in Classic and Smart Windows
+    .label = Learn from browsing in Classic and { -smart-window-brand-name(plural-form: "true") }
 
 ai-window-manage-memories-button =
     .label = Manage memories
 
 ai-window-manage-memories-header =
     .heading = Manage memories
-    .description = Memories are stored locally on this device to help protect your privacy. They refresh a few times a day while you use Smart Window, so recent activity may take time to be reflected.
+    .description = Memories are stored locally on this device to help protect your privacy. They refresh a few times a day while you use { -smart-window-brand-name }, so recent activity may take time to be reflected.
 
 ai-window-no-memories =
     .label = No memories yet
-    .description = As Smart Window learns from your activity, you’ll see memories here.
+    .description = As { -smart-window-brand-name } learns from your activity, you’ll see memories here.
 
 ai-window-no-memories-learning-off =
     .label = No memories to show
-    .description = Learning from activity is off, so Smart Window isn’t creating memories.
+    .description = Learning from activity is off, so { -smart-window-brand-name } isn’t creating memories.
 
 ai-window-delete-all-memories-button =
     .label = Delete all
 
 ai-window-delete-all-memories-title = Delete all memories?
-ai-window-delete-all-memories-message = Existing memories will be deleted. If you don’t want any new memories created, uncheck the options to “Learn from…” in Smart Window settings.
+# “Learn from…” refers to two different options in settings that start with "Learn from"
+# (ai-window-learn-from-chat-activity and ai-window-learn-from-browsing-activity)
+ai-window-delete-all-memories-message = Existing memories will be deleted. If you don’t want any new memories created, uncheck the options to “Learn from…” in { -smart-window-brand-name } settings.
 ai-window-delete-all-memories-confirm = Delete
 ai-window-delete-all-memories-cancel = Cancel
 
