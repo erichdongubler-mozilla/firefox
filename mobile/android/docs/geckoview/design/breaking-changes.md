@@ -1,16 +1,13 @@
-Breaking changes in GeckoView
-=============================
+# Breaking changes in GeckoView
 
-Agi sferro <agi@sferro.dev>
+Agi sferro \<<mailto:agi@sferro.dev>>
 
-Abstract
---------
+## Abstract
 
 This document describes the reasoning behind the GeckoView deprecation policy,
 where we are today and where we want to be in the future.
 
-Background
-----------
+## Background
 
 The following sections illustrate how breaking changes are expensive and
 frustrating as a consumer of GeckoView, as a Gecko engineer and as an external
@@ -18,8 +15,7 @@ consumer, how they take away time from the Fenix team. And finally, how
 breaking changes negate the very advantages that brought us to the current
 modularized architecture.
 
-Introduction
-------------
+## Introduction
 
 GeckoView is a library that provides consumers access to Gecko and is the main
 way through which Gecko is consumed on Mozilla’s Android products.
@@ -33,8 +29,7 @@ Firefox for Android (code name Fenix) uses GeckoView through Android Components
 Fenix also provides Nightly, Beta and Release updates that mirror GeckoView and
 Firefox Desktop’s.
 
-Testing days
-------------
+## Testing days
 
 All Firefox Gecko-based products release a new major version every 4 weeks.
 Which means that, on average, a commit that lands on a random day during the
@@ -55,8 +50,7 @@ Assuming a 4 days report delay, each day where the Nightly build is delayed,
 due to reasons such as breaking changes, reduces the average testing time by
 10%.
 
-Reducing breakages
-------------------
+## Reducing breakages
 
 Breakages caused by upstream teams like GeckoView can be divided into 2 groups:
 
@@ -72,8 +66,7 @@ each backward-incompatible change to keep the old code for 3 releases, allowing
 downstream consumers, like Fenix, time to migrate asynchronously to the new
 code without breaking the build.
 
-Functional testing and prototyping
-----------------------------------
+## Functional testing and prototyping
 
 GeckoView offers a test browser app called GeckoViewExample (or GVE) that is
 developed in-tree and thus always available to test local changes.
@@ -90,8 +83,7 @@ it’s often used by platform engineers that are unfamiliar with Android and
 Fenix itself, and are not likely to retain knowledge from running code on
 Android and would likely need help to do so from the GeckoView or Fenix team.
 
-External consumers
-------------------
+## External consumers
 
 For apps interested in building a browser for Android, GeckoView provides the
 unique combination of being a modern Web engine with a relatively stable API.
@@ -118,8 +110,7 @@ For comparison, alternatives to GeckoView include:
 If the cost of updating GeckoView becomes high enough because of frequent API
 changes, the advantage of using GeckoView is negated.
 
-Prior Art
----------
+## Prior Art
 
 Many public libraries offer a deprecation policy similar or better than
 GeckoView. For example, Android APIs need to be deprecated for a few releases
@@ -127,8 +118,7 @@ before being considered for removal, and completely removed only in exceptional
 cases. Google products’ deprecated APIs are supported for a year before being
 removed. Ebay requires deprecating an API before removal.
 
-Status quo
-----------
+## Status quo
 
 Making backward-incompatible changes to the GeckoView API is currently heavily
 discouraged and requires approval by the GeckoView team.
@@ -138,8 +128,7 @@ change was in June 2021, a refactor of the permission API which we didn’t thin
 was worth executing in a backward compatible way. Before that, the last
 breaking change was in September 2020.
 
-Tracking breaking changes
--------------------------
+## Tracking breaking changes
 
 Internally, GeckoView tracks the API using apilint. Each change that touches
 the API requires an additional GeckoView peer to review the patch and a
@@ -148,8 +137,7 @@ description of the change in the changelog.
 Apilint also tracks deprecated APIs and enforces their removal, so that old,
 deprecated APIs don’t linger in the codebase for longer than necessary.
 
-The future
-----------
+## The future
 
 The ideal end state for GeckoView would be to not have any more backward
 incompatible changes. Our experience is that supporting the old APIs for a
