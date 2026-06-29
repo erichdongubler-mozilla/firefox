@@ -39,9 +39,9 @@ struct Register {
 
   Encoding reg_;
   explicit constexpr Register(Encoding e) : reg_(e) {}
-  Register() : reg_(Encoding(Codes::Invalid)) {}
+  constexpr Register() : reg_(Encoding(Codes::Invalid)) {}
 
-  static Register FromCode(Code i) {
+  constexpr static Register FromCode(Code i) {
     MOZ_ASSERT(i < Registers::Total);
     Register r{Encoding(i)};
     return r;
@@ -51,10 +51,7 @@ struct Register {
     Register r{Encoding(code)};
     return r;
   }
-  constexpr static Register Invalid() {
-    Register r{Encoding(Codes::Invalid)};
-    return r;
-  }
+  constexpr static Register Invalid() { return Register{}; }
   constexpr Code code() const { return Code(reg_); }
   Encoding encoding() const {
     MOZ_ASSERT(Code(reg_) < Registers::Total);
