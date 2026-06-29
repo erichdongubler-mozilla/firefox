@@ -982,21 +982,6 @@ export class MozBrowser extends MozElements.MozElementMixin(XULFrameElement) {
     }
   }
 
-  audioPlaybackStarted() {
-    if (this._audioMuted) {
-      return;
-    }
-    let event = document.createEvent("Events");
-    event.initEvent("DOMAudioPlaybackStarted", true, false);
-    this.dispatchEvent(event);
-  }
-
-  audioPlaybackStopped() {
-    let event = document.createEvent("Events");
-    event.initEvent("DOMAudioPlaybackStopped", true, false);
-    this.dispatchEvent(event);
-  }
-
   /**
    * When the pref "media.block-autoplay-until-in-foreground" is on,
    * Gecko delays starting playback of media resources in tabs until the
