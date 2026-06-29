@@ -10,14 +10,7 @@ using namespace js;
 using namespace js::jit;
 
 MoveEmitterARM::MoveEmitterARM(MacroAssembler& masm)
-    : inCycle_(0),
-      masm(masm),
-      pushedAtCycle_(-1),
-      pushedAtSpill_(-1),
-      spilledReg_(InvalidReg),
-      spilledFloatReg_(InvalidFloatReg) {
-  pushedAtStart_ = masm.framePushed();
-}
+    : masm(masm), pushedAtStart_(masm.framePushed()) {}
 
 void MoveEmitterARM::emit(const MoveResolver& moves) {
   if (moves.numCycles()) {

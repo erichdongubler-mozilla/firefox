@@ -130,10 +130,10 @@ void MoveEmitterLOONG64::emit(const MoveResolver& moves) {
   }
 }
 
-Address MoveEmitterLOONG64::cycleSlot(uint32_t slot, uint32_t subslot) const {
+Address MoveEmitterLOONG64::cycleSlot(uint32_t slot) const {
   int32_t offset = masm.framePushed() - pushedAtCycle_;
   MOZ_ASSERT(Imm16::IsInSignedRange(offset));
-  return Address(StackPointer, offset + slot * sizeof(double) + subslot);
+  return Address(StackPointer, offset + slot * sizeof(double));
 }
 
 int32_t MoveEmitterLOONG64::getAdjustedOffset(

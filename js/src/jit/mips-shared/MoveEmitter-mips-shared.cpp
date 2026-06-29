@@ -22,11 +22,10 @@ void MoveEmitterMIPSShared::emit(const MoveResolver& moves) {
   }
 }
 
-Address MoveEmitterMIPSShared::cycleSlot(uint32_t slot,
-                                         uint32_t subslot) const {
+Address MoveEmitterMIPSShared::cycleSlot(uint32_t slot) const {
   int32_t offset = masm.framePushed() - pushedAtCycle_;
   MOZ_ASSERT(Imm16::IsInSignedRange(offset));
-  return Address(StackPointer, offset + slot * sizeof(double) + subslot);
+  return Address(StackPointer, offset + slot * sizeof(double));
 }
 
 int32_t MoveEmitterMIPSShared::getAdjustedOffset(
@@ -46,7 +45,7 @@ Address MoveEmitterMIPSShared::getAdjustedAddress(
 }
 
 Register MoveEmitterMIPSShared::tempReg() {
-  spilledReg_ = ScratchRegister;
+  tempReg_ = ScratchRegister;
   return ScratchRegister;
 }
 
@@ -54,7 +53,7 @@ void MoveEmitterMIPSShared::emitMove(const MoveOperand& from,
                                      const MoveOperand& to) {
   if (from.isGeneralReg()) {
     // Second scratch register should not be moved by MoveEmitter.
-    MOZ_ASSERT(from.reg() != spilledReg_);
+    MOZ_ASSERT(from.reg() != tempReg_);
 
     if (to.isGeneralReg()) {
       masm.movePtr(from.reg(), to.reg());
@@ -90,7 +89,7 @@ void MoveEmitterMIPSShared::emitInt32Move(const MoveOperand& from,
                                           const MoveOperand& to) {
   if (from.isGeneralReg()) {
     // Second scratch register should not be moved by MoveEmitter.
-    MOZ_ASSERT(from.reg() != spilledReg_);
+    MOZ_ASSERT(from.reg() != tempReg_);
 
     if (to.isGeneralReg()) {
       masm.move32(from.reg(), to.reg());

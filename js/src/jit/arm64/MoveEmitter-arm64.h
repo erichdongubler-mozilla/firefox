@@ -30,7 +30,7 @@ class MoveEmitterARM64 {
   uint32_t pushedAtStart_;
 
   // This stores a stack offset to a spill location, snapshotting
-  // codegen->framePushed_ at the time it was allocated. It is -1 if no
+  // `masm.framePushed()` at the time it was allocated. It is -1 if no
   // stack space has been allocated for that particular spill.
   int32_t pushedAtCycle_;
 
