@@ -141,6 +141,9 @@ skip-if = [
 ["browser_target_support.js"]
 
 ["browser_toolbox_adopted_tab.js"]
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan",
+]
 
 ["browser_toolbox_backward_forward_navigation.js"]
 
