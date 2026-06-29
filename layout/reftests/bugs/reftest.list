@@ -2158,3 +2158,4 @@ skip-if(((AddressSanitizer||ThreadSanitizer)&&gtkWidget)||(isDebugBuild&&Android
 == 1936259.html 1936259-ref.html
 == 1936563-1.html 1936563-1-ref.html
 == 1941075.html 1941075-ref.html
+pref(layout.disable-pixel-alignment,true) == 2051166-1.html 2051166-1-ref.html
