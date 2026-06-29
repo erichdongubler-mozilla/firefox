@@ -3799,13 +3799,18 @@ nsresult Document::InitCSP(nsIChannel* aChannel) {
     return rv;
   }
 
-  if (mDocumentURI && mDocumentURI->SchemeIs("chrome") &&
+  nsCOMPtr<nsIPrincipal> principal = NodePrincipal();
+  if ((principal->IsSystemPrincipal() ||
+       (mDocumentURI && mDocumentURI->SchemeIs("chrome"))) &&
       StaticPrefs::security_chrome_baseline_csp_enabled()) {
     nsAutoCString spec;
-    mDocumentURI->GetSpec(spec);
-    if (!nsContentSecurityUtils::IsExemptedFromBaselineChromeCSP(spec)) {
+    if (mDocumentURI) {
+      mDocumentURI->GetSpec(spec);
+    }
+    if (spec.IsEmpty() ||
+        !nsContentSecurityUtils::IsExemptedFromBaselineSystemCSP(spec)) {
       rv = CSP_AppendCSPFromHeader(
-          csp, nsContentSecurityUtils::kBaselineChromeCSP, false);
+          csp, nsContentSecurityUtils::kBaselineSystemCSP, false);
       NS_ENSURE_SUCCESS(rv, rv);
     }
   }
@@ -3829,7 +3834,6 @@ nsresult Document::InitCSP(nsIChannel* aChannel) {
   NS_ConvertASCIItoUTF16 cspROHeaderValue(tCspROHeaderValue);
 
   // Check if this is a document from a WebExtension.
-  nsCOMPtr<nsIPrincipal> principal = NodePrincipal();
   MOZ_ASSERT(!BasePrincipal::Cast(principal)->Is<ExpandedPrincipal>());
   auto addonPolicy = BasePrincipal::Cast(principal)->AddonPolicy();
 
