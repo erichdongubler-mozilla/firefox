@@ -7061,7 +7061,9 @@ void LIRGenerator::visitWasmDerivedIndexPointer(MWasmDerivedIndexPointer* ins) {
 void LIRGenerator::visitWasmStoreRef(MWasmStoreRef* ins) {
   LAllocation instance = useRegister(ins->instance());
   LAllocation valueBase = useFixed(ins->valueBase(), PreBarrierReg);
-  LAllocation value = useRegister(ins->value());
+  LAllocation value = ins->value()->isWasmNullConstant()
+                          ? LAllocation()
+                          : useRegister(ins->value());
   uint32_t valueOffset = ins->offset();
   add(new (alloc())
           LWasmStoreRef(instance, valueBase, value, temp(), valueOffset,
@@ -8787,7 +8789,9 @@ void LIRGenerator::visitWasmStoreField(MWasmStoreField* ins) {
 void LIRGenerator::visitWasmStoreFieldRef(MWasmStoreFieldRef* ins) {
   LAllocation instance = useRegister(ins->instance());
   LAllocation base = useFixed(ins->base(), PreBarrierReg);
-  LAllocation value = useRegister(ins->value());
+  LAllocation value = ins->value()->isWasmNullConstant()
+                          ? LAllocation()
+                          : useRegister(ins->value());
   uint32_t offset = ins->offset();
   add(new (alloc()) LWasmStoreRef(instance, base, value, temp(), offset,
                                   ins->maybeTrap(), ins->preBarrierKind()),
@@ -8825,7 +8829,9 @@ void LIRGenerator::visitWasmStoreElementRef(MWasmStoreElementRef* ins) {
   LAllocation instance = useRegister(ins->instance());
   LAllocation base = useFixed(ins->base(), PreBarrierReg);
   LAllocation index = useRegister(ins->index());
-  LAllocation value = useRegister(ins->value());
+  LAllocation value = ins->value()->isWasmNullConstant()
+                          ? LAllocation()
+                          : useRegister(ins->value());
   bool needTemps = ins->preBarrierKind() == WasmPreBarrierKind::Normal;
   LDefinition temp0 = needTemps ? temp() : LDefinition::BogusTemp();
   LDefinition temp1 = needTemps ? temp() : LDefinition::BogusTemp();
