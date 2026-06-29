@@ -1192,14 +1192,7 @@ features:
       enabled:
         description: If true, Add Shortcuts improvement is enabled.
         type: Boolean
-        default: false
-    defaults:
-      - channel: developer
-        value:
-          enabled: true
-      - channel: nightly
-        value:
-          enabled: true
+        default: true
 
   merino-client:
     description: Feature to enable the Merino Client for users on Firefox on Android.
