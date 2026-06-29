@@ -2243,6 +2243,7 @@ pref("sidebar.updatedBookmarks.enabled", true);
 pref("sidebar.updatedBookmarks.enabled", false);
 #endif
 pref("sidebar.openTabsPanel.enabled", false);
+pref("sidebar.openTabsPanel.collapsedWindows", "{}");
 
 pref("sidebar.notification.badge.aichat", false);
 
