@@ -44,7 +44,6 @@ export const FormAutofillHeuristics = {
 
   CREDIT_CARD_FIELDNAMES: [],
   ADDRESS_FIELDNAMES: [],
-  PASSPORT_FIELDNAMES: [],
 
   useTestYear: null, // set by tests to the current year to use
 
@@ -406,8 +405,8 @@ export const FormAutofillHeuristics = {
 
       // A house number suffix immediately afterwards implies that this
       // really is a house number field.
-      const nextDetail = scanner.getFieldDetailByIndex(savedIndex + 1);
-      if (nextDetail?.fieldName == "address-extra-housesuffix") {
+      const detail = scanner.getFieldDetailByIndex(savedIndex + 1);
+      if (detail?.fieldName == "address-extra-housesuffix") {
         return false;
       }
 
@@ -1217,14 +1216,6 @@ export const FormAutofillHeuristics = {
       // valid cc form; hence both cc-number & cc-name are identified.
     }
 
-    // Passport fields are not covered by the ML model yet, so detect them with
-    // a dedicated regex heuristic. This runs before the ML path on purpose, so
-    // passport detection works whether or not ML is enabled.
-    const passportFieldName = this._inferPassportField(element);
-    if (passportFieldName) {
-      return [passportFieldName, inferredInfo];
-    }
-
     if (mlTokens) {
       // If ML is desired, skip heuristics and use the ML data instead.
       return [matchedFieldNames, inferredInfo, mlTokens?.get(element)];
@@ -1540,32 +1531,6 @@ export const FormAutofillHeuristics = {
   },
 
   /**
-   * Infer a passport field name from an element using the passport regexp
-   * rules from HeuristicsRegExp. Only runs when passport autofill is available;
-   * returns the first matching passport field name (in PASSPORT_FIELDNAMES
-   * order), or null when nothing matches.
-   *
-   * @param {HTMLElement} element The input element to classify.
-   * @returns {?string} A passport field name, or null.
-   */
-  _inferPassportField(element) {
-    if (
-      !FormAutofill.isAutofillTypeAvailable(lazy.AutofillDataTypes.PASSPORT)
-    ) {
-      return null;
-    }
-
-    // TODO: This regexp-based passport detection is temporary and should be
-    // removed once the ML model supports passport fields.
-    for (const fieldName of this.PASSPORT_FIELDNAMES) {
-      if (this._matchRegexp(element, this.RULES[fieldName])) {
-        return fieldName;
-      }
-    }
-    return null;
-  },
-
-  /**
    * Determine whether the regexp can match any of element strings.
    *
    * @param {HTMLElement} element The HTML element to match.
@@ -1733,15 +1698,6 @@ ChromeUtils.defineLazyGetter(FormAutofillHeuristics, "ADDRESS_FIELDNAMES", () =>
   Object.keys(FormAutofillHeuristics.RULES).filter(name =>
     lazy.FormAutofillUtils.isAddressField(name)
   )
-);
-
-ChromeUtils.defineLazyGetter(
-  FormAutofillHeuristics,
-  "PASSPORT_FIELDNAMES",
-  () =>
-    Object.keys(FormAutofillHeuristics.RULES).filter(name =>
-      lazy.FormAutofillUtils.isPassportField(name)
-    )
 );
 
 export default FormAutofillHeuristics;
