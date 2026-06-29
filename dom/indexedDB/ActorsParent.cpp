@@ -6164,8 +6164,7 @@ uint32_t TelemetryIdForFile(nsIFile* aFile) {
   // Any databases in these directories are owned by the application and should
   // not have their filenames masked. Hopefully they also appear in the
   // Telemetry.cpp whitelist.
-  if (origin.EqualsLiteral("chrome") ||
-      origin.EqualsLiteral("moz-safe-about+home")) {
+  if (origin.EqualsLiteral("chrome")) {
     return 0;
   }
 

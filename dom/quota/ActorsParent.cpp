@@ -265,7 +265,6 @@ const int32_t kStorageVersion =
 const int32_t kHackyPreDowngradeStorageVersion = int32_t((3 << 16) + 0);
 const int32_t kHackyPostDowngradeStorageVersion = int32_t((2 << 16) + 1);
 
-const char kAboutHomeOriginPrefix[] = "moz-safe-about:home";
 const char kIndexedDBOriginPrefix[] = "indexeddb://";
 const char kResourceOriginPrefix[] = "resource://";
 
@@ -7776,7 +7775,6 @@ bool QuotaManager::IsOriginInternal(const nsACString& aOrigin) {
 
   // The first prompt is not required for these origins.
   if (aOrigin.EqualsLiteral(kChromeOrigin) ||
-      StringBeginsWith(aOrigin, nsDependentCString(kAboutHomeOriginPrefix)) ||
       StringBeginsWith(aOrigin, nsDependentCString(kIndexedDBOriginPrefix)) ||
       StringBeginsWith(aOrigin, nsDependentCString(kResourceOriginPrefix))) {
     return true;
