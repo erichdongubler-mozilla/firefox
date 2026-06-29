@@ -156,7 +156,7 @@ server access already, your mentor, or the person who reviewed your
 patch, will be able to help.
 
 Ask the reviewer to land the patch for you.
-For more details, see {ref}`push_a_change`
+For more details, see {ref}`push-a-change`
 
 ## Do it all again
 
