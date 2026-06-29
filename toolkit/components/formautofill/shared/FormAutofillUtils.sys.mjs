@@ -156,6 +156,13 @@ FormAutofillUtils = {
     );
   },
 
+  isPassportField(fieldName) {
+    return (
+      lazy.AutofillDataTypes.typeIdForFieldName(fieldName) ==
+      lazy.AutofillDataTypes.PASSPORT
+    );
+  },
+
   // Returns true if the field is one we don't fill handle via the autocomplete
   // attribute. It should be identified using heuristics.
   isUnsupportedField(fieldName) {
