@@ -155,12 +155,6 @@ export class DevToolsProcessParent extends JSProcessActorParent {
 
       this.#watchers.set(watcher.watcherConnectionPrefix, {
         watcher,
-
-        // Keep the connection prefix around, to do proper cleanup
-        // once the connection closes and the watcher or its connection is already destroyed
-        // (this prefix is shorter than the forwarding prefix)
-        connectionPrefix: watcher.conn.prefix,
-
         // This prefix is the prefix of the DevToolsServerConnection, running
         // in the content process, for which we should forward packets to, based on its prefix.
         // While `watcher.connection` is also a DevToolsServerConnection, but from this process,
@@ -212,7 +206,7 @@ export class DevToolsProcessParent extends JSProcessActorParent {
 
   #onConnectionClosed = (status, prefix) => {
     for (const watcherInfo of this.#watchers.values()) {
-      if (watcherInfo.connectionPrefix == prefix) {
+      if (watcherInfo.watcher.conn?.prefix == prefix) {
         this.#unregisterWatcher(watcherInfo.watcher);
       }
     }
