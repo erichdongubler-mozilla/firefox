@@ -215,6 +215,15 @@ void LIRGeneratorRiscv64::lowerDivI(MDiv* div) {
 }
 
 void LIRGeneratorRiscv64::lowerDivI64(MDiv* div) {
+  if (div->rhs()->isConstant()) {
+    int64_t rhs = div->rhs()->toConstant()->toInt64();
+
+    auto lhs = useRegister(div->lhs());
+    auto* lir = new (alloc()) LDivConstantI64(lhs, rhs);
+    define(lir, div);
+    return;
+  }
+
   auto* lir = new (alloc())
       LDivI64(useRegisterAtStart(div->lhs()), useRegisterAtStart(div->rhs()));
   defineInt64(lir, div);
@@ -272,6 +281,15 @@ void LIRGeneratorRiscv64::lowerModI(MMod* mod) {
 }
 
 void LIRGeneratorRiscv64::lowerModI64(MMod* mod) {
+  if (mod->rhs()->isConstant()) {
+    int64_t rhs = mod->rhs()->toConstant()->toInt64();
+
+    auto lhs = useRegister(mod->lhs());
+    auto* lir = new (alloc()) LModConstantI64(lhs, rhs);
+    define(lir, mod);
+    return;
+  }
+
   auto* lir = new (alloc())
       LModI64(useRegisterAtStart(mod->lhs()), useRegisterAtStart(mod->rhs()));
   defineInt64(lir, mod);
@@ -319,6 +337,16 @@ void LIRGeneratorRiscv64::lowerUDiv(MDiv* div) {
 }
 
 void LIRGeneratorRiscv64::lowerUDivI64(MDiv* div) {
+  if (div->rhs()->isConstant()) {
+    // NOTE: the result of toInt64 is coerced to uint64_t.
+    uint64_t rhs = div->rhs()->toConstant()->toInt64();
+
+    auto lhs = useRegister(div->lhs());
+    auto* lir = new (alloc()) LUDivConstantI64(lhs, rhs);
+    define(lir, div);
+    return;
+  }
+
   auto* lir = new (alloc())
       LUDivI64(useRegisterAtStart(div->lhs()), useRegisterAtStart(div->rhs()));
   defineInt64(lir, div);
@@ -358,6 +386,16 @@ void LIRGeneratorRiscv64::lowerUMod(MMod* mod) {
 }
 
 void LIRGeneratorRiscv64::lowerUModI64(MMod* mod) {
+  if (mod->rhs()->isConstant()) {
+    // NOTE: the result of toInt64 is coerced to uint64_t.
+    uint64_t rhs = mod->rhs()->toConstant()->toInt64();
+
+    auto lhs = useRegister(mod->lhs());
+    auto* lir = new (alloc()) LUModConstantI64(lhs, rhs);
+    define(lir, mod);
+    return;
+  }
+
   auto* lir = new (alloc())
       LUModI64(useRegisterAtStart(mod->lhs()), useRegisterAtStart(mod->rhs()));
   defineInt64(lir, mod);

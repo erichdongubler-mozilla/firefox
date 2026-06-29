@@ -4472,11 +4472,27 @@
     rhs: WordSized
   mir_op: Div
 
+- name: DivConstantI64
+  result_type: WordSized
+  operands:
+    numerator: WordSized
+  arguments:
+    denominator: int64_t
+  mir_op: Div
+
 - name: ModI64
   result_type: Int64
   operands:
     lhs: WordSized
     rhs: WordSized
+  mir_op: Mod
+
+- name: ModConstantI64
+  result_type: WordSized
+  operands:
+    numerator: WordSized
+  arguments:
+    denominator: int64_t
   mir_op: Mod
 
 - name: UDivI64
@@ -4486,11 +4502,27 @@
     rhs: WordSized
   mir_op: Div
 
+- name: UDivConstantI64
+  result_type: WordSized
+  operands:
+    numerator: WordSized
+  arguments:
+    denominator: uint64_t
+  mir_op: Div
+
 - name: UModI64
   result_type: Int64
   operands:
     lhs: WordSized
     rhs: WordSized
+  mir_op: Mod
+
+- name: UModConstantI64
+  result_type: WordSized
+  operands:
+    numerator: WordSized
+  arguments:
+    denominator: uint64_t
   mir_op: Mod
 
 - name: ModMaskI

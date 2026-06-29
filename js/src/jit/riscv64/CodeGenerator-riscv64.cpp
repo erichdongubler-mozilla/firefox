@@ -379,6 +379,69 @@ void CodeGenerator::visitDivI64(LDivI64* ins) {
   masm.div(output, lhs, rhs);
 }
 
+template <class LDivOrMod>
+static void Divide64WithConstant(MacroAssembler& masm, LDivOrMod* ins) {
+  Register lhs = ToRegister(ins->numerator());
+  Register output = ToRegister(ins->output());
+  int64_t d = ins->denominator();
+
+  UseScratchRegisterScope temps(masm);
+  Register temp = temps.Acquire();
+
+  // The absolute value of the denominator isn't a power of 2.
+  MOZ_ASSERT(!std::has_single_bit(mozilla::Abs(d)));
+
+  auto* mir = ins->mir();
+
+  // We will first divide by Abs(d), and negate the answer if d is negative.
+  // If desired, this can be avoided by generalizing computeDivisionConstants.
+  auto rmc = ReciprocalMulConstants::computeSignedDivisionConstants(d);
+
+  // We first compute (M * n) >> 64, where M = rmc.multiplier.
+  masm.ma_li(temp, Imm64(uint64_t(rmc.multiplier)));
+  masm.mulh(output, lhs, temp);
+  if (rmc.multiplier > Int128(INT64_MAX)) {
+    MOZ_ASSERT(rmc.multiplier < (Int128(1) << 64));
+
+    // We actually computed output = ((int64_t(M) * n) >> 64) instead. Since
+    // (M * n) >> 64 is the same as (output + n), we can correct for the
+    // overflow. (output + n) can't overflow, as n and output have opposite
+    // signs because int64_t(M) is negative.
+    masm.add(output, output, lhs);
+  }
+
+  // (M * n) >> (64 + shift) is the truncated division answer if n is
+  // non-negative, as proved in the comments of computeDivisionConstants. We
+  // must add 1 later if n is negative to get the right answer in all cases.
+  if (rmc.shiftAmount > 0) {
+    masm.srai(output, output, rmc.shiftAmount);
+  }
+
+  // We'll subtract -1 instead of adding 1, because (n < 0 ? -1 : 0) can be
+  // computed with just a sign-extending shift of 63 bits.
+  if (mir->canBeNegativeDividend()) {
+    masm.srai(temp, lhs, 63);
+    masm.sub(output, output, temp);
+  }
+
+  // After this, |output| contains the correct truncated division result.
+  if (d < 0) {
+    masm.neg(output, output);
+  }
+}
+
+void CodeGenerator::visitDivConstantI64(LDivConstantI64* ins) {
+  int64_t d = ins->denominator();
+
+  if (d == 0) {
+    masm.wasmTrap(wasm::Trap::IntegerDivideByZero, ins->mir()->trapSiteDesc());
+    return;
+  }
+
+  // Compute the truncated division result in rdx.
+  Divide64WithConstant(masm, ins);
+}
+
 void CodeGenerator::visitModI64(LModI64* ins) {
   Register lhs = ToRegister(ins->lhs());
   Register rhs = ToRegister(ins->rhs());
@@ -400,6 +463,25 @@ void CodeGenerator::visitModI64(LModI64* ins) {
   masm.rem(output, lhs, rhs);
 }
 
+void CodeGenerator::visitModConstantI64(LModConstantI64* ins) {
+  Register lhs = ToRegister(ins->numerator());
+  Register output = ToRegister(ins->output());
+
+  int64_t d = ins->denominator();
+
+  if (d == 0) {
+    masm.wasmTrap(wasm::Trap::IntegerDivideByZero, ins->mir()->trapSiteDesc());
+    return;
+  }
+
+  // Compute the truncated division result in |output|.
+  Divide64WithConstant(masm, ins);
+
+  // Compute the remainder: output = lhs - (output * d).
+  masm.ma_mul64(output, output, Imm64(d));
+  masm.sub(output, lhs, output);
+}
+
 void CodeGenerator::visitUDivI64(LUDivI64* ins) {
   Register lhs = ToRegister(ins->lhs());
   Register rhs = ToRegister(ins->rhs());
@@ -411,6 +493,62 @@ void CodeGenerator::visitUDivI64(LUDivI64* ins) {
   masm.divu(output, lhs, rhs);
 }
 
+template <class LUDivOrUMod>
+static void UnsignedDivide64WithConstant(MacroAssembler& masm,
+                                         LUDivOrUMod* ins) {
+  Register lhs = ToRegister(ins->numerator());
+  Register output = ToRegister(ins->output());
+  uint64_t d = ins->denominator();
+
+  UseScratchRegisterScope temps(masm);
+  Register temp = temps.Acquire();
+
+  // The denominator isn't a power of 2 (see LDivPowTwoI).
+  MOZ_ASSERT(!std::has_single_bit(d));
+
+  auto rmc = ReciprocalMulConstants::computeUnsignedDivisionConstants(d);
+
+  // We first compute (M * n) >> 64, where M = rmc.multiplier.
+  masm.ma_li(temp, Imm64(uint64_t(rmc.multiplier)));
+  masm.mulhu(output, lhs, temp);
+  if (rmc.multiplier > Int128(UINT64_MAX)) {
+    // M >= 2^64 and shift == 0 is impossible, as d >= 2 implies that
+    // ((M * n) >> (64 + shift)) >= n > floor(n/d) whenever n >= d,
+    // contradicting the proof of correctness in computeDivisionConstants.
+    MOZ_ASSERT(rmc.shiftAmount > 0);
+    MOZ_ASSERT(rmc.multiplier < (Int128(1) << 65));
+
+    // We actually computed output = ((uint64_t(M) * n) >> 64) instead. Since
+    // (M * n) >> (64 + shift) is the same as (output + n) >> shift, we can
+    // correct for the overflow. This case is a bit trickier than the signed
+    // case, though, as the (output + n) addition itself can overflow; however,
+    // note that
+    // (output + n) >> shift == (((n - output) >> 1) + output) >> (shift - 1),
+    // which is overflow-free. See Hacker's Delight, section 10-8 for details.
+
+    masm.sub(temp, lhs, output);
+    masm.srli(temp, temp, 1);
+    masm.add(output, output, temp);
+    masm.srli(output, output, rmc.shiftAmount - 1);
+  } else {
+    if (rmc.shiftAmount > 0) {
+      masm.srli(output, output, rmc.shiftAmount);
+    }
+  }
+}
+
+void CodeGenerator::visitUDivConstantI64(LUDivConstantI64* ins) {
+  uint64_t d = ins->denominator();
+
+  if (d == 0) {
+    masm.wasmTrap(wasm::Trap::IntegerDivideByZero, ins->mir()->trapSiteDesc());
+    return;
+  }
+
+  // Compute the truncated division result.
+  UnsignedDivide64WithConstant(masm, ins);
+}
+
 void CodeGenerator::visitUModI64(LUModI64* ins) {
   Register lhs = ToRegister(ins->lhs());
   Register rhs = ToRegister(ins->rhs());
@@ -420,6 +558,25 @@ void CodeGenerator::visitUModI64(LUModI64* ins) {
   TrapIfDivideByZero(masm, ins, rhs);
 
   masm.remu(output, lhs, rhs);
+}
+
+void CodeGenerator::visitUModConstantI64(LUModConstantI64* ins) {
+  Register lhs = ToRegister(ins->numerator());
+  Register output = ToRegister(ins->output());
+
+  uint64_t d = ins->denominator();
+
+  if (d == 0) {
+    masm.wasmTrap(wasm::Trap::IntegerDivideByZero, ins->mir()->trapSiteDesc());
+    return;
+  }
+
+  // Compute the truncated division result in output.
+  UnsignedDivide64WithConstant(masm, ins);
+
+  // Compute the remainder: output = lhs - (output * d).
+  masm.ma_mul64(output, output, Imm64(d));
+  masm.sub(output, lhs, output);
 }
 
 void CodeGenerator::visitWasmLoadI64(LWasmLoadI64* ins) {
