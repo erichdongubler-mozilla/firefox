@@ -12025,12 +12025,6 @@
   mirror: always
   value: 0
 
-# Enable lazy loading for media elements (video and audio)
-- name: media.lazy_loading.enabled
-  type: RelaxedAtomicBool
-  value: false
-  mirror: always
-
 # If a resource is known to be smaller than this size (in kilobytes), a
 # memory-backed MediaCache may be used; otherwise the (single shared global)
 # file-backed MediaCache is used.

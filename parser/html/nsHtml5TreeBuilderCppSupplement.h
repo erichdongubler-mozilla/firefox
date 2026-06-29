@@ -13,7 +13,7 @@
 #include "mozilla/dom/ShadowRootBinding.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/Likely.h"
-#include "mozilla/StaticPrefs_media.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/UniquePtrExtensions.h"
@@ -498,24 +498,17 @@ nsIContentHandle* nsHtml5TreeBuilder::createElement(
             }
           }
         } else if (nsGkAtoms::video == aName) {
-          // Lazy video defers the poster fetch as well as media loading.
-          bool isLazyLoading =
-              mozilla::StaticPrefs::media_lazy_loading_enabled() &&
-              aAttributes->getValue(nsHtml5AttributeName::ATTR_LOADING)
-                  .LowerCaseEqualsASCII("lazy");
-          if (!isLazyLoading) {
-            nsHtml5String url =
-                aAttributes->getValue(nsHtml5AttributeName::ATTR_POSTER);
-            if (url) {
-              // Fetch priority is not supported for video. Nullptr will map to
-              // the auto state
-              // (https://html.spec.whatwg.org/#fetch-priority-attribute).
-              auto fetchPriority = nullptr;
+          nsHtml5String url =
+              aAttributes->getValue(nsHtml5AttributeName::ATTR_POSTER);
+          if (url) {
+            // Fetch priority is not supported for video. Nullptr will map to
+            // the auto state
+            // (https://html.spec.whatwg.org/#fetch-priority-attribute).
+            auto fetchPriority = nullptr;
 
-              mSpeculativeLoadQueue.AppendElement()->InitImage(
-                  url, nullptr, nullptr, nullptr, nullptr, nullptr, false,
-                  fetchPriority, nullptr);
-            }
+            mSpeculativeLoadQueue.AppendElement()->InitImage(
+                url, nullptr, nullptr, nullptr, nullptr, nullptr, false,
+                fetchPriority, nullptr);
           }
         } else if (nsGkAtoms::style == aName) {
           mImportScanner.Start();

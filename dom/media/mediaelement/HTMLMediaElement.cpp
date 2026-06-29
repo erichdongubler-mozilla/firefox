@@ -2555,7 +2555,6 @@ void HTMLMediaElement::ShutdownDecoder() {
 void HTMLMediaElement::AbortExistingLoads() {
   MOZ_ASSERT(NS_IsMainThread());
   LOG(LogLevel::Debug, ("{} Abort existing loads", fmt::ptr(this)));
-  mLazyLoadingCompleted = false;
   // Abort any already-running instance of the resource selection algorithm.
   mLoadWaitStatus = NOT_WAITING;
 
@@ -2794,44 +2793,6 @@ static nsCString DocumentOrigin(Document* aDoc) {
   return origin;
 }
 
-void HTMLMediaElement::SetLazyLoading() {
-  if (!StaticPrefs::media_lazy_loading_enabled()) {
-    return;
-  }
-
-  if (mLazyLoading || mLazyLoadingCompleted || !MaybeStartLazyLoading()) {
-    return;
-  }
-
-  mLazyLoading = true;
-  ChangeNetworkState(NETWORK_IDLE);
-  LOG(LogLevel::Debug, ("{} SetLazyLoading: pending", fmt::ptr(this)));
-}
-
-void HTMLMediaElement::StopLazyLoading(StartLoad aStartLoad) {
-  if (!mLazyLoading) {
-    return;
-  }
-
-  if (IsVideo() && aStartLoad == StartLoad::Yes) {
-    if (nsVideoFrame* videoFrame = do_QueryFrame(GetPrimaryFrame())) {
-      videoFrame->UpdatePosterSource(true);
-    }
-  }
-
-  mLazyLoading = false;
-  Element::StopLazyLoading();
-
-  if (aStartLoad == StartLoad::Yes) {
-    LOG(LogLevel::Debug, ("{} StopLazyLoading: loading now", fmt::ptr(this)));
-    DoLoad();
-    mLazyLoadingCompleted = true;
-  } else {
-    LOG(LogLevel::Debug,
-        ("{} StopLazyLoading: stopped without loading", fmt::ptr(this)));
-  }
-}
-
 void HTMLMediaElement::Load() {
   LOG(LogLevel::Debug,
       ("{} Load() hasSrcAttrStream={} hasSrcAttr={} hasSourceChildren={} "
@@ -2848,20 +2809,8 @@ void HTMLMediaElement::Load() {
     return;
   }
 
-  // An explicit load() call must override lazy loading deferral.
-  // StartLoad::No: DoLoad() handles resource selection itself and skips
-  // UpdatePosterSource. An explicit load() should not trigger poster loading,
-  // matching the spec's load() steps, which invoke only the media lazy load
-  // resumption steps.
-  const bool wasLazyLoading = mLazyLoading;
-  StopLazyLoading(StartLoad::No);
-
   mIsDoingExplicitLoad = true;
   DoLoad();
-
-  if (wasLazyLoading) {
-    mLazyLoadingCompleted = true;
-  }
 }
 
 void HTMLMediaElement::DoLoad() {
@@ -2873,11 +2822,6 @@ void HTMLMediaElement::DoLoad() {
   }
 
   if (mIsRunningLoadMethod) {
-    return;
-  }
-
-  if (mLazyLoading) {
-    LOG(LogLevel::Debug, ("{} DoLoad: load deferred (lazy)", fmt::ptr(this)));
     return;
   }
 
@@ -2941,12 +2885,6 @@ void HTMLMediaElement::SelectResource(
     // element children, abort the load.
     ChangeNetworkState(NETWORK_EMPTY);
     ChangeDelayLoadStatus(false);
-    return;
-  }
-
-  if (mLazyLoading) {
-    LOG(LogLevel::Debug,
-        ("{} SelectResource: load deferred (lazy)", fmt::ptr(this)));
     return;
   }
 
@@ -3177,7 +3115,7 @@ void HTMLMediaElement::DealWithFailedElement(nsIContent* aSourceElement) {
 
 void HTMLMediaElement::LoadFromSourceChildren(
     const JSCallingLocation& aCallingLocation) {
-  NS_ASSERTION(mDelayingLoadEvent || LoadingState() == Loading::Lazy,
+  NS_ASSERTION(mDelayingLoadEvent,
                "Should delay load event (if in document) during load");
   NS_ASSERTION(mIsLoadingFromSourceChildren,
                "Must remember we're loading from source children");
@@ -3449,7 +3387,7 @@ void HTMLMediaElement::UpdatePreloadAction(
 
 MediaResult HTMLMediaElement::LoadResource(
     const JSCallingLocation& aCallingLocation) {
-  NS_ASSERTION(mDelayingLoadEvent || LoadingState() == Loading::Lazy,
+  NS_ASSERTION(mDelayingLoadEvent,
                "Should delay load event (if in document) during load");
 
   if (mChannelLoader) {
@@ -5137,17 +5075,6 @@ already_AddRefed<Promise> HTMLMediaElement::Play(ErrorResult& aRv) {
   // play promises.
   // Note: Promise appended to list of pending promises as needed below.
 
-  // Per spec, play() invokes the media lazy load resumption steps but not the
-  // poster lazy load resumption steps. Handle this before other checks so
-  // loading begins even if play is later blocked or delayed.
-  if (mLazyLoading) {
-    StopLazyLoading(StartLoad::No);
-    DoLoad();
-    // Must be set after DoLoad(): DoLoad() calls AbortExistingLoads(), which
-    // resets mLazyLoadingCompleted to false.
-    mLazyLoadingCompleted = true;
-  }
-
   if (ShouldBeSuspendedByInactiveDocShell()) {
     LOG(LogLevel::Debug,
         ("{} no allow to play by the docShell for now", fmt::ptr(this)));
@@ -5586,10 +5513,6 @@ bool HTMLMediaElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
                                     // not a recognised value.
                                     kPreloadDefaultType);
     }
-
-    if (aAttribute == nsGkAtoms::loading) {
-      return ParseLoadingAttribute(aValue, aResult);
-    }
   }
 
   return nsGenericHTMLElement::ParseAttribute(aNamespaceID, aAttribute, aValue,
@@ -5623,14 +5546,7 @@ void HTMLMediaElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
                                     nsIPrincipal* aMaybeScriptedPrincipal,
                                     bool aNotify) {
   if (aNameSpaceID == kNameSpaceID_None) {
-    if (aName == nsGkAtoms::loading) {
-      if (aValue && Loading(aValue->GetEnumValue()) == Loading::Lazy) {
-        SetLazyLoading();
-      } else if (aOldValue &&
-                 Loading(aOldValue->GetEnumValue()) == Loading::Lazy) {
-        StopLazyLoading(StartLoad(aNotify));
-      }
-    } else if (aName == nsGkAtoms::src) {
+    if (aName == nsGkAtoms::src) {
       mSrcMediaSource = nullptr;
       nsAttrValueOrString srcVal(aValue);
       mSrcAttrTriggeringPrincipal = nsContentUtils::GetAttrTriggeringPrincipal(
@@ -5647,13 +5563,11 @@ void HTMLMediaElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
     } else if (aName == nsGkAtoms::autoplay) {
       if (aNotify) {
         if (aValue) {
-          if (!mLazyLoading) {
 #if defined(MOZ_WIDGET_ANDROID)
-            StartObservingGVAutoplayIfNeeded();
+          StartObservingGVAutoplayIfNeeded();
 #endif
-            StopSuspendingAfterFirstFrame();
-            CheckAutoplayDataReady();
-          }
+          StopSuspendingAfterFirstFrame();
+          CheckAutoplayDataReady();
         }
         // This attribute can affect AddRemoveSelfReference
         AddRemoveSelfReference();
@@ -5704,15 +5618,6 @@ void HTMLMediaElement::AfterMaybeChangeAttr(int32_t aNamespaceID, nsAtom* aName,
                                             bool aNotify) {
   if (aNamespaceID == kNameSpaceID_None) {
     if (aName == nsGkAtoms::src) {
-      mLazyLoadingCompleted = false;
-
-      if (StaticPrefs::media_lazy_loading_enabled() &&
-          LoadingState() == Loading::Lazy) {
-        if (!mLazyLoading) {
-          AbortExistingLoads();
-        }
-        SetLazyLoading();
-      }
       DoLoad();
     }
   }
@@ -5730,10 +5635,6 @@ nsresult HTMLMediaElement::BindToTree(BindContext& aContext, nsINode& aParent) {
     UpdatePreloadAction(JSCallingLocation::Get());
   }
 
-  if (mLazyLoading) {
-    LazyLoadingElementBindToTree(aContext);
-  }
-
   NotifyDecoderActivityChanges();
   mMediaControlKeyListener->UpdateOwnerBrowsingContextIfNeeded();
   return rv;
@@ -5744,10 +5645,6 @@ void HTMLMediaElement::UnbindFromTree(UnbindContext& aContext) {
 
   if (IsInComposedDoc()) {
     TeardownUAShadowRoot();
-  }
-
-  if (mLazyLoading) {
-    LazyLoadingElementUnbindFromTree(aContext);
   }
 
   nsGenericHTMLElement::UnbindFromTree(aContext);
@@ -7624,11 +7521,6 @@ HTMLSourceElement* HTMLMediaElement::GetNextSource() {
 }
 
 void HTMLMediaElement::ChangeDelayLoadStatus(bool aDelay) {
-  if (aDelay && LoadingState() == Loading::Lazy) {
-    // Lazy media must not delay the document load event after deferral resumes.
-    aDelay = false;
-  }
-
   if (mDelayingLoadEvent == aDelay) {
     return;
   }
@@ -8912,11 +8804,6 @@ void HTMLMediaElement::NodeInfoChanged(Document* aOldDoc) {
   if (mMediaSource) {
     OwnerDoc()->AddMediaElementWithMSE();
     aOldDoc->RemoveMediaElementWithMSE();
-  }
-
-  StopLazyLoading(StartLoad::No);
-  if (LoadingState() == Loading::Lazy) {
-    SetLazyLoading();
   }
 
   nsGenericHTMLElement::NodeInfoChanged(aOldDoc);
