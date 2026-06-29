@@ -152,7 +152,6 @@ enum class OpKind {
   Conversion,
   Load,
   Store,
-  TeeStore,
   MemorySize,
   MemoryGrow,
   Select,
@@ -161,7 +160,6 @@ enum class OpKind {
   TeeLocal,
   GetGlobal,
   SetGlobal,
-  TeeGlobal,
   Call,
   ReturnCall,
   CallIndirect,
@@ -713,9 +711,6 @@ class MOZ_STACK_CLASS OpIter : private Policy {
                               LinearMemoryAddress<Value>* addr);
   [[nodiscard]] bool readStore(ValType resultType, uint32_t byteSize,
                                LinearMemoryAddress<Value>* addr, Value* value);
-  [[nodiscard]] bool readTeeStore(ValType resultType, uint32_t byteSize,
-                                  LinearMemoryAddress<Value>* addr,
-                                  Value* value);
   [[nodiscard]] bool readNop();
   [[nodiscard]] bool readMemorySize(uint32_t* memoryIndex);
   [[nodiscard]] bool readMemoryGrow(uint32_t* memoryIndex, Value* input);
@@ -726,7 +721,6 @@ class MOZ_STACK_CLASS OpIter : private Policy {
   [[nodiscard]] bool readTeeLocal(uint32_t* id, Value* value);
   [[nodiscard]] bool readGetGlobal(uint32_t* id);
   [[nodiscard]] bool readSetGlobal(uint32_t* id, Value* value);
-  [[nodiscard]] bool readTeeGlobal(uint32_t* id, Value* value);
   [[nodiscard]] bool readI32Const(int32_t* i32);
   [[nodiscard]] bool readI64Const(int64_t* i64);
   [[nodiscard]] bool readF32Const(float* f32);
@@ -2153,24 +2147,6 @@ inline bool OpIter<Policy>::readStore(ValType resultType, uint32_t byteSize,
 }
 
 template <typename Policy>
-inline bool OpIter<Policy>::readTeeStore(ValType resultType, uint32_t byteSize,
-                                         LinearMemoryAddress<Value>* addr,
-                                         Value* value) {
-  MOZ_ASSERT(Classify(op_) == OpKind::TeeStore);
-
-  if (!popWithType(resultType, value)) {
-    return false;
-  }
-
-  if (!readLinearMemoryAddress(byteSize, addr)) {
-    return false;
-  }
-
-  infalliblePush(TypeAndValue(resultType, *value));
-  return true;
-}
-
-template <typename Policy>
 inline bool OpIter<Policy>::readNop() {
   MOZ_ASSERT(Classify(op_) == OpKind::Nop);
 
@@ -2385,34 +2361,6 @@ inline bool OpIter<Policy>::readSetGlobal(uint32_t* id, Value* value) {
   }
 
   return popWithType(codeMeta_.globals[*id].type(), value);
-}
-
-template <typename Policy>
-inline bool OpIter<Policy>::readTeeGlobal(uint32_t* id, Value* value) {
-  MOZ_ASSERT(Classify(op_) == OpKind::TeeGlobal);
-
-  if (!d_.readGlobalIndex(id)) {
-    return false;
-  }
-
-  if (*id >= codeMeta_.globals.length()) {
-    return fail("global.set index out of range");
-  }
-
-  if (!codeMeta_.globals[*id].isMutable()) {
-    return fail("can't write an immutable global");
-  }
-
-  ValueVector single;
-  if (!checkTopTypeMatches(ResultType::Single(codeMeta_.globals[*id].type()),
-                           &single,
-                           /*rewriteStackTypes=*/true)) {
-    return false;
-  }
-
-  MOZ_ASSERT(single.length() == 1);
-  *value = single[0];
-  return true;
 }
 
 template <typename Policy>
