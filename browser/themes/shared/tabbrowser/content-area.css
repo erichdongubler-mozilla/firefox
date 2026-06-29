@@ -510,6 +510,7 @@ split-view-footer {
 
 /* Content popups */
 
+#clipboardReadPasteMenuPopup,
 #contentAreaContextMenu,
 #DateTimePickerPanel,
 #remoteBrowserTooltip,
