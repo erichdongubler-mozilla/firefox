@@ -786,6 +786,13 @@ function _execute_test() {
     _PromiseTestUtils.ensureDOMPromiseRejectionsProcessed();
     _PromiseTestUtils.assertNoUncaughtRejections();
     _PromiseTestUtils.assertNoMoreExpectedRejections();
+  } catch (e) {
+    // A late uncaught rejection reported here has already set _passed and
+    // thrown NS_ERROR_ABORT; swallow it like the run_test catch above so we
+    // still reach the profile-upload path below. Re-throw anything unexpected.
+    if (!_quit || e.result != Cr.NS_ERROR_ABORT) {
+      throw e;
+    }
   } finally {
     // It's important to terminate the module to avoid crashes on shutdown.
     _PromiseTestUtils.uninit();
