@@ -8232,6 +8232,7 @@ button.arrow-button:dir(rtl) {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  gap: var(--space-small);
   height: 100%;
 }
 .nova-enabled .weather-widget.weather-opt-in .weather-opt-in-container-title-bar {
@@ -8281,7 +8282,21 @@ button.arrow-button:dir(rtl) {
   outline: 0;
 }
 .nova-enabled .weather-widget.weather-opt-in.small-widget .weather-opt-in-container-title {
-  padding-block-start: var(--space-small);
+  padding-block-start: var(--space-medium);
+  font-size: var(--newtab-font-size-xsmall);
+  line-height: 1.25;
+}
+.nova-enabled .weather-widget.weather-opt-in.small-widget .weather-opt-in-container-title::before {
+  content: "";
+  float: inline-end;
+  width: calc(var(--space-xlarge) + var(--space-large));
+  height: var(--space-medium);
+}
+.nova-enabled .weather-widget.weather-opt-in.small-widget .weather-opt-in-container-buttons {
+  padding-inline: var(--space-medium);
+}
+.nova-enabled .weather-widget.weather-opt-in.small-widget .weather-text-link {
+  font-size: var(--newtab-font-size-xsmall);
 }
 .nova-enabled .weather-widget.weather-opt-in.medium-widget {
   padding-inline: var(--space-medium);
