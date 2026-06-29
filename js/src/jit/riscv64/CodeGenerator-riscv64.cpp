@@ -6,12 +6,15 @@
 
 #include "mozilla/MathAlgorithms.h"
 
+#include <bit>
+
 #include "jit/CodeGenerator.h"
 #include "jit/InlineScriptTree.h"
 #include "jit/JitRuntime.h"
 #include "jit/MIR-wasm.h"
 #include "jit/MIR.h"
 #include "jit/MIRGraph.h"
+#include "jit/ReciprocalMulConstants.h"
 
 #include "jit/shared/CodeGenerator-shared-inl.h"
 
@@ -1002,6 +1005,104 @@ void CodeGenerator::visitDivPowTwoI(LDivPowTwoI* ins) {
   }
 }
 
+template <class LDivOrMod>
+static void DivideWithConstant(MacroAssembler& masm, LDivOrMod* ins) {
+  Register lhs = ToRegister(ins->numerator());
+  Register output = ToRegister(ins->output());
+  int32_t d = ins->denominator();
+
+  UseScratchRegisterScope temps(masm);
+  Register temp = temps.Acquire();
+
+  // The absolute value of the denominator isn't a power of 2.
+  MOZ_ASSERT(!std::has_single_bit(mozilla::Abs(d)));
+
+  auto* mir = ins->mir();
+
+  // We will first divide by Abs(d), and negate the answer if d is negative.
+  // If desired, this can be avoided by generalizing computeDivisionConstants.
+  auto rmc = ReciprocalMulConstants::computeSignedDivisionConstants(d);
+
+  // We first compute (M * n) >> 32, where M = rmc.multiplier.
+  masm.ma_li(temp, Imm32(rmc.multiplier));
+  masm.mul(output, lhs, temp);
+  if (rmc.multiplier > INT32_MAX || rmc.shiftAmount == 0) {
+    masm.srli(output, output, 32);
+  }
+  if (rmc.multiplier > INT32_MAX) {
+    MOZ_ASSERT(rmc.multiplier < (int64_t(1) << 32));
+
+    // We actually computed output = ((int32_t(M) * n) >> 32) instead. Since
+    // (M * n) >> 32 is the same as (output + n), we can correct for the
+    // overflow. (output + n) can't overflow, as n and |output| have opposite
+    // signs because int32_t(M) is negative.
+    masm.addw(output, output, lhs);
+  }
+
+  // (M * n) >> (32 + shift) is the truncated division answer if n is
+  // non-negative, as proved in the comments of computeDivisionConstants. We
+  // must add 1 later if n is negative to get the right answer in all cases.
+  if (rmc.shiftAmount > 0) {
+    if (rmc.multiplier > INT32_MAX) {
+      masm.sraiw(output, output, rmc.shiftAmount);
+    } else {
+      masm.srai(output, output, 32 + rmc.shiftAmount);
+    }
+  }
+
+  // We'll subtract -1 instead of adding 1, because (n < 0 ? -1 : 0) can be
+  // computed with just a sign-extending shift of 31 bits.
+  if (mir->canBeNegativeDividend()) {
+    masm.sraiw(temp, lhs, 31);
+    masm.subw(output, output, temp);
+  }
+
+  // After this, |output| contains the correct truncated division result.
+  if (d < 0) {
+    masm.negw(output, output);
+  }
+}
+
+void CodeGenerator::visitDivConstantI(LDivConstantI* ins) {
+  Register lhs = ToRegister(ins->numerator());
+  Register output = ToRegister(ins->output());
+  int32_t d = ins->denominator();
+
+  MDiv* mir = ins->mir();
+
+  if (d == 0) {
+    if (mir->trapOnError()) {
+      masm.wasmTrap(wasm::Trap::IntegerDivideByZero, mir->trapSiteDesc());
+    } else if (mir->canTruncateInfinities()) {
+      masm.mv(output, zero);
+    } else {
+      MOZ_ASSERT(mir->fallible());
+      bailout(ins->snapshot());
+    }
+    return;
+  }
+
+  // Compute the truncated division result in |output|.
+  DivideWithConstant(masm, ins);
+
+  // We are checking whether the division resulted in an integer, we multiply
+  // the obtained value by d to check if the correct answer is an integer. This
+  // cannot overflow, since |d| > 1.
+  if (!mir->isTruncated()) {
+    UseScratchRegisterScope temps(masm);
+    Register temp = temps.Acquire();
+
+    masm.ma_mul32(temp, output, Imm32(d));
+    bailoutCmp32(Assembler::NotEqual, lhs, temp, ins->snapshot());
+
+    // If lhs is zero and the divisor is negative, the answer should have
+    // been -0.
+    if (d < 0) {
+      bailoutTest32(Assembler::Zero, lhs, lhs, ins->snapshot());
+    }
+  }
+}
+
 void CodeGenerator::visitModI(LModI* ins) {
   Register lhs = ToRegister(ins->lhs());
   Register rhs = ToRegister(ins->rhs());
@@ -1050,6 +1151,43 @@ void CodeGenerator::visitModI(LModI* ins) {
     bailoutCmp32(Assembler::Signed, lhs, lhs, ins->snapshot());
   }
   masm.bind(&done);
+}
+
+void CodeGenerator::visitModConstantI(LModConstantI* ins) {
+  Register lhs = ToRegister(ins->numerator());
+  Register output = ToRegister(ins->output());
+
+  MMod* mir = ins->mir();
+
+  int32_t d = ins->denominator();
+  if (d == 0) {
+    if (mir->trapOnError()) {
+      masm.wasmTrap(wasm::Trap::IntegerDivideByZero, mir->trapSiteDesc());
+    } else if (mir->isTruncated()) {
+      masm.mv(output, zero);
+    } else {
+      MOZ_ASSERT(mir->fallible());
+      bailout(ins->snapshot());
+    }
+    return;
+  }
+
+  // Compute the truncated division result in |output|.
+  DivideWithConstant(masm, ins);
+
+  // Compute the remainder: output = lhs - (output * d).
+  masm.ma_mul32(output, output, Imm32(d));
+  masm.subw(output, lhs, output);
+
+  if (mir->canBeNegativeDividend() && !mir->isTruncated()) {
+    MOZ_ASSERT(mir->fallible());
+
+    // If output == 0 and lhs < 0, then the result should be double -0.0.
+    Label done;
+    masm.ma_b(output, Imm32(0), &done, Assembler::NotEqual, ShortJump);
+    bailoutCmp32(Assembler::Signed, lhs, lhs, ins->snapshot());
+    masm.bind(&done);
+  }
 }
 
 void CodeGenerator::visitModPowTwoI(LModPowTwoI* ins) {

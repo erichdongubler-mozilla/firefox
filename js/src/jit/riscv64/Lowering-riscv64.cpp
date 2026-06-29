@@ -173,9 +173,7 @@ void LIRGeneratorRiscv64::lowerDivI(MDiv* div) {
     int32_t rhs = div->rhs()->toConstant()->toInt32();
 
     // Check for division by a power of two, which is an easy and important case
-    // to optimize. Note that other optimizations are also
-    // possible; division by other constants can be optimized by a reciprocal
-    // multiplication technique.
+    // to optimize.
     if (std::has_single_bit(mozilla::Abs(rhs))) {
       int32_t shift = mozilla::FloorLog2(mozilla::Abs(rhs));
       auto lhs = useRegisterAtStart(div->lhs());
@@ -186,6 +184,16 @@ void LIRGeneratorRiscv64::lowerDivI(MDiv* div) {
       define(lir, div);
       return;
     }
+
+    // Division by other constants can be optimized by a reciprocal
+    // multiplication technique.
+    auto lhs = useRegister(div->lhs());
+    auto* lir = new (alloc()) LDivConstantI(lhs, rhs);
+    if (div->fallible()) {
+      assignSnapshot(lir, div->bailoutKind());
+    }
+    define(lir, div);
+    return;
   }
 
   LAllocation lhs, rhs;
@@ -237,6 +245,14 @@ void LIRGeneratorRiscv64::lowerModI(MMod* mod) {
       define(lir, mod);
       return;
     }
+
+    auto lhs = useRegister(mod->lhs());
+    auto* lir = new (alloc()) LModConstantI(lhs, rhs);
+    if (mod->fallible()) {
+      assignSnapshot(lir, mod->bailoutKind());
+    }
+    define(lir, mod);
+    return;
   }
 
   LAllocation lhs, rhs;
