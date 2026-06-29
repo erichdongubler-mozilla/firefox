@@ -8,7 +8,6 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.scrollBy
@@ -40,6 +39,7 @@ import kotlinx.coroutines.launch
 import org.mozilla.fenix.tabstray.browser.compose.TabItemInteractionState
 import org.mozilla.fenix.tabstray.controller.TabInteractionHandler
 import org.mozilla.fenix.tabstray.ui.tabitems.Elevation
+import org.mozilla.fenix.tabstray.ui.tabitems.defaultListItemAnimation
 import kotlin.math.abs
 import kotlin.math.pow
 
@@ -635,6 +635,7 @@ private fun findOverscroll(
  * @param state List reordering state.
  * @param key Key of the item to be displayed.
  * @param position Position in the list of the item to be displayed.
+ * @param enteringGroupId The id of the group entering composition, if any.  Can be null.
  * @param content Content of the item to be displayed.
  */
 @Composable
@@ -642,6 +643,7 @@ fun LazyItemScope.InteractableDragItemContainer(
     state: ListInteractionState,
     key: Any,
     position: Int,
+    enteringGroupId: String? = null,
     content: @Composable (tabItemInteractionState: TabItemInteractionState) -> Unit,
 ) {
     val modifier = when (key) {
@@ -675,14 +677,17 @@ fun LazyItemScope.InteractableDragItemContainer(
         else -> {
             Modifier
                 .zIndex(Elevation.NO_INTERACTION)
-                .animateItem(tween())
         }
-    }
+    }.defaultListItemAnimation(
+        lazyListItemScope = this,
+        enteringGroupId = enteringGroupId,
+    )
     Box(modifier = modifier, propagateMinConstraints = true) {
         content(
             TabItemInteractionState(
                 isHoveredByItem = key == state.hoveredItem.key,
                 isDragged = key == state.draggedItem.key,
+                isEnteringGroup = key == enteringGroupId,
             ),
         )
     }

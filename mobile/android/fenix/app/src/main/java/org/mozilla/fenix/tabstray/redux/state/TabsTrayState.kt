@@ -211,6 +211,8 @@ data class TabsTrayState(
      * @property hasUserEverHadOneTabGroup Whether the user has ever had a tab group.
      * @property hasViewedTabGroupsPage Whether the user has viewed the Tab Groups page.
      * @property hasRecordedOnboardingImpression Whether an onboarding impression has been recorded this session.
+     * @property enteringGroupId Recently created group id, to be referenced for animations.  Cleared after
+     * entrance animations are played.
      */
     data class TabGroupState(
         val groups: List<TabsTrayItem.TabGroup> = emptyList(),
@@ -220,6 +222,7 @@ data class TabsTrayState(
         internal val hasUserEverHadOneTabGroup: Boolean = false,
         internal val hasViewedTabGroupsPage: Boolean = false,
         internal val hasRecordedOnboardingImpression: Boolean = false,
+        val enteringGroupId: String? = null,
     )
 
     /**

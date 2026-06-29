@@ -103,7 +103,7 @@ fun TabGroupCard(
     Box(
         modifier = modifier
             .wrapContentSize()
-            .tabItemGridInteractionAnimation(interactionState)
+            .tabItemGridInteractionAnimation(interactionState = interactionState)
             .testTag(TabsTrayTestTag.TAB_ITEM_ROOT),
     ) {
         Card(

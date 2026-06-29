@@ -23,6 +23,7 @@ import org.mozilla.fenix.tabstray.redux.state.TabsTrayState.Mode
 import org.mozilla.fenix.tabstray.redux.state.initializeTabGroupForm
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class TabGroupReducerTest {
@@ -684,5 +685,32 @@ class TabGroupReducerTest {
         )
 
         assertTrue(resultState.tabGroupState.hasRecordedOnboardingImpression)
+    }
+
+    @Test
+    fun `WHEN NewGroupCreated THEN entering group is updated`() {
+        val groupId = "group123"
+        val initialState = TabsTrayState()
+
+        val resultState = TabGroupActionReducer.reduce(
+            state = initialState,
+            action = TabGroupAction.NewGroupCreated(groupId),
+        )
+
+        assertEquals(expected = groupId, actual = resultState.tabGroupState.enteringGroupId)
+    }
+
+    @Test
+    fun `WHEN NewGroupAnimationPlayed THEN entering group is set to null`() {
+        val initialState = TabsTrayState(
+            tabGroupState = TabsTrayState.TabGroupState(enteringGroupId = "group123"),
+        )
+
+        val resultState = TabGroupActionReducer.reduce(
+            state = initialState,
+            action = TabGroupAction.NewGroupAnimationFinished,
+        )
+
+        assertNull(resultState.tabGroupState.enteringGroupId)
     }
 }

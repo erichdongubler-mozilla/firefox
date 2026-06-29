@@ -619,79 +619,98 @@ class TabStorageMiddleware(
     ) {
         val formState = store.state.tabGroupState.formState ?: return
         val mode = store.state.mode
-        when (mode) {
-            is TabsTrayState.Mode.DragAndDrop -> {
-                handleSaveFromDragAndDrop(formState = formState, mode = mode)
-            }
+        // Capture the selection synchronously to prevent selection loss by the Reducer
+        val selectedTabIds = mode.selectedTabIds
+        scope.launch {
+            val newGroupId = when (mode) {
+                is TabsTrayState.Mode.DragAndDrop -> {
+                    handleSaveFromDragAndDrop(formState = formState, mode = mode)
+                }
 
-            is TabsTrayState.Mode.Normal, is TabsTrayState.Mode.Select -> {
-                handleSaveFromMultiSelection(formState = formState, selectedTabIds = store.state.mode.selectedTabIds)
+                is TabsTrayState.Mode.Normal, is TabsTrayState.Mode.Select -> {
+                    handleSaveFromMultiSelection(
+                        formState = formState,
+                        selectedTabIds = selectedTabIds,
+                    )
+                }
+            }
+            if (newGroupId != null) {
+                mainScope.launch {
+                    store.dispatch(TabGroupAction.NewGroupCreated(newGroupId))
+                }
             }
         }
     }
 
-    private fun handleSaveFromDragAndDrop(formState: TabGroupFormState, mode: TabsTrayState.Mode.DragAndDrop) {
-        scope.launch {
-            val sourceId = mode.sourceId
-            val destinationId = mode.destinationId ?: return@launch
-            // Sequence from the destination
-            sequenceGroupedTabsTogether(
-                tabIds = listOf(sourceId),
-                targetTabId = destinationId,
+    private suspend fun handleSaveFromDragAndDrop(
+        formState: TabGroupFormState,
+        mode: TabsTrayState.Mode.DragAndDrop,
+    ): String? {
+        val sourceId = mode.sourceId
+        val destinationId = mode.destinationId ?: return null
+        // Sequence from the destination
+        sequenceGroupedTabsTogether(
+            tabIds = listOf(sourceId),
+            targetTabId = destinationId,
+        )
+        val tabGroup = TabGroup(
+            title = formState.name,
+            theme = formState.theme.toStorageValue(),
+            lastModified = dateTimeProvider.currentTimeMillis(),
+        )
+        tabGroupRepository.createTabGroupWithTabs(
+            tabGroup = tabGroup,
+            tabIds = listOf(sourceId, destinationId),
+        )
+        return tabGroup.id
+    }
+
+    private suspend fun handleSaveFromMultiSelection(
+        formState: TabGroupFormState,
+        selectedTabIds: List<String>,
+    ): String? {
+        if (formState.tabGroupId == null) {
+            val newTabGroup = TabGroup(
+                title = formState.name,
+                theme = formState.theme.toStorageValue(),
+                lastModified = dateTimeProvider.currentTimeMillis(),
             )
-            tabGroupRepository.createTabGroupWithTabs(
+            if (selectedTabIds.isNotEmpty()) {
+                // Obtain the ID of the selected tab that appears sequentially first in the tab data to sequence
+                // the rest of the selected tabs against it.
+                // If the data is in a weird state, fallback to the first selected tab ID.
+                // This is necessary until we can guarantee we always have tab data after the tab data refactor
+                // to hoist tab data more globally.
+                val sequentiallyFirstTabId = combinedDataFlow
+                    .value
+                    ?.tabs
+                    ?.first { it.id in selectedTabIds }?.id ?: selectedTabIds.first()
+
+                sequenceGroupedTabsTogether(
+                    tabIds = selectedTabIds - sequentiallyFirstTabId,
+                    targetTabId = sequentiallyFirstTabId,
+                )
+
+                tabGroupRepository.createTabGroupWithTabs(
+                    tabGroup = newTabGroup,
+                    tabIds = selectedTabIds,
+                )
+                return newTabGroup.id
+            } else {
+                tabGroupRepository.addNewTabGroup(newTabGroup)
+                return newTabGroup.id
+            }
+        } else {
+            tabGroupRepository.updateTabGroup(
                 tabGroup = TabGroup(
+                    id = formState.tabGroupId,
                     title = formState.name,
                     theme = formState.theme.toStorageValue(),
                     lastModified = dateTimeProvider.currentTimeMillis(),
                 ),
-                tabIds = listOf(sourceId, destinationId),
             )
         }
-    }
-
-    private fun handleSaveFromMultiSelection(formState: TabGroupFormState, selectedTabIds: List<String>) {
-        scope.launch {
-            if (formState.tabGroupId == null) {
-                val newTabGroup = TabGroup(
-                    title = formState.name,
-                    theme = formState.theme.toStorageValue(),
-                    lastModified = dateTimeProvider.currentTimeMillis(),
-                )
-                if (selectedTabIds.isNotEmpty()) {
-                    // Obtain the ID of the selected tab that appears sequentially first in the tab data to sequence
-                    // the rest of the selected tabs against it.
-                    // If the data is in a weird state, fallback to the first selected tab ID.
-                    // This is necessary until we can guarantee we always have tab data after the tab data refactor
-                    // to hoist tab data more globally.
-                    val sequentiallyFirstTabId = combinedDataFlow
-                        .value
-                        ?.tabs
-                        ?.first { it.id in selectedTabIds }?.id ?: selectedTabIds.first()
-
-                    sequenceGroupedTabsTogether(
-                        tabIds = selectedTabIds - sequentiallyFirstTabId,
-                        targetTabId = sequentiallyFirstTabId,
-                    )
-
-                    tabGroupRepository.createTabGroupWithTabs(
-                        tabGroup = newTabGroup,
-                        tabIds = selectedTabIds,
-                    )
-                } else {
-                    tabGroupRepository.addNewTabGroup(newTabGroup)
-                }
-            } else {
-                tabGroupRepository.updateTabGroup(
-                    tabGroup = TabGroup(
-                        id = formState.tabGroupId,
-                        title = formState.name,
-                        theme = formState.theme.toStorageValue(),
-                        lastModified = dateTimeProvider.currentTimeMillis(),
-                    ),
-                )
-            }
-        }
+        return null
     }
 
     private fun handleDeleteClicked(

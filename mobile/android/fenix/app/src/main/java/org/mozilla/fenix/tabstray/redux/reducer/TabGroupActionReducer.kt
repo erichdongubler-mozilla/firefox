@@ -52,6 +52,10 @@ object TabGroupActionReducer {
                 backStack = state.backStack.popDeleteTabGroupFlow(),
             )
             is TabGroupAction.EditTabGroupClicked -> reduceEditTabGroupClicked(state, action)
+            is TabGroupAction.NewGroupCreated ->
+                state.copy(tabGroupState = state.tabGroupState.copy(enteringGroupId = action.id))
+            is TabGroupAction.NewGroupAnimationFinished ->
+                state.copy(tabGroupState = state.tabGroupState.copy(enteringGroupId = null))
             is TabGroupAction.OpenTabGroupClicked -> reduceOpenTabGroupClicked(state, action)
             is TabGroupAction.CloseTabGroupClicked -> state.copy(
                 backStack = listOf(TabManagerNavDestination.Root),

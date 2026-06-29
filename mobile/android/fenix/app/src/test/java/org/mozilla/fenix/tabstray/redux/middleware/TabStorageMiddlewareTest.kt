@@ -48,6 +48,8 @@ import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState.Mode
 import org.mozilla.fenix.tabstray.redux.store.TabsTrayStore
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
@@ -2559,6 +2561,111 @@ class TabStorageMiddlewareTest {
         advanceUntilIdle()
 
         assertEquals(1, browserStore.state.tabs.size)
+    }
+
+    @Test
+    fun `WHEN save is clicked from group creation with valid drag and drop data THEN entering group is updated`() = runTest {
+        val repository = createRepository()
+        val sourceTab = createTab(url = "https://mozilla.org")
+        val destinationTab = createTab(url = "https://example.com")
+        val expectedTitle = "Group 1"
+        val expectedTheme = TabGroupTheme.Red
+        val store = createStore(
+            initialState = TabsTrayState(
+                mode = Mode.DragAndDrop(sourceId = sourceTab.id, destinationId = destinationTab.id),
+                tabGroupState = TabsTrayState.TabGroupState(
+                    formState = TabGroupFormState(
+                        name = expectedTitle,
+                        tabGroupId = null,
+                        theme = expectedTheme,
+                    ),
+                ),
+            ),
+            tabDataFlow = flowOf(TabData(tabs = listOf(sourceTab, destinationTab))),
+            tabGroupsEnabled = true,
+            tabGroupRepository = repository,
+            dateTimeProvider = fakeDateTimeProvider,
+        )
+
+        runCurrent()
+        advanceUntilIdle()
+
+        store.dispatch(TabGroupAction.SaveClicked)
+
+        runCurrent()
+        advanceUntilIdle()
+
+        assertNotNull(actual = store.state.tabGroupState.enteringGroupId)
+    }
+
+    @Test
+    fun `WHEN save is clicked from group creation with valid multi-select data THEN entering group is updated`() = runTest {
+        val repository = createRepository()
+        val sourceTab = createTab(url = "https://mozilla.org")
+        val destinationTab = createTab(url = "https://example.com")
+        val expectedTitle = "Group 1"
+        val expectedTheme = TabGroupTheme.Red
+        val store = createStore(
+            initialState = TabsTrayState(
+                mode = Mode.Select(selectedTabs = setOf(TabsTrayItem.Tab(tab = sourceTab), TabsTrayItem.Tab(tab = destinationTab))),
+                tabGroupState = TabsTrayState.TabGroupState(
+                    formState = TabGroupFormState(
+                        name = expectedTitle,
+                        tabGroupId = null,
+                        theme = expectedTheme,
+                    ),
+                ),
+            ),
+            tabDataFlow = flowOf(TabData(tabs = listOf(sourceTab, destinationTab))),
+            tabGroupsEnabled = true,
+            tabGroupRepository = repository,
+            dateTimeProvider = fakeDateTimeProvider,
+        )
+
+        runCurrent()
+        advanceUntilIdle()
+
+        store.dispatch(TabGroupAction.SaveClicked)
+
+        runCurrent()
+        advanceUntilIdle()
+
+        assertNotNull(actual = store.state.tabGroupState.enteringGroupId)
+    }
+
+    @Test
+    fun `WHEN save is clicked from group creation with invalid data THEN it is handled gracefully AND entering group is not updated`() = runTest {
+        val repository = createRepository()
+        val sourceTab = createTab(url = "https://mozilla.org")
+        val destinationTab = createTab(url = "https://example.com")
+        val expectedTitle = "Group 1"
+        val expectedTheme = TabGroupTheme.Red
+        val store = createStore(
+            initialState = TabsTrayState(
+                mode = Mode.DragAndDrop(sourceId = sourceTab.id, destinationId = null),
+                tabGroupState = TabsTrayState.TabGroupState(
+                    formState = TabGroupFormState(
+                        name = expectedTitle,
+                        tabGroupId = null,
+                        theme = expectedTheme,
+                    ),
+                ),
+            ),
+            tabDataFlow = flowOf(TabData(tabs = listOf(sourceTab, destinationTab))),
+            tabGroupsEnabled = true,
+            tabGroupRepository = repository,
+            dateTimeProvider = fakeDateTimeProvider,
+        )
+
+        runCurrent()
+        advanceUntilIdle()
+
+        store.dispatch(TabGroupAction.SaveClicked)
+
+        runCurrent()
+        advanceUntilIdle()
+
+        assertNull(actual = store.state.tabGroupState.enteringGroupId)
     }
 
     private fun TestScope.createStore(

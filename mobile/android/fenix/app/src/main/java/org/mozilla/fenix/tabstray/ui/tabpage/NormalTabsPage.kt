@@ -53,6 +53,7 @@ private val EmptyPageWidth = 170.dp
  * @param displayTabGroupOnboarding Whether onboarding for tab groups should be shown.
  * @param liveReorderEnabled Whether tab reorders should happen 'live' during a drag.
  * @param tabInteractionHandler Handles tab interactions, such as moves and drag and drop.
+ * @param enteringGroupId The id of a group entering composition, if any.  Can be null.
  * @param trackersBlockedCount The number of trackers blocked to display in the footer card.
  * @param focusEnabled Whether the focus indicator is enabled.
  * @param onTabClose Invoked when the user clicks to close a tab.
@@ -79,6 +80,7 @@ private val EmptyPageWidth = 170.dp
  * @param onTabGroupOnboardingDismiss Invoked when the user dismisses the tab group onboarding card.
  * @param onTabGroupOnboardingShown Invoked when the tab group onboarding card is shown to the user.
  * @param onPrivacyReportTapped Invoked when the trackers blocked pill is tapped.
+ * @param onEnteringGroupAnimationPlayed Invoked when the group entrance animation is played.
  */
 @Composable
 @Suppress("LongParameterList")
@@ -93,6 +95,7 @@ internal fun NormalTabsPage(
     displayTabGroupOnboarding: Boolean,
     liveReorderEnabled: Boolean,
     tabInteractionHandler: TabInteractionHandler,
+    enteringGroupId: String?,
     trackersBlockedCount: Int? = null,
     focusEnabled: Boolean,
     onTabClose: (TabsTrayItem.Tab) -> Unit,
@@ -116,6 +119,7 @@ internal fun NormalTabsPage(
     onTabGroupOnboardingDismiss: () -> Unit,
     onTabGroupOnboardingShown: () -> Unit,
     onPrivacyReportTapped: (() -> Unit)? = null,
+    onEnteringGroupAnimationPlayed: () -> Unit,
 ) {
     if (items.isNotEmpty() || inactiveTabs.isNotEmpty()) {
         var showAutoCloseDialog by remember { mutableStateOf(shouldShowInactiveTabsAutoCloseDialog) }
@@ -177,6 +181,8 @@ internal fun NormalTabsPage(
             tabInteractionHandler = tabInteractionHandler,
             focusEnabled = focusEnabled,
             onPrivacyReportTapped = onPrivacyReportTapped,
+            enteringGroupId = enteringGroupId,
+            onGroupEntranceAnimationPlayed = onEnteringGroupAnimationPlayed,
         )
     } else {
         EmptyNormalTabsPage(

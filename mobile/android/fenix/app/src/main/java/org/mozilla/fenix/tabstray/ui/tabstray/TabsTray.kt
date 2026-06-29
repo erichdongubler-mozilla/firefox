@@ -269,6 +269,7 @@ fun TabsTray(
                             dragAndDropEnabled = tabsTrayState.config.tabGroupsDragAndDropEnabled,
                             liveReorderEnabled = tabsTrayState.config.tabGroupsLiveReorderEnabled,
                             displayTabGroupOnboarding = tabsTrayState.shouldShowTabGroupOnboarding,
+                            enteringGroupId = tabsTrayState.tabGroupState.enteringGroupId,
                             onTabClose = onTabClose,
                             shouldShowInactiveTabsAutoCloseDialog = tabsTrayState.inactiveTabs.showAutoCloseDialog,
                             onItemClick = onItemClick,
@@ -299,6 +300,9 @@ fun TabsTray(
                             trackersBlockedCount = trackersBlockedCount,
                             focusEnabled = tabsTrayState.normalTabsState.itemFocusIndicatorEnabled,
                             onPrivacyReportTapped = onPrivacyReportTapped,
+                            onEnteringGroupAnimationPlayed = {
+                                tabsTrayStore.dispatch(TabGroupAction.NewGroupAnimationFinished)
+                            },
                         )
                     }
 

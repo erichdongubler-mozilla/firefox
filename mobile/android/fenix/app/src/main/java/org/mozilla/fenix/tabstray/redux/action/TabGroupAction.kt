@@ -68,6 +68,13 @@ sealed interface TabGroupAction : TabsTrayAction {
     data class ThemeChanged(val theme: TabGroupTheme) : TabGroupAction
 
     /**
+     * Invoked when a new tab group is created.
+     *
+     * @property id The tab group's id
+     */
+    data class NewGroupCreated(val id: String) : TabGroupAction
+
+    /**
      * Fired when the user performs an action to add the current collection of
      * multiselected items to an existing Tab Group.
      *
@@ -139,4 +146,9 @@ sealed interface TabGroupAction : TabsTrayAction {
      * Invoked when the tab group onboarding card is shown to the user.
      */
     data object OnboardingShown : TabGroupAction, TabManagerUiStateStorageAction
+
+    /**
+     * Invoked when a new group's animation is played.
+     */
+    data object NewGroupAnimationFinished : TabGroupAction
 }
