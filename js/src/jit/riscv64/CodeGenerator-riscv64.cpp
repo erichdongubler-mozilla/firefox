@@ -1489,24 +1489,6 @@ void CodeGenerator::visitModPowTwoI(LModPowTwoI* ins) {
   }
 }
 
-void CodeGenerator::visitModMaskI(LModMaskI* ins) {
-  Register src = ToRegister(ins->input());
-  Register dest = ToRegister(ins->output());
-  Register tmp0 = ToRegister(ins->temp0());
-  Register tmp1 = ToRegister(ins->temp1());
-  MMod* mir = ins->mir();
-
-  if (!mir->isTruncated() && mir->canBeNegativeDividend()) {
-    MOZ_ASSERT(mir->fallible());
-
-    Label bail;
-    masm.ma_mod_mask(src, dest, tmp0, tmp1, ins->shift(), &bail);
-    bailoutFrom(&bail, ins->snapshot());
-  } else {
-    masm.ma_mod_mask(src, dest, tmp0, tmp1, ins->shift(), nullptr);
-  }
-}
-
 void CodeGenerator::visitBitNotI(LBitNotI* ins) {
   Register input = ToRegister(ins->input());
   Register dest = ToRegister(ins->output());

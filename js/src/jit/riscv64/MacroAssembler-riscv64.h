@@ -304,12 +304,6 @@ class MacroAssemblerRiscv64 : public Assembler {
   void ma_mul32TestOverflow(Register rd, Register rj, Imm32 imm,
                             Label* overflow);
 
-  // fast mod, uses scratch registers, and thus needs to be in the assembler
-  // implicitly assumes that we can overwrite dest at the beginning of the
-  // sequence
-  void ma_mod_mask(Register src, Register dest, Register hold, Register remain,
-                   int32_t shift, Label* negZero = nullptr);
-
   // FP branches
   void ma_compareF32(Register rd, DoubleCondition cc, FloatRegister cmp1,
                      FloatRegister cmp2);
