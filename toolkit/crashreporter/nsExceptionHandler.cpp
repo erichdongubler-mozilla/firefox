@@ -1956,6 +1956,14 @@ nsresult SetExceptionHandler(nsIFile* aXREDirectory, bool force /*=false*/) {
   // Pre-load psapi.dll to prevent it from being loaded during exception
   // handling.
   ::LoadLibraryW(L"psapi.dll");
+
+  // Pre-load verifier.dll for the same reason: when MiniDumpWithHandleData is
+  // set, dbgcore loads it mid-dump (Win32LiveSystemProvider) to enumerate
+  // handle operations. Because MiniDumpWriteDump has already suspended every
+  // other thread, that LoadLibrary deadlocks in LdrpDrainWorkQueue waiting on
+  // the loader worker threads it just suspended, wedging the crashing process
+  // (bug 1760099). Loading it now turns the mid-dump load into a refcount bump.
+  ::LoadLibraryW(L"verifier.dll");
 #endif  // XP_WIN
 
 #ifdef MOZ_WIDGET_ANDROID
