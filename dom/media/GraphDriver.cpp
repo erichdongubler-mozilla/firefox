@@ -659,7 +659,6 @@ void AudioCallbackDriver::Init(const nsCString& aStreamName) {
 
 void AudioCallbackDriver::SetCubebStreamName(const nsCString& aStreamName) {
   MOZ_ASSERT(OnCubebOperationThread());
-  MOZ_ASSERT(mAudioStream);
   cubeb_stream_set_name(mAudioStream, aStreamName.get());
 }
 
