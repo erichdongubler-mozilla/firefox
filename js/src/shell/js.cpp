@@ -5999,6 +5999,22 @@ static bool InstantiateModuleStencilXDR(JSContext* cx, uint32_t argc,
   return true;
 }
 
+static bool CheckModuleFunctionAllowed(JSContext* cx) {
+  // These module functions are provided for testing purposes only. In a real
+  // implementation they are not accessible to user scripts and are called as
+  // part of the module loader itself.
+  //
+  // They should not be allowed in places where their use can break module
+  // loader invariants, for example from debugger hooks.
+
+  if (cx->noExecuteDebuggerTop) {
+    JS_ReportErrorASCII(cx, "Function not allowed inside debugger hooks");
+    return false;
+  }
+
+  return true;
+}
+
 static bool RegisterModule(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   if (!args.requireAtLeast(cx, "registerModule", 2)) {
@@ -6028,6 +6044,10 @@ static bool RegisterModule(JSContext* cx, unsigned argc, Value* vp) {
 
   Rooted<JSAtom*> specifier(cx, AtomizeString(cx, args[0].toString()));
   if (!specifier) {
+    return false;
+  }
+
+  if (!CheckModuleFunctionAllowed(cx)) {
     return false;
   }
 
@@ -6088,6 +6108,10 @@ static bool ModuleLink(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
+  if (!CheckModuleFunctionAllowed(cx)) {
+    return false;
+  }
+
   AutoRealm ar(cx, object);
 
   Rooted<ModuleObject*> module(cx,
@@ -6117,6 +6141,10 @@ static bool ModuleEvaluate(JSContext* cx, unsigned argc, Value* vp) {
   if (!object->is<ShellModuleObjectWrapper>()) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_INVALID_ARGS,
                               "moduleEvaluate");
+    return false;
+  }
+
+  if (!CheckModuleFunctionAllowed(cx)) {
     return false;
   }
 
