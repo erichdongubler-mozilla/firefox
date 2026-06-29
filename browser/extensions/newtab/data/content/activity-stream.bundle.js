@@ -21123,15 +21123,8 @@ function Privacy({
   const initialized = privacyData?.initialized ?? false;
   // Ceiling the readout at "100+" so the number stays a tidy single line.
   const displayCount = trackersToday > 100 ? "100+" : `${trackersToday}`;
-
-  // TEMP (Bug 2049390): preview override for CSS work. "live" follows the real
-  // count (0 => empty, otherwise the tip card); the others force a state.
-  // Remove with the tip-rotation / site-count wiring (Bug 2048387).
-  const [preview, setPreview] = (0,external_React_namespaceObject.useState)("live");
-  const liveState = trackersToday === 0 ? "empty" : "tip";
-  const effectiveState = preview === "live" ? liveState : preview;
-  const isEmptyState = effectiveState === "empty";
-  const showTip = effectiveState === "tip";
+  const isEmptyState = trackersToday === 0;
+  const showTip = !isEmptyState;
   const isLarge = widgetSize === "large";
   const handleIntersection = (0,external_React_namespaceObject.useCallback)(() => {
     if (impressionFired.current) {
@@ -21247,15 +21240,7 @@ function Privacy({
   }), /*#__PURE__*/external_React_default().createElement("panel-item", {
     "data-l10n-id": "newtab-privacy-menu-learn-more",
     onClick: handleLearnMore
-  }), /*#__PURE__*/external_React_default().createElement("panel-item", {
-    onClick: () => setPreview("live")
-  }, "Preview: Live (real count)"), /*#__PURE__*/external_React_default().createElement("panel-item", {
-    onClick: () => setPreview("empty")
-  }, "Preview: Empty"), /*#__PURE__*/external_React_default().createElement("panel-item", {
-    onClick: () => setPreview("default")
-  }, "Preview: Default (no tip)"), /*#__PURE__*/external_React_default().createElement("panel-item", {
-    onClick: () => setPreview("tip")
-  }, "Preview: Default (with tip)")))), /*#__PURE__*/external_React_default().createElement("div", {
+  })))), /*#__PURE__*/external_React_default().createElement("div", {
     className: "privacy-body"
   }, initialized && (isEmptyState ? /*#__PURE__*/external_React_default().createElement("div", {
     className: "privacy-empty"

@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 // eslint-disable-next-line no-unused-vars
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useRef } from "react";
 import { useSelector, batch } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 import { useIntersectionObserver, useSizeSubmenu } from "../../../lib/utils";
@@ -49,14 +49,8 @@ function Privacy({ dispatch, widgetsMayBeMaximized, widgetEnabledMap }) {
   // Ceiling the readout at "100+" so the number stays a tidy single line.
   const displayCount = trackersToday > 100 ? "100+" : `${trackersToday}`;
 
-  // TEMP (Bug 2049390): preview override for CSS work. "live" follows the real
-  // count (0 => empty, otherwise the tip card); the others force a state.
-  // Remove with the tip-rotation / site-count wiring (Bug 2048387).
-  const [preview, setPreview] = useState("live");
-  const liveState = trackersToday === 0 ? "empty" : "tip";
-  const effectiveState = preview === "live" ? liveState : preview;
-  const isEmptyState = effectiveState === "empty";
-  const showTip = effectiveState === "tip";
+  const isEmptyState = trackersToday === 0;
+  const showTip = !isEmptyState;
   const isLarge = widgetSize === "large";
 
   const handleIntersection = useCallback(() => {
@@ -203,21 +197,6 @@ function Privacy({ dispatch, widgetsMayBeMaximized, widgetEnabledMap }) {
               data-l10n-id="newtab-privacy-menu-learn-more"
               onClick={handleLearnMore}
             />
-
-            {/* TEMP (Bug 2049390): static-state preview switcher. No FTL.
-                Remove with the tip-rotation / site-count wiring (Bug 2048387). */}
-            <panel-item onClick={() => setPreview("live")}>
-              Preview: Live (real count)
-            </panel-item>
-            <panel-item onClick={() => setPreview("empty")}>
-              Preview: Empty
-            </panel-item>
-            <panel-item onClick={() => setPreview("default")}>
-              Preview: Default (no tip)
-            </panel-item>
-            <panel-item onClick={() => setPreview("tip")}>
-              Preview: Default (with tip)
-            </panel-item>
           </panel-list>
         </div>
       </div>
