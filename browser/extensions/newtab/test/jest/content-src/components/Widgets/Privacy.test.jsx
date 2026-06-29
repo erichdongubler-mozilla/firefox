@@ -124,6 +124,41 @@ describe("Privacy widget", () => {
     );
   });
 
+  it("caps at the widgets.privacy.maxCount pref when set", () => {
+    const base = stateWithTrackers(75);
+    const state = {
+      ...base,
+      Prefs: {
+        ...base.Prefs,
+        values: { ...base.Prefs.values, "widgets.privacy.maxCount": 50 },
+      },
+    };
+    const { container } = renderPrivacy(jest.fn(), {}, state);
+    expect(container.querySelector(".privacy-count-number").textContent).toBe(
+      "50+"
+    );
+  });
+
+  it("lets trainhopConfig.widgets.privacyMaxCount override the pref", () => {
+    const base = stateWithTrackers(75);
+    const state = {
+      ...base,
+      Prefs: {
+        ...base.Prefs,
+        values: {
+          ...base.Prefs.values,
+          "widgets.privacy.maxCount": 200,
+          trainhopConfig: { widgets: { privacyMaxCount: 50 } },
+        },
+      },
+    };
+    const { container } = renderPrivacy(jest.fn(), {}, state);
+    // trainhop (50) wins over the pref (200): 75 > 50 caps to "50+".
+    expect(container.querySelector(".privacy-count-number").textContent).toBe(
+      "50+"
+    );
+  });
+
   it("shows the exact count just below the ceiling", () => {
     const { container } = renderPrivacy(jest.fn(), {}, stateWithTrackers(87));
     expect(container.querySelector(".privacy-count-number").textContent).toBe(

@@ -31,6 +31,21 @@ const privacyImage = filename => (
   </div>
 );
 
+const PREF_PRIVACY_MAX_COUNT = "widgets.privacy.maxCount";
+const DEFAULT_PRIVACY_MAX_COUNT = 100;
+
+// Resolves the count at which the readout caps to "N+". trainhopConfig wins so
+// an experiment can override the pref's default; then the pref
+// (widgets.privacy.maxCount, default 100); then a defensive fallback. Routed
+// through a helper (never the raw pref) per the trainhop-gate convention.
+function resolvePrivacyMaxCount(prefs) {
+  return (
+    prefs.trainhopConfig?.widgets?.privacyMaxCount ||
+    prefs[PREF_PRIVACY_MAX_COUNT] ||
+    DEFAULT_PRIVACY_MAX_COUNT
+  );
+}
+
 function Privacy({ dispatch, widgetsMayBeMaximized, widgetEnabledMap }) {
   const prefs = useSelector(state => state.Prefs.values);
   const privacyData = useSelector(state => state.PrivacyWidget);
@@ -46,8 +61,10 @@ function Privacy({ dispatch, widgetsMayBeMaximized, widgetEnabledMap }) {
   // when it's skipped (e.g. the backward-compat guard in PrivacyFeed on older
   // platforms) — show no metric state rather than a misleading empty/zero one.
   const initialized = privacyData?.initialized ?? false;
-  // Ceiling the readout at "100+" so the number stays a tidy single line.
-  const displayCount = trackersToday > 100 ? "100+" : `${trackersToday}`;
+  // Ceiling the readout at "{maxCount}+" so the number stays a tidy single line.
+  const maxCount = resolvePrivacyMaxCount(prefs);
+  const displayCount =
+    trackersToday > maxCount ? `${maxCount}+` : `${trackersToday}`;
 
   const isEmptyState = trackersToday === 0;
   const showTip = !isEmptyState;

@@ -1511,6 +1511,13 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "widgets.privacy.maxCount",
+    {
+      title: "Max trackers-blocked count shown before the '+' cap",
+      value: 100,
+    },
+  ],
+  [
     "widgets.crossword.size",
     {
       title: "Size of the crossword widget (medium or large)",
