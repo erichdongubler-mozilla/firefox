@@ -15,5 +15,6 @@ function f(i,j) {
 return f
 `);
 let g80 = newGlobal({newCompartment: true});
-// Compiling to a Stencil XDR should fail because XDR encoding does not support asm.js
-assertThrowsInstanceOf(() => g80.compileToStencilXDR(code, {}), g80.Error);
+// asm.js has been removed; "use asm" code now compiles as normal JavaScript
+// and XDR encoding succeeds.
+g80.compileToStencilXDR(code, {});

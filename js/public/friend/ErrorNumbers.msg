@@ -379,7 +379,6 @@ MSG_DEF(JSMSG_UNTERMINATED_STATIC_CLASS_BLOCK, 0, JSEXN_SYNTAXERR, "unterminated
 MSG_DEF(JSMSG_EOF_BEFORE_END_OF_LITERAL,1,JSEXN_SYNTAXERR, "{0} literal not terminated before end of script")
 MSG_DEF(JSMSG_EOL_BEFORE_END_OF_STRING,1, JSEXN_SYNTAXERR, "{0} string literal contains an unescaped line break")
 MSG_DEF(JSMSG_EOF_IN_ESCAPE_IN_LITERAL,1, JSEXN_SYNTAXERR, "reached end of script in the middle of an escape sequence in a {0} literal")
-MSG_DEF(JSMSG_USE_ASM_DIRECTIVE_FAIL,  0, JSEXN_SYNTAXERR, "\"use asm\" is only meaningful in the Directive Prologue of a function body")
 MSG_DEF(JSMSG_VAR_HIDES_ARG,           1, JSEXN_TYPEERR, "variable {0} redeclares argument")
 MSG_DEF(JSMSG_WHILE_AFTER_DO,          0, JSEXN_SYNTAXERR, "missing while after do-loop body")
 MSG_DEF(JSMSG_YIELD_IN_PARAMETER,      0, JSEXN_SYNTAXERR, "yield expression can't be used in parameter")

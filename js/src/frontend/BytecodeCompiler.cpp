@@ -851,7 +851,6 @@ void SourceAwareCompiler<Unit>::handleParseFailure(
 
   // Assignment must be monotonic to prevent reparsing iloops
   MOZ_ASSERT_IF(compilationState_.directives.strict(), newDirectives.strict());
-  MOZ_ASSERT_IF(compilationState_.directives.asmJS(), newDirectives.asmJS());
   compilationState_.directives = newDirectives;
 }
 
