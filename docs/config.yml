@@ -140,7 +140,6 @@ allowed_warnings:
     # Specific warnings allowed when the allow list was created.
     - "accessible/HCMMediaQueries\\.md:.*: WARNING: Lexing literal_block"
     - "js/Debugger/Debugger\\.md:.*: WARNING: Duplicate reference definition"
-    - "l10n/migrations/localizations\\.rst:.* ERROR: Anonymous hyperlink mismatch"
     - "networking/http/prioritization\\.md:.*: ERROR: At least one body element must separate transitions"
     - "networking/http/prioritization\\.md:.*: ERROR: Document may not end with a transition"
     - "UITour-lib.Mozilla.UITour.* WARNING: duplicate class description of Mozilla.UITour"
@@ -234,6 +233,7 @@ allowed_warnings:
     - "taskcluster/release-promotion-action\\.md:.*: WARNING: undefined label"
     - "testing/automated-testing/manifest-sandbox\\.md:.*: WARNING: download file not readable"
     - "mobile/android/geckoview/contributor/geckoview-architecture\\.md:.*: WARNING: Duplicate explicit target name"
+    - "l10n/migrations/localizations\\.md:.* ERROR: Anonymous hyperlink mismatch"
 exclude_patterns:
     - js/src/doc/Debugger
 
