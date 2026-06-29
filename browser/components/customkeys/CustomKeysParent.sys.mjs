@@ -136,7 +136,7 @@ export class CustomKeysParent extends JSWindowActorParent {
     );
     add(cat, "key_profilerCapture", "customkeys-dev-profiler-capture");
     add(cat, "key_profilerCaptureAlternate", "customkeys-dev-profiler-capture");
-    cat = keys["customkeys-category-navigation"] = {};
+    cat = keys["customkeys-category-navigation-2"] = {};
     add(cat, "goBackKb", "customkeys-nav-back");
     add(cat, "goForwardKb", "customkeys-nav-forward");
     add(cat, "goHome", "customkeys-nav-home");
@@ -288,7 +288,9 @@ export class CustomKeysParent extends JSWindowActorParent {
           data.isValid = false;
         }
       }
-      data.shortcut = this.prettifyShortcut(data);
+      if (data.isValid) {
+        data.shortcut = this.prettifyShortcut(data);
+      }
       this.sendAsyncMessage("CustomKeys:CapturedKey", data);
     }
   }
