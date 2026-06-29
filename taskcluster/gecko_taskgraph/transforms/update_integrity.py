@@ -171,10 +171,10 @@ def add_additional_fetches_and_command(config, jobs):
             "/builds/worker/fetches",
             # locale
             locale,
-            # channel - stop hardcoding
-            "nightly-try",
-            # app name - stop hardcoding
-            "firefox",
+            # channel
+            job["attributes"]["update-channel"],
+            # app name
+            job["attributes"]["shipping_product"],
             # artifact dir
             "/builds/worker/artifacts",
         ]
