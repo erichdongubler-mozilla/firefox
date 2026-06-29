@@ -46,14 +46,7 @@ class OnboardingTest {
             homeScreen(composeTestRule) {
                 verifyTheTermsOfUseOnboardingCard()
                 clickTheOnboardingCardContinueButton()
-                // Check if the device is running on Android version lower than 10
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-                    // If true, the "Set as default browser" onboarding card is displayed
-                    verifyTheSetAsDefaultBrowserOnboardingCard()
-                } else {
-                    // If the device is running on Android version higher or equal to 10 the "Set as default browser" system dialog is displayed
-                    verifyTheSetAsDefaultBrowserSystemDialog()
-                }
+                verifyTheSetAsDefaultBrowserOnboardingCard()
             }
         }
     }
@@ -67,7 +60,6 @@ class OnboardingTest {
             homeScreen(composeTestRule) {
                 verifyTheTermsOfUseOnboardingCard()
                 clickTheOnboardingCardContinueButton()
-                verifyTheSetAsDefaultBrowserSystemDialog()
                 clickTheSetAsDefaultBrowserDialogCancelButton()
                 verifyTheSetAsDefaultBrowserOnboardingCard()
             }
@@ -229,7 +221,6 @@ class OnboardingTest {
                 restartApp(composeTestRule.activityRule)
                 verifyTheTermsOfUseOnboardingCard()
                 clickTheOnboardingCardContinueButton()
-                verifyTheSetAsDefaultBrowserSystemDialog()
             }
         }
     }
@@ -242,8 +233,6 @@ class OnboardingTest {
             homeScreen(composeTestRule) {
                 verifyTheTermsOfUseOnboardingCard()
                 clickTheOnboardingCardContinueButton()
-                verifyTheSetAsDefaultBrowserSystemDialog()
-                clickTheSetAsDefaultBrowserDialogCancelButton()
                 verifyTheSetAsDefaultBrowserOnboardingCard()
                 clickNotNowOnboardingCardButton()
                 verifyTheFirefoxSearchWidgetOnboardingCard()
@@ -253,8 +242,6 @@ class OnboardingTest {
                 restartApp(composeTestRule.activityRule)
                 verifyTheTermsOfUseOnboardingCard()
                 clickTheOnboardingCardContinueButton()
-                verifyTheSetAsDefaultBrowserSystemDialog()
-                clickTheSetAsDefaultBrowserDialogCancelButton()
                 verifyTheSetAsDefaultBrowserOnboardingCard()
             }
         }
