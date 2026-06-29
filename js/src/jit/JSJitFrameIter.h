@@ -386,11 +386,7 @@ class SnapshotIterator {
   uintptr_t fromStack(int32_t offset) const;
 
   bool hasInstructionResult(uint32_t index) const {
-    if (!instructionResults_) {
-      return false;
-    }
-    MOZ_RELEASE_ASSERT(index < instructionResults_->length());
-    return true;
+    return instructionResults_;
   }
   bool hasInstructionResults() const { return instructionResults_; }
   Value fromInstructionResult(uint32_t index) const;
@@ -405,13 +401,10 @@ class SnapshotIterator {
  public:
   // Handle iterating over RValueAllocations of the snapshots.
   inline RValueAllocation readAllocation() {
-    MOZ_RELEASE_ASSERT(moreAllocations());
+    MOZ_ASSERT(moreAllocations());
     return snapshot_.readAllocation();
   }
-  void skip() {
-    MOZ_RELEASE_ASSERT(moreAllocations());
-    snapshot_.skipAllocation();
-  }
+  void skip() { snapshot_.skipAllocation(); }
 
   const RResumePoint* resumePoint() const;
   const RInstruction* instruction() const { return recover_.instruction(); }
@@ -445,7 +438,7 @@ class SnapshotIterator {
   // Read the next instruction available and get ready to either skip it or
   // evaluate it.
   inline void nextInstruction() {
-    MOZ_RELEASE_ASSERT(snapshot_.numAllocationsRead() == numAllocations());
+    MOZ_ASSERT(snapshot_.numAllocationsRead() == numAllocations());
     recover_.nextInstruction();
     snapshot_.resetNumAllocationsRead();
   }

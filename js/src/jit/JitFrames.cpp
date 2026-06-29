@@ -2619,13 +2619,13 @@ uintptr_t MachineState::read(Register reg) const {
 
 template <typename T>
 T MachineState::read(FloatRegister reg) const {
-  MOZ_RELEASE_ASSERT(reg.size() == sizeof(T));
+  MOZ_ASSERT(reg.size() == sizeof(T));
 
 #if !defined(JS_CODEGEN_NONE) && !defined(JS_CODEGEN_WASM32)
   if (state_.is<BailoutState>()) {
     uint32_t offset = reg.getRegisterDumpOffsetInBytes();
-    MOZ_RELEASE_ASSERT((offset % sizeof(T)) == 0);
-    MOZ_RELEASE_ASSERT(offset <= sizeof(RegisterDump::FPUArray) - sizeof(T));
+    MOZ_ASSERT((offset % sizeof(T)) == 0);
+    MOZ_ASSERT((offset + sizeof(T)) <= sizeof(RegisterDump::FPUArray));
 
     const BailoutState& state = state_.as<BailoutState>();
     char* addr = reinterpret_cast<char*>(state.floatRegs.begin()) + offset;

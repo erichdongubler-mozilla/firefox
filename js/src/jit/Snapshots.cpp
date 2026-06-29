@@ -363,18 +363,12 @@ void RValueAllocation::readPayload(CompactBufferReader& reader,
     case PAYLOAD_STACK_OFFSET:
       p->stackOffset = reader.readSigned();
       break;
-    case PAYLOAD_GPR: {
-      uint8_t code = reader.readByte();
-      MOZ_RELEASE_ASSERT(code < Registers::Total);
-      p->gpr = Register::FromCode(code);
+    case PAYLOAD_GPR:
+      p->gpr = Register::FromCode(reader.readByte());
       break;
-    }
-    case PAYLOAD_FPU: {
-      uint8_t code = reader.readByte();
-      MOZ_RELEASE_ASSERT(code < FloatRegisters::Total);
-      p->fpu.data = code;
+    case PAYLOAD_FPU:
+      p->fpu.data = reader.readByte();
       break;
-    }
     case PAYLOAD_PACKED_TAG:
       p->type = JSValueType(*mode & PACKED_TAG_MASK);
       *mode = *mode & ~PACKED_TAG_MASK;
@@ -621,14 +615,14 @@ RecoverReader& RecoverReader::operator=(const RecoverReader& rr) {
 
 void RecoverReader::readRecoverHeader() {
   numInstructions_ = reader_.readUnsigned();
-  MOZ_RELEASE_ASSERT(numInstructions_ > 0);
+  MOZ_ASSERT(numInstructions_);
 
   JitSpew(JitSpew_IonSnapshots, "Read recover header with instructionCount %u",
           numInstructions_);
 }
 
 void RecoverReader::readInstruction() {
-  MOZ_RELEASE_ASSERT(moreInstructions());
+  MOZ_ASSERT(moreInstructions());
   RInstruction::readRecoverData(reader_, &rawData_);
   numInstructionsRead_++;
 }
