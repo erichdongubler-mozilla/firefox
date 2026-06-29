@@ -990,6 +990,28 @@ class CorePS {
   PS_GET_AND_SET(const Maybe<nsCOMPtr<nsIFile>>&, AsyncSignalDumpDirectory)
 #endif
 
+  // The scheduled off-main-thread profile dump deadline
+  // (profiler_schedule_dump_to_file). A null deadline means none is scheduled.
+  // Read by the sampler thread.
+  static const TimeStamp& ScheduledDumpDeadline(PSLockRef) {
+    MOZ_ASSERT(sInstance);
+    return sInstance->mScheduledDumpDeadline;
+  }
+  static const nsACString& ScheduledDumpPath(PSLockRef) {
+    MOZ_ASSERT(sInstance);
+    return sInstance->mScheduledDumpPath;
+  }
+  static void ScheduleDumpToFile(PSLockRef, const TimeStamp& aDeadline,
+                                 const nsACString& aPath) {
+    MOZ_ASSERT(sInstance);
+    sInstance->mScheduledDumpDeadline = aDeadline;
+    sInstance->mScheduledDumpPath = aPath;
+  }
+  static void CancelScheduledDump(PSLockRef) {
+    MOZ_ASSERT(sInstance);
+    sInstance->mScheduledDumpDeadline = TimeStamp{};
+  }
+
   static void SetBandwidthCounter(ProfilerBandwidthCounter* aBandwidthCounter) {
     MOZ_ASSERT(sInstance);
 
@@ -1042,6 +1064,12 @@ class CorePS {
   // Private name, provided by child process initialization code (eTLD+1 in
   // fission)
   nsAutoCString mETLDplus1;
+
+  // A scheduled off-main-thread profile dump (profiler_schedule_dump_to_file):
+  // the deadline at which the sampler thread should write the profile, and the
+  // file to write it to. Null deadline when none is scheduled.
+  TimeStamp mScheduledDumpDeadline;
+  nsAutoCString mScheduledDumpPath;
 
   // This memory buffer is used by the MergeStacks mechanism. Previously it was
   // stack allocated, but this led to a stack overflow, as it was too much
@@ -4664,6 +4692,12 @@ void SamplerThread::Run() {
   // This will be set inside the loop, before invoking callbacks outside.
   SamplingState samplingState{};
 
+  // Set inside the locked scope when a scheduled off-main-thread profile dump
+  // (profiler_schedule_dump_to_file) is due, then acted on outside the lock
+  // (profiler_save_profile_to_file takes the profiler lock itself).
+  bool scheduledDumpDue = false;
+  nsAutoCString scheduledDumpPath;
+
   const TimeDuration sampleInterval =
       TimeDuration::FromMicroseconds(mIntervalMicroseconds);
   const uint32_t minimumIntervalSleepUs =
@@ -4736,6 +4770,13 @@ void SamplerThread::Run() {
       }
 
       ActivePS::ClearExpiredExitProfiles(lock);
+
+      if (const TimeStamp& deadline = CorePS::ScheduledDumpDeadline(lock);
+          !deadline.IsNull() && sampleStart >= deadline) {
+        scheduledDumpDue = true;
+        scheduledDumpPath = CorePS::ScheduledDumpPath(lock);
+        CorePS::CancelScheduledDump(lock);
+      }
 
       TimeStamp expiredMarkersCleaned = TimeStamp::Now();
 
@@ -5211,6 +5252,13 @@ void SamplerThread::Run() {
     // Invoke end-of-sampling callbacks outside of the locked scope.
     InvokePostSamplingCallbacks(std::move(postSamplingCallbacks),
                                 samplingState);
+
+    // We've hit the deadline for a scheduled profile dump; call
+    // profiler_save_profile_to_file outside the lock to avoid a deadlock.
+    if (scheduledDumpDue) {
+      scheduledDumpDue = false;
+      profiler_save_profile_to_file(scheduledDumpPath.get());
+    }
 
     ProfilerChild::ProcessPendingUpdate();
 
@@ -6603,6 +6651,30 @@ void profiler_save_profile_to_file(const char* aFilename) {
 
   locked_profiler_save_profile_to_file(lock, aFilename,
                                        preRecordedMetaInformation);
+}
+
+void profiler_schedule_dump_to_file(double aDelaySeconds,
+                                    const char* aFilename) {
+  if (!aFilename || !CorePS::Exists()) {
+    return;
+  }
+
+  // Compute the deadline before grabbing the lock, which may already be held
+  // by another thread for a while.
+  TimeStamp deadline =
+      TimeStamp::Now() + TimeDuration::FromSeconds(aDelaySeconds);
+
+  PSAutoLock lock;
+  CorePS::ScheduleDumpToFile(lock, deadline, nsDependentCString(aFilename));
+}
+
+void profiler_cancel_scheduled_dump() {
+  if (!CorePS::Exists()) {
+    return;
+  }
+
+  PSAutoLock lock;
+  CorePS::CancelScheduledDump(lock);
 }
 
 void profiler_request_dump_and_quit_for_test(const nsACString& aReason) {
