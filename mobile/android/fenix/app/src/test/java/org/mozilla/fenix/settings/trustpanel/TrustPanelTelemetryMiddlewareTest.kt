@@ -18,6 +18,7 @@ import org.mozilla.fenix.settings.trustpanel.store.TrustPanelAction
 import org.mozilla.fenix.settings.trustpanel.store.TrustPanelState
 import org.mozilla.fenix.settings.trustpanel.store.TrustPanelStore
 import org.mozilla.fenix.trackingprotection.ProtectionsDashboardFragment
+import org.mozilla.fenix.trackingprotection.TrackingProtectionCategory
 import org.robolectric.RobolectricTestRunner
 import kotlin.test.assertNotNull
 
@@ -107,6 +108,20 @@ class TrustPanelTelemetryMiddlewareTest {
         store.dispatch(TrustPanelAction.Navigate.PrivacySecuritySettings)
 
         assertNotNull(TrackingProtection.panelSettings.testGetValue())
+    }
+
+    @Test
+    fun `WHEN update detailed tracker category action is dispatched THEN record etp tracker list telemetry`() {
+        val store = createStore()
+        assertNull(TrackingProtection.etpTrackerList.testGetValue())
+
+        store.dispatch(
+            TrustPanelAction.UpdateDetailedTrackerCategory(
+                TrackingProtectionCategory.SOCIAL_MEDIA_TRACKERS,
+            ),
+        )
+
+        assertNotNull(TrackingProtection.etpTrackerList.testGetValue())
     }
 
     private fun createStore(

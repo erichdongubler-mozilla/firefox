@@ -54,10 +54,13 @@ class TrustPanelTelemetryMiddleware : Middleware<TrustPanelState, TrustPanelActi
                 TrackingProtection.panelSettings.record(NoExtras())
             }
 
+            is TrustPanelAction.UpdateDetailedTrackerCategory -> {
+                TrackingProtection.etpTrackerList.record(NoExtras())
+            }
+
             is TrustPanelAction.ClearSiteData,
             is TrustPanelAction.RequestClearSiteDataDialog,
             is TrustPanelAction.UpdateBaseDomain,
-            is TrustPanelAction.UpdateDetailedTrackerCategory,
             is TrustPanelAction.UpdateNumberOfTrackersBlocked,
             is TrustPanelAction.UpdateTrackersBlocked,
             is TrustPanelAction.TogglePermission,
