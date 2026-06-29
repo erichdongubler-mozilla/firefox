@@ -292,6 +292,14 @@ void LIRGeneratorRiscv64::lowerUDiv(MDiv* div) {
       define(lir, div);
       return;
     }
+
+    auto lhs = useRegister(div->lhs());
+    auto* lir = new (alloc()) LUDivConstant(lhs, rhs);
+    if (div->fallible()) {
+      assignSnapshot(lir, div->bailoutKind());
+    }
+    define(lir, div);
+    return;
   }
 
   LAllocation lhs, rhs;
@@ -331,6 +339,14 @@ void LIRGeneratorRiscv64::lowerUMod(MMod* mod) {
       define(lir, mod);
       return;
     }
+
+    auto lhs = useRegister(mod->lhs());
+    auto* lir = new (alloc()) LUModConstant(lhs, rhs);
+    if (mod->fallible()) {
+      assignSnapshot(lir, mod->bailoutKind());
+    }
+    define(lir, mod);
+    return;
   }
 
   auto* lir = new (alloc())

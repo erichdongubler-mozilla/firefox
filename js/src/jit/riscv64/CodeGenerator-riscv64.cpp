@@ -2170,6 +2170,98 @@ void CodeGenerator::visitUDiv(LUDiv* ins) {
   masm.bind(&done);
 }
 
+template <class LUDivOrUMod>
+static void UnsignedDivideWithConstant(MacroAssembler& masm, LUDivOrUMod* ins) {
+  Register lhs = ToRegister(ins->numerator());
+  Register output = ToRegister(ins->output());
+  uint32_t d = ins->denominator();
+
+  UseScratchRegisterScope temps(masm);
+  Register temp = temps.Acquire();
+
+  // The denominator isn't a power of 2 (see LDivPowTwoI).
+  MOZ_ASSERT(!std::has_single_bit(d));
+
+  auto rmc = ReciprocalMulConstants::computeUnsignedDivisionConstants(d);
+
+  // We first compute (M * n) >> 32, where M = rmc.multiplier.
+  if (int32_t(rmc.multiplier) >= 0) {
+    // Zero-extend |lhs| in preparation for an unsigned 64-bit multiplication.
+    masm.ZeroExtendWord(output, lhs);
+    masm.ma_li(temp, Imm32(rmc.multiplier));
+    masm.mul(output, output, temp);
+  } else {
+    masm.slli(output, lhs, 32);
+    masm.ma_li(temp, Imm32(rmc.multiplier));
+    masm.slli(temp, temp, 32);
+    masm.mulhu(output, output, temp);
+  }
+
+  if (rmc.multiplier > UINT32_MAX) {
+    // M >= 2^32 and shift == 0 is impossible, as d >= 2 implies that
+    // ((M * n) >> (32 + shift)) >= n > floor(n/d) whenever n >= d,
+    // contradicting the proof of correctness in computeDivisionConstants.
+    MOZ_ASSERT(rmc.shiftAmount > 0);
+    MOZ_ASSERT(rmc.multiplier < (int64_t(1) << 33));
+
+    masm.srli(output, output, 32);
+
+    // We actually computed output = ((uint32_t(M) * n) >> 32) instead. Since
+    // (M * n) >> (32 + shift) is the same as (output + n) >> shift, we can
+    // correct for the overflow. This case is a bit trickier than the signed
+    // case, though, as the (output + n) addition itself can overflow; however,
+    // note that
+    // (output + n) >> shift == (((n - output) >> 1) + output) >> (shift - 1),
+    // which is overflow-free. See Hacker's Delight, section 10-8 for details.
+
+    // Compute (n - output) >> 1 into temp.
+    masm.sub(temp, lhs, output);
+    masm.srliw(temp, temp, 1);
+
+    // Finish the computation.
+    masm.add(output, output, temp);
+    if (rmc.shiftAmount > 1) {
+      masm.srli(output, output, rmc.shiftAmount - 1);
+    }
+  } else {
+    masm.srli(output, output, 32 + rmc.shiftAmount);
+  }
+}
+
+void CodeGenerator::visitUDivConstant(LUDivConstant* ins) {
+  Register lhs = ToRegister(ins->numerator());
+  Register output = ToRegister(ins->output());
+  uint32_t d = ins->denominator();
+
+  MDiv* mir = ins->mir();
+
+  if (d == 0) {
+    if (ins->mir()->trapOnError()) {
+      masm.wasmTrap(wasm::Trap::IntegerDivideByZero, mir->trapSiteDesc());
+    } else if (mir->canTruncateInfinities()) {
+      masm.mv(output, zero);
+    } else {
+      MOZ_ASSERT(mir->fallible());
+      bailout(ins->snapshot());
+    }
+    return;
+  }
+
+  // Compute the truncated division result in |output|.
+  UnsignedDivideWithConstant(masm, ins);
+
+  // We are checking whether the division resulted in an integer, we multiply
+  // the obtained value by d to check if the correct answer is an integer. This
+  // cannot overflow, since |d| > 1.
+  if (!mir->isTruncated()) {
+    UseScratchRegisterScope temps(masm);
+    Register temp = temps.Acquire();
+
+    masm.ma_mul32(temp, output, Imm32(d));
+    bailoutCmp32(Assembler::NotEqual, lhs, temp, ins->snapshot());
+  }
+}
+
 void CodeGenerator::visitUMod(LUMod* ins) {
   Register lhs = ToRegister(ins->lhs());
   Register rhs = ToRegister(ins->rhs());
@@ -2205,6 +2297,38 @@ void CodeGenerator::visitUMod(LUMod* ins) {
   }
 
   masm.bind(&done);
+}
+
+void CodeGenerator::visitUModConstant(LUModConstant* ins) {
+  Register output = ToRegister(ins->output());
+  Register lhs = ToRegister(ins->numerator());
+
+  MMod* mir = ins->mir();
+
+  uint32_t d = ins->denominator();
+  if (d == 0) {
+    if (ins->mir()->trapOnError()) {
+      masm.wasmTrap(wasm::Trap::IntegerDivideByZero, mir->trapSiteDesc());
+    } else if (mir->isTruncated()) {
+      masm.mv(output, zero);
+    } else {
+      MOZ_ASSERT(mir->fallible());
+      bailout(ins->snapshot());
+    }
+    return;
+  }
+
+  // Compute the truncated division result in |output|.
+  UnsignedDivideWithConstant(masm, ins);
+
+  // Compute the remainder: output = lhs - (output * d).
+  masm.ma_mul32(output, output, Imm32(d));
+  masm.subw(output, lhs, output);
+
+  // Bail if not truncated and the remainder is in the range [2^31, 2^32).
+  if (!mir->isTruncated()) {
+    bailoutTest32(Assembler::Signed, output, output, ins->snapshot());
+  }
 }
 
 void CodeGenerator::visitEffectiveAddress3(LEffectiveAddress3* ins) {

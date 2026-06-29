@@ -4442,11 +4442,27 @@
     rhs: WordSized
   mir_op: Div
 
+- name: UDivConstant
+  result_type: WordSized
+  operands:
+    numerator: WordSized
+  arguments:
+    denominator: uint32_t
+  mir_op: Div
+
 - name: UMod
   result_type: WordSized
   operands:
     lhs: WordSized
     rhs: WordSized
+  mir_op: Mod
+
+- name: UModConstant
+  result_type: WordSized
+  operands:
+    numerator: WordSized
+  arguments:
+    denominator: uint32_t
   mir_op: Mod
 
 - name: DivI64
