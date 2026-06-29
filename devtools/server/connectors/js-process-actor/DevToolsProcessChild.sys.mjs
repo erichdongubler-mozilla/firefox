@@ -267,6 +267,7 @@ export class DevToolsProcessChild extends JSProcessActorChild {
     for (const targetType of [...watchingTargetTypes]) {
       this.#unwatchTargetsForWatcher(watcherDataObject, targetType);
     }
+    ContentProcessWatcherRegistry.remove(watcherDataObject);
   }
 
   /**

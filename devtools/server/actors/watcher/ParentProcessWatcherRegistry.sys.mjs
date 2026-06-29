@@ -29,6 +29,12 @@ const { SessionDataHelpers } = ChromeUtils.importESModule(
   { global: "contextual" }
 );
 
+const lazy = {};
+
+ChromeUtils.defineESModuleGetters(lazy, {
+  setTimeout: "resource://gre/modules/Timer.sys.mjs",
+});
+
 const { SUPPORTED_DATA } = SessionDataHelpers;
 const SUPPORTED_DATA_TYPES = Object.values(SUPPORTED_DATA);
 
@@ -235,6 +241,11 @@ export const ParentProcessWatcherRegistry = {
   unregisterWatcher(watcherActorID) {
     sessionDataByWatcherActor.delete(watcherActorID);
     watcherActors.delete(watcherActorID);
+
+    // We should persist the data to sharedData as content processes may keep a cached
+    // version of sessionData for this watcher Actor ID.
+    persistMapToSharedData();
+
     this.maybeUnregisterJSActors();
   },
 
@@ -242,9 +253,11 @@ export const ParentProcessWatcherRegistry = {
    * Unregister the JS Actors if there is no more DevTools code observing any target/resource.
    */
   maybeUnregisterJSActors() {
-    if (sessionDataByWatcherActor.size == 0) {
+    if (shouldUnregisterJSProcessActor()) {
       unregisterBrowserToolboxJSProcessActor();
-      unregisterJSProcessActor();
+      // As there may be pending async RDP Request / Actor queries
+      // delay the actual unregistering a bit
+      lazy.setTimeout(unregisterJSProcessActor, 1000);
     }
   },
 
@@ -355,6 +368,10 @@ const BrowserToolboxJSProcessActorConfig = {
 const PROCESS_SCRIPT_URL =
   "resource://devtools/server/connectors/js-process-actor/content-process-jsprocessactor-startup.js";
 
+function shouldUnregisterJSProcessActor() {
+  return sessionDataByWatcherActor.size == 0;
+}
+
 function registerJSProcessActor() {
   if (isJSProcessActorRegistered) {
     return;
@@ -385,6 +402,10 @@ function registerBrowserToolboxJSProcessActor() {
 }
 
 function unregisterJSProcessActor() {
+  // As this is being throttled, re-check the unregistering condition before actually unregistering the actor
+  if (!shouldUnregisterJSProcessActor()) {
+    return;
+  }
   if (!isJSProcessActorRegistered) {
     return;
   }
