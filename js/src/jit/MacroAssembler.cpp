@@ -7528,15 +7528,16 @@ void MacroAssembler::branchWasmAnyRefIsJSString(bool isJSString, Register src,
 
 void MacroAssembler::branchWasmAnyRefIsGCThing(bool isGCThing, Register src,
                                                Label* label) {
-  Label fallthrough;
-  Label* isGCThingLabel = isGCThing ? label : &fallthrough;
-  Label* isNotGCThingLabel = isGCThing ? &fallthrough : label;
-
   // A null value or i31 value are not GC things.
-  branchWasmAnyRefIsNull(true, src, isNotGCThingLabel);
-  branchWasmAnyRefIsI31(true, src, isNotGCThingLabel);
-  jump(isGCThingLabel);
-  bind(&fallthrough);
+  if (isGCThing) {
+    Label fallthrough;
+    branchWasmAnyRefIsNull(true, src, &fallthrough);
+    branchWasmAnyRefIsI31(false, src, label);
+    bind(&fallthrough);
+  } else {
+    branchWasmAnyRefIsNull(true, src, label);
+    branchWasmAnyRefIsI31(true, src, label);
+  }
 }
 
 void MacroAssembler::branchWasmAnyRefIsNurseryCell(bool isNurseryCell,
