@@ -1893,13 +1893,6 @@ void CanonicalBrowsingContext::NotifyStartDelayedAutoplayMedia() {
   });
 }
 
-void CanonicalBrowsingContext::NotifyMediaMutedChanged(bool aMuted,
-                                                       ErrorResult& aRv) {
-  MOZ_ASSERT(!GetParent(),
-             "Notify media mute change on non top-level context!");
-  SetMuted(aMuted, aRv);
-}
-
 uint32_t CanonicalBrowsingContext::CountSiteOrigins(
     GlobalObject& aGlobal,
     const Sequence<OwningNonNull<BrowsingContext>>& aRoots) {
