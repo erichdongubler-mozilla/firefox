@@ -1,23 +1,19 @@
-Task Kinds
-==========
+# Task Kinds
 
 This section lists and documents the available task kinds.
 
-build
------
+## build
 
 Builds are tasks that produce an installer or other output that can be run by
-users or automated tests.  This is more restrictive than most definitions of
+users or automated tests. This is more restrictive than most definitions of
 "build" in a Mozilla context: it does not include tasks that run build-like
 actions for static analysis or to produce instrumented artifacts.
 
-build-extensions
-----------------
+## build-extensions
 
 Builds Firefox extensions with `mach build`.
 
-build-fat-aar
--------------
+## build-fat-aar
 
 Build architecture-independent GeckoView AAR (Android ARchive) files. This build-like tasks is an
 artifact build (ARMv7, but this is arbitrary) that itself depends on arch-specific Android build
@@ -26,20 +22,19 @@ and then assembles a multi-architecture "fat AAR". Downstream consumers are expe
 per-ABI feature splits to produce arch-specific APKs.
 
 If you want to run this task locally, you need to specify these environment variable:
-  - MOZ_ANDROID_FAT_AAR_ARCHITECTURES: must be a comma-separated list of architecture.
+: - MOZ_ANDROID_FAT_AAR_ARCHITECTURES: must be a comma-separated list of architecture.
     Eg: "armeabi-v7a,arm64-v8a,x86_64".
-  - each of MOZ_ANDROID_FAT_AAR_ARM64_V8A, MOZ_ANDROID_FAT_AAR_ARMEABI_V7A,
-    and MOZ_ANDROID_FAT_AAR_X86_64 must be a path relative to MOZ_FETCHES_DIR.
 
-build-signing
--------------
+- each of MOZ_ANDROID_FAT_AAR_ARM64_V8A, MOZ_ANDROID_FAT_AAR_ARMEABI_V7A,
+  and MOZ_ANDROID_FAT_AAR_X86_64 must be a path relative to MOZ_FETCHES_DIR.
+
+## build-signing
 
 Many builds must be signed. The build-signing task takes the unsigned `build`
 kind artifacts and passes them through signingscriptworker to a signing server
 and returns signed results.
 
-build-mac-signing
------------------
+## build-mac-signing
 
 Mac signing without notarization.
 
@@ -47,8 +42,7 @@ Uses a self-signed certificate on level 1 environments.
 
 Shippable downstream tasks should use artifacts from build-mac-notarization.
 
-build-mac-notarization
-----------------------
+## build-mac-notarization
 
 Mac notarization on signingscript (linux) using rcodesign.
 
@@ -58,47 +52,40 @@ endpoint for notarizing apps.
 Downstream tasks switch to build-mac-signing in non-shippable builds or level 1
 environments.
 
-artifact-build
---------------
+## artifact-build
 
 This kind performs an artifact build: one based on precompiled binaries
-discovered via the TaskCluster index.  This task verifies that such builds
+discovered via the TaskCluster index. This task verifies that such builds
 continue to work correctly.
 
-bootstrap
----------
+## bootstrap
 
 This kind performs a standalone bootstrap of a Firefox build from various system environments.
 
-hazard
-------
+## hazard
 
 Hazard builds are similar to "regular' builds, but use a compiler extension to
 extract a bunch of data from the build and then analyze that data looking for
-hazardous behaviors. See https://firefox-source-docs.mozilla.org/js/HazardAnalysis/index.html
+hazardous behaviors. See <https://firefox-source-docs.mozilla.org/js/HazardAnalysis/index.html>
 
-l10n
-----
+## l10n
 
 The l10n kind repacks a build (from the same source) for a subset of locales,
 to exercise the localized repack logic in CI.
 
-shippable-l10n
---------------
+## shippable-l10n
 
 The nightly l10n kind repacks a shippable build (from the same source code)
 in order to provide localized versions of the same source.
 
-shippable-l10n-signing
-----------------------
+## shippable-l10n-signing
 
 The shippable l10n signing kind takes artifacts from the shippable-l10n kind and
 passes them to signing servers to have their contents signed appropriately, based
 on an appropriate signing format. One signing job is created for each shippable-l10n
 job (usually chunked).
 
-shippable-l10n-mac-signing
---------------------------
+## shippable-l10n-mac-signing
 
 Mac signing without notarization.
 
@@ -106,8 +93,7 @@ Uses a self-signed certificate on level 1 environments.
 
 Shippable downstream tasks should use artifacts from build-mac-notarization.
 
-shippable-l10n-mac-notarization
--------------------------------
+## shippable-l10n-mac-notarization
 
 Mac notarization on signingscript (linux) using rcodesign.
 
@@ -117,173 +103,151 @@ endpoint for notarizing apps.
 Downstream tasks switch to build-mac-signing in non-shippable builds or level 1
 environments.
 
-source-test
------------
+## source-test
 
 Source-tests are tasks that run directly from the Gecko source. This can include linting,
 unit tests, source-code analysis, or measurement work. While source-test tasks run from
 a source checkout, it is still possible for them to depend on a build artifact, though
 often they do not.
 
-code-review
------------
+## code-review
 
 Publish issues found by source-test tasks on Phabricator.
 This is a part of Release Management code review Bot.
 
-code-coverage
--------------
+## code-coverage
 
 Publish a pulse message when all ccov coverage tasks in the task group finish.
 
-upload-symbols
---------------
+## upload-symbols
 
 Upload-symbols tasks run after builds and upload the symbols files generated by
 build tasks to Socorro for later use in crash analysis.
 
-upload-symbols-dummy
---------------------
+## upload-symbols-dummy
 
 Upload-symbols-dummy ensures both x64 and macosx64 tasks run for nightlies and releases.
 
-upload-generated-sources
-------------------------
+## upload-generated-sources
 
 Upload-generated-sources tasks run after builds and upload source files that were generated as part of the build process to an s3 bucket for later use in links from crash reports or when debugging shipped builds.
 
-upload-generated-sources-dummy
-------------------------------
+## upload-generated-sources-dummy
 
 Upload-generated-sources-dummy ensures both x64 and macosx64 tasks run for nightlies and releases.
 
-valgrind
---------
+## valgrind
 
 Valgrind tasks produce builds instrumented by valgrind.
 
-searchfox
----------
+## searchfox
 
 Searchfox builds generate C++ index data for Searchfox.
 
-static-analysis-autotest
-------------------------
+## static-analysis-autotest
 
 Static analysis autotest utility in order to be sure that there is no regression
 when upgrading utilities that impact static-analysis.
 
-toolchain
----------
+## toolchain
 
-Toolchain builds create the compiler toolchains used to build Firefox.  These
+Toolchain builds create the compiler toolchains used to build Firefox. These
 will eventually be dependencies of the builds themselves, but for the moment
 are run manually via try pushes and the results uploaded to tooltool.
 
-toolchain-dxc-upload
---------------------
+## toolchain-dxc-upload
 
 Upload Windows symbols for `DirectXShaderCompiler` to tecken, based on builds in `toolchain-dxc`.
 Maintained by Firefox's WebGPU team.
 
-spidermonkey
-------------
+## spidermonkey
 
 Spidermonkey tasks check out the full gecko source tree, then compile only the
-spidermonkey portion.  Each task runs specific tests after the build.
+spidermonkey portion. Each task runs specific tests after the build.
 
-mochitest
----------
+## mochitest
 
-See the :doc:`test kind documentation <kinds/test>` for more info.
+See the {doc}`test kind documentation <kinds/test>` for more info.
 
-.. toctree::
-   :hidden:
+```{toctree}
+:hidden: true
 
-   kinds/test
+kinds/test
+```
 
+## reftest
 
-reftest
--------
+See the {doc}`test kind documentation <kinds/test>` for more info.
 
-See the :doc:`test kind documentation <kinds/test>` for more info.
+```{toctree}
+:hidden: true
 
-.. toctree::
-   :hidden:
+kinds/test
+```
 
-   kinds/test
+## browsertime
 
+See the {doc}`test kind documentation <kinds/test>` for more info.
 
-browsertime
------------
+```{toctree}
+:hidden: true
 
-See the :doc:`test kind documentation <kinds/test>` for more info.
+kinds/test
+```
 
-.. toctree::
-   :hidden:
+## web-platform-tests
 
-   kinds/test
+See the {doc}`test kind documentation <kinds/test>` for more info.
 
+```{toctree}
+:hidden: true
 
-web-platform-tests
-------------------
+kinds/test
+```
 
-See the :doc:`test kind documentation <kinds/test>` for more info.
+## test
 
-.. toctree::
-   :hidden:
+See the {doc}`test kind documentation <kinds/test>` for more info.
 
-   kinds/test
+```{toctree}
+:hidden: true
 
+kinds/test
+```
 
-test
-----
+## docker-image
 
-See the :doc:`test kind documentation <kinds/test>` for more info.
-
-.. toctree::
-   :hidden:
-
-   kinds/test
-
-
-docker-image
-------------
-
-Tasks of the ``docker-image`` kind build the Docker images in which other
+Tasks of the `docker-image` kind build the Docker images in which other
 Docker tasks run.
 
 The tasks to generate each docker image have predictable labels:
-``docker-image-<name>``.
+`docker-image-<name>`.
 
-Docker images are built from subdirectories of ``taskcluster/docker``, using
-``docker build``.  There is currently no capability for one Docker image to
+Docker images are built from subdirectories of `taskcluster/docker`, using
+`docker build`. There is currently no capability for one Docker image to
 depend on another in-tree docker image, without uploading the latter to a
 Docker repository.
 
-balrog
-------
+## balrog
 
 Balrog tasks are responsible for submitting metadata to our update server (Balrog).
 They are typically downstream of a beetmover job that moves signed MARs somewhere
 (eg: beetmover and beetmover-l10n for releases, beetmover-repackage for nightlies).
 
-beetmover
----------
+## beetmover
 
 Beetmover, takes specific artifacts, "Beets", and pushes them to a location outside
 of Taskcluster's task artifacts, (archive.mozilla.org as one place) and in the
 process determines the final location and a "pretty" name (versioned product name)
 
-beetmover-integration
----------------------
+## beetmover-integration
+
 Beetmover, takes specific artifacts, "Beets", and pushes them to a location outside
 of Taskcluster's task artifacts, (archive.mozilla.org as one place) and in the
 process determines the final location and a "pretty" name (versioned product name)
 This separate kind archives builds from the autoland branch.
 
-beetmover-l10n
---------------
+## beetmover-l10n
 
 Beetmover L10n, takes specific artifacts, "Beets", and pushes them to a location outside
 of Taskcluster's task artifacts, (archive.mozilla.org as one place) and in the
@@ -291,218 +255,215 @@ process determines the final location and a "pretty" name (versioned product nam
 This separate kind uses logic specific to localized artifacts, such as including
 the language in the final artifact names.
 
-beetmover-repackage
--------------------
+## beetmover-repackage
 
 Beetmover-repackage is beetmover but for tasks that need an intermediate step
 between signing and packaging, such as OSX. For more details see the definitions
 of the Beetmover kind above and the repackage kind below.
 
-release-beetmover-push-to-release
----------------------------------
+## release-beetmover-push-to-release
 
 release-beetmover-push-to-release publishes promoted releases from the
 candidates directory to the release directory. This is part of release
 promotion.
 
-beetmover-source
-----------------
+## beetmover-source
+
 Beetmover-source publishes release source. This is part of release promotion.
 
-beetmover-geckoview
--------------------
+## beetmover-geckoview
+
 Beetmover-geckoview publishes the Android library called "geckoview".
 
-beetmover-apt
--------------------
+## beetmover-apt
+
 Beetmover-apt publishes Linux .deb packages from the Mozilla archive to our APT repositories.
 
-beetmover-rpm
--------------------
+## beetmover-rpm
+
 Beetmover-rpm publishes Linux .rpm packages from the Mozilla archive to our RPM repositories.
 
-beetmover-repackage-rpm
------------------------
+## beetmover-repackage-rpm
+
 Beetmover-repackage-rpm publishes Linux .rpm packages (main package and all langpacks) to the candidates directory.
 
-condprof
---------
+## condprof
+
 condprof creates and updates realistic profiles.
 
-release-source-checksums-signing
---------------------------------
+## release-source-checksums-signing
+
 release-source-checksums-signing take as input the checksums file generated by
 source-related beetmover task and sign it via the signing scriptworkers.
 Returns the same file signed and additional detached signature.
 
-beetmover-checksums
--------------------
+## beetmover-checksums
+
 Beetmover, takes specific artifact checksums and pushes it to a location outside
 of Taskcluster's task artifacts (archive.mozilla.org as one place) and in the
 process determines the final location and "pretty" names it (version product name)
 
-release-beetmover-source-checksums
-----------------------------------
+## release-beetmover-source-checksums
+
 Beetmover, takes source specific artifact checksums and pushes it to a location outside
 of Taskcluster's task artifacts (archive.mozilla.org as one place) and in the
 process determines the final location and "pretty" names it (version product name)
 
-perftest
---------
+## perftest
+
 Runs performance tests using mozperftest.
 
-release-balrog-submit-toplevel
-------------------------------
+## release-balrog-submit-toplevel
+
 Toplevel tasks are responsible for submitting metadata to Balrog that is not specific to any
 particular platform+locale. For example: fileUrl templates, versions, and platform aliases.
 
 Toplevel tasks are also responsible for updating test channel rules to point at the Release
 being generated.
 
-release-balrog-scheduling
--------------------------
+## release-balrog-scheduling
+
 Schedules a Release for shipping in Balrog. If a `release_eta` was provided when starting the Release,
 it will be scheduled to go live at that day and time.
 
-release-binary-transparency
----------------------------
-Binary transparency creates a publicly verifiable log of binary shas for downstream
-release auditing. https://wiki.mozilla.org/Security/Binary_Transparency
+## release-binary-transparency
 
-release-flatpak-push
---------------------
+Binary transparency creates a publicly verifiable log of binary shas for downstream
+release auditing. <https://wiki.mozilla.org/Security/Binary_Transparency>
+
+## release-flatpak-push
+
 Pushes Flatpak repackage on Flathub
 
-release-notify-av-announce
---------------------------
+## release-notify-av-announce
+
 Notify anti-virus vendors when a release is likely shipping.
 
-release-notify-push
--------------------
+## release-notify-push
+
 Notify when a release has been pushed to CDNs.
 
-release-notify-ship
--------------------
+## release-notify-ship
+
 Notify when a release has been shipped.
 
-release-notify-promote
-----------------------
+## release-notify-promote
+
 Notify when a release has been promoted.
 
-release-notify-started
-----------------------
+## release-notify-started
+
 Notify when a release has been started.
 
-release-notify-testrail
------------------------
+## release-notify-testrail
+
 Create milestones in testrail for the next fenix/focus releases, and send a slack notification.
 
-release-bouncer-sub
--------------------
+## release-bouncer-sub
+
 Submits bouncer information for releases.
 
-release-mark-as-shipped
------------------------
+## release-mark-as-shipped
+
 Marks releases as shipped in Ship-It v1
 
-release-bouncer-aliases
------------------------
+## release-bouncer-aliases
+
 Update Bouncer's (download.mozilla.org) "latest" aliases.
 
-cron-bouncer-check
-------------------
+## cron-bouncer-check
+
 Checks Bouncer (download.mozilla.org) uptake.
 
-bouncer-locations
------------------
+## bouncer-locations
+
 Updates nightly bouncer locations for version bump.
 
-release-bouncer-check
----------------------
+## release-bouncer-check
+
 Checks Bouncer (download.mozilla.org) uptake as part of the release tasks.
 
-release-generate-checksums
---------------------------
+## release-generate-checksums
+
 Generate the per-release checksums along with the summaries
 
-release-generate-checksums-signing
-----------------------------------
+## release-generate-checksums-signing
+
 Sign the pre-release checksums produced by the above task
 
-release-generate-checksums-beetmover
-------------------------------------
+## release-generate-checksums-beetmover
+
 Submit to S3 the artifacts produced by the release-checksums task and its signing counterpart.
 
-release-final-verify
---------------------
+## release-final-verify
+
 Verifies the contents and package of release update MARs.
 
-release-push-langpacks
--------------------------------
+## release-push-langpacks
+
 Publishes language packs onto addons.mozilla.org.
 
-release-beetmover-signed-langpacks
-----------------------------------
+## release-beetmover-signed-langpacks
+
 Publishes signed langpacks to archive.mozilla.org
 
-release-beetmover-signed-langpacks-checksums
---------------------------------------------
+## release-beetmover-signed-langpacks-checksums
+
 Publishes signed langpacks to archive.mozilla.org
 
-release-update-verify
----------------------
+## release-update-verify
+
 Verifies the contents and package of release update MARs.
 
-test-update-integrity
----------------------
+## test-update-integrity
+
 Verifies that update MARs match installers. See `tools/update-verify/marannon` for more details.
 
-release-update-verify-next
---------------------------
+## release-update-verify-next
+
 Verifies the contents and package of release and updare MARs from the previous ESR release.
 
-release-update-verify-config
-----------------------------
+## release-update-verify-config
+
 Creates configs for release-update-verify tasks
 
-release-update-verify-config-next
----------------------------------
+## release-update-verify-config-next
+
 Creates configs for release-update-verify-next tasks
 
-release-updates-builder
------------------------
+## release-updates-builder
+
 Top level Balrog blob submission & patcher/update verify config updates.
 
-release-version-bump
---------------------
+## release-version-bump
+
 Bumps to the next version.
 
-release-source
---------------
+## release-source
+
 Generates source for the release
 
-release-source-signing
-----------------------
+## release-source-signing
+
 Signs source for the release
 
-release-partner-repack
-----------------------
+## release-partner-repack
+
 Generates customized versions of releases for partners.
 
-release-partner-attribution
----------------------------
+## release-partner-attribution
+
 Generates attributed versions of releases for partners.
 
-release-partner-repack-chunking-dummy
--------------------------------------
+## release-partner-repack-chunking-dummy
+
 Chunks the partner repacks by locale.
 
-release-partner-repack-signing
-------------------------------
+## release-partner-repack-signing
+
 Internal signing of partner repacks.
 
-release-partner-repack-mac-signing
-----------------------------------
+## release-partner-repack-mac-signing
 
 Mac signing without notarization.
 
@@ -510,8 +471,7 @@ Uses a self-signed certificate on level 1 environments.
 
 Shippable downstream tasks should use artifacts from build-mac-notarization.
 
-release-partner-repack-mac-notarization
----------------------------------------
+## release-partner-repack-mac-notarization
 
 Mac notarization on signingscript (linux) using rcodesign.
 
@@ -521,56 +481,55 @@ endpoint for notarizing apps.
 Downstream tasks switch to build-mac-signing in non-shippable builds or level 1
 environments.
 
-release-partner-repack-repackage
---------------------------------
+## release-partner-repack-repackage
+
 Repackaging of partner repacks.
 
-release-partner-repack-repackage-signing
-----------------------------------------
+## release-partner-repack-repackage-signing
+
 External signing of partner repacks.
 
-release-partner-repack-beetmover
---------------------------------
+## release-partner-repack-beetmover
+
 Moves the partner repacks to S3 buckets.
 
-release-partner-attribution-beetmover
--------------------------------------
+## release-partner-attribution-beetmover
+
 Moves the partner attributions to S3 buckets.
 
-release-partner-repack-bouncer-sub
-----------------------------------
+## release-partner-repack-bouncer-sub
+
 Sets up bouncer products for partners.
 
-release-early-tagging
----------------------
+## release-early-tagging
+
 Utilises treescript to perform tagging that should happen near the start of a release.
 
-release-eme-free-repack
------------------------
+## release-eme-free-repack
+
 Generates customized versions of releases for eme-free repacks.
 
-release-eme-free-repack-signing
--------------------------------
+## release-eme-free-repack-signing
+
 Internal signing of eme-free repacks
 
-release-eme-free-repack-repackage
----------------------------------
+## release-eme-free-repack-repackage
+
 Repackaging of eme-free repacks.
 
-release-eme-free-repack-repackage-signing
------------------------------------------
+## release-eme-free-repack-repackage-signing
+
 External signing of eme-free repacks.
 
-release-eme-free-repack-beetmover
----------------------------------
+## release-eme-free-repack-beetmover
+
 Moves the eme-free repacks to S3 buckets.
 
-release-eme-free-repack-beetmover-checksums
--------------------------------------------
+## release-eme-free-repack-beetmover-checksums
+
 Moves the beetmover checksum for eme-free repacks to S3 buckets.
 
-release-eme-free-repack-mac-signing
------------------------------------
+## release-eme-free-repack-mac-signing
 
 Mac signing without notarization.
 
@@ -578,8 +537,7 @@ Uses a self-signed certificate on level 1 environments.
 
 Shippable downstream tasks should use artifacts from build-mac-notarization.
 
-release-eme-free-repack-mac-notarization
-----------------------------------------
+## release-eme-free-repack-mac-notarization
 
 Mac notarization on signingscript (linux) using rcodesign.
 
@@ -589,234 +547,234 @@ endpoint for notarizing apps.
 Downstream tasks switch to build-mac-signing in non-shippable builds or level 1
 environments.
 
-repackage
----------
+## repackage
+
 Repackage tasks take a signed output and package them up into something suitable
 for shipping to our users. For example, on OSX we return a tarball as the signed output
 and this task would package that up as an Apple Disk Image (.dmg)
 
-repackage-l10n
---------------
-Repackage-L10n is a ```Repackage``` task split up to be suitable for use after l10n repacks.
+## repackage-l10n
 
-repackage-deb
-----------------
+Repackage-L10n is a `` `Repackage` `` task split up to be suitable for use after l10n repacks.
+
+## repackage-deb
+
 These repackage tasks take signed Firefox Linux binaries and puts them in Debian packages.
 
-repackage-deb-l10n
-------------------
+## repackage-deb-l10n
+
 These repackage tasks take the signed langpacks (.xpi) binaries and puts them in Debian packages.
 
-repackage-rpm
-----------------
+## repackage-rpm
+
 These repackage tasks take signed Firefox Linux binaries and puts them in RPM packages.
 
-repackage-rpm-signing
----------------------
+## repackage-rpm-signing
+
 Repackage-rpm-signing takes the repackaged RPMs and signs them.
 
-repackage-pkg-signing
----------------------
+## repackage-pkg-signing
+
 Repackage-pkg-signing takes the repackaged macOS .pkg installers and signs them.
 
-repackage-pkg-notarization
---------------------------
+## repackage-pkg-notarization
+
 Notarization of signed macOS .pkg installers via Apple's notarization service.
 
-repackage-l10n-pkg-signing
---------------------------
+## repackage-l10n-pkg-signing
+
 Repackage-l10n-pkg-signing takes the l10n repackaged macOS .pkg installers and signs them.
 
-repackage-l10n-pkg-notarization
--------------------------------
+## repackage-l10n-pkg-notarization
+
 Notarization of signed macOS .pkg installers via Apple's notarization service.
 
-repackage-flatpak
------------------
+## repackage-flatpak
+
 These repackage tasks take signed Firefox Linux binaries and langpacks, and builds a flatpak.
 
-repackage-signing
------------------
+## repackage-signing
+
 Repackage-signing take the repackaged installers (windows) and signs them.
 
-repackage-signing-l10n
-----------------------
+## repackage-signing-l10n
+
 Repackage-signing-l10n take the repackaged installers (windows) and signs them for localized versions.
 
-mar-signing
------------
+## mar-signing
+
 Mar-signing takes the complete update MARs and signs them.
 
-mar-signing-l10n
-----------------
+## mar-signing-l10n
+
 Mar-signing-l10n takes the complete update MARs and signs them for localized versions.
 
-mar-signing-autograph-stage
----------------------------
+## mar-signing-autograph-stage
+
 These tasks are only to test autograph-stage, when the autograph team asks for their staging environment to be tested.
 
-repackage-msi
--------------
-Repackage-msi takes the signed full installer and produces an msi installer (that wraps the full installer)
-Using the ```./mach repackage``` command
+## repackage-msi
 
-repackage-signing-msi
----------------------
+Repackage-msi takes the signed full installer and produces an msi installer (that wraps the full installer)
+Using the `` `./mach repackage` `` command
+
+## repackage-signing-msi
+
 Repackage-signing-msi takes the repackaged msi installers and signs them.
 
-repackage-msix
---------------
+## repackage-msix
+
 Repackage-msix takes a (possibly unsigned) package and produces a Windows MSIX package containing no langpacks using the
-```./mach repackage``` command.
+`` `./mach repackage` `` command.
 
-These tasks are supposed intended for rapid iteration in ```try```.
+These tasks are supposed intended for rapid iteration in `` `try` ``.
 
-repackage-shippable-l10n-msix
------------------------------
+## repackage-shippable-l10n-msix
+
 Repackage-msix takes a signed package and a list of signed langpacks and produces a Windows MSIX package using the
-```./mach repackage``` command.
+`` `./mach repackage` `` command.
 
 The signed langpacks are produced on Linux, since langpacks are platform agnostic.
 
 These tasks are for releases; they are complete, and therefore slower, and not intended for rapid iteration in
-```try```.
+`` `try` ``.
 
-repackage-signing-msix
-----------------------
-Repackage-signing-msix takes Windows MSIX packages produced in ```repackage-msix``` and signs them.
+## repackage-signing-msix
 
-repackage-signing-shippable-l10n-msix
--------------------------------------
+Repackage-signing-msix takes Windows MSIX packages produced in `` `repackage-msix` `` and signs them.
+
+## repackage-signing-shippable-l10n-msix
+
 Repackage-signing-shippable-l10n-msix takes Windows MSIX packages produced in
-```repackage-signing-shippable-l10n-msix``` and signs them.
+`` `repackage-signing-shippable-l10n-msix` `` and signs them.
 
-repackage-snap
---------------
+## repackage-snap
+
 Repackage current packaged build as a Snap package
 
-release-msix-push
---------------------
+## release-msix-push
+
 Pushes msix repackage to the Microsoft Store.
 
-repo-update
------------
+## repo-update
+
 Repo-Update tasks are tasks that perform some action on the project repo itself,
 in order to update its state in some way.
 
-partials
---------
+## partials
+
 Partials takes the complete.mar files produced in previous tasks and generates partial
 updates between previous nightly releases and the new one. Requires a release_history
-in the parameters. See ``mach release-history`` if doing this manually.
+in the parameters. See `mach release-history` if doing this manually.
 
-partials-zucchini
------------------
+## partials-zucchini
+
 Partials-zucchini takes the complete.mar files produced in previous tasks and generates partial
 updates between previous nightly releases and the new one for the en-US locale only.
-Requires a release_history in the parameters. See ``mach release-history`` if doing this manually.
+Requires a release_history in the parameters. See `mach release-history` if doing this manually.
 The zucchini tool is compiled via toolchain task. The source code can be found at:
-https://chromium.googlesource.com/chromium/src/components/zucchini/
+<https://chromium.googlesource.com/chromium/src/components/zucchini/>
 
-partials-zucchini-l10n
-----------------------
+## partials-zucchini-l10n
+
 Partials-zucchini-l10n is the localized counterpart of partials-zucchini. It produces the same
 partial updates for every shipped locale.
 
-partials-signing
-----------------
+## partials-signing
+
 Partials-signing takes the partial updates produced in Partials and signs them.
 
-post-balrog-dummy
------------------
+## post-balrog-dummy
+
 Dummy tasks to consolidate balrog dependencies to avoid taskcluster limits on number of dependencies per task.
 
-post-beetmover-dummy
---------------------
+## post-beetmover-dummy
+
 Dummy tasks to consolidate beetmover dependencies to avoid taskcluster limits on number of dependencies per task.
 
-post-beetmover-checksums-dummy
-------------------------------
+## post-beetmover-checksums-dummy
+
 Dummy tasks to consolidate beetmover-checksums dependencies to avoid taskcluster limits on number of dependencies per task.
 
-post-beetmover-components-dummy
--------------------------------
+## post-beetmover-components-dummy
+
 Dummy tasks to consolidate beetmover-components dependencies to avoid taskcluster limits on number of dependencies per task.
 
-post-langpack-dummy
--------------------
+## post-langpack-dummy
+
 Dummy tasks to consolidate language pack beetmover dependencies to avoid taskcluster limits on number of dependencies per task.
 
-post-update-verify-dummy
-------------------------
+## post-update-verify-dummy
+
 Dummy tasks to consolidate update verify dependencies to avoid taskcluster limits on number of dependencies per task.
 
-fetch
------
+## fetch
+
 Tasks that obtain something from a remote service and re-expose it as a
 task artifact. These tasks are used to effectively cache and re-host
 remote content so it is reliably and deterministically available.
 
-packages
---------
+## packages
+
 Tasks used to build packages for use in docker images.
 
-diffoscope
-----------
-Tasks used to compare pairs of Firefox builds using https://diffoscope.org/.
+## diffoscope
+
+Tasks used to compare pairs of Firefox builds using <https://diffoscope.org/>.
 As of writing, this is mainly meant to be used in try builds, by editing
 taskcluster/kinds/diffoscope/kind.yml for your needs.
 
-addon
------
+## addon
+
 Tasks used to build/package add-ons.
 
-openh264-plugin
----------------
+## openh264-plugin
+
 Tasks used to build the openh264 plugin.
 
-openh264-notarization
----------------------
+## openh264-notarization
+
 Mac notarization for the openh264 plugin.
 
-openh264-signing
-----------------
+## openh264-signing
+
 Signing for the openh264 plugin.
 
-openh264-symbol-upload
------------------------
+## openh264-symbol-upload
+
 Upload crash symbols for the openh264 plugin to the symbol server.
 
-webrender
----------
+## webrender
+
 Tasks used to do testing of WebRender standalone (without gecko). The
 WebRender code lives in gfx/wr and has its own testing infrastructure.
 
-instrumented-build
-------------------
+## instrumented-build
+
 Tasks that generate builds with PGO instrumentation enabled. This is an
 intermediate build that can be used to generate profiling information for a
 final PGO build. This is the 1st stage of the full 3-step PGO process.
 
-generate-profile
-----------------
+## generate-profile
+
 Tasks that take a build configured for PGO and run the binary against a sample
 set to generate profile data. This is the 2nd stage of the full 3-step PGO
 process.
 
-geckodriver-signing
--------------------
+## geckodriver-signing
+
 Signing for geckodriver binary.
 
-geckodriver-mac-notarization
-----------------------------
+## geckodriver-mac-notarization
+
 Apple notarization for mac geckodriver binary.
 
-mark-as-merged
---------------
+## mark-as-merged
+
 Mark merge automation as completed in shipit.
 
-maybe-release
--------------
+## maybe-release
+
 A shipitscript task that does the following:
 
 1. Checks if automated releases are disabled
@@ -824,165 +782,163 @@ A shipitscript task that does the following:
    revision are considered "worthwhile" for a new release.
 3. Triggers the release via ship-it, which will then create an action task.
 
-l10n-bump
----------
+## l10n-bump
+
 Cron-driven tasks that bump l10n-changesets files in-tree, using data from the l10n dashboard.
 
-merge-automation
-----------------
+## merge-automation
+
 Hook-driven tasks that automate "Merge Day" tasks during the release cycle.
 
-sentry
-------
+## sentry
+
 Interact with Sentry, such as by publishing new project releases.
 
-system-symbols
---------------
+## system-symbols
+
 Generate missing macOS and windows system symbols from crash reports.
 
-system-symbols-upload
----------------------
+## system-symbols-upload
+
 Upload macOS and windows system symbols to tecken.
 
-system-symbols-reprocess
-------------------------
+## system-symbols-reprocess
+
 Call Crash-Stats API to reprocess after symbols upload.
 
-scriptworker-canary
--------------------
+## scriptworker-canary
+
 Push tasks to try to test new scriptworker deployments.
 
-updatebot
-------------------
+## updatebot
+
 Check for updates to (supported) third party libraries, and manage their lifecycle.
 
-fuzzing
--------
+## fuzzing
 
 Performs fuzzing smoke tests
 
-startup-test
-------------
+## startup-test
 
 Runs Firefox for a short period of time to see if it crashes
 
-attribution
------------
+## attribution
+
 Injects attribution information into en-US installers.
 
-attribution-l10n
-----------------
+## attribution-l10n
+
 Injects attribution information into localized installers.
 
-snap-upstream-build
--------------------
+## snap-upstream-build
+
 Perform a Firefox Snap build using upstream tooling
 
-snap-upstream-test
--------------------
+## snap-upstream-test
+
 Test a Firefox Snap built using upstream tooling
 
-trigger-comm-central
---------------------
+## trigger-comm-central
+
 Trigger a CI decision task on comm-central when conditions are met. Currently
 used for verifying third party Rust code is consistent.
 
-build-components
-----------------
+## build-components
+
 Build android-components.
 
-build-bundle
-------------
+## build-bundle
+
 Build Focus, Klar, and Fenix android app bundles.
 
-build-apk
----------
+## build-apk
+
 Build Focus, Klar, and Fenix apks.
 
-build-samples-browser
----------------------
+## build-samples-browser
+
 Build android samples browser.
 
-signing
--------
+## signing
+
 Sign android-components.
 
-signing-bundle
---------------
+## signing-bundle
+
 Sign Focus, Klar, and Fenix android app bundles.
 
-signing-apk
------------
+## signing-apk
+
 Sign Focus, Klar, and Fenix apks.
 
-test-components
----------------
+## test-components
+
 Test android-components
 
-test-apk
---------
+## test-apk
+
 Test Focus, Klar, and Fenix apks.
 
-ui-test-apk
------------
+## ui-test-apk
+
 User interface tests for Focus, Klar, and Fenix apks.
 
-android-browsertime
--------------------
+## android-browsertime
+
 Browsertime tests for android.
 
-android-startup-test
---------------------
+## android-startup-test
+
 Startup test for android.
 
-post-signing-dummy
-------------------
+## post-signing-dummy
+
 Gating kind to wait for all android signing tasks.
 
-beetmover-components
---------------------
+## beetmover-components
+
 A beetmover task for android components.
 
-beetmover-android-app
----------------------
+## beetmover-android-app
+
 A beetmover task for android APKs and AABs.
 
-push-apks
------------
+## push-apks
+
 Push Focus and Fenix APKs to the Samsung Galaxy Store.
 
-push-bundle
------------
+## push-bundle
+
 Push Focus and Fenix AABs to Google Play.
 
-android-l10n
-------------
+## android-l10n
+
 Update android string resources from android-l10n repo.
 
-release-update-product-channel-version
---------------------------------------
+## release-update-product-channel-version
+
 Update the product channel version in Ship-It.
 
-instrumented-build-apk
------------------------
+## instrumented-build-apk
+
 Generate instrumented apks used to generate Baseline Profile for Android apps.
 
-generate-baseline-profile-firebase
-----------------------------------
+## generate-baseline-profile-firebase
+
 Run baseline profile generation for Android on Firebase TestLab.
 
-update-test
------------
+## update-test
+
 Run tests to see if the Firefox executable can be updated to the latest release.
 
-run-macrobenchmark-firebase
----------------------------
+## run-macrobenchmark-firebase
+
 Run Macrobenchmark for Android on Firebase TestLab.
 
-instrumented-build-macrobenchmark-apk
--------------------------------------
+## instrumented-build-macrobenchmark-apk
+
 Generate instrumented apks used to run Macrobenchmark for Android apps.
 
-submit-nightly-release-metadata
--------------------------------
+## submit-nightly-release-metadata
+
 Submits metadata (product, channel, version, buildid, locales) about Nightly releases to Ship It.

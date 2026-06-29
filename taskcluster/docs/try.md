@@ -1,37 +1,34 @@
-Try
-===
+# Try
 
 "Try" is a way to "try out" a proposed change safely before review, without
-officially landing it.  This functionality has been around for a *long* time in
+officially landing it. This functionality has been around for a *long* time in
 various forms, and can sometimes show its age.
 
 Access to "push to try" is typically available to a much larger group of
 developers than those who can land changes in integration and release branches.
-Specifically, try pushes are allowed for anyone with `SCM Level`_ 1, while
+Specifically, try pushes are allowed for anyone with [SCM Level] 1, while
 integration branches are at SCM level 3.
 
-Scheduling a Task on Try
-------------------------
+## Scheduling a Task on Try
 
 There are two methods for scheduling a task on try: try task config, and an empty try.
 
-Try Task Config
-:::::::::::::::
+### Try Task Config
 
-The second, more modern method specifies exactly the tasks to run.  That list
-of tasks is usually generated locally with some :doc:`local tool </tools/try/selectors/fuzzy>`
+The second, more modern method specifies exactly the tasks to run. That list
+of tasks is usually generated locally with some {doc}`local tool </tools/try/selectors/fuzzy>`
 and attached to the commit pushed to the try repository. This gives
 finer control over exactly what runs and enables growth of an
 ecosystem of tooling appropriate to varied circumstances.
 
-Implementation
-,,,,,,,,,,,,,,
+#### Implementation
 
-This method uses a checked-in file called ``try_task_config.json`` which lives
+This method uses a checked-in file called `try_task_config.json` which lives
 at the root of the source dir. The JSON object in this file contains a
-``tasks`` key giving the labels of the tasks to run.  For example, the
-``try_task_config.json`` file might look like:
+`tasks` key giving the labels of the tasks to run. For example, the
+`try_task_config.json` file might look like:
 
+```{eval-rst}
 .. parsed-literal::
 
     {
@@ -45,36 +42,43 @@ at the root of the source dir. The JSON object in this file contains a
         "source-test-mozlint-eslint"
       ]
     }
+```
 
 Very simply, this will run any task label that gets passed in as well as their
 dependencies. While it is possible to manually commit this file and push to
-try, it is mainly meant to be a generation target for various :ref:`try server <Pushing to Try>`
-choosers.  For example:
+try, it is mainly meant to be a generation target for various {ref}`try server <Pushing to Try>`
+choosers. For example:
 
+```{eval-rst}
 .. parsed-literal::
 
     $ ./mach try fuzzy
+```
 
 A list of all possible task labels can be obtained by running:
 
+```{eval-rst}
 .. parsed-literal::
 
     $ ./mach taskgraph tasks
+```
 
 A list of task labels relevant to a tree (defaults to mozilla-central) can be
 obtained with:
 
+```{eval-rst}
 .. parsed-literal::
 
     $ ./mach taskgraph target
+```
 
-Modifying Tasks in a Try Push
-,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+#### Modifying Tasks in a Try Push
 
 It's possible to alter the definition of a task by defining additional
-configuration in ``try_task_config.json``. For example, to set an environment
+configuration in `try_task_config.json`. For example, to set an environment
 variable in all tasks, you can add:
 
+```{eval-rst}
 .. parsed-literal::
 
     {
@@ -84,30 +88,29 @@ variable in all tasks, you can add:
         "FOO": "bar"
       }
     }
+```
 
-The allowed configs are defined in :py:obj:`taskgraph.decision.try_task_config_schema`.
+The allowed configs are defined in {py:obj}`taskgraph.decision.try_task_config_schema`.
 The values will be available to all transforms, so how each config applies will
-vary wildly from one context to the next. Some (such as ``env``) will affect
+vary wildly from one context to the next. Some (such as `env`) will affect
 all tasks in the graph. Others might only affect certain kinds of task. The
-``use-artifact-builds`` config only applies to build tasks for instance.
+`use-artifact-builds` config only applies to build tasks for instance.
 
-Empty Try
-:::::::::
+### Empty Try
 
-If there is no try syntax or ``try_task_config.json``, the ``try_mode``
-parameter is None and no tasks are selected to run.  The resulting push will
+If there is no try syntax or `try_task_config.json`, the `try_mode`
+parameter is None and no tasks are selected to run. The resulting push will
 only have a decision task, but one with an "add jobs" action that can be used
 to add the desired jobs to the try push.
 
-
-Complex Configuration
-:::::::::::::::::::::
+### Complex Configuration
 
 If you need more control over the build configuration,
-(:doc:`staging releases </tools/try/selectors/release>`, for example),
-you can directly specify :doc:`parameters <parameters>`
-to override from the ``try_task_config.json`` like this:
+({doc}`staging releases </tools/try/selectors/release>`, for example),
+you can directly specify {doc}`parameters <parameters>`
+to override from the `try_task_config.json` like this:
 
+```{eval-rst}
 .. parsed-literal::
 
    {
@@ -118,11 +121,13 @@ to override from the ``try_task_config.json`` like this:
            "target_tasks_method": "staging_release_builds"
        }
    }
+```
 
 This format can express a superset of the version 1 format, as the
 version one configuration is equivalent to the following version 2
 config.
 
+```{eval-rst}
 .. parsed-literal::
 
    {
@@ -132,5 +137,6 @@ config.
            "try_mode": "try_task_config",
        }
    }
+```
 
-.. _SCM Level: https://www.mozilla.org/en-US/about/governance/policies/commit/access-policy/
+[scm level]: https://www.mozilla.org/en-US/about/governance/policies/commit/access-policy/

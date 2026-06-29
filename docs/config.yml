@@ -158,7 +158,6 @@ allowed_warnings:
     - "layout/Reftest\\.md:.*: WARNING: undefined label"
     - "mots/index.rst:.*: WARNING: undefined label"
     - "nspr/.* WARNING: undefined label"
-    - "taskcluster/release-promotion-action\\.rst:.*: WARNING: undefined label"
     - "toolkit/components/messaging-system/docs/index\\.rst:.*: WARNING: undefined label"
     - "toolkit/components/telemetry/collection/events\\.rst:.*: WARNING: undefined label"
     - "toolkit/mozapps/extensions/addon-manager/AMRemoteSettings-overview\\.rst:.*: WARNING: undefined label"
@@ -234,6 +233,7 @@ allowed_warnings:
     - "contributing/.*\\.md:.*: WARNING: undefined label"
     - "permissions\\.py:.*: ERROR: Unknown target name: \"server-locations\\.txt\""
     - "layout/Reftest\\.md:.*: WARNING: undefined label"
+    - "taskcluster/release-promotion-action\\.md:.*: WARNING: undefined label"
 exclude_patterns:
     - js/src/doc/Debugger
 

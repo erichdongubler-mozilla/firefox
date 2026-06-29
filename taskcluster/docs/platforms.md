@@ -1,16 +1,14 @@
-Platforms in the CI
-===================
+# Platforms in the CI
 
+% <https://raw.githubusercontent.com/mozilla/treeherder/HEAD/ui/helpers/constants.js>
+% awk -e /thPlatformMap = {/,/};/ constants.js |grep ""|cut -d: -f2|sed -e s/^/   /|sed -e "s/$/ ,, /g"
+% TODO:
+%    * Leverage verify_docs - <https://bugzilla.mozilla.org/show_bug.cgi?id=1636400>
+%    * Add a new column (when executed ? ie always, rarely, etc)
 
-.. https://raw.githubusercontent.com/mozilla/treeherder/HEAD/ui/helpers/constants.js
-   awk -e /thPlatformMap = {/,/};/ constants.js |grep ""|cut -d: -f2|sed -e s/^/   /|sed -e "s/$/ ,, /g"
-   TODO:
-      * Leverage verify_docs - https://bugzilla.mozilla.org/show_bug.cgi?id=1636400
-      * Add a new column (when executed ? ie always, rarely, etc)
+## Build Platforms
 
-Build Platforms
----------------
-
+```{eval-rst}
 .. csv-table::
    :header: "Platform", "Owner", "Why?"
    :widths: 40, 20, 40
@@ -81,12 +79,13 @@ Build Platforms
    Android 13.0 Pixel6 AArch64 WebRender, ,
    Android 13.0 Samsung S21 AArch64 WebRender, ,
    Android, ,
+```
 
-Testing configurations
-----------------------
+## Testing configurations
 
 We have some platforms used to run the tests to make sure they run correctly on different versions of the operating systems.
 
+```{eval-rst}
 .. csv-table::
    :header: "Platform", "Owner", "Why?"
    :widths: 40, 20, 40
@@ -113,13 +112,14 @@ We have some platforms used to run the tests to make sure they run correctly on 
    | Only runs on autoland, m-c and m-esr"
    Windows 10 AArch64, ,
 
+```
 
-Quality platforms
------------------
+## Quality platforms
 
 We have many platforms used to run various quality tools. They aren't directly focussing on user quality but on code quality,
 or prevening some classes of errors (memory, threading, etc).
 
+```{eval-rst}
 .. csv-table::
    :header: "Platform", "Owner", "Why?"
    :widths: 40, 20, 40
@@ -154,12 +154,13 @@ or prevening some classes of errors (memory, threading, etc).
    | integration repository plus mozilla-central"
 
 
+```
 
-Infrastructure tasks
---------------------
+## Infrastructure tasks
 
 The decision tasks responsible for creating the task graph.
 
+```{eval-rst}
 .. csv-table::
    :header: "Task", "Owner", "Why?"
    :widths: 40, 20, 40
@@ -171,10 +172,11 @@ The decision tasks responsible for creating the task graph.
    Fennec Release Tasks, ,
    Thunderbird Release Tasks, ,
 
+```
 
-Others
-------
+## Others
 
+```{eval-rst}
 .. csv-table::
    :header: "Platform", "Owner", "Why?"
    :widths: 40, 20, 40
@@ -184,3 +186,4 @@ Others
    Packages, ,
    Toolchains, ,
    Other, ,
+```

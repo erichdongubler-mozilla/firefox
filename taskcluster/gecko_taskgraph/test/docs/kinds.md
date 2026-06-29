@@ -1,12 +1,11 @@
-Task Kinds
-==========
+# Task Kinds
 
 Fake task kind documentation.
 
-newkind
-----------
+## newkind
+
 Kind found in separate doc dir,
 
-anotherkind
------------
+## anotherkind
+
 Here's another.

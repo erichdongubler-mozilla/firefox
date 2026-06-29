@@ -1,5 +1,4 @@
-Release Promotion
-=================
+# Release Promotion
 
 Release promotion allows us to ship the same compiled binaries that we've
 already tested.
@@ -16,38 +15,36 @@ phase tasks (compilation, packaging, and related tests) from the promotion
 phase tasks, we can schedule each phase at their own independent cadence, as
 needed, and the end-to-end time for promotion is reduced significantly.
 
-.. _release promotion phases:
+(release-promotion-phases)=
 
-Release Promotion Phases
-------------------------
+## Release Promotion Phases
 
-Currently, we have the ``build``, ``promote``, ``push``, and ``ship`` phases.
+Currently, we have the `build`, `promote`, `push`, and `ship` phases.
 
-The ``build`` phase creates ``shippable builds``. These optimize for correctness
+The `build` phase creates `shippable builds`. These optimize for correctness
 over speed, and are designed to be of shipping quality, should we decide to
 ship that revision of code. These are triggered on push on release branches.
-(We also schedule ``depend`` builds on most branches, which optimize for speed
+(We also schedule `depend` builds on most branches, which optimize for speed
 over correctness, so we can detect new code bustage sooner.)
 
-The ``promote`` phase localizes the shippable builds, creates any update MARs,
+The `promote` phase localizes the shippable builds, creates any update MARs,
 and populates the candidates directories on S3. (On Android, we rebuild, because
 we haven't been successful repacking the APK.)
 
-The ``push`` phase pushes the candidates files to the appropriate release directory
+The `push` phase pushes the candidates files to the appropriate release directory
 on S3.
 
-The ``ship`` phase ships or schedules updates to users. These are often at a
+The `ship` phase ships or schedules updates to users. These are often at a
 limited rollout percentage or are dependent on multiple downstream signoffs to
 fully ship.
 
-In-depth relpro guide
----------------------
+## In-depth relpro guide
 
-.. toctree::
-
-    release-promotion-action
-    balrog
-    partials
-    signing
-    partner-repacks
-    partner-attribution
+```{toctree}
+release-promotion-action
+balrog
+partials
+signing
+partner-repacks
+partner-attribution
+```
