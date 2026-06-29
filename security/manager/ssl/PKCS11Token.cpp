@@ -5,7 +5,9 @@
 #include "PKCS11Token.h"
 #include "ScopedNSSTypes.h"
 #include "mozilla/Casting.h"
+#include "mozilla/ErrorResult.h"
 #include "mozilla/Logging.h"
+#include "mozilla/dom/Promise.h"
 #include "nsISupports.h"
 #include "nsNSSCertHelper.h"
 #include "nsNSSComponent.h"
@@ -14,6 +16,10 @@
 #include "nsServiceManagerUtils.h"
 #include "prerror.h"
 #include "secerr.h"
+
+using namespace mozilla;
+using mozilla::ErrorResult;
+using mozilla::dom::Promise;
 
 extern mozilla::LazyLogModule gPIPNSSLog;
 
@@ -157,16 +163,73 @@ PKCS11Token::GetIsLoggedIn(bool* isLoggedIn) {
 }
 
 NS_IMETHODIMP
-PKCS11Token::Login() {
-  return mozilla::MapSECStatus(PK11_Authenticate(mSlot.get(), true, nullptr));
+PKCS11Token::Login(JSContext* aCx, Promise** aPromise) {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (!NS_IsMainThread()) {
+    return NS_ERROR_NOT_SAME_THREAD;
+  }
+
+  ErrorResult result;
+  RefPtr<Promise> promise =
+      Promise::Create(xpc::CurrentNativeGlobal(aCx), result);
+  if (result.Failed()) {
+    return result.StealNSResult();
+  }
+  auto promiseHolder =
+      MakeRefPtr<nsMainThreadPtrHolder<Promise>>("Login promise", promise);
+
+  nsCOMPtr<nsIRunnable> runnable(NS_NewRunnableFunction(
+      "Login runnable",
+      [promiseHolder,
+       slot = UniquePK11SlotInfo(PK11_ReferenceSlot(mSlot.get()))]() {
+        nsresult rv =
+            mozilla::MapSECStatus(PK11_Authenticate(slot.get(), true, nullptr));
+        NS_DispatchToMainThread(
+            NS_NewRunnableFunction("Login callback", [rv, promiseHolder] {
+              if (NS_SUCCEEDED(rv)) {
+                promiseHolder->get()->MaybeResolveWithUndefined();
+              } else {
+                promiseHolder->get()->MaybeReject(rv);
+              }
+            }));
+      }));
+
+  promise.forget(aPromise);
+  return NS_DispatchBackgroundTask(runnable.forget());
 }
 
 NS_IMETHODIMP
-PKCS11Token::Logout() {
-  // PK11_Logout() can fail if the user wasn't logged in beforehand. We want
-  // this method to succeed even in this case, so we ignore the return value.
-  (void)PK11_Logout(mSlot.get());
-  return NS_OK;
+PKCS11Token::Logout(JSContext* aCx, Promise** aPromise) {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (!NS_IsMainThread()) {
+    return NS_ERROR_NOT_SAME_THREAD;
+  }
+
+  ErrorResult result;
+  RefPtr<Promise> promise =
+      Promise::Create(xpc::CurrentNativeGlobal(aCx), result);
+  if (result.Failed()) {
+    return result.StealNSResult();
+  }
+  auto promiseHolder =
+      MakeRefPtr<nsMainThreadPtrHolder<Promise>>("Logout promise", promise);
+
+  nsCOMPtr<nsIRunnable> runnable(NS_NewRunnableFunction(
+      "Logout runnable",
+      [promiseHolder,
+       slot = UniquePK11SlotInfo(PK11_ReferenceSlot(mSlot.get()))]() {
+        // PK11_Logout() can fail if the user wasn't logged in beforehand. We
+        // want this method to succeed even in this case, so we ignore the
+        // return value.
+        (void)PK11_Logout(slot.get());
+        NS_DispatchToMainThread(
+            NS_NewRunnableFunction("Logout callback", [promiseHolder] {
+              promiseHolder->get()->MaybeResolveWithUndefined();
+            }));
+      }));
+
+  promise.forget(aPromise);
+  return NS_DispatchBackgroundTask(runnable.forget());
 }
 
 NS_IMETHODIMP

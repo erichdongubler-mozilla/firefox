@@ -8,7 +8,7 @@
 [scriptable, builtinclass, uuid(51191434-1dd2-11b2-a17c-e49c4e99a4e3)]
 interface nsIPKCS11Token : nsISupports
 {
-  /*
+  /**
    * The name of the token
    */
   [must_use]
@@ -33,17 +33,25 @@ interface nsIPKCS11Token : nsISupports
   [must_use]
   readonly attribute AUTF8String tokenSerialNumber;
 
-  /*
-   * Login information
+  /**
+   * Whether or not the token has been logged in to.
    */
   [must_use]
   readonly attribute boolean isLoggedIn;
-  [must_use]
-  void login();
-  [must_use]
-  void logout();
 
-  /*
+  /**
+   * Returns a promise that resolves when the login() operation has completed.
+   */
+  [implicit_jscontext, must_use]
+  Promise login();
+
+  /**
+   * Returns a promise that resolves when the logout() operation has completed.
+   */
+  [implicit_jscontext, must_use]
+  Promise logout();
+
+  /**
    * Reset password
    */
   [must_use]

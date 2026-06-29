@@ -31,10 +31,10 @@ add_setup(async function () {
     password: "password",
   });
   await Services.logins.addLoginAsync(login);
-  LoginTestUtils.primaryPassword.enable();
+  await LoginTestUtils.primaryPassword.enable();
 
   registerCleanupFunction(async function () {
-    LoginTestUtils.primaryPassword.disable();
+    await LoginTestUtils.primaryPassword.disable();
     await SpecialPowers.flushPrefEnv();
   });
 
