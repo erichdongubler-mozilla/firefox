@@ -54,6 +54,7 @@ open class BaseSessionTest(
         const val SELECT_LISTBOX_HTML_PATH = "/assets/www/select-listbox.html"
         const val ADDRESS_FORM_HTML_PATH = "/assets/www/address_form.html"
         const val FORMS_AUTOCOMPLETE_HTML_PATH = "/assets/www/forms_autocomplete.html"
+        const val FORMS_AUTOCOMPLETE2_HTML_PATH = "/assets/www/forms_autocomplete2.html"
         const val FORMS_DATALIST_HTML_PATH = "/assets/www/forms_datalist.html"
         const val FORMS_ID_VALUE_HTML_PATH = "/assets/www/forms_id_value.html"
         const val CC_FORM_HTML_PATH = "/assets/www/cc_form.html"
