@@ -130,7 +130,8 @@ static CSSPoint ScrollFrameTo(ScrollContainerFrame* aFrame,
   if (!scrollInProgress) {
     ScrollSnapTargetIds snapTargetIds = aRequest.GetLastSnapTargetIds();
     aFrame->ScrollToCSSPixelsForApz(targetScrollPosition,
-                                    std::move(snapTargetIds));
+                                    std::move(snapTargetIds),
+                                    aRequest.GetScrollGenerationOnApz());
     geckoScrollPosition = CSSPoint::FromAppUnits(aFrame->GetScrollPosition());
     aSuccessOut = true;
   }
@@ -156,7 +157,6 @@ static DisplayPortMargins ScrollFrame(nsIContent* aContent,
       nsLayoutUtils::FindScrollContainerFrameFor(aRequest.GetScrollId());
   if (sf) {
     sf->ResetScrollInfoIfNeeded(aRequest.GetScrollGeneration(),
-                                aRequest.GetScrollGenerationOnApz(),
                                 aRequest.GetScrollAnimationType(),
                                 ScrollContainerFrame::InScrollingGesture(
                                     aRequest.IsInScrollingGesture()));
@@ -388,8 +388,8 @@ void APZCCallbackHelper::UpdateRootFrame(const RepaintRequest& aRequest) {
     CSSPoint currentScrollPosition =
         CSSPoint::FromAppUnits(sf->GetScrollPosition());
     ScrollSnapTargetIds snapTargetIds = aRequest.GetLastSnapTargetIds();
-    sf->ScrollToCSSPixelsForApz(currentScrollPosition,
-                                std::move(snapTargetIds));
+    sf->ScrollToCSSPixelsForApz(currentScrollPosition, std::move(snapTargetIds),
+                                sf->ScrollGenerationOnApz());
   }
 
   // Do this as late as possible since scrolling can flush layout. It also
