@@ -9,6 +9,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/MozPromise.h"
+#include "mozilla/ScopedPrefs.h"
 #include "mozilla/Span.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/RefPtr.h"
@@ -75,6 +76,10 @@ struct ContentClassifierFeature {
   // sanity-check that such features are listed after the features they may
   // except in the engines pref.
   bool mExceptionOnly;
+  // The scoped pref that gates this feature's blocking decision. When the
+  // scoped pref is set to false, blocking is suppressed for the channel's site.
+  // Only consulted on the blocking path.
+  Maybe<nsIScopedPrefs::Pref> mReferencedScopedPref;
 };
 
 enum class InitPhase {
