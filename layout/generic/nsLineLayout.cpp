@@ -2091,7 +2091,7 @@ void nsLineLayout::VerticalAlignFrames(PerSpanData* psd) {
         GetInflationForBlockDirAlignment(spanFrame, mInflationMinFontSize);
     nscoord logicalBSize = ReflowInput::CalcLineHeight(
         *spanFrame->Style(), spanFrame->PresContext(), spanFrame->GetContent(),
-        mLineContainerRI.ComputedHeight(), inflation);
+        inflation);
     nscoord contentBSize = spanFramePFD->mBounds.BSize(lineWM) -
                            spanFramePFD->mBorderPadding.BStartEnd(lineWM);
 
@@ -2430,9 +2430,9 @@ void nsLineLayout::VerticalAlignFrames(PerSpanData* psd) {
         // of the elements line block size value.
         float inflation =
             GetInflationForBlockDirAlignment(frame, mInflationMinFontSize);
-        return ReflowInput::CalcLineHeight(
-            *frame->Style(), frame->PresContext(), frame->GetContent(),
-            mLineContainerRI.ComputedBSize(), inflation);
+        return ReflowInput::CalcLineHeight(*frame->Style(),
+                                           frame->PresContext(),
+                                           frame->GetContent(), inflation);
       });
 
       // According to the CSS2 spec (10.8.1), a positive value

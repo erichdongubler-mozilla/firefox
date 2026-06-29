@@ -342,7 +342,7 @@ nscoord Gecko_CalcLineHeight(const StyleLineHeight* aLh,
   MutexAutoLock guard(*sServoFFILock);
   return ReflowInput::CalcLineHeight(*aLh, *aAgainstFont,
                                      const_cast<nsPresContext*>(aPc), aVertical,
-                                     aElement, NS_UNCONSTRAINEDSIZE, 1.0f);
+                                     aElement, 1.0f);
 }
 
 float Gecko_CalcAutoDecorationInset(float aFontSize) {

@@ -670,7 +670,7 @@ nscoord nsBlockFrame::GetCaretBaseline() const {
       return line->BStart() + line->GetLogicalAscent();
     }
   }
-  return GetFontMetricsDerivedCaretBaseline(ContentBSize(wm));
+  return GetFontMetricsDerivedCaretBaseline();
 }
 
 /////////////////////////////////////////////////////////////////////////////

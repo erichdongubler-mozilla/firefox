@@ -1823,15 +1823,7 @@ class nsIFrame : public nsQueryFrame {
   }
 
   // Gets a caret baseline suitable for the frame if the frame doesn't have one.
-  //
-  // @param aBSize the content box block size of the line container. Needed to
-  // resolve line-height: -moz-block-height. NS_UNCONSTRAINEDSIZE is fine
-  // otherwise.
-  //
-  // TODO(emilio): Now we support align-content on blocks it seems we could
-  // get rid of line-height: -moz-block-height.
-  nscoord GetFontMetricsDerivedCaretBaseline(
-      nscoord aBSize = NS_UNCONSTRAINEDSIZE) const;
+  nscoord GetFontMetricsDerivedCaretBaseline() const;
 
   /**
    * Subclasses can call this method to enable visibility tracking for this

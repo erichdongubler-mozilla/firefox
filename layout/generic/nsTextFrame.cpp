@@ -6255,7 +6255,6 @@ void nsTextFrame::UnionAdditionalOverflow(nsPresContext* aPresContext,
 
 nscoord nsTextFrame::ComputeLineHeight() const {
   return ReflowInput::CalcLineHeight(*Style(), PresContext(), GetContent(),
-                                     NS_UNCONSTRAINEDSIZE,
                                      GetFontSizeInflation());
 }
 
@@ -12112,8 +12111,7 @@ nscoord nsTextFrame::GetCaretBaseline() const {
     // will get placed into a non-empty line unless all lines are empty, I
     // believe...
     if (container && container->LinesAreEmpty()) {
-      nscoord blockSize = container->ContentBSize(GetWritingMode());
-      return GetFontMetricsDerivedCaretBaseline(blockSize);
+      return GetFontMetricsDerivedCaretBaseline();
     }
   }
   return nsIFrame::GetCaretBaseline();

@@ -2082,13 +2082,13 @@ nsIFrame::CaretBlockAxisMetrics nsIFrame::GetCaretBlockAxisMetrics(
   return CaretBlockAxisMetrics{.mOffset = baseline - ascent, .mExtent = height};
 }
 
-nscoord nsIFrame::GetFontMetricsDerivedCaretBaseline(nscoord aBSize) const {
+nscoord nsIFrame::GetFontMetricsDerivedCaretBaseline() const {
   float inflation = nsLayoutUtils::FontSizeInflationFor(this);
   RefPtr<nsFontMetrics> fm =
       nsLayoutUtils::GetFontMetricsForFrame(this, inflation);
   const WritingMode wm = GetWritingMode();
-  nscoord lineHeight = ReflowInput::CalcLineHeight(
-      *Style(), PresContext(), GetContent(), aBSize, inflation);
+  const nscoord lineHeight = ReflowInput::CalcLineHeight(
+      *Style(), PresContext(), GetContent(), inflation);
   return nsLayoutUtils::GetCenteredFontBaseline(fm, lineHeight,
                                                 wm.IsLineInverted()) +
          GetLogicalUsedBorderAndPadding(wm).BStart(wm);
