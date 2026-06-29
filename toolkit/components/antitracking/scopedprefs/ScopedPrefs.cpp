@@ -107,7 +107,8 @@ nsresult ScopedPrefs::GetBoolPrefFallback(const nsIScopedPrefs::Pref aPref,
       *aValue = ContentClassifierService::IsBlockingFeatureActive("trackers"_ns,
                                                                   aIsPrivate);
       break;
-    case nsIScopedPrefs::PRIVACY_TRACKINGPROTECTION_CONTENT_CRYPTOMINING_ENABLED:
+    case nsIScopedPrefs::
+        PRIVACY_TRACKINGPROTECTION_CONTENT_CRYPTOMINING_ENABLED:
       *aValue = ContentClassifierService::IsBlockingFeatureActive(
           "cryptominers"_ns, aIsPrivate);
       break;
