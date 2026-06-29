@@ -445,8 +445,7 @@ void Realm::setNewObjectMetadata(JSContext* cx, HandleObject obj) {
 void Realm::updateDebuggerObservesFlag(unsigned flag) {
   MOZ_ASSERT(isDebuggee());
   MOZ_ASSERT(flag == DebuggerObservesAllExecution ||
-             flag == DebuggerObservesCoverage ||
-             flag == DebuggerObservesWasm ||
+             flag == DebuggerObservesCoverage || flag == DebuggerObservesWasm ||
              flag == DebuggerObservesNativeCall);
 
   GlobalObject* global =

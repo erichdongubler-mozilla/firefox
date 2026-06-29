@@ -1518,7 +1518,6 @@ class MOZ_STACK_CLASS GeneralParser : public PerHandlerParser<ParseHandler> {
   bool noteDeclaredPrivateName(Node nameNode, TaggedParserAtomIndex name,
                                PropertyType propType, FieldPlacement placement,
                                TokenPos pos);
-
 };
 
 template <typename Unit>

@@ -5390,7 +5390,6 @@ void CompilationStencil::dumpFields(js::JSONPrinter& json) const {
     moduleMetadata->dumpFields(json, this);
     json.endObject();
   }
-
 }
 
 void CompilationStencil::dumpAtom(TaggedParserAtomIndex index) const {

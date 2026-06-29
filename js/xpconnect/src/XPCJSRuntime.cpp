@@ -1754,8 +1754,7 @@ static void ReportClassStats(const ClassInfo& classInfo, const nsACString& path,
 
   if (classInfo.objectsNonHeapCodeWasm > 0) {
     REPORT_BYTES(path + "objects/non-heap/code/wasm"_ns, KIND_NONHEAP,
-                 classInfo.objectsNonHeapCodeWasm,
-                 "AOT-compiled wasm code.");
+                 classInfo.objectsNonHeapCodeWasm, "AOT-compiled wasm code.");
   }
 
   if (classInfo.objectsGCBufferMisc > 0) {
