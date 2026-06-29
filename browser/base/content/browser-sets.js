@@ -231,6 +231,9 @@ document.addEventListener(
           case "Browser:NewUserContextTab":
             openNewUserContextTab(event.sourceEvent);
             break;
+          case "Browser:AddContainer":
+            gContainerCreation.open();
+            break;
           case "Browser:OpenAboutContainers":
             openPreferences("paneContainers");
             break;
