@@ -280,7 +280,7 @@ bool AndroidImageReader::UpdateTexImage(
 
   const gfx::IntSize size = gfx::IntSize(bufferInfo.width, bufferInfo.height);
   // XXX
-  const gfx::SurfaceFormat format = gfx::SurfaceFormat::R8G8B8A8;
+  const gfx::SurfaceFormat format = gfx::SurfaceFormat::R8G8B8X8;
 
   // XXX add crop handling
 
