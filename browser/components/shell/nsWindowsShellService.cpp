@@ -2570,7 +2570,6 @@ static HRESULT GetStartScreenManager(
 }
 
 static void PinCurrentAppToStartMenuAsyncImpl(
-    bool aCheckOnly,
     const RefPtr<nsMainThreadPtrHolder<dom::Promise>> promiseHolder) {
   ComPtr<IPackage3> package3;
   HRESULT hr = GetPackage3(package3);
@@ -2586,87 +2585,80 @@ static void PinCurrentAppToStartMenuAsyncImpl(
   if (FAILED(hr)) {
     REJECT_AND_RETURN(promiseHolder, NS_ERROR_FAILURE, /* void */);
   }
-  auto getAppListEntriesCallback =
-      Callback<IAsyncOperationCompletedHandler<IVectorView<AppListEntry*>*>>(
-          [promiseHolder, aCheckOnly](
-              IAsyncOperation<IVectorView<AppListEntry*>*>* operation,
-              AsyncStatus status) -> HRESULT {
-            if (status != AsyncStatus::Completed) {
-              REJECT_AND_RETURN(promiseHolder, NS_ERROR_FAILURE, E_FAIL);
-            }
-            ComPtr<IVectorView<AppListEntry*>> appListEntries;
-            HRESULT hr = operation->GetResults(&appListEntries);
-            if (FAILED(hr)) {
-              REJECT_AND_RETURN(promiseHolder, NS_ERROR_FAILURE, E_FAIL);
-            }
-            ComPtr<IStartScreenManager> startScreenManager;
-            ComPtr<IAppListEntry> entry;
-            hr = GetStartScreenManager(appListEntries, entry,
-                                       startScreenManager);
-            if (FAILED(hr)) {
-              REJECT_AND_RETURN(promiseHolder, NS_ERROR_FAILURE, E_FAIL);
-            }
-            ComPtr<IAsyncOperation<bool>> getPinnedOperation;
-            hr = startScreenManager->ContainsAppListEntryAsync(
-                entry.Get(), &getPinnedOperation);
-            if (FAILED(hr)) {
-              REJECT_AND_RETURN(promiseHolder, NS_ERROR_FAILURE, E_FAIL);
-            }
-            auto getPinnedCallback =
-                Callback<IAsyncOperationCompletedHandler<bool>>(
-                    [promiseHolder, entry, startScreenManager, aCheckOnly](
-                        IAsyncOperation<bool>* operation,
-                        AsyncStatus status) -> HRESULT {
-                      if (status != AsyncStatus::Completed) {
-                        REJECT_AND_RETURN(promiseHolder, NS_ERROR_FAILURE,
-                                          E_FAIL);
-                      }
-                      boolean isAlreadyPinned;
-                      HRESULT hr = operation->GetResults(&isAlreadyPinned);
-                      if (FAILED(hr)) {
-                        REJECT_AND_RETURN(promiseHolder, NS_ERROR_FAILURE,
-                                          E_FAIL);
-                      }
-                      // If we're already pinned we can return early
-                      // Ditto if we're just checking whether we *can* pin
-                      if (isAlreadyPinned || aCheckOnly) {
-                        RESOLVE_AND_RETURN(promiseHolder, true, S_OK);
-                      }
-                      ComPtr<IAsyncOperation<bool>> pinOperation;
-                      startScreenManager->RequestAddAppListEntryAsync(
-                          entry.Get(), &pinOperation);
-                      // Set another callback for pinning to the start menu
-                      auto pinOperationCallback =
-                          Callback<IAsyncOperationCompletedHandler<bool>>(
-                              [promiseHolder](IAsyncOperation<bool>* operation,
-                                              AsyncStatus status) -> HRESULT {
-                                if (status != AsyncStatus::Completed) {
-                                  REJECT_AND_RETURN(promiseHolder,
-                                                    NS_ERROR_FAILURE, E_FAIL);
-                                };
-                                boolean pinSuccess;
-                                HRESULT hr = operation->GetResults(&pinSuccess);
-                                if (FAILED(hr)) {
-                                  REJECT_AND_RETURN(promiseHolder,
-                                                    NS_ERROR_FAILURE, E_FAIL);
-                                }
-                                RESOLVE_AND_RETURN(promiseHolder,
-                                                   pinSuccess ? true : false,
-                                                   S_OK);
-                              });
-                      hr = pinOperation->put_Completed(
-                          pinOperationCallback.Get());
-                      if (FAILED(hr)) {
-                        REJECT_AND_RETURN(promiseHolder, NS_ERROR_FAILURE, hr);
-                      }
-                      return hr;
-                    });
-            hr = getPinnedOperation->put_Completed(getPinnedCallback.Get());
-            if (FAILED(hr)) {
-              REJECT_AND_RETURN(promiseHolder, NS_ERROR_FAILURE, hr);
-            }
-            return hr;
-          });
+  auto getAppListEntriesCallback = Callback<
+      IAsyncOperationCompletedHandler<IVectorView<AppListEntry*>*>>(
+      [promiseHolder](IAsyncOperation<IVectorView<AppListEntry*>*>* operation,
+                      AsyncStatus status) -> HRESULT {
+        if (status != AsyncStatus::Completed) {
+          REJECT_AND_RETURN(promiseHolder, NS_ERROR_FAILURE, E_FAIL);
+        }
+        ComPtr<IVectorView<AppListEntry*>> appListEntries;
+        HRESULT hr = operation->GetResults(&appListEntries);
+        if (FAILED(hr)) {
+          REJECT_AND_RETURN(promiseHolder, NS_ERROR_FAILURE, E_FAIL);
+        }
+        ComPtr<IStartScreenManager> startScreenManager;
+        ComPtr<IAppListEntry> entry;
+        hr = GetStartScreenManager(appListEntries, entry, startScreenManager);
+        if (FAILED(hr)) {
+          REJECT_AND_RETURN(promiseHolder, NS_ERROR_FAILURE, E_FAIL);
+        }
+        ComPtr<IAsyncOperation<bool>> getPinnedOperation;
+        hr = startScreenManager->ContainsAppListEntryAsync(entry.Get(),
+                                                           &getPinnedOperation);
+        if (FAILED(hr)) {
+          REJECT_AND_RETURN(promiseHolder, NS_ERROR_FAILURE, E_FAIL);
+        }
+        auto getPinnedCallback =
+            Callback<IAsyncOperationCompletedHandler<bool>>(
+                [promiseHolder, entry, startScreenManager](
+                    IAsyncOperation<bool>* operation,
+                    AsyncStatus status) -> HRESULT {
+                  if (status != AsyncStatus::Completed) {
+                    REJECT_AND_RETURN(promiseHolder, NS_ERROR_FAILURE, E_FAIL);
+                  }
+                  boolean isAlreadyPinned;
+                  HRESULT hr = operation->GetResults(&isAlreadyPinned);
+                  if (FAILED(hr)) {
+                    REJECT_AND_RETURN(promiseHolder, NS_ERROR_FAILURE, E_FAIL);
+                  }
+                  // If we're already pinned we can return early
+                  if (isAlreadyPinned) {
+                    RESOLVE_AND_RETURN(promiseHolder, true, S_OK);
+                  }
+                  ComPtr<IAsyncOperation<bool>> pinOperation;
+                  startScreenManager->RequestAddAppListEntryAsync(
+                      entry.Get(), &pinOperation);
+                  // Set another callback for pinning to the start menu
+                  auto pinOperationCallback =
+                      Callback<IAsyncOperationCompletedHandler<bool>>(
+                          [promiseHolder](IAsyncOperation<bool>* operation,
+                                          AsyncStatus status) -> HRESULT {
+                            if (status != AsyncStatus::Completed) {
+                              REJECT_AND_RETURN(promiseHolder, NS_ERROR_FAILURE,
+                                                E_FAIL);
+                            };
+                            boolean pinSuccess;
+                            HRESULT hr = operation->GetResults(&pinSuccess);
+                            if (FAILED(hr)) {
+                              REJECT_AND_RETURN(promiseHolder, NS_ERROR_FAILURE,
+                                                E_FAIL);
+                            }
+                            RESOLVE_AND_RETURN(promiseHolder,
+                                               pinSuccess ? true : false, S_OK);
+                          });
+                  hr = pinOperation->put_Completed(pinOperationCallback.Get());
+                  if (FAILED(hr)) {
+                    REJECT_AND_RETURN(promiseHolder, NS_ERROR_FAILURE, hr);
+                  }
+                  return hr;
+                });
+        hr = getPinnedOperation->put_Completed(getPinnedCallback.Get());
+        if (FAILED(hr)) {
+          REJECT_AND_RETURN(promiseHolder, NS_ERROR_FAILURE, hr);
+        }
+        return hr;
+      });
   hr = getAppListEntriesOperation->put_Completed(
       getAppListEntriesCallback.Get());
   if (FAILED(hr)) {
@@ -2675,8 +2667,7 @@ static void PinCurrentAppToStartMenuAsyncImpl(
 }
 
 NS_IMETHODIMP
-nsWindowsShellService::PinCurrentAppToStartMenuAsync(bool aCheckOnly,
-                                                     JSContext* aCx,
+nsWindowsShellService::PinCurrentAppToStartMenuAsync(JSContext* aCx,
                                                      dom::Promise** aPromise) {
   if (!NS_IsMainThread()) {
     return NS_ERROR_NOT_SAME_THREAD;
@@ -2698,9 +2689,8 @@ nsWindowsShellService::PinCurrentAppToStartMenuAsync(bool aCheckOnly,
   auto promiseHolder = MakeRefPtr<nsMainThreadPtrHolder<dom::Promise>>(
       "PinCurrentAppToStartMenuAsync promise", promise);
   NS_DispatchBackgroundTask(NS_NewRunnableFunction(
-      "PinCurrentAppToStartMenuAsync", [aCheckOnly, promiseHolder] {
-        PinCurrentAppToStartMenuAsyncImpl(aCheckOnly, promiseHolder);
-      }));
+      "PinCurrentAppToStartMenuAsync",
+      [promiseHolder] { PinCurrentAppToStartMenuAsyncImpl(promiseHolder); }));
   promise.forget(aPromise);
   return NS_OK;
 }
@@ -2831,8 +2821,7 @@ nsWindowsShellService::GetLaunchOnLoginEnabledMSIXAsync(
 }
 
 NS_IMETHODIMP
-nsWindowsShellService::PinCurrentAppToStartMenuAsync(bool aCheckOnly,
-                                                     JSContext* aCx,
+nsWindowsShellService::PinCurrentAppToStartMenuAsync(JSContext* aCx,
                                                      dom::Promise** aPromise) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
