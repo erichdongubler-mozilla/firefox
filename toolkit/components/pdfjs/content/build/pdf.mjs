@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 6.1.202
- * pdfjsBuild = f2f3a7fdc
+ * pdfjsVersion = 6.1.206
+ * pdfjsBuild = 649fb9c97
  */
 
 ;// ./src/shared/util.js
@@ -2001,7 +2001,7 @@ class FloatingToolbar {
 }
 
 ;// ./src/shared/internal_evt.js
-const INTERNAL_EVT = "cbe7e2e4-d795-4cce-ad51-6e6178985b77";
+const INTERNAL_EVT = "afc7ab31-c806-47f9-861a-49bb3a47f52e";
 const internalOpt = Object.freeze({
   internal: INTERNAL_EVT
 });
@@ -14217,7 +14217,7 @@ function getDocument(src = {}) {
   }
   const docParams = {
     docId,
-    apiVersion: "6.1.202",
+    apiVersion: "6.1.206",
     data,
     password,
     disableAutoFetch,
@@ -15866,8 +15866,8 @@ class InternalRenderTask {
     }
   }
 }
-const version = "6.1.202";
-const build = "f2f3a7fdc";
+const version = "6.1.206";
+const build = "649fb9c97";
 
 ;// ./src/display/editor/color_picker.js
 
@@ -16354,6 +16354,7 @@ class AnnotationElementFactory {
         return new FileAttachmentAnnotationElement(parameters);
       case AnnotationType.RICHMEDIA:
       case AnnotationType.SCREEN:
+      case AnnotationType.SOUND:
         return new MediaAnnotationElement(parameters);
       default:
         return new AnnotationElement(parameters);
