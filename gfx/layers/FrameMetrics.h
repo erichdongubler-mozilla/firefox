@@ -238,16 +238,6 @@ struct FrameMetrics {
   void ZoomBy(float aScale) { mZoom.scale *= aScale; }
 
   /*
-   * Compares an APZ frame metrics with an incoming content frame metrics
-   * to see if APZ has a scroll offset that has not been incorporated into
-   * the content frame metrics.
-   */
-  bool HasPendingScroll(const FrameMetrics& aContentFrameMetrics) const {
-    return GetVisualScrollOffset() !=
-           aContentFrameMetrics.GetVisualScrollOffset();
-  }
-
-  /*
    * Returns true if the layout scroll offset or visual scroll offset changed.
    */
   bool ApplyScrollUpdateFrom(const ScrollPositionUpdate& aUpdate);
