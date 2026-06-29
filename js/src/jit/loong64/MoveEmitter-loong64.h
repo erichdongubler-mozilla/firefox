@@ -41,8 +41,8 @@ class MoveEmitterLOONG64 {
   Register tempReg();
   FloatRegister tempFloatReg();
   Address cycleSlot(uint32_t slot, uint32_t subslot = 0) const;
-  int32_t getAdjustedOffset(const MoveOperand& operand);
-  Address getAdjustedAddress(const MoveOperand& operand);
+  int32_t getAdjustedOffset(const MoveOperand& operand) const;
+  Address getAdjustedAddress(const MoveOperand& operand) const;
 
   void emitMove(const MoveOperand& from, const MoveOperand& to);
   void emitInt32Move(const MoveOperand& from, const MoveOperand& to);

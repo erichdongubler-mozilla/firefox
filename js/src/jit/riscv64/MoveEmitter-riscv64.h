@@ -42,8 +42,8 @@ class MoveEmitterRiscv64 {
   void emitDoubleMove(const MoveOperand& from, const MoveOperand& to);
 
   Address cycleSlot(uint32_t slot, uint32_t subslot = 0) const;
-  int32_t getAdjustedOffset(const MoveOperand& operand);
-  Address getAdjustedAddress(const MoveOperand& operand);
+  int32_t getAdjustedOffset(const MoveOperand& operand) const;
+  Address getAdjustedAddress(const MoveOperand& operand) const;
 
   void breakCycle(const MoveOperand& from, const MoveOperand& to,
                   MoveOp::Type type, uint32_t slotId);

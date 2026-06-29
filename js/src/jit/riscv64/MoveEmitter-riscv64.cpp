@@ -308,7 +308,8 @@ Address MoveEmitterRiscv64::cycleSlot(uint32_t slot, uint32_t subslot) const {
   return Address(StackPointer, offset + slot * sizeof(double) + subslot);
 }
 
-int32_t MoveEmitterRiscv64::getAdjustedOffset(const MoveOperand& operand) {
+int32_t MoveEmitterRiscv64::getAdjustedOffset(
+    const MoveOperand& operand) const {
   MOZ_ASSERT(operand.isMemoryOrEffectiveAddress());
   if (operand.base() != StackPointer) {
     return operand.disp();
@@ -318,7 +319,8 @@ int32_t MoveEmitterRiscv64::getAdjustedOffset(const MoveOperand& operand) {
   return operand.disp() + masm.framePushed() - pushedAtStart_;
 }
 
-Address MoveEmitterRiscv64::getAdjustedAddress(const MoveOperand& operand) {
+Address MoveEmitterRiscv64::getAdjustedAddress(
+    const MoveOperand& operand) const {
   return Address(operand.base(), getAdjustedOffset(operand));
 }
 

@@ -29,7 +29,8 @@ Address MoveEmitterMIPSShared::cycleSlot(uint32_t slot,
   return Address(StackPointer, offset + slot * sizeof(double) + subslot);
 }
 
-int32_t MoveEmitterMIPSShared::getAdjustedOffset(const MoveOperand& operand) {
+int32_t MoveEmitterMIPSShared::getAdjustedOffset(
+    const MoveOperand& operand) const {
   MOZ_ASSERT(operand.isMemoryOrEffectiveAddress());
   if (operand.base() != StackPointer) {
     return operand.disp();
@@ -39,7 +40,8 @@ int32_t MoveEmitterMIPSShared::getAdjustedOffset(const MoveOperand& operand) {
   return operand.disp() + masm.framePushed() - pushedAtStart_;
 }
 
-Address MoveEmitterMIPSShared::getAdjustedAddress(const MoveOperand& operand) {
+Address MoveEmitterMIPSShared::getAdjustedAddress(
+    const MoveOperand& operand) const {
   return Address(operand.base(), getAdjustedOffset(operand));
 }
 

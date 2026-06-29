@@ -136,7 +136,8 @@ Address MoveEmitterLOONG64::cycleSlot(uint32_t slot, uint32_t subslot) const {
   return Address(StackPointer, offset + slot * sizeof(double) + subslot);
 }
 
-int32_t MoveEmitterLOONG64::getAdjustedOffset(const MoveOperand& operand) {
+int32_t MoveEmitterLOONG64::getAdjustedOffset(
+    const MoveOperand& operand) const {
   MOZ_ASSERT(operand.isMemoryOrEffectiveAddress());
   if (operand.base() != StackPointer) {
     return operand.disp();
@@ -146,7 +147,8 @@ int32_t MoveEmitterLOONG64::getAdjustedOffset(const MoveOperand& operand) {
   return operand.disp() + masm.framePushed() - pushedAtStart_;
 }
 
-Address MoveEmitterLOONG64::getAdjustedAddress(const MoveOperand& operand) {
+Address MoveEmitterLOONG64::getAdjustedAddress(
+    const MoveOperand& operand) const {
   return Address(operand.base(), getAdjustedOffset(operand));
 }
 
