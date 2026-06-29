@@ -6,6 +6,7 @@
 import re
 from typing import Literal, Union
 
+from mozilla_taskgraph.util.attributes import release_level
 from taskgraph.util.attributes import _match_run_on
 
 INTEGRATION_PROJECTS = {
@@ -75,7 +76,8 @@ RUN_ON_PROJECT_ALIASES = {
         params["project"] in INTEGRATION_PROJECTS or params["project"] == "toolchains"
     ),
     "release": lambda params: (
-        release_level(params) == "production" or params["project"] == "toolchains"
+        release_level(PROJECT_RELEASE_BRANCHES, params) == "production"
+        or params["project"] == "toolchains"
     ),
     "trunk": lambda params: (
         params["project"] in TRUNK_PROJECTS or params["project"] == "toolchains"
@@ -150,25 +152,6 @@ def sorted_unique_list(*args):
     """Join one or more lists, and return a sorted list of unique members"""
     combined = set().union(*args)
     return sorted(combined)
-
-
-def release_level(params):
-    """
-    Whether this is a staging release or not.
-
-    :return str: One of "production" or "staging".
-    """
-    if params["level"] != "3":
-        return "staging"
-    if branches := PROJECT_RELEASE_BRANCHES.get(params.get("project")):
-        if branches is True:
-            return "production"
-
-        m = re.match(r"refs/heads/(\S+)$", params["head_ref"])
-        if m is not None and m.group(1) in branches:
-            return "production"
-
-    return "staging"
 
 
 def task_name(task):
