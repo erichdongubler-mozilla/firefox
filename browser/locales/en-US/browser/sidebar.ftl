@@ -17,6 +17,10 @@ menu-view-open-tabs =
 sidebar-options-menu-button =
   .title = Open menu
 
+# Accessible label for the splitter used to resize the sidebar.
+sidebar-resize-splitter =
+  .aria-label = Resize sidebar
+
 ## Labels for sidebar history panel
 
 # Variables:
