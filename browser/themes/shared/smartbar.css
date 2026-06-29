@@ -33,6 +33,7 @@
   --urlbarView-row-padding-inline: var(--space-small);
   --urlbarView-row-padding-block: var(--space-small);
   --urlbarView-labeled-row-margin-top: 0;
+  --urlbar-background-border: var(--border-width) solid var(--border-color-transparent);
 
   --urlbarView-small-font-size: var(--font-size-small);
 
