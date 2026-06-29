@@ -1214,6 +1214,10 @@ export class BaseContent extends React.PureComponent {
                 shouldShowOMCHighlight(
                   this.props.Messages,
                   "WorldCupWallpaperHighlight"
+                ) ||
+                shouldShowOMCHighlight(
+                  this.props.Messages,
+                  "WorldCupSemiFinalWallpaperHighlight"
                 )) && (
                 <MessageWrapper dispatch={this.props.dispatch}>
                   <WallpaperFeatureHighlight
