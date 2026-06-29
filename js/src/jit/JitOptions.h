@@ -50,7 +50,6 @@ struct DefaultJitOptions {
   bool runExtraChecks;
   bool disableJitBackend;
   bool disableJitHints;
-  bool disableAma;
   bool disableEaa;
   bool disableEdgeCaseAnalysis;
   bool disableGvn;

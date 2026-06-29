@@ -3097,22 +3097,6 @@
 #endif
   mir_op: WasmStore
 
-- name: AsmJSLoadHeap
-  result_type: WordSized
-  operands:
-    ptr: WordSized
-    boundsCheckLimit: WordSized
-    memoryBase: WordSized
-  mir_op: true
-
-- name: AsmJSStoreHeap
-  operands:
-    ptr: WordSized
-    value: WordSized
-    boundsCheckLimit: WordSized
-    memoryBase: WordSized
-  mir_op: true
-
 - name: WasmCompareExchangeHeap
   result_type: WordSized
   operands:

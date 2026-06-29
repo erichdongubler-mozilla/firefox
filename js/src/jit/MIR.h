@@ -368,9 +368,9 @@ class AliasSet {
     DynamicSlot = 1 << 3,       // A Value member of obj->slots.
     FixedSlot = 1 << 4,         // A Value member of obj->fixedSlots().
     DOMProperty = 1 << 5,       // A DOM property
-    WasmInstanceData = 1 << 6,  // An asm.js/wasm private global var
-    WasmHeap = 1 << 7,          // An asm.js/wasm heap load
-    WasmHeapMeta = 1 << 8,      // The asm.js/wasm heap base pointer and
+    WasmInstanceData = 1 << 6,  // A wasm private global var
+    WasmHeap = 1 << 7,          // A wasm heap load
+    WasmHeapMeta = 1 << 8,      // The wasm heap base pointer and
                                 // bounds check limit, in Instance.
     ArrayBufferViewLengthOrOffset =
         1 << 9,                  // An array buffer view's length or byteOffset

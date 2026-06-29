@@ -3766,8 +3766,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
   // branches out of line to the trap, the barrier will actually be executed
   // when the bounds check passes.
   //
-  // On 32-bit systems for both wasm and asm.js, and on 64-bit systems for
-  // asm.js, heap lengths are limited to 2GB.  On 64-bit systems for wasm,
+  // On 32-bit systems, heap lengths are limited to 2GB.  On 64-bit systems,
   // 32-bit heap lengths are limited to 4GB, and 64-bit heap lengths will be
   // limited to something much larger.
 

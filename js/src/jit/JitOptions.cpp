@@ -74,9 +74,6 @@ DefaultJitOptions::DefaultJitOptions() {
   // RangeAnalysis results.
   SET_DEFAULT(checkRangeAnalysis, false);
 
-  // Toggles whether Alignment Mask Analysis is globally disabled.
-  SET_DEFAULT(disableAma, false);
-
   // Toggles whether Effective Address Analysis is globally disabled.
   SET_DEFAULT(disableEaa, false);
 
