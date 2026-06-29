@@ -649,11 +649,7 @@ describe("ASRouterTriggerListeners", () => {
         assert.calledWithExactly(newTriggerHandler, browser, {
           id: "openURL",
           param: { host: "www.mozilla.org", url: "www.mozilla.org" },
-          context: {
-            visitsCount: 1,
-            url: "www.mozilla.org",
-            host: "www.mozilla.org",
-          },
+          context: { visitsCount: 1 },
         });
       });
       it("should call triggerHandler for a redirect (openURL + frequentVisits)", () => {
@@ -706,11 +702,7 @@ describe("ASRouterTriggerListeners", () => {
         assert.calledWithExactly(newTriggerHandler, browser, {
           id: "openURL",
           param: { host: "www.mozilla.org", url: "www.mozilla.org" },
-          context: {
-            visitsCount: 1,
-            url: "www.mozilla.org",
-            host: "www.mozilla.org",
-          },
+          context: { visitsCount: 1 },
         });
       });
       it("should call triggerHandler for a redirect (openURL + frequentVisits)", () => {
@@ -763,11 +755,7 @@ describe("ASRouterTriggerListeners", () => {
         assert.calledWithExactly(newTriggerHandler, browser, {
           id: "openURL",
           param: { host: "www.mozilla.org", url: "www.mozilla.org" },
-          context: {
-            visitsCount: 1,
-            url: "www.mozilla.org",
-            host: "www.mozilla.org",
-          },
+          context: { visitsCount: 1 },
         });
       });
       it("should fail for subdomains (not redirect)", () => {
@@ -826,11 +814,7 @@ describe("ASRouterTriggerListeners", () => {
             host: "www.mozilla.org",
             url: "www.mozilla.org",
           },
-          context: {
-            visitsCount: 1,
-            url: "www.mozilla.org",
-            host: "www.mozilla.org",
-          },
+          context: { visitsCount: 1 },
         });
       });
     });

@@ -283,26 +283,6 @@ Windows only.
 
 - args: (none)
 
-### `SET_DEFAULT_PROTOCOL_HANDLER`
-
-Action for setting Firefox as the default handler for a protocol (scheme), such
-as `mailto`, on the user's system.
-
-Windows only.
-
-- args:
-```ts
-{
-  // The protocol to claim, e.g. "mailto".
-  protocol: string;
-  // URL passed to the OS default-app picker.
-  url?: string;
-  // If the OS hands the URL back to Firefox after the user picks Firefox in the
-  // open-with dialog, open the protocol's default URL in a new tab.
-  openInFirefox?: boolean;
-}
-```
-
 ### `SHOW_SPOTLIGHT`
 
 Action for opening a spotlight tab or window modal using the content passed to the dialog.

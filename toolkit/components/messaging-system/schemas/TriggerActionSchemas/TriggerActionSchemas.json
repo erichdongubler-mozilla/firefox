@@ -31,24 +31,6 @@
                 "type": "string"
               },
               "description": "List of regular expression patterns to match against URLs"
-            },
-            "context": {
-              "type": "object",
-              "properties": {
-                "visitsCount": {
-                  "type": "number",
-                  "description": "Number of times the matched URL has been visited this session"
-                },
-                "url": {
-                  "type": "string",
-                  "description": "The full spec of the URL that was navigated to"
-                },
-                "host": {
-                  "type": "string",
-                  "description": "The host (nsIURI.host) of the URL that was navigated to"
-                }
-              },
-              "additionalProperties": false
             }
           },
           "required": ["id"],

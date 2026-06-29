@@ -556,7 +556,7 @@ export const ASRouterTriggerListeners = new Map([
             this._triggerHandler(aBrowser, {
               id: this.id,
               param: match,
-              context: { visitsCount, url: match.url, host: match.host },
+              context: { visitsCount },
             });
           }
         }

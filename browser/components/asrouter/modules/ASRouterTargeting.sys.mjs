@@ -216,10 +216,6 @@ XPCOMUtils.defineLazyServiceGetters(lazy, {
     Ci.nsIApplicationUpdateService,
   ],
   BrowserHandler: ["@mozilla.org/browser/clh;1", Ci.nsIBrowserHandler],
-  ExternalProtocolService: [
-    "@mozilla.org/uriloader/external-protocol-service;1",
-    Ci.nsIExternalProtocolService,
-  ],
   ScreenManager: ["@mozilla.org/gfx/screenmanager;1", Ci.nsIScreenManager],
   TrackingDBService: [
     "@mozilla.org/tracking-db-service;1",
@@ -247,18 +243,6 @@ const FRECENT_SITES_MIN_FRECENCY = PlacesUtils.history.pageFrecencyThreshold(
 
 const CACHE_EXPIRATION = 5 * 60 * 1000;
 const jexlEvaluationCache = new Map();
-
-function _extractMailDomainFromURI(uriTemplate) {
-  if (!uriTemplate) {
-    return null;
-  }
-  try {
-    return Services.io.newURI(uriTemplate).host;
-  } catch (e) {
-    // Ignore parse errors
-  }
-  return null;
-}
 
 /**
  * CachedTargetingGetter
@@ -441,49 +425,11 @@ export const QueryCache = {
       FRECENT_SITES_UPDATE_INTERVAL,
       ShellService
     ),
-    isDefaultMailtoHandler: new CachedTargetingGetter(
-      "isDefaultHandlerFor",
-      ["mailto"],
-      FRECENT_SITES_UPDATE_INTERVAL,
-      ShellService
-    ),
     defaultPDFHandler: new CachedTargetingGetter(
       "getDefaultPDFHandler",
       null,
       FRECENT_SITES_UPDATE_INTERVAL,
       ShellService
-    ),
-    mailtoHandlerHost: new CachedTargetingGetter(
-      "getMailtoHandlerHost",
-      null,
-      FRECENT_SITES_UPDATE_INTERVAL,
-      {
-        getMailtoHandlerHost() {
-          if (AppConstants.platform !== "win") {
-            return null;
-          }
-          try {
-            const handlerInfo =
-              lazy.ExternalProtocolService.getProtocolHandlerInfo("mailto");
-            if (
-              handlerInfo.alwaysAskBeforeHandling ||
-              handlerInfo.preferredAction !== Ci.nsIHandlerInfo.useHelperApp ||
-              !(
-                handlerInfo.preferredApplicationHandler instanceof
-                Ci.nsIWebHandlerApp
-              )
-            ) {
-              return null;
-            }
-            return _extractMailDomainFromURI(
-              handlerInfo.preferredApplicationHandler.uriTemplate
-            );
-          } catch (e) {
-            // No configured handler, or a non-web (local app) handler.
-            return null;
-          }
-        },
-      }
     ),
     profileGroupId: new CachedTargetingGetter(
       "getCachedProfileGroupID",
@@ -1272,17 +1218,10 @@ const TargetingGetters = {
     get pdf() {
       return QueryCache.getters.isDefaultPDFHandler.get();
     },
-    get mailto() {
-      return QueryCache.getters.isDefaultMailtoHandler.get();
-    },
   },
 
   get defaultPDFHandler() {
     return QueryCache.getters.defaultPDFHandler.get();
-  },
-
-  get mailtoHandlerHost() {
-    return QueryCache.getters.mailtoHandlerHost.get();
   },
 
   get creditCardsSaved() {
