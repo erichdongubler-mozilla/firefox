@@ -7713,14 +7713,25 @@ JS_PUBLIC_API bool FireOnGarbageCollectionHook(
     }
   }
 
+  // Preserve the debuggee's microtask event queue while we run the hooks, so
+  // the debugger's microtask checkpoints don't run from the debuggee's
+  // microtasks, and vice versa.
+  JS::AutoDebuggerJobQueueInterruption adjqi;
+  if (!adjqi.init(cx)) {
+    cx->clearPendingException();
+    return false;
+  }
+
   for (; !triggered.empty(); triggered.popBack()) {
     Debugger* dbg = Debugger::fromJSObject(triggered.back());
+    EnterDebuggeeNoExecute nx(cx, *dbg, adjqi);
 
     if (dbg->getHook(Debugger::OnGarbageCollection)) {
       (void)dbg->enterDebuggerHook(cx, [&]() -> bool {
         return dbg->fireOnGarbageCollectionHook(cx, data);
       });
       MOZ_ASSERT(!cx->isExceptionPending());
+      adjqi.runJobs();
     }
   }
 
