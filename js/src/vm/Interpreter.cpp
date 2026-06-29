@@ -4650,15 +4650,9 @@ JSObject* js::LambdaOptimizedFallback(JSContext* cx, HandleFunction fun,
 
 JSObject* js::Lambda(JSContext* cx, HandleFunction fun, HandleObject parent,
                      gc::Heap heap, gc::AllocSite* site) {
-  JSFunction* clone;
-  if (fun->isNativeFun()) {
-    MOZ_ASSERT(IsAsmJSModule(fun));
-    MOZ_ASSERT(heap == gc::Heap::Default);  // Not supported.
-    clone = CloneAsmJSModuleFunction(cx, fun);
-  } else {
-    RootedObject proto(cx, fun->staticPrototype());
-    clone = CloneFunctionReuseScript(cx, fun, parent, proto, heap, site);
-  }
+  RootedObject proto(cx, fun->staticPrototype());
+  JSFunction* clone =
+      CloneFunctionReuseScript(cx, fun, parent, proto, heap, site);
   if (!clone) {
     return nullptr;
   }

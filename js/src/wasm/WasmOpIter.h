@@ -168,8 +168,6 @@ enum class OpKind {
   ReturnCallIndirect,
   CallRef,
   ReturnCallRef,
-  OldCallDirect,
-  OldCallIndirect,
   Return,
   If,
   Else,
@@ -754,11 +752,6 @@ class MOZ_STACK_CLASS OpIter : private Policy {
                                  ValueVector* argValues);
   [[nodiscard]] bool readReturnCallRef(uint32_t* funcTypeIndex, Value* callee,
                                        ValueVector* argValues);
-  [[nodiscard]] bool readOldCallDirect(uint32_t numFuncImports,
-                                       uint32_t* funcIndex,
-                                       ValueVector* argValues);
-  [[nodiscard]] bool readOldCallIndirect(uint32_t* funcTypeIndex, Value* callee,
-                                         ValueVector* argValues);
   [[nodiscard]] bool readNotify(LinearMemoryAddress<Value>* addr, Value* count);
   [[nodiscard]] bool readWait(LinearMemoryAddress<Value>* addr,
                               ValType valueType, uint32_t byteSize,
@@ -2836,67 +2829,6 @@ inline bool OpIter<Policy>::readReturnCallRef(uint32_t* funcTypeIndex,
 
   afterUnconditionalBranch();
   return true;
-}
-
-template <typename Policy>
-inline bool OpIter<Policy>::readOldCallDirect(uint32_t numFuncImports,
-                                              uint32_t* funcIndex,
-                                              ValueVector* argValues) {
-  MOZ_ASSERT(Classify(op_) == OpKind::OldCallDirect);
-
-  uint32_t funcDefIndex;
-  if (!readVarU32(&funcDefIndex)) {
-    return fail("unable to read call function index");
-  }
-
-  if (UINT32_MAX - funcDefIndex < numFuncImports) {
-    return fail("callee index out of range");
-  }
-
-  *funcIndex = numFuncImports + funcDefIndex;
-
-  if (*funcIndex >= codeMeta_.funcs.length()) {
-    return fail("callee index out of range");
-  }
-
-  const FuncType& funcType = codeMeta_.getFuncType(*funcIndex);
-
-  if (!popCallArgs(funcType.args(), argValues)) {
-    return false;
-  }
-
-  return push(ResultType::Vector(funcType.results()));
-}
-
-template <typename Policy>
-inline bool OpIter<Policy>::readOldCallIndirect(uint32_t* funcTypeIndex,
-                                                Value* callee,
-                                                ValueVector* argValues) {
-  MOZ_ASSERT(Classify(op_) == OpKind::OldCallIndirect);
-
-  if (!readVarU32(funcTypeIndex)) {
-    return fail("unable to read call_indirect signature index");
-  }
-
-  if (*funcTypeIndex >= codeMeta_.numTypes()) {
-    return fail("signature index out of range");
-  }
-
-  const TypeDef& typeDef = codeMeta_.types->type(*funcTypeIndex);
-  if (!typeDef.isFuncType()) {
-    return fail("expected signature type");
-  }
-  const FuncType& funcType = typeDef.funcType();
-
-  if (!popCallArgs(funcType.args(), argValues)) {
-    return false;
-  }
-
-  if (!popWithType(ValType::I32, callee)) {
-    return false;
-  }
-
-  return push(ResultType::Vector(funcType.results()));
 }
 
 template <typename Policy>

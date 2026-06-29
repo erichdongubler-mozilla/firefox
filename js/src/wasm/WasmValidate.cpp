@@ -3321,9 +3321,9 @@ static bool AddImport(Decoder& d, CacheableName& moduleName,
       if (codeMeta->numTables() >= MaxTables) {
         return d.fail("too many tables");
       }
-      if (!codeMeta->tables.emplaceBack(
-              importType.asTable(), mozilla::Nothing(),
-              /*isAsmJS=*/false, /*isImported=*/true)) {
+      if (!codeMeta->tables.emplaceBack(importType.asTable(),
+                                        mozilla::Nothing(),
+                                        /*isImported=*/true)) {
         return false;
       }
       break;
@@ -3729,7 +3729,6 @@ static bool DecodeTableSection(Decoder& d, CodeMetadata* codeMeta) {
     }
 
     codeMeta->tables.infallibleAppend(TableDesc(tableType, std::move(initExpr),
-                                                /*isAsmJS=*/false,
                                                 /*isImported=*/false));
   }
 
@@ -4145,8 +4144,6 @@ static bool DecodeElemSegment(Decoder& d, CodeMetadata* codeMeta,
     return d.fail("too many elements in element segment");
   }
 
-  bool isAsmJS = seg.active() && codeMeta->tables[seg.tableIndex].isAsmJS;
-
   switch (payload) {
     case ElemSegmentPayload::Indices: {
       seg.encoding = ModuleElemSegment::Encoding::Indices;
@@ -4165,10 +4162,8 @@ static bool DecodeElemSegment(Decoder& d, CodeMetadata* codeMeta,
         }
 
         seg.elemIndices.infallibleAppend(elemIndex);
-        if (!isAsmJS) {
-          codeMeta->funcs[elemIndex].declareFuncExported(/*eager=*/false,
-                                                         /*canRefFunc=*/true);
-        }
+        codeMeta->funcs[elemIndex].declareFuncExported(/*eager=*/false,
+                                                       /*canRefFunc=*/true);
       }
     } break;
     case ElemSegmentPayload::Expressions: {

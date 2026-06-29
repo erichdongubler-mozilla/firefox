@@ -42,10 +42,6 @@ namespace wasm {
 
 class FuncType;
 
-// A Module can either be asm.js or wasm.
-
-enum ModuleKind { Wasm, AsmJS };
-
 // CacheableChars is used to cacheably store UniqueChars.
 
 struct CacheableChars : UniqueChars {
@@ -454,10 +450,6 @@ struct GlobalType {
 // A GlobalDesc describes a single global variable.
 //
 // wasm can import and export mutable and immutable globals.
-//
-// asm.js can import mutable and immutable globals, but a mutable global has a
-// location that is private to the module, and its initial value is copied into
-// that cell from the environment.  asm.js cannot export globals.
 class GlobalDesc {
   GlobalKind kind_ = GlobalKind::Constant;
   // Stores the value type of this global for all kinds, and the initializer
@@ -466,7 +458,6 @@ class GlobalDesc {
   // Metadata for the global when `variable` or `import`.
   unsigned offset_ = 0;
   bool isMutable_ = false;
-  bool isWasm_ = false;
   bool isExport_ = false;
   // Metadata for the global when `import`.
   uint32_t importIndex_ = 0;
@@ -474,31 +465,26 @@ class GlobalDesc {
   // Private, as they have unusual semantics.
 
   bool isExport() const { return !isConstant() && isExport_; }
-  bool isWasm() const { return !isConstant() && isWasm_; }
 
  public:
   GlobalDesc() = default;
 
-  explicit GlobalDesc(InitExpr&& initial, bool isMutable,
-                      ModuleKind kind = ModuleKind::Wasm)
+  explicit GlobalDesc(InitExpr&& initial, bool isMutable)
       : kind_((!isMutable && initial.isLiteral()) ? GlobalKind::Constant
                                                   : GlobalKind::Variable) {
     initial_ = std::move(initial);
     if (isVariable()) {
       isMutable_ = isMutable;
-      isWasm_ = kind == Wasm;
       isExport_ = false;
       offset_ = UINT32_MAX;
     }
   }
 
-  explicit GlobalDesc(const GlobalType& type, uint32_t importIndex,
-                      ModuleKind kind = ModuleKind::Wasm)
+  explicit GlobalDesc(const GlobalType& type, uint32_t importIndex)
       : kind_(GlobalKind::Import) {
     initial_ = InitExpr(LitVal(type.type));
     importIndex_ = importIndex;
     isMutable_ = type.isMutable;
-    isWasm_ = kind == Wasm;
     isExport_ = false;
     offset_ = UINT32_MAX;
   }
@@ -548,9 +534,7 @@ class GlobalDesc {
   // Note that isIndirect() isn't equivalent to getting a WasmGlobalObject:
   // an immutable exported global will still get an object, but will not be
   // indirect.
-  bool isIndirect() const {
-    return isMutable() && isWasm() && (isImport() || isExport());
-  }
+  bool isIndirect() const { return isMutable() && (isImport() || isExport()); }
 
   ValType type() const { return initial_.type(); }
 
@@ -940,16 +924,14 @@ struct TableDesc {
 
   bool isImported = false;
   bool isExported = false;
-  bool isAsmJS = false;
   mozilla::Maybe<InitExpr> initExpr;
 
   TableDesc() = default;
   TableDesc(const TableType& type, mozilla::Maybe<InitExpr>&& initExpr,
-            bool isAsmJS, bool isImported = false, bool isExported = false)
+            bool isImported = false, bool isExported = false)
       : type(type),
         isImported(isImported),
         isExported(isExported),
-        isAsmJS(isAsmJS),
         initExpr(std::move(initExpr)) {}
 
   AddressType addressType() const { return type.limits.addressType; }

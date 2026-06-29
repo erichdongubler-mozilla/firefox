@@ -52,7 +52,6 @@
 #include "vm/SelfHosting.h"
 #include "vm/Shape.h"
 #include "vm/StringObject.h"
-#include "wasm/AsmJS.h"
 #include "wasm/WasmCode.h"
 #include "wasm/WasmInstance.h"
 #include "vm/Interpreter-inl.h"
@@ -135,11 +134,6 @@ static bool IsSloppyNormalFunction(JSFunction* fun) {
 
     MOZ_ASSERT(fun->isInterpreted());
     return !fun->strict();
-  }
-
-  // Or asm.js function in sloppy mode.
-  if (fun->kind() == FunctionFlags::AsmJS) {
-    return !IsAsmJSStrictModeModuleOrFunction(fun);
   }
 
   return false;
@@ -851,13 +845,6 @@ void js::FunctionToStringCache::put(BaseScript* script, JSString* string) {
 
 JSString* js::FunctionToString(JSContext* cx, HandleFunction fun,
                                bool isToSource) {
-  if (IsAsmJSModule(fun)) {
-    return AsmJSModuleToString(cx, fun, isToSource);
-  }
-  if (IsAsmJSFunction(fun)) {
-    return AsmJSFunctionToString(cx, fun);
-  }
-
   // Self-hosted built-ins should not expose their source code.
   bool haveSource = fun->isInterpreted() && !fun->isSelfHostedBuiltin();
 
@@ -1938,30 +1925,6 @@ JSFunction* js::CloneFunctionReuseScript(JSContext* cx, HandleFunction fun,
     }
   }
 #endif
-
-  return clone;
-}
-
-JSFunction* js::CloneAsmJSModuleFunction(JSContext* cx, HandleFunction fun) {
-  MOZ_ASSERT(fun->isNativeFun());
-  MOZ_ASSERT(IsAsmJSModule(fun));
-  MOZ_ASSERT(fun->isExtended());
-  MOZ_ASSERT(cx->compartment() == fun->compartment());
-
-  RootedObject proto(cx, fun->staticPrototype());
-  JSFunction* clone = NewFunctionClone(cx, fun, proto);
-  if (!clone) {
-    return nullptr;
-  }
-
-  MOZ_ASSERT(fun->native() == InstantiateAsmJS);
-  MOZ_ASSERT(!fun->hasJitInfo());
-  clone->initNative(InstantiateAsmJS, nullptr);
-
-  JSObject* moduleObj =
-      &fun->getExtendedSlot(FunctionExtended::ASMJS_MODULE_SLOT).toObject();
-  clone->initExtendedSlot(FunctionExtended::ASMJS_MODULE_SLOT,
-                          ObjectValue(*moduleObj));
 
   return clone;
 }

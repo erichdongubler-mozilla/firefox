@@ -809,9 +809,8 @@ OpKind wasm::Classify(OpBytes op) {
         case MozOp::F64TeeStoreF32:
           return OpKind::TeeStore;
         case MozOp::OldCallDirect:
-          return OpKind::OldCallDirect;
         case MozOp::OldCallIndirect:
-          return OpKind::OldCallIndirect;
+          return OpKind::Call;
         case MozOp::CallBuiltinModuleFunc:
           return OpKind::CallBuiltinModuleFunc;
 #  ifdef ENABLE_WASM_JSPI

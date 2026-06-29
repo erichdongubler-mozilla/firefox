@@ -46,7 +46,6 @@
 #include "vm/NativeObject.h"   // NativeDefineDataProperty
 #include "vm/PlainObject.h"    // NewPlainObjectWithProto
 #include "vm/Time.h"           // AutoIncrementalTimer
-#include "wasm/AsmJS.h"
 
 #include "vm/Compartment-inl.h"  // JS::Compartment::wrap
 #include "vm/GeckoProfiler-inl.h"
@@ -1709,7 +1708,7 @@ static JSFunction* CompileStandaloneFunction(
 
     fun = gcOutput.get().getFunctionNoBaseIndex(
         CompilationStencil::TopLevelIndex);
-    MOZ_ASSERT(fun->hasBytecode() || IsAsmJSModule(fun));
+    MOZ_ASSERT(fun->hasBytecode() || fun->isAsmJSNative());
 
     // Enqueue an off-thread source compression task after finishing parsing.
     if (!source->tryCompressOffThread(cx)) {

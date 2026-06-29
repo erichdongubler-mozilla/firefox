@@ -131,7 +131,6 @@
 #include "vm/StringObject.h"
 #include "vm/StringType.h"
 #include "vm/WrapperObject.h"
-#include "wasm/AsmJS.h"
 #include "wasm/WasmBaselineCompile.h"
 #include "wasm/WasmBuiltinModule.h"
 #include "wasm/WasmDump.h"
@@ -1887,14 +1886,7 @@ static bool DisassembleNative(JSContext* cx, unsigned argc, Value* vp) {
   uint8_t* jit_begin = nullptr;
   uint8_t* jit_end = nullptr;
 
-  if (fun->isAsmJSNative() || fun->isWasmWithJitEntry()) {
-    if (IsAsmJSModule(fun)) {
-      JS_ReportErrorASCII(cx, "Can't disassemble asm.js module function.");
-      return false;
-    }
-    if (fun->isAsmJSNative()) {
-      sprinter.printf("; backend=asmjs\n");
-    }
+  if (fun->isWasmWithJitEntry()) {
     sprinter.printf("; backend=wasm\n");
 
     js::wasm::Instance& inst = fun->wasmInstance();

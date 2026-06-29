@@ -108,8 +108,7 @@ bool IsSharedWasmMemoryObject(JSObject* obj);
 }  // namespace wasm
 
 // The class of WebAssembly.Module. Each WasmModuleObject owns a
-// wasm::Module. These objects are used both as content-facing JS objects and as
-// internal implementation details of asm.js.
+// wasm::Module. These objects are used as content-facing JS objects.
 
 class WasmModuleObject : public NativeObject {
   static const unsigned MODULE_SLOT = 0;
@@ -208,8 +207,7 @@ class WasmGlobalObject : public NativeObject {
 };
 
 // The class of WebAssembly.Instance. Each WasmInstanceObject owns a
-// wasm::Instance. These objects are used both as content-facing JS objects and
-// as internal implementation details of asm.js.
+// wasm::Instance. These objects are used as content-facing JS objects.
 
 class WasmInstanceObject : public NativeObject {
   static const unsigned INSTANCE_SLOT = 0;

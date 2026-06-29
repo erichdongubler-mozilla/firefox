@@ -10365,9 +10365,6 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
       MOZ_ASSERT(!isReturnCall);
       retOffset = masm.wasmCallImport(desc, callee);
       break;
-    case wasm::CalleeDesc::AsmJSTable:
-      retOffset = masm.asmCallIndirect(desc, callee);
-      break;
     case wasm::CalleeDesc::WasmTable: {
       Label* nullCheckFailed = nullptr;
 #ifndef WASM_HAS_HEAPREG

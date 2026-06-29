@@ -327,9 +327,8 @@ struct AnyReg {
 #ifdef JS_PUNBOX64
         return AnyRegister(i64_.reg);
 #else
-        // The compiler is written so that this is never needed: any() is
-        // called on arbitrary registers for asm.js but asm.js does not have
-        // 64-bit ints.  For wasm, any() is called on arbitrary registers
+        // The compiler is written so that this is never needed.
+        // For wasm, any() is called on arbitrary registers
         // only on 64-bit platforms.
         MOZ_CRASH("AnyReg::any() on 32-bit platform");
 #endif

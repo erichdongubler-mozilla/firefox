@@ -3984,11 +3984,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
                          const wasm::CalleeDesc& callee,
                          const ReturnCallAdjustmentInfo& retCallInfo);
 
-  // WasmTableCallIndexReg must contain the index of the indirect call.
-  // This is for asm.js calls only.
-  CodeOffset asmCallIndirect(const wasm::CallSiteDesc& desc,
-                             const wasm::CalleeDesc& callee);
-
   // This function takes care of loading the pointer to the current instance
   // as the implicit first argument. It preserves instance and pinned registers.
   // (instance & pinned regs are non-volatile registers in the system ABI).

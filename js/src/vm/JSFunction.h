@@ -903,8 +903,6 @@ extern JSFunction* CloneFunctionReuseScript(JSContext* cx, HandleFunction fun,
                                             gc::Heap heap = gc::Heap::Default,
                                             gc::AllocSite* site = nullptr);
 
-extern JSFunction* CloneAsmJSModuleFunction(JSContext* cx, HandleFunction fun);
-
 }  // namespace js
 
 template <>

@@ -16651,12 +16651,6 @@ void LambdaIRGenerator::trackAttached(const char* name) {
 }
 
 AttachDecision LambdaIRGenerator::tryAttachFunctionClone() {
-  // Don't optimize asm.js module functions.
-  if (canonicalFunction_->isNativeFun()) {
-    MOZ_ASSERT(IsAsmJSModule(canonicalFunction_));
-    return AttachDecision::NoAction;
-  }
-
   // Stub doesn't support metadata builder.
   if (cx_->realm()->hasAllocationMetadataBuilder()) {
     return AttachDecision::NoAction;

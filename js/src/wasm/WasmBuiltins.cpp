@@ -598,7 +598,7 @@ static bool WasmHandleDebugTrap() {
   }
 
   DebugState& debug = instance->debug();
-  MOZ_ASSERT(debug.hasBreakpointTrapAtOffset(site.lineOrBytecode()));
+  MOZ_ASSERT(debug.hasBreakpointTrapAtOffset(site.bytecodeOffset()));
   if (debug.stepModeEnabled(debugFrame->funcIndex())) {
     if (!DebugAPI::onSingleStep(cx)) {
       if (cx->isPropagatingForcedReturn()) {
@@ -610,7 +610,7 @@ static bool WasmHandleDebugTrap() {
       return false;
     }
   }
-  if (debug.hasBreakpointSite(site.lineOrBytecode())) {
+  if (debug.hasBreakpointSite(site.bytecodeOffset())) {
     if (!DebugAPI::onTrap(cx)) {
       if (cx->isPropagatingForcedReturn()) {
         cx->clearPropagatingForcedReturn();

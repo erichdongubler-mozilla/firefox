@@ -67,7 +67,6 @@
 #include "vm/StaticStrings.h"
 #include "vm/StencilEnums.h"  // ImmutableScriptFlagsEnum
 #include "vm/StringType.h"    // JSAtom, js::CopyChars
-#include "wasm/AsmJS.h"       // InstantiateAsmJS
 
 #include "jit/JitHints-inl.h"          // JitHints::mightHaveEagerBaselineHint
 #include "jit/JitScript-inl.h"         // AutoKeepJitScripts constructor
@@ -2186,9 +2185,6 @@ static JSFunction* CreateFunction(JSContext* cx,
   gc::AllocKind allocKind = script.functionFlags.isExtended()
                                 ? gc::AllocKind::FUNCTION_EXTENDED
                                 : gc::AllocKind::FUNCTION;
-  bool isAsmJS = script.functionFlags.isAsmJSNative();
-
-  JSNative maybeNative = isAsmJS ? InstantiateAsmJS : nullptr;
 
   Rooted<JSAtom*> displayAtom(cx);
   if (script.functionAtom) {
@@ -2196,24 +2192,11 @@ static JSFunction* CreateFunction(JSContext* cx,
     MOZ_ASSERT(displayAtom);
   }
   RootedFunction fun(
-      cx, NewFunctionWithProto(cx, maybeNative, scriptExtra.nargs,
+      cx, NewFunctionWithProto(cx, nullptr, scriptExtra.nargs,
                                script.functionFlags, nullptr, displayAtom,
                                proto, allocKind, TenuredObject));
   if (!fun) {
     return nullptr;
-  }
-
-  if (isAsmJS) {
-    RefPtr<const JS::WasmModule> asmJS =
-        stencil.asmJS->moduleMap.lookup(functionIndex)->value();
-
-    JSObject* moduleObj = asmJS->createObjectForAsmJS(cx);
-    if (!moduleObj) {
-      return nullptr;
-    }
-
-    fun->setExtendedSlot(FunctionExtended::ASMJS_MODULE_SLOT,
-                         ObjectValue(*moduleObj));
   }
 
   return fun;
