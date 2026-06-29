@@ -58,12 +58,11 @@ struct Register {
     return reg_;
   }
   const char* name() const { return Registers::GetName(code()); }
-  constexpr bool operator==(Register other) const { return reg_ == other.reg_; }
-  constexpr bool operator!=(Register other) const { return reg_ != other.reg_; }
+  constexpr bool operator==(const Register&) const = default;
   bool volatile_() const {
     return !!((SetType(1) << code()) & Registers::VolatileMask);
   }
-  bool aliases(const Register& other) const { return reg_ == other.reg_; }
+  bool aliases(const Register& other) const { return *this == other; }
   uint32_t numAliased() const { return 1; }
 
   Register aliased(uint32_t aliasIdx) const {
