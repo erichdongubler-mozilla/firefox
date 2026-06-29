@@ -57,6 +57,9 @@ class MoveEmitterX86 {
   void breakCycle(const MoveOperand& to, MoveOp::Type type);
   void completeCycle(const MoveOperand& to, MoveOp::Type type);
 
+  mozilla::Maybe<Register> findScratchRegister(const MoveResolver& moves,
+                                               size_t i);
+
  public:
   explicit MoveEmitterX86(MacroAssembler& masm);
   ~MoveEmitterX86() { assertDone(); }
@@ -66,9 +69,6 @@ class MoveEmitterX86 {
 #ifdef JS_CODEGEN_X86
   void setScratchRegister(Register reg) { scratchRegister_.emplace(reg); }
 #endif
-
-  mozilla::Maybe<Register> findScratchRegister(const MoveResolver& moves,
-                                               size_t i);
 };
 
 using MoveEmitter = MoveEmitterX86;

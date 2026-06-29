@@ -33,6 +33,23 @@ class MoveEmitterRiscv64 {
   Register spilledReg_;
   FloatRegister spilledFloatReg_;
 
+  void assertDone() { MOZ_ASSERT(inCycle_ == 0); }
+
+  void emit(const MoveOp& move);
+  void emitMove(const MoveOperand& from, const MoveOperand& to);
+  void emitInt32Move(const MoveOperand& from, const MoveOperand& to);
+  void emitFloat32Move(const MoveOperand& from, const MoveOperand& to);
+  void emitDoubleMove(const MoveOperand& from, const MoveOperand& to);
+
+  Address cycleSlot(uint32_t slot, uint32_t subslot = 0) const;
+  int32_t getAdjustedOffset(const MoveOperand& operand);
+  Address getAdjustedAddress(const MoveOperand& operand);
+
+  void breakCycle(const MoveOperand& from, const MoveOperand& to,
+                  MoveOp::Type type, uint32_t slotId);
+  void completeCycle(const MoveOperand& from, const MoveOperand& to,
+                     MoveOp::Type type, uint32_t slot);
+
  public:
   explicit MoveEmitterRiscv64(MacroAssembler& m)
       : inCycle_(0),
@@ -44,21 +61,7 @@ class MoveEmitterRiscv64 {
   ~MoveEmitterRiscv64() { assertDone(); }
 
   void emit(const MoveResolver&);
-  void emit(const MoveOp& move);
-  void emitMove(const MoveOperand& from, const MoveOperand& to);
-  void emitInt32Move(const MoveOperand& from, const MoveOperand& to);
-  void emitFloat32Move(const MoveOperand& from, const MoveOperand& to);
-  void emitDoubleMove(const MoveOperand& from, const MoveOperand& to);
   void finish();
-  void assertDone() { MOZ_ASSERT(inCycle_ == 0); }
-  Address cycleSlot(uint32_t slot, uint32_t subslot = 0) const;
-  int32_t getAdjustedOffset(const MoveOperand& operand);
-  Address getAdjustedAddress(const MoveOperand& operand);
-
-  void breakCycle(const MoveOperand& from, const MoveOperand& to,
-                  MoveOp::Type type, uint32_t slotId);
-  void completeCycle(const MoveOperand& from, const MoveOperand& to,
-                     MoveOp::Type type, uint32_t slot);
 };
 
 typedef MoveEmitterRiscv64 MoveEmitter;
