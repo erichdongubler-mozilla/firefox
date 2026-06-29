@@ -62,7 +62,6 @@ class HomeActivityTestRule(
         isPageLoadTranslationsPromptEnabled: Boolean = false,
         isMicrosurveyEnabled: Boolean = settings.microsurveyFeatureEnabled,
         shouldUseBottomToolbar: Boolean = settings.shouldUseBottomToolbar,
-        isUseNewCrashReporterFlow: Boolean = false,
         isIPProtectionEnabled: Boolean = false,
         isTabSwipeCFREnabled: Boolean = false,
         isTermsOfServiceAccepted: Boolean = true,
@@ -89,7 +88,6 @@ class HomeActivityTestRule(
         this.enableOrDisablePageLoadTranslationsPrompt(isPageLoadTranslationsPromptEnabled)
         this.isMicrosurveyEnabled = isMicrosurveyEnabled
         this.shouldUseBottomToolbar = shouldUseBottomToolbar
-        this.isUseNewCrashReporterFlow = isUseNewCrashReporterFlow
         this.enableOrDisableIPProtection(isIPProtectionEnabled)
         this.isTabSwipeCFREnabled = isTabSwipeCFREnabled
         this.isTermsOfServiceAccepted = isTermsOfServiceAccepted
@@ -160,7 +158,6 @@ class HomeActivityTestRule(
             shouldUseBottomToolbar = true,
             isPageLoadTranslationsPromptEnabled = false,
             isIPProtectionEnabled = false,
-            isUseNewCrashReporterFlow = useNewCrashReporterFlow,
             isTabSwipeCFREnabled = true,
             hasSeenShakeToSummarizeToolbarCfr = true,
             isTermsOfServiceAccepted = true,

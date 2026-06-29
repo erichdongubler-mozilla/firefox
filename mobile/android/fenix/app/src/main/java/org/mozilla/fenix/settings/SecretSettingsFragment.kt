@@ -298,16 +298,6 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
             }
         }
 
-        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_use_new_crash_reporter).apply {
-            isVisible = true
-            isChecked = settings.useNewCrashReporterFlow
-            onPreferenceChangeListener =
-                Preference.OnPreferenceChangeListener { _, newValue ->
-                    settings.useNewCrashReporterFlow = newValue as Boolean
-                    true
-                }
-        }
-
         // for performance reasons, this is only available in Nightly or Debug builds
         requirePreference<EditTextPreference>(R.string.pref_key_custom_glean_server_url).apply {
             isVisible = Config.channel.isNightlyOrDebug && BuildConfig.GLEAN_CUSTOM_URL.isNullOrEmpty()
