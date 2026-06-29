@@ -195,7 +195,7 @@ using PackedRegisterMask = uint32_t;
 
 class FloatRegisters {
  public:
-  enum FPRegisterID {
+  enum FPRegisterID : uint8_t {
     f0 = 0,
     f1,
     f2,
@@ -452,9 +452,9 @@ struct FloatRegister {
   using Kind = Codes::Kind;
   // These fields only hold valid values: an invalid register is always
   // represented as a valid encoding and kind with the invalid_ bit set.
-  Encoding encoding_;  // 32 encodings
-  Kind kind_;          // Double, Single; more later
-  bool invalid_;
+  Encoding encoding_ : 5;  // 32 encodings
+  Kind kind_ : 2;          // Double, Single; more later
+  bool invalid_ : 1;
 
  public:
   constexpr FloatRegister(Encoding encoding, Kind kind)
