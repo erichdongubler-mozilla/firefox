@@ -113,10 +113,9 @@ class Registers {
     t4 = x29,
     t5 = x30,
     t6 = x31,
-    invalid_reg,
   };
-  typedef uint8_t Code;
-  typedef RegisterID Encoding;
+  using Code = uint8_t;
+  using Encoding = uint8_t;
   union RegisterContent {
     uintptr_t r;
   };
@@ -147,7 +146,7 @@ class Registers {
   static Code FromName(const char*);
 
   static const Encoding StackPointer = sp;
-  static const Encoding Invalid = invalid_reg;
+  static const Code Invalid = 0xFF;
   static const uint32_t Total = 32;
   static const uint32_t TotalPhys = 32;
   static const uint32_t Allocatable = 24;
@@ -230,7 +229,6 @@ class FloatRegisters {
     f29,
     f30,
     f31,
-    invalid_reg,
     ft0 = f0,
     ft1 = f1,
     ft2 = f2,
@@ -267,7 +265,7 @@ class FloatRegisters {
 
   enum Kind : uint8_t { Double, Single, NumTypes };
 
-  // (invalid << 7) | (kind << 5) | encoding
+  // Eight bits: (invalid << 7) | (kind << 5) | encoding
   using Code = uint8_t;
   using Encoding = FPRegisterID;
 
@@ -293,7 +291,7 @@ class FloatRegisters {
 
   using SetType = uint64_t;
 
-  static const Code Invalid = Code(0b10000000);
+  static const Code Invalid = Code(0b1'00'00000);
   static const uint32_t TotalPhys = 32;
   static const uint32_t Total = TotalPhys * NumTypes;
   static const uint32_t Allocatable = 23;
@@ -473,7 +471,7 @@ struct FloatRegister {
   }
 
   constexpr FloatRegister()
-      : encoding_(FloatRegisters::invalid_reg),
+      : encoding_(FloatRegisters::ft0),
         kind_(FloatRegisters::Double),
         invalid_(true) {}
 
