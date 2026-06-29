@@ -3753,8 +3753,8 @@ void ScriptLoader::TryCacheRequest(ScriptLoadRequest* aRequest) {
   }
 
   if (!JS::IsStencilCacheable(aRequest->GetStencil())) {
-    // If the stencil is not compatible with the cache (e.g. contains asm.js),
-    // this should also evict any the existing cache if any.
+    // If the stencil is not compatible with the cache, this should also evict
+    // any existing cache.
     cacheBehavior = CacheBehavior::Evict;
   }
 
@@ -4194,8 +4194,7 @@ bool ScriptLoader::EncodeAndCompress(
       JS::EncodeStencil(aFc, aStencil, SRIAndSerializedStencil);
 
   if (result != JS::TranscodeResult::Ok) {
-    // Encoding can be aborted for non-supported syntax (e.g. asm.js), or
-    // any other internal error.
+    // Encoding can be aborted for any internal error.
     // We don't care the error and just give up encoding.
     JS::ClearFrontendErrors(aFc);
 

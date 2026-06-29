@@ -4333,8 +4333,6 @@ struct MOZ_STACK_CLASS Debugger::CallData {
   bool setOnPromiseSettled();
   bool getUncaughtExceptionHook();
   bool setUncaughtExceptionHook();
-  bool getAllowUnobservedAsmJS();
-  bool setAllowUnobservedAsmJS();
   bool getAllowUnobservedWasm();
   bool setAllowUnobservedWasm();
   bool getExclusiveDebuggerOnEval();
@@ -4599,19 +4597,6 @@ bool Debugger::CallData::setUncaughtExceptionHook() {
     return false;
   }
   dbg->uncaughtExceptionHook = args[0].toObjectOrNull();
-  args.rval().setUndefined();
-  return true;
-}
-
-bool Debugger::CallData::getAllowUnobservedAsmJS() {
-  args.rval().setBoolean(false);
-  return true;
-}
-
-bool Debugger::CallData::setAllowUnobservedAsmJS() {
-  if (!args.requireAtLeast(cx, "Debugger.set allowUnobservedAsmJS", 1)) {
-    return false;
-  }
   args.rval().setUndefined();
   return true;
 }
@@ -6968,8 +6953,6 @@ const JSPropertySpec Debugger::properties[] = {
                   setOnNewGlobalObject),
     JS_DEBUG_PSGS("uncaughtExceptionHook", getUncaughtExceptionHook,
                   setUncaughtExceptionHook),
-    JS_DEBUG_PSGS("allowUnobservedAsmJS", getAllowUnobservedAsmJS,
-                  setAllowUnobservedAsmJS),
     JS_DEBUG_PSGS("allowUnobservedWasm", getAllowUnobservedWasm,
                   setAllowUnobservedWasm),
     JS_DEBUG_PSGS("collectCoverageInfo", getCollectCoverageInfo,

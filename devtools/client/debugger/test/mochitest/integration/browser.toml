@@ -18,8 +18,6 @@ prefs = [
  "dom.ipc.processPrelaunch.enabled=false", # Disable randomly spawning processes during tests. After enabling windowless service workers, a process spawning will trigger an update of the service workers list which can fail the test if it occurs during shutdown (unhandled promise rejection).
 ]
 
-["browser_dbg-features-asm.js"]
-
 ["browser_dbg-features-breakable-lines.js"]
 
 ["browser_dbg-features-breakable-positions.js"]

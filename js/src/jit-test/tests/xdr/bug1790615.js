@@ -15,6 +15,4 @@ function f(i,j) {
 return f
 `);
 let g80 = newGlobal({newCompartment: true});
-// asm.js has been removed; "use asm" code now compiles as normal JavaScript
-// and XDR encoding succeeds.
 g80.compileToStencilXDR(code, {});

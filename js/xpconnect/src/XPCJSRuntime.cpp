@@ -1739,14 +1739,14 @@ static void ReportClassStats(const ClassInfo& classInfo, const nsACString& path,
   if (classInfo.objectsNonHeapElementsWasm > 0) {
     REPORT_BYTES(path + "objects/non-heap/elements/wasm"_ns, KIND_NONHEAP,
                  classInfo.objectsNonHeapElementsWasm,
-                 "wasm/asm.js array buffer elements allocated outside both the "
+                 "wasm array buffer elements allocated outside both the "
                  "malloc heap and the GC heap.");
   }
   if (classInfo.objectsNonHeapElementsWasmShared > 0) {
     REPORT_BYTES(
         path + "objects/non-heap/elements/wasm-shared"_ns, KIND_NONHEAP,
         classInfo.objectsNonHeapElementsWasmShared,
-        "wasm/asm.js array buffer elements allocated outside both the "
+        "wasm array buffer elements allocated outside both the "
         "malloc heap and the GC heap. These elements are shared between "
         "one or more runtimes; the reported size is divided by the "
         "buffer's refcount.");
@@ -1755,7 +1755,7 @@ static void ReportClassStats(const ClassInfo& classInfo, const nsACString& path,
   if (classInfo.objectsNonHeapCodeWasm > 0) {
     REPORT_BYTES(path + "objects/non-heap/code/wasm"_ns, KIND_NONHEAP,
                  classInfo.objectsNonHeapCodeWasm,
-                 "AOT-compiled wasm/asm.js code.");
+                 "AOT-compiled wasm code.");
   }
 
   if (classInfo.objectsGCBufferMisc > 0) {
