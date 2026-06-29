@@ -16827,7 +16827,7 @@ function Weather_Weather({
       size: "small"
     }), /*#__PURE__*/external_React_default().createElement("panel-list", {
       id: "weather-widget-context-menu"
-    }, !showOptInState && !isOptInEnabled && (prefs["weather.temperatureUnits"] === "f" ? /*#__PURE__*/external_React_default().createElement("panel-item", {
+    }, !showOptInState && (prefs["weather.temperatureUnits"] === "f" ? /*#__PURE__*/external_React_default().createElement("panel-item", {
       "data-l10n-id": "newtab-weather-menu-change-temperature-units-celsius",
       onClick: () => handleChangeTempUnit("c")
     }) : /*#__PURE__*/external_React_default().createElement("panel-item", {
