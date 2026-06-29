@@ -168,6 +168,7 @@ hr {
   margin-block-start: var(--space-medium);
   margin-block-end: var(--space-medium);
   color: var(--text-color-deemphasized);
+  text-align: center;
 }
 
 ipprotection-message-bar.vpn-top-content {
