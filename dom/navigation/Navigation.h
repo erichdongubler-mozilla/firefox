@@ -271,7 +271,7 @@ class Navigation final : public DOMEventTargetHelper {
 
   static void CleanUp(NavigationAPIMethodTracker* aNavigationAPIMethodTracker);
 
-  bool SetCurrentEntryIndex(const SessionHistoryInfo* aTargetInfo);
+  void SetCurrentEntryIndex(const SessionHistoryInfo* aTargetInfo);
 
   Document* GetAssociatedDocument() const;
 

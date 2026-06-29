@@ -397,13 +397,8 @@ void Navigation::UpdateEntriesForSameDocumentNavigation(
   switch (aNavigationType) {
     case NavigationType::Traverse:
       MOZ_LOG(gNavigationAPILog, LogLevel::Debug, ("Traverse navigation"));
-      // Workaround. See https://github.com/whatwg/html/issues/12574
-      // We think that the only thing we can do here, is to actually return and
-      // do nothing. We don't stamp out the current entry index either, just
-      // return.
-      if (!SetCurrentEntryIndex(aDestinationSHE)) {
-        return;
-      }
+      SetCurrentEntryIndex(aDestinationSHE);
+      MOZ_ASSERT(mCurrentEntryIndex);
       break;
 
     case NavigationType::Push:
@@ -1986,16 +1981,15 @@ Maybe<size_t> Navigation::GetNavigationEntryIndex(
   navigation->mUpcomingTraverseAPIMethodTrackers.Remove(*key);
 }
 
-bool Navigation::SetCurrentEntryIndex(const SessionHistoryInfo* aTargetInfo) {
+void Navigation::SetCurrentEntryIndex(const SessionHistoryInfo* aTargetInfo) {
+  mCurrentEntryIndex.reset();
   if (auto* entry = FindNavigationHistoryEntry(*aTargetInfo)) {
-    mCurrentEntryIndex.reset();
     MOZ_ASSERT(entry->Index() >= 0);
     mCurrentEntryIndex = Some(entry->Index());
-    return true;
+    return;
   }
 
   LOG_FMTW("Session history entry did not exist");
-  return false;
 }
 
 // https://html.spec.whatwg.org/#inform-the-navigation-api-about-aborting-navigation
