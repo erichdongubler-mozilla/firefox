@@ -386,7 +386,6 @@ menupopup[emptyplacesresult] > .hide-if-empty-places-result {
   --panel-border-color: var(--button-border-color-ghost);
   --panel-text-color: var(--button-text-color-primary);
   --panel-padding: var(--space-small) var(--space-medium);
-  font-size: var(--font-size-heading-medium);
 
   &::part(content) {
     align-items: center;
@@ -469,7 +468,7 @@ menupopup[emptyplacesresult] > .hide-if-empty-places-result {
 
 #confirmation-hint-message {
   #confirmation-hint.with-description & {
-    font-size: 1.2em;
+    font-size: var(--font-size-heading-medium);
     font-weight: var(--font-weight-semibold);
   }
 }
@@ -1824,6 +1823,7 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
   > h1 {
     flex: auto;
     margin: 0;
+    font-size: inherit;
   }
 
   &.panel-header-with-info-button > h1 {
