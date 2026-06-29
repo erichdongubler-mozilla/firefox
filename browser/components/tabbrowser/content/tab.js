@@ -759,13 +759,13 @@
       if (browser.audioMuted) {
         if (this.linkedPanel) {
           // "Lazy Browser" should not invoke its unmute method
-          browser.unmute();
+          browser.browsingContext?.mediaController?.unmute();
         }
         this.removeAttribute("muted");
       } else {
         if (this.linkedPanel) {
           // "Lazy Browser" should not invoke its mute method
-          browser.mute();
+          browser.browsingContext?.mediaController?.mute();
         }
         this.toggleAttribute("muted", true);
       }
