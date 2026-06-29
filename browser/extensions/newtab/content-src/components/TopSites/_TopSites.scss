@@ -246,8 +246,6 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
     .context-menu-button {
       opacity: 1;
       transition: opacity 200ms;
-
-      @include wallpaper-contrast-fix;
     }
 
     .tile {

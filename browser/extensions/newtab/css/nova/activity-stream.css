@@ -1708,12 +1708,6 @@ main.newtab-main section {
   opacity: 1;
   transition: opacity 200ms;
 }
-.lightWallpaper .top-sites-list:not(.dnd-active) .top-site-outer:is(:hover, :focus) .context-menu-button {
-  color-scheme: light;
-}
-.darkWallpaper .top-sites-list:not(.dnd-active) .top-site-outer:is(:hover, :focus) .context-menu-button {
-  color-scheme: dark;
-}
 .top-sites-list:not(.dnd-active) .top-site-outer:is(:hover, :focus) .tile {
   background-color: var(--newtab-background-color-secondary);
 }
