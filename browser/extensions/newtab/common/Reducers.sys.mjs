@@ -244,6 +244,15 @@ export const INITIAL_STATE = {
       results: { loading: false, exhausted: false, lastFetchedDate: null },
     },
   },
+  PrivacyWidget: {
+    initialized: false,
+    // Count of trackers blocked today, fetched by PrivacyFeed.
+    trackersToday: 0,
+    // Count of distinct sites visited today (Places-based proxy for
+    // "sites where we blocked something"; see PrivacyFeed).
+    sitesToday: 0,
+    lastUpdated: null,
+  },
 };
 
 function App(prevState = INITIAL_STATE.App, action) {
@@ -1107,6 +1116,21 @@ function Weather(prevState = INITIAL_STATE.Weather, action) {
   }
 }
 
+function PrivacyWidget(prevState = INITIAL_STATE.PrivacyWidget, action) {
+  switch (action.type) {
+    case at.WIDGETS_PRIVACY_UPDATE:
+      return {
+        ...prevState,
+        trackersToday: action.data.trackersToday,
+        sitesToday: action.data.sitesToday,
+        lastUpdated: action.data.lastUpdated,
+        initialized: true,
+      };
+    default:
+      return prevState;
+  }
+}
+
 function Ads(prevState = INITIAL_STATE.Ads, action) {
   switch (action.type) {
     case at.ADS_INIT:
@@ -1362,4 +1386,5 @@ export const reducers = {
   Weather,
   ExternalComponents,
   SportsWidget,
+  PrivacyWidget,
 };

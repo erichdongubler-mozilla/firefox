@@ -309,6 +309,7 @@ for (const type of [
   "WIDGETS_LISTS_USER_EVENT",
   "WIDGETS_LISTS_USER_IMPRESSION",
   "WIDGETS_OPT_IN",
+  "WIDGETS_PRIVACY_UPDATE",
   "WIDGETS_SPORTS_CHANGE_FOLLOWED_ONLY",
   "WIDGETS_SPORTS_CHANGE_LIVE_INDEX",
   "WIDGETS_SPORTS_CHANGE_MATCHES_TAB",
@@ -6858,6 +6859,15 @@ const INITIAL_STATE = {
       results: { loading: false, exhausted: false, lastFetchedDate: null },
     },
   },
+  PrivacyWidget: {
+    initialized: false,
+    // Count of trackers blocked today, fetched by PrivacyFeed.
+    trackersToday: 0,
+    // Count of distinct sites visited today (Places-based proxy for
+    // "sites where we blocked something"; see PrivacyFeed).
+    sitesToday: 0,
+    lastUpdated: null,
+  },
 };
 
 function App(prevState = INITIAL_STATE.App, action) {
@@ -7721,6 +7731,21 @@ function Weather(prevState = INITIAL_STATE.Weather, action) {
   }
 }
 
+function PrivacyWidget(prevState = INITIAL_STATE.PrivacyWidget, action) {
+  switch (action.type) {
+    case actionTypes.WIDGETS_PRIVACY_UPDATE:
+      return {
+        ...prevState,
+        trackersToday: action.data.trackersToday,
+        sitesToday: action.data.sitesToday,
+        lastUpdated: action.data.lastUpdated,
+        initialized: true,
+      };
+    default:
+      return prevState;
+  }
+}
+
 function Ads(prevState = INITIAL_STATE.Ads, action) {
   switch (action.type) {
     case actionTypes.ADS_INIT:
@@ -7976,6 +8001,7 @@ const reducers = {
   Weather,
   ExternalComponents,
   SportsWidget,
+  PrivacyWidget,
 };
 
 ;// CONCATENATED MODULE: ./content-src/components/TopSites/TopSiteFormInput.jsx
@@ -21065,17 +21091,48 @@ const Privacy_USER_ACTION_TYPES = {
   CHANGE_SIZE: "change_size"
 };
 const PRIVACY_ENTRY = WIDGET_REGISTRY.find(w => w.id === "privacy");
+const ICON_BASE_URL = "chrome://newtab/content/data/content/assets/";
+
+// Renders a widget icon by asset filename. The wrapper div is the alignment
+// hook. TEMP (Bug 2049390): callers pass a static filename for now; the
+// per-message icon mapping (shield/planet/star/bolt/kit) is a follow-up commit.
+const privacyImage = filename => /*#__PURE__*/external_React_default().createElement("div", {
+  className: "privacy-image"
+}, /*#__PURE__*/external_React_default().createElement("img", {
+  className: "privacy-image-icon",
+  src: `${ICON_BASE_URL}${filename}`,
+  alt: ""
+}));
 function Privacy({
   dispatch,
   widgetsMayBeMaximized,
   widgetEnabledMap
 }) {
   const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
+  const privacyData = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.PrivacyWidget);
 
   // Size comes from the registry helper: user-set pref > trainhop suggestion
   // > registry defaultSize. Never read the size pref directly.
   const widgetSize = resolveWidgetSize(PRIVACY_ENTRY, prefs);
   const impressionFired = (0,external_React_namespaceObject.useRef)(false);
+  const trackersToday = privacyData?.trackersToday ?? 0;
+  const sitesToday = privacyData?.sitesToday ?? 0;
+  // Gate the metric UI on a real feed update. Before the first broadcast — or
+  // when it's skipped (e.g. the backward-compat guard in PrivacyFeed on older
+  // platforms) — show no metric state rather than a misleading empty/zero one.
+  const initialized = privacyData?.initialized ?? false;
+  // Ceiling the readout at "100+" so the number stays a tidy single line.
+  const displayCount = trackersToday > 100 ? "100+" : `${trackersToday}`;
+
+  // TEMP (Bug 2049390): preview override for CSS work. "live" follows the real
+  // count (0 => empty, otherwise the tip card); the others force a state.
+  // Remove with the tip-rotation / site-count wiring (Bug 2048387).
+  const [preview, setPreview] = (0,external_React_namespaceObject.useState)("live");
+  const liveState = trackersToday === 0 ? "empty" : "tip";
+  const effectiveState = preview === "live" ? liveState : preview;
+  const isEmptyState = effectiveState === "empty";
+  const showTip = effectiveState === "tip";
+  const isLarge = widgetSize === "large";
   const handleIntersection = (0,external_React_namespaceObject.useCallback)(() => {
     if (impressionFired.current) {
       return;
@@ -21152,7 +21209,7 @@ function Privacy({
     });
   }
   return /*#__PURE__*/external_React_default().createElement("article", {
-    className: `privacy widget col-4 ${widgetSize}-widget`,
+    className: `privacy widget col-4 ${widgetSize}-widget${initialized && isEmptyState ? " is-empty" : ""}${initialized && showTip ? " has-tip-msg" : ""}`,
     ref: el => {
       widgetRef.current = [el];
     }
@@ -21190,9 +21247,47 @@ function Privacy({
   }), /*#__PURE__*/external_React_default().createElement("panel-item", {
     "data-l10n-id": "newtab-privacy-menu-learn-more",
     onClick: handleLearnMore
-  })))), /*#__PURE__*/external_React_default().createElement("div", {
+  }), /*#__PURE__*/external_React_default().createElement("panel-item", {
+    onClick: () => setPreview("live")
+  }, "Preview: Live (real count)"), /*#__PURE__*/external_React_default().createElement("panel-item", {
+    onClick: () => setPreview("empty")
+  }, "Preview: Empty"), /*#__PURE__*/external_React_default().createElement("panel-item", {
+    onClick: () => setPreview("default")
+  }, "Preview: Default (no tip)"), /*#__PURE__*/external_React_default().createElement("panel-item", {
+    onClick: () => setPreview("tip")
+  }, "Preview: Default (with tip)")))), /*#__PURE__*/external_React_default().createElement("div", {
     className: "privacy-body"
-  }));
+  }, initialized && (isEmptyState ? /*#__PURE__*/external_React_default().createElement("div", {
+    className: "privacy-empty"
+  }, privacyImage("widget-privacy-shield.svg"), /*#__PURE__*/external_React_default().createElement("p", {
+    className: "privacy-empty-message",
+    "data-l10n-id": "newtab-privacy-empty"
+  })) : /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("div", {
+    className: "privacy-count"
+  }, /*#__PURE__*/external_React_default().createElement("div", {
+    className: "privacy-count-number-wrapper"
+  }, !isLarge && privacyImage("widget-privacy-shield-check.svg"), /*#__PURE__*/external_React_default().createElement("span", {
+    className: "privacy-count-number"
+  }, displayCount)), /*#__PURE__*/external_React_default().createElement("span", {
+    className: "privacy-count-label",
+    "data-l10n-id": "newtab-privacy-trackers-blocked-today",
+    "data-l10n-args": JSON.stringify({
+      count: trackersToday
+    })
+  }), /*#__PURE__*/external_React_default().createElement("span", {
+    className: "privacy-count-sites",
+    "data-l10n-id": "newtab-privacy-across-sites",
+    "data-l10n-args": JSON.stringify({
+      count: sitesToday
+    })
+  })), showTip && /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("hr", {
+    className: "privacy-divider"
+  }), /*#__PURE__*/external_React_default().createElement("div", {
+    className: "privacy-tip"
+  }, isLarge && privacyImage("widget-privacy-shield-check.svg"), /*#__PURE__*/external_React_default().createElement("p", {
+    className: "privacy-tip-message",
+    "data-l10n-id": "newtab-privacy-message-informed-5"
+  })))))));
 }
 
 ;// CONCATENATED MODULE: ./content-src/components/Widgets/Crossword/Crossword.jsx

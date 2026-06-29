@@ -28,9 +28,21 @@ function WrapWithProvider({ children, state = INITIAL_STATE }) {
   return <Provider store={store}>{children}</Provider>;
 }
 
-function renderPrivacy(dispatch = jest.fn(), props = {}) {
+function stateWithTrackers(trackersToday, sitesToday = 9) {
+  return {
+    ...mockState,
+    PrivacyWidget: {
+      ...INITIAL_STATE.PrivacyWidget,
+      initialized: true,
+      trackersToday,
+      sitesToday,
+    },
+  };
+}
+
+function renderPrivacy(dispatch = jest.fn(), props = {}, state = mockState) {
   const { container, unmount } = render(
-    <WrapWithProvider state={mockState}>
+    <WrapWithProvider state={state}>
       <Privacy
         dispatch={dispatch}
         widgetsMayBeMaximized={true}
@@ -74,5 +86,69 @@ describe("Privacy widget", () => {
     );
     expect(setPref).toBeTruthy();
     expect(setPref[0].data.value).toBe(false);
+  });
+
+  it("shows no metric state until the feed has initialized", () => {
+    // Default mockState has PrivacyWidget.initialized = false.
+    const { container } = renderPrivacy();
+    const root = container.querySelector("article.privacy");
+    expect(root).toBeTruthy();
+    expect(root.className).not.toContain("is-empty");
+    expect(container.querySelector(".privacy-empty")).toBeFalsy();
+    expect(container.querySelector(".privacy-count")).toBeFalsy();
+  });
+
+  it("shows the empty state when no trackers are blocked today", () => {
+    const { container } = renderPrivacy(jest.fn(), {}, stateWithTrackers(0));
+    expect(container.querySelector("article.privacy").className).toContain(
+      "is-empty"
+    );
+    expect(container.querySelector(".privacy-empty-message")).toBeTruthy();
+    expect(container.querySelector(".privacy-count")).toBeFalsy();
+  });
+
+  it("shows today's blocked-tracker count", () => {
+    const { container } = renderPrivacy(jest.fn(), {}, stateWithTrackers(42));
+    expect(container.querySelector(".privacy-count-number").textContent).toBe(
+      "42"
+    );
+    expect(container.querySelector("article.privacy").className).not.toContain(
+      "is-empty"
+    );
+  });
+
+  it("ceilings the count at 100+", () => {
+    const { container } = renderPrivacy(jest.fn(), {}, stateWithTrackers(250));
+    expect(container.querySelector(".privacy-count-number").textContent).toBe(
+      "100+"
+    );
+  });
+
+  it("shows the exact count just below the ceiling", () => {
+    const { container } = renderPrivacy(jest.fn(), {}, stateWithTrackers(87));
+    expect(container.querySelector(".privacy-count-number").textContent).toBe(
+      "87"
+    );
+  });
+
+  it("passes the site count to the across-sites line", () => {
+    const { container } = renderPrivacy(
+      jest.fn(),
+      {},
+      stateWithTrackers(42, 7)
+    );
+    const sites = container.querySelector(".privacy-count-sites");
+    expect(sites).toBeTruthy();
+    expect(sites.getAttribute("data-l10n-args")).toBe(
+      JSON.stringify({ count: 7 })
+    );
+  });
+
+  it("passes the numeric count (not the ceiling string) to the label plural", () => {
+    const { container } = renderPrivacy(jest.fn(), {}, stateWithTrackers(250));
+    const label = container.querySelector(".privacy-count-label");
+    expect(label.getAttribute("data-l10n-args")).toBe(
+      JSON.stringify({ count: 250 })
+    );
   });
 });

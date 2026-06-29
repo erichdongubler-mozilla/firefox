@@ -9526,6 +9526,7 @@ dialog:dir(rtl)::after {
   flex-direction: column;
   position: relative;
   transition: height var(--widget-size-transition-duration) var(--widget-size-transition-easing);
+  padding: var(--space-large);
 }
 .privacy:hover {
   background: var(--newtab-background-color-secondary);
@@ -9576,7 +9577,94 @@ dialog:dir(rtl)::after {
   flex: 1;
   display: flex;
   flex-direction: column;
+  font-size: var(--font-size-small);
+  align-items: flex-start;
+  justify-content: flex-end;
+}
+.medium-widget .privacy-body {
+  font-size: var(--font-size-xsmall);
+}
+.has-tip-msg.medium-widget .privacy-body {
+  justify-content: flex-end;
+  flex-direction: row;
+  align-items: stretch;
+  gap: var(--space-large);
+}
+.has-tip-msg.medium-widget .privacy-body .privacy-tip, .has-tip-msg.medium-widget .privacy-body .privacy-count {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.large-widget .privacy-body {
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: var(--space-large);
+}
+.is-empty .privacy-body {
+  align-items: center;
+  justify-content: center;
+}
+
+.privacy-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  align-self: stretch;
+  gap: var(--space-medium);
+}
+.large-widget .privacy-empty {
+  gap: var(--space-large);
+}
+.privacy-empty .privacy-empty-message {
+  margin: 0;
+  max-width: 75%;
+}
+
+.medium-widget .privacy-image-icon {
+  max-height: var(--icon-size-xlarge);
+}
+.large-widget .privacy-image-icon {
+  max-height: calc(var(--icon-size-large) * 2);
+}
+
+.privacy-count {
+  display: flex;
+  flex-direction: column;
+}
+.privacy-count .privacy-count-number-wrapper {
+  align-items: center;
+  display: flex;
   gap: var(--space-small);
+}
+.privacy-count .privacy-count-number {
+  font-size: calc(var(--font-size-root) * 2.75);
+}
+.large-widget .privacy-count .privacy-count-number {
+  font-size: calc(var(--font-size-root) * 4.5);
+}
+
+.privacy-divider {
+  align-self: stretch;
+  margin: 0;
+  border: 0;
+  background-color: var(--border-color);
+}
+.medium-widget .privacy-divider {
+  inline-size: var(--border-width);
+}
+.large-widget .privacy-divider {
+  block-size: var(--border-width);
+}
+
+.large-widget .privacy-tip {
+  align-items: center;
+  display: flex;
+  gap: var(--space-small);
+}
+.privacy-tip .privacy-tip-message {
+  margin: 0;
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

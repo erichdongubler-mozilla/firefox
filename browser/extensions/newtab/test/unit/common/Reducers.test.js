@@ -13,6 +13,10 @@ const {
 } = reducers;
 import { actionTypes as at } from "common/Actions.mjs";
 
+// Bug 2050900: Add new reducer tests to the Jest suite at
+// test/jest/common/Reducers.test.jsx, not here. This Karma/Enzyme file is being
+// migrated to Jest incrementally; the PrivacyWidget reducer lives there now.
+
 describe("Reducers", () => {
   describe("App", () => {
     it("should return the initial state", () => {
