@@ -1997,4 +1997,24 @@ export const ASRouterTriggerListeners = new Map([
       },
     },
   ],
+  [
+    "nimbusUpdate",
+    {
+      /**
+       * This trigger does not actually listen for any events. It's triggered
+       * imperatively by ASRouter from _onExperimentEnrollmentsUpdated() after
+       * loading messages from the messaging-experiments provider. We track its
+       * state here, because we don't want it to fire if there aren't any
+       * messages using it.
+       */
+      id: "nimbusUpdate",
+      initialized: false,
+      init() {
+        this.initialized = true;
+      },
+      uninit() {
+        this.initialized = false;
+      },
+    },
+  ],
 ]);

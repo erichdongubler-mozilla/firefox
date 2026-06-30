@@ -634,6 +634,18 @@
           "additionalProperties": false,
           "required": ["id"],
           "description": "Occurs every time a user opens a new Smart Window tab."
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "enum": ["nimbusUpdate"]
+            }
+          },
+          "additionalProperties": false,
+          "required": ["id"],
+          "description": "Fired after the Nimbus experiment enrollment listener finishes loading messages from the messaging-experiments provider. Used for messages that should be processed immediately upon experiment enrollment, such as moments page messages."
         }
       ]
     }
