@@ -7,16 +7,14 @@
 
 #include <cstring>
 
+#include "EncryptedRandomAccessBlockView.h"
 #include "EncryptedRandomAccessStream.h"
+#include "ErrorList.h"
 #include "mozilla/CheckedInt.h"
-#include "mozilla/EndianUtils.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Result.h"
 #include "mozilla/ResultExtensions.h"
-#include "mozilla/Span.h"
 #include "nsError.h"
-#include "nsIInputStream.h"
-#include "nsIOutputStream.h"
 #include "nsIRandomAccessStream.h"
 #include "nsISeekableStream.h"
 #include "nscore.h"
@@ -77,82 +75,26 @@ EncryptedRandomAccessStream<CipherStrategy>::Create(
 
 template <typename CipherStrategy>
 nsresult EncryptedRandomAccessStream<CipherStrategy>::LoadBlock(
-    uint64_t aBlockIndex) {
+    BlockIndexType aBlockIndex) {
   // |LoadBlock()| must only be called for a block that exists on disk.
   // This also keeps |mTotalBlockCount - 1| below from underflowing.
   if (aBlockIndex >= mTotalBlockCount) {
     return NS_ERROR_UNEXPECTED;
   }
 
-  const auto blockOffset = CheckedInt64(aBlockIndex) * sBlockSize;
-  if (!blockOffset.isValid()) {
-    return NS_ERROR_FILE_TOO_BIG;
-  }
-  auto rv = mBaseStream->Seek(NS_SEEK_SET, blockOffset.value());
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-  nsIInputStream* inputStream = mBaseStream->InputStream();
-
   EncryptedRandomAccessBlock encryptedBlock;
-  uint32_t readBytes = 0;
-  rv = inputStream->Read(
-      AsWritableChars(encryptedBlock.MutableWholeBlock()).Elements(),
-      sBlockSize, &readBytes);
+  auto rv = ReadEncryptedBlockFromBaseStream(aBlockIndex, encryptedBlock);
   if (NS_FAILED(rv)) {
     return rv;
-  }
-  // The base random access stream should return a complete block because it
-  // receives |sBlockSize| as a |aCount|. So, a short read is treated as a
-  // failure here.
-  if (readBytes != sBlockSize) {
-    return NS_ERROR_CORRUPTED_CONTENT;
   }
 
   const auto version = encryptedBlock.Version();
   switch (version) {
     case 1: {
-      EncryptedRandomAccessBlockCipherMetadataViewV1 metadataView(
-          encryptedBlock.MutableCipherMetadata());
-
-      std::array<uint8_t,
-                 EncryptedRandomAccessBlock::HeaderSize + sizeof(uint64_t)>
-          aad{};
-      auto header = encryptedBlock.Header();
-      memcpy(aad.data(), header.data(), header.size());
-      mozilla::LittleEndian::writeUint64(aad.data() + header.size(),
-                                         aBlockIndex);
-
-      typename CipherStrategy::DecryptionInput dInput{
-          .mMasterKey = mMasterKey,
-          .mBlockNumber = aBlockIndex,
-          .mNonce = metadataView.MutableNonce(),
-          .mCiphertext = encryptedBlock.CipherPayload(),
-          .mAad = aad,
-          .mTag = metadataView.MutableAuthenticationTag(),
-      };
-      std::array<uint8_t, EncryptedRandomAccessBlock::CipherPayloadSize>
-          plaintext;
-      typename CipherStrategy::DecryptionOutput dOutput{.mPlaintext =
-                                                            plaintext};
-      rv = CipherStrategy::Decrypt(dInput, dOutput);
+      rv = DecryptBlockVersion1(encryptedBlock, aBlockIndex);
       if (NS_FAILED(rv)) {
-        return NS_ERROR_CORRUPTED_CONTENT;
+        return rv;
       }
-
-      DecryptedRandomAccessBlockCipherPayloadView payloadView(plaintext);
-      auto textSize = payloadView.TextLength();
-      if (textSize > sMaxTextLength) {
-        return NS_ERROR_CORRUPTED_CONTENT;
-      }
-      // All blocks except the last one must be filled to the maximum
-      // length.
-      if (aBlockIndex < mTotalBlockCount - 1 && textSize != sMaxTextLength) {
-        return NS_ERROR_CORRUPTED_CONTENT;
-      }
-      mCurrentBlockTextLength = textSize;
-      memcpy(mPlainBuffer.data(),
-             payloadView.MutableTextAndPadding().Elements(), sMaxTextLength);
       break;
     }
     default: {
@@ -163,6 +105,45 @@ nsresult EncryptedRandomAccessStream<CipherStrategy>::LoadBlock(
   mCurrentBlockIndex = aBlockIndex;
   mBlockLoaded = true;
   mBlockDirty = false;
+
+  return NS_OK;
+}
+
+template <typename CipherStrategy>
+nsresult EncryptedRandomAccessStream<CipherStrategy>::DecryptBlockVersion1(
+    EncryptedRandomAccessBlock& aEncryptedBlock, BlockIndexType aBlockIndex) {
+  EncryptedRandomAccessBlockCipherMetadataViewV1 metadataView(
+      aEncryptedBlock.MutableCipherMetadata());
+
+  const auto aad = BuildAad(aEncryptedBlock, aBlockIndex);
+
+  typename CipherStrategy::DecryptionInput dInput{
+      .mMasterKey = mMasterKey,
+      .mBlockNumber = aBlockIndex,
+      .mNonce = metadataView.MutableNonce(),
+      .mCiphertext = aEncryptedBlock.CipherPayload(),
+      .mAad = aad,
+      .mTag = metadataView.MutableAuthenticationTag(),
+  };
+  std::array<uint8_t, EncryptedRandomAccessBlock::CipherPayloadSize> plaintext;
+  typename CipherStrategy::DecryptionOutput dOutput{.mPlaintext = plaintext};
+  auto rv = CipherStrategy::Decrypt(dInput, dOutput);
+  if (NS_FAILED(rv)) {
+    return NS_ERROR_CORRUPTED_CONTENT;
+  }
+
+  DecryptedRandomAccessBlockCipherPayloadView payloadView(plaintext);
+  auto textSize = payloadView.TextLength();
+  if (textSize > sMaxTextLength) {
+    return NS_ERROR_CORRUPTED_CONTENT;
+  }
+  // All blocks except the last one must be filled to the maximum length.
+  if (aBlockIndex < mTotalBlockCount - 1 && textSize != sMaxTextLength) {
+    return NS_ERROR_CORRUPTED_CONTENT;
+  }
+  mCurrentBlockTextLength = textSize;
+  memcpy(mPlainBuffer.data(), payloadView.MutableTextAndPadding().Elements(),
+         sMaxTextLength);
 
   return NS_OK;
 }
