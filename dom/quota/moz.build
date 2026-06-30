@@ -126,7 +126,6 @@ UNIFIED_SOURCES += [
     "DecryptingInputStream.cpp",
     "DirectoryLockImpl.cpp",
     "DirectoryMetadata.cpp",
-    "EncryptedRandomAccessStream.cpp",
     "EncryptingOutputStream.cpp",
     "FileStreams.cpp",
     "FileUtils.cpp",

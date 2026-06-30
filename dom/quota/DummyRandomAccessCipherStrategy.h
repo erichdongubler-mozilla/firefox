@@ -14,7 +14,6 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/Result.h"
 #include "mozilla/Span.h"
-#include "nscore.h"
 
 namespace mozilla::dom::quota {
 

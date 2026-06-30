@@ -8,7 +8,7 @@
 #include <numeric>
 
 #include "EncryptedRandomAccessBlock.h"
-#include "EncryptedRandomAccessBlockView.h"
+#include "EncryptedRandomAccessBlockViewV1.h"
 #include "gtest/gtest.h"
 
 namespace mozilla::dom::quota::test {
@@ -18,16 +18,16 @@ bool IsAllZero(Span<const uint8_t> aSpan) {
                      [](uint8_t e) { return e == 0; });
 }
 
-TEST(EncryptedRandomAccessBlockTest,
-     EncryptedRandomAccessBlock_zeroInitializedEncryptedBlockMetadataAndPayload)
+TEST(EncryptedRandomAccessBlockTest, zeroInitializedEncryptedBlock)
 {
   EncryptedRandomAccessBlock encryptedRandomAccessBlock;
 
+  EXPECT_TRUE(IsAllZero(encryptedRandomAccessBlock.Header()));
   EXPECT_TRUE(IsAllZero(encryptedRandomAccessBlock.CipherMetadata()));
   EXPECT_TRUE(IsAllZero(encryptedRandomAccessBlock.CipherPayload()));
 }
 
-TEST(EncryptedRandomAccessBlockTest, EncryptedRandomAccessBlock_accessors)
+TEST(EncryptedRandomAccessBlockTest, accessors)
 {
   std::array<uint8_t, EncryptedRandomAccessBlock::BlockSize> rawData{};
   std::iota(rawData.begin(), rawData.end(), 1);
@@ -46,30 +46,12 @@ TEST(EncryptedRandomAccessBlockTest, EncryptedRandomAccessBlock_accessors)
   EXPECT_EQ(block.CipherMetadata(), raw.Subspan(32, 32));
   EXPECT_EQ(block.CipherPayload(), raw.Subspan(64, 4096 - 64));
 
-  EncryptedRandomAccessBlockCipherMetadataViewV1 v1(
-      block.MutableCipherMetadata());
+  EncryptedRandomAccessBlockViewV1 v1(block.MutableCipherMetadata());
   EXPECT_EQ(v1.Nonce(), raw.Subspan(32, 12));
   EXPECT_EQ(v1.AuthenticationTag(), raw.Subspan(32 + 12, 16));
 }
 
-TEST(EncryptedRandomAccessBlockTest,
-     DecryptedRandomAccessBlockCipherPayloadView_accessors)
-{
-  std::array<uint8_t, EncryptedRandomAccessBlock::CipherPayloadSize>
-      payloadData{};
-  std::iota(payloadData.begin(), payloadData.end(), 1);
-
-  DecryptedRandomAccessBlockCipherPayloadView payloadView(payloadData);
-
-  const Span<const uint8_t> raw{payloadData.data(), payloadData.size()};
-
-  uint16_t expectedTextLength;
-  memcpy(&expectedTextLength, payloadData.data(), sizeof(uint16_t));
-  EXPECT_EQ(payloadView.TextLength(), expectedTextLength);
-  EXPECT_EQ(payloadView.TextAndPadding(), raw.Subspan(2));
-}
-
-TEST(EncryptedRandomAccessBlockTest, EncryptedRandomAccessBlock_setVersion)
+TEST(EncryptedRandomAccessBlockTest, setVersion)
 {
   EncryptedRandomAccessBlock block;
   block.SetVersion(0x0102);
@@ -80,12 +62,10 @@ TEST(EncryptedRandomAccessBlockTest, EncryptedRandomAccessBlock_setVersion)
   EXPECT_TRUE(IsAllZero(block.ReservedBytes()));
 }
 
-TEST(EncryptedRandomAccessBlockTest,
-     EncryptedRandomAccessBlockCipherMetadataViewV1_setNonce)
+TEST(EncryptedRandomAccessBlockTest, setNonce)
 {
   EncryptedRandomAccessBlock block;
-  EncryptedRandomAccessBlockCipherMetadataViewV1 v1(
-      block.MutableCipherMetadata());
+  EncryptedRandomAccessBlockViewV1 v1(block.MutableCipherMetadata());
 
   std::array<uint8_t, 12> nonce{};
   std::iota(nonce.begin(), nonce.end(), 1);
@@ -97,12 +77,10 @@ TEST(EncryptedRandomAccessBlockTest,
   EXPECT_TRUE(IsAllZero(v1.AuthenticationTag()));
 }
 
-TEST(EncryptedRandomAccessBlockTest,
-     EncryptedRandomAccessBlockCipherMetadataViewV1_setAuthenticationTag)
+TEST(EncryptedRandomAccessBlockTest, setAuthenticationTag)
 {
   EncryptedRandomAccessBlock block;
-  EncryptedRandomAccessBlockCipherMetadataViewV1 v1(
-      block.MutableCipherMetadata());
+  EncryptedRandomAccessBlockViewV1 v1(block.MutableCipherMetadata());
 
   std::array<uint8_t, 16> authTag{};
   std::iota(authTag.begin(), authTag.end(), 1);
@@ -115,23 +93,7 @@ TEST(EncryptedRandomAccessBlockTest,
   EXPECT_TRUE(IsAllZero(v1.Nonce()));
 }
 
-TEST(EncryptedRandomAccessBlockTest,
-     DecryptedRandomAccessBlockCipherPayloadView_setTextLength)
-{
-  std::array<uint8_t, EncryptedRandomAccessBlock::CipherPayloadSize>
-      payloadData{};
-  DecryptedRandomAccessBlockCipherPayloadView payloadView(payloadData);
-
-  payloadView.SetTextLength(0x0102);
-
-  EXPECT_EQ(payloadView.TextLength(), 0x0102u);
-
-  // check that the adjacent area is not written
-  EXPECT_TRUE(IsAllZero(payloadView.TextAndPadding()));
-}
-
-TEST(EncryptedRandomAccessBlockTest,
-     EncryptedRandomAccessBlock_mutableCipherPayload)
+TEST(EncryptedRandomAccessBlockTest, mutableCipherPayload)
 {
   EncryptedRandomAccessBlock block;
 
@@ -143,24 +105,6 @@ TEST(EncryptedRandomAccessBlockTest,
 
   // check if the adjacent area is not written.
   EXPECT_TRUE(IsAllZero(block.CipherMetadata()));
-}
-
-TEST(EncryptedRandomAccessBlockTest,
-     DecryptedRandomAccessBlockCipherPayloadView_mutableTextAndPadding)
-{
-  std::array<uint8_t, EncryptedRandomAccessBlock::CipherPayloadSize>
-      payloadData{};
-  DecryptedRandomAccessBlockCipherPayloadView payloadView(payloadData);
-
-  auto mutableTextAndPadding = payloadView.MutableTextAndPadding();
-  std::iota(mutableTextAndPadding.data(),
-            mutableTextAndPadding.data() + mutableTextAndPadding.Length(), 1);
-
-  EXPECT_EQ(payloadView.TextAndPadding(),
-            Span<const uint8_t>{mutableTextAndPadding});
-
-  // check if the adjacent area is not written.
-  EXPECT_EQ(payloadView.TextLength(), 0u);
 }
 
 }  // namespace mozilla::dom::quota::test
