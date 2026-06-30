@@ -244,16 +244,28 @@ static nsresult ConvertToProtobuf(
 
   if (analysisType == nsIContentAnalysisRequest::AnalysisType::ePrint) {
 #if XP_WIN
-    uint64_t printDataHandle;
-    MOZ_TRY(aIn->GetPrintDataHandle(&printDataHandle));
+    nsTArray<uint8_t> printData;
+    MOZ_TRY(aIn->GetPrintData(printData));
+    // Copy the PDF bytes into a file-mapping section so the agent can map them
+    // into its own process. The agent duplicates this handle out of our process
+    // while servicing the request, so the caller must keep the handle open
+    // until this request's response arrives (see
+    // ExternalAgentBackend::Analyze).
+    LARGE_INTEGER dataContentLength;
+    dataContentLength.QuadPart = static_cast<LONGLONG>(printData.Length());
+    HANDLE printDataHandle = ::CreateFileMappingW(
+        INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE,
+        dataContentLength.HighPart, dataContentLength.LowPart, nullptr);
     if (!printDataHandle) {
       return NS_ERROR_OUT_OF_MEMORY;
     }
-    aOut->mutable_print_data()->set_handle(printDataHandle);
-
-    uint64_t printDataSize;
-    MOZ_TRY(aIn->GetPrintDataSize(&printDataSize));
-    aOut->mutable_print_data()->set_size(printDataSize);
+    {
+      mozilla::nt::AutoMappedView view(printDataHandle, FILE_MAP_ALL_ACCESS);
+      memcpy(view.as<uint8_t>(), printData.Elements(), printData.Length());
+    }
+    aOut->mutable_print_data()->set_handle(
+        static_cast<uint64_t>(reinterpret_cast<uintptr_t>(printDataHandle)));
+    aOut->mutable_print_data()->set_size(printData.Length());
 
     nsString printerName;
     MOZ_TRY(aIn->GetPrinterName(printerName));
@@ -948,6 +960,26 @@ nsresult ExternalAgentBackend::Analyze(
   nsresult rv = ConvertToProtobuf(aRequest, &pbRequest);
   NS_ENSURE_SUCCESS(rv, rv);
 
+  // For print requests on Windows, ConvertToProtobuf stored the PDF bytes in a
+  // file-mapping section whose handle now lives in pbRequest. The agent
+  // duplicates that handle out of our process while servicing the request, and
+  // responses can arrive out of order, so the handle must stay open until this
+  // request's response arrives -- not merely until Send() returns. We hand it
+  // to DoAnalyzeRequest, which stores it in the per-request map entry that is
+  // only removed once the matching response is handled. The callable below also
+  // keeps a reference so the handle survives reconnect retries, where that map
+  // entry is briefly removed and re-inserted. Empty on platforms that do not
+  // transport print data via a handle.
+  std::shared_ptr<void> printDataHandleGuard;
+#ifdef XP_WIN
+  if (pbRequest.has_print_data() && pbRequest.print_data().handle()) {
+    printDataHandleGuard = std::shared_ptr<void>(
+        reinterpret_cast<HANDLE>(
+            static_cast<uintptr_t>(pbRequest.print_data().handle())),
+        [](void* aHandle) { ::CloseHandle(aHandle); });
+  }
+#endif
+
   LOGD("Issuing ContentAnalysisRequest for token %s", requestToken.get());
   LogRequest(&pbRequest);
   nsCOMPtr<nsIObserverService> obsServ =
@@ -992,12 +1024,13 @@ nsresult ExternalAgentBackend::Analyze(
   CallClientWithRetry<std::nullptr_t>(
       __func__,
       [self = RefPtr{this}, userActionId = userActionId,
-       pbRequest = std::move(pbRequest), aAutoAcknowledge, ignoreCanceled](
+       pbRequest = std::move(pbRequest), aAutoAcknowledge, ignoreCanceled,
+       printDataHandleGuard](
           std::shared_ptr<content_analysis::sdk::Client> client) mutable {
         MOZ_ASSERT(!NS_IsMainThread());
-        return self->DoAnalyzeRequest(std::move(userActionId),
-                                      std::move(pbRequest), aAutoAcknowledge,
-                                      client, ignoreCanceled);
+        return self->DoAnalyzeRequest(
+            std::move(userActionId), std::move(pbRequest), aAutoAcknowledge,
+            client, ignoreCanceled, printDataHandleGuard);
       })
       ->Then(
           GetMainThreadSerialEventTarget(), __func__, []() { /* do nothing */ },
@@ -1024,7 +1057,7 @@ Result<std::nullptr_t, nsresult> ExternalAgentBackend::DoAnalyzeRequest(
     content_analysis::sdk::ContentAnalysisRequest&& aRequest,
     bool aAutoAcknowledge,
     const std::shared_ptr<content_analysis::sdk::Client>& aClient,
-    bool aTestOnlyIgnoreCanceled) {
+    bool aTestOnlyIgnoreCanceled, std::shared_ptr<void> aPrintDataHandle) {
   MOZ_ASSERT(!NS_IsMainThread());
   RefPtr<ContentAnalysis> owner =
       ContentAnalysis::GetContentAnalysisFromService();
@@ -1076,12 +1109,15 @@ Result<std::nullptr_t, nsresult> ExternalAgentBackend::DoAnalyzeRequest(
   {
     // Insert this into the map before calling Send() because another thread
     // calling Send() may get a response before our Send() call finishes.
+    // The print-data handle (if any) is owned by this entry so it stays alive
+    // until this request's response arrives, even though responses may come
+    // back out of order.
     auto map = mRequestTokenToBasicRequestInfoMap.Lock();
     map->InsertOrUpdate(
         nsCString(aRequest.request_token()),
-        ExternalAgentBackend::BasicRequestInfo{aUserActionId, timerId,
-                                               std::move(analysisConnectorName),
-                                               aAutoAcknowledge});
+        ExternalAgentBackend::BasicRequestInfo{
+            aUserActionId, timerId, std::move(analysisConnectorName),
+            aAutoAcknowledge, std::move(aPrintDataHandle)});
   }
 
   LOGD(

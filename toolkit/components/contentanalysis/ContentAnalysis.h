@@ -21,10 +21,6 @@
 
 #include <regex>
 
-#ifdef XP_WIN
-#  include <windows.h>
-#endif  // XP_WIN
-
 class nsBaseClipboard;
 class nsIPrincipal;
 class nsIPrintSettings;
@@ -87,9 +83,8 @@ class ContentAnalysisRequest final : public nsIContentAnalysisRequest {
                          dom::WindowGlobalParent* aWindowGlobal,
                          dom::WindowGlobalParent* aSourceWindowGlobal);
 
-  ContentAnalysisRequest(const nsTArray<uint8_t> aPrintData,
-                         nsCOMPtr<nsIURI> aUrl, nsString aPrinterName,
-                         Reason aReason,
+  ContentAnalysisRequest(nsTArray<uint8_t> aPrintData, nsCOMPtr<nsIURI> aUrl,
+                         nsString aPrinterName, Reason aReason,
                          dom::WindowGlobalParent* aWindowGlobalParent);
 
   ContentAnalysisRequest(const ContentAnalysisRequest&) = delete;
@@ -155,12 +150,9 @@ class ContentAnalysisRequest final : public nsIContentAnalysisRequest {
   nsString mPrinterName;
 
   RefPtr<dom::WindowGlobalParent> mWindowGlobalParent;
-#ifdef XP_WIN
-  // The printed data to analyze, in PDF format
-  HANDLE mPrintDataHandle = 0;
-  // The size of the printed data in mPrintDataHandle
-  uint64_t mPrintDataSize = 0;
-#endif
+
+  // The printed data to analyze, in PDF format.
+  nsTArray<uint8_t> mPrintData;
 
   // WindowGlobalParent that is the origin of the data in the request, if known.
   RefPtr<mozilla::dom::WindowGlobalParent> mSourceWindowGlobal;
@@ -196,7 +188,6 @@ class ContentAnalysis final : public nsIContentAnalysis,
   ContentAnalysis(const ContentAnalysis&) = delete;
   ContentAnalysis& operator=(ContentAnalysis&) = delete;
 
-#if defined(XP_WIN)
   struct PrintAllowedResult final {
     bool mAllowed;
     dom::MaybeDiscarded<dom::BrowsingContext>
@@ -227,7 +218,6 @@ class ContentAnalysis final : public nsIContentAnalysis,
   PrintToPDFToDetermineIfPrintAllowed(
       dom::CanonicalBrowsingContext* aBrowsingContext,
       nsIPrintSettings* aPrintSettings);
-#endif  // defined(XP_WIN)
 
   // Find the outermost browsing context that has same-origin access to
   // aBrowsingContext, and this is the URL we will pass to the Content Analysis
