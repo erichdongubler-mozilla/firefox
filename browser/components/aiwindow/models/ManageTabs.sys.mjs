@@ -18,12 +18,16 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ToolUI: "moz-src:///browser/components/aiwindow/ui/modules/ToolUI.sys.mjs",
   ToolUITelemetry:
     "moz-src:///browser/components/aiwindow/ui/modules/ToolUITelemetry.sys.mjs",
+  SmartTabGroupingManager:
+    "moz-src:///browser/components/tabbrowser/SmartTabGrouping.sys.mjs",
 });
 
 export const CLOSE_TABS = "close_tabs";
-export const TAB_ACTIONS = [CLOSE_TABS];
+export const GROUP_TABS = "group_tabs";
+export const TAB_ACTIONS = [CLOSE_TABS, GROUP_TABS];
 const UI_TYPE_BY_ACTION = {
   [CLOSE_TABS]: "website-confirmation",
+  [GROUP_TABS]: "tab-group-confirmation",
 };
 
 /**
@@ -92,9 +96,9 @@ function shouldRequireUserConfirmation(tabs, topAIWin, securityProperties) {
  * @param {{ validUrls: Set<string>, askConfirmation: boolean, baseTelemetryInfo: object, conversation: ChatConversation, toolCallId?: string }} state
  * @param {{ action: string, verb: string, failureError: string, failureMessage: string,
  *           takeUIAction: (gathered: object) => Promise<object>,
- *           getToolResults: (result: object, gathered: object) => object }} handler
+ *           getToolResults: (result: object, gathered: object) => object }} toolHandler
  */
-async function runManageTabsFlow(state, handler) {
+async function runManageTabsFlow(state, toolHandler) {
   const gatheredResult = await gatherTabs(
     state.validUrls,
     state.baseTelemetryInfo
@@ -112,28 +116,28 @@ async function runManageTabsFlow(state, handler) {
       state.conversation.securityProperties
     )
   ) {
-    const uiType = UI_TYPE_BY_ACTION[handler.action];
+    const uiType = UI_TYPE_BY_ACTION[toolHandler.action];
     if (!uiType) {
-      throw new Error(`No UI mapping for action: ${handler.action}`);
+      throw new Error(`No UI mapping for action: ${toolHandler.action}`);
     }
     // Keep token -> permanentKey on the chrome side until the user confirms;
     // the map can't ride through the confirmation actor round-trip.
     lazy.ToolUI.registerTabKeys(state.toolCallId, gatheredResult.tabKeyByToken);
     return {
       toolResult: {
-        description: `The following tabs were found. User confirmation is required to ${handler.verb} them.`,
+        description: `The following tabs were found. User confirmation is required to ${toolHandler.verb} them.`,
         pending: true,
-        action: handler.action,
+        action: toolHandler.action,
         selectedTabs: gatheredResult.summarizedTabInfo,
       },
       uiData: {
         uiType,
-        properties: { tabs: gatheredResult.tabs },
+        properties: await toolHandler.getConfirmationProperties(gatheredResult),
       },
     };
   }
 
-  const result = await handler.takeUIAction(gatheredResult);
+  const result = await toolHandler.takeUIAction(gatheredResult);
 
   if (!result || !result.operationId) {
     lazy.ToolUITelemetry.recordBrowserActionComplete({
@@ -141,25 +145,23 @@ async function runManageTabsFlow(state, handler) {
       result: "error",
       tabs_affected: 0,
       undo_available: false,
-      error: handler.failureError,
+      error: toolHandler.failureError,
     });
     return {
-      toolResult: `Error: ${handler.action} action failed`,
+      toolResult: `Error: ${toolHandler.action} action failed`,
       uiData: null,
     };
   }
 
-  const { description, selectedTabs, telemetryValues } = handler.getToolResults(
-    result,
-    gatheredResult
-  );
+  const { description, selectedTabs, telemetryValues } =
+    toolHandler.getToolResults(result, gatheredResult);
 
   lazy.ToolUITelemetry.recordBrowserActionComplete({
     ...state.baseTelemetryInfo,
     result: telemetryValues.telemetryResult,
     tabs_affected: telemetryValues.affectedCount,
     undo_available: telemetryValues.affectedCount > 0,
-    error: telemetryValues.failedCount ? handler.failureMessage : "",
+    error: telemetryValues.failedCount ? toolHandler.failureMessage : "",
   });
 
   return {
@@ -174,7 +176,7 @@ async function runManageTabsFlow(state, handler) {
           selectedTabs: gatheredResult.tabs,
           operationId: result.operationId,
           actionTimestamp: Date.now(),
-          actionType: handler.action,
+          actionType: toolHandler.action,
         },
       },
     },
@@ -236,7 +238,7 @@ async function gatherTabs(validUrls, baseTelemetryInfo) {
 /**
  * Closes the tabs identified by `validUrls` in the active AI windows.
  */
-const closeTabsHandler = {
+const closeTabsToolHandler = {
   action: CLOSE_TABS,
   verb: "close",
   failureError: "close_failed",
@@ -248,6 +250,10 @@ const closeTabsHandler = {
       gatheredResult.tabKeyByToken,
       gatheredResult.topAIWin
     );
+  },
+
+  getConfirmationProperties(gatheredResult) {
+    return { tabs: gatheredResult.tabs };
   },
 
   getToolResults(result, gatheredResult) {
@@ -286,22 +292,120 @@ const closeTabsHandler = {
 };
 
 /**
+ * Builds a tool handler that groups the tabs identified by `validUrls` into a new
+ * tab group in the top active AI window. Uses the optional caller-supplied
+ * `rawLabel` when present (sanitized, capped at 40 chars); otherwise predicts
+ * one via `SmartTabGroupingManager`, defaulting to "Tabs" when prediction fails.
+ *
+ * @param {string} rawLabel
+ */
+function makeGroupTabsToolHandler(rawLabel) {
+  const getLabel = async gatheredResult => {
+    if (rawLabel) {
+      return sanitizeUntrustedContent(rawLabel, true).slice(0, 40).trim();
+    }
+    const rawTabs = gatheredResult.matchedTabs
+      .filter(m => m.win === gatheredResult.topAIWin)
+      .map(m => m.tab);
+
+    const allVisible = gatheredResult.topAIWin.gBrowser.visibleTabs;
+    const otherTabs = allVisible.filter(t => !rawTabs.includes(t) && !t.pinned);
+
+    const manager = new lazy.SmartTabGroupingManager();
+    return (
+      (await manager.getPredictedLabelForGroup(rawTabs, otherTabs)) || "Tabs"
+    );
+  };
+
+  return {
+    action: GROUP_TABS,
+    verb: "group",
+    failureError: "group_failed",
+    failureMessage: "some_tabs_could_not_be_grouped",
+
+    async getConfirmationProperties(gatheredResult) {
+      return {
+        tabs: gatheredResult.tabs,
+        tabGroupLabel: await getLabel(gatheredResult),
+      };
+    },
+
+    async takeUIAction(gathered) {
+      const label = await getLabel(gathered);
+      const result = await lazy.ToolUI.createTabGroup({
+        tabs: gathered.tabs,
+        window: gathered.topAIWin,
+        label,
+      });
+      return { ...result, label };
+    },
+
+    getToolResults(result, gatheredResult) {
+      const failedPanels = new Set(
+        (result.failedTabs ?? [])
+          .map(failedTab => failedTab.tab?.linkedPanel)
+          .filter(Boolean)
+      );
+      const groupedTabs = gatheredResult.tabs.map(
+        ({ url, title, linkedPanel }) => ({
+          url,
+          title,
+          grouped: !failedPanels.has(linkedPanel),
+        })
+      );
+
+      const groupedCount = groupedTabs.filter(tab => tab.grouped).length;
+      const failedCount = groupedTabs.length - groupedCount;
+      let telemetryResult = "success";
+      if (failedCount && groupedCount === 0) {
+        telemetryResult = "error";
+      } else if (failedCount) {
+        telemetryResult = "partial_success";
+      }
+
+      return {
+        description: failedCount
+          ? `Some tabs could not be grouped (${failedCount} of ${groupedTabs.length}).`
+          : `Successfully grouped ${groupedTabs.length} tabs in group ${result.label}.`,
+        selectedTabs: groupedTabs,
+        telemetryValues: {
+          telemetryResult,
+          affectedCount: groupedCount,
+          failedCount,
+        },
+      };
+    },
+  };
+}
+
+/**
  * Tab management orchestrator to handle all tab-related actions.
  *
- * @param {{ action: string, validUrls: Set<string>, ask_confirmation: boolean, baseTelemetryInfo: object, toolCallId?: string }} params
+ * @param {{ action: string, validUrls: Set<string>, ask_confirmation: boolean, label: string, baseTelemetryInfo: object, toolCallId?: string }} params
  * @param {ChatConversation} conversation
  * @returns {Promise<object>}
  */
 export async function manageTabsAction(
-  { action, validUrls, ask_confirmation, baseTelemetryInfo, toolCallId },
+  {
+    action,
+    validUrls,
+    ask_confirmation,
+    label = "",
+    baseTelemetryInfo,
+    toolCallId,
+  },
   conversation
 ) {
-  let handler;
-  if (action === CLOSE_TABS) {
-    handler = closeTabsHandler;
-  } else {
+  const HANDLERS = {
+    [CLOSE_TABS]: () => closeTabsToolHandler,
+    [GROUP_TABS]: () => makeGroupTabsToolHandler(label),
+  };
+
+  const makeHandler = HANDLERS[action];
+  if (!makeHandler) {
     throw new Error(`Invalid action: ${action}`);
   }
+  const toolHandler = makeHandler();
 
   return runManageTabsFlow(
     {
@@ -311,6 +415,6 @@ export async function manageTabsAction(
       conversation,
       toolCallId,
     },
-    handler
+    toolHandler
   );
 }

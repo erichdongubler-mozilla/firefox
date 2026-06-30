@@ -350,7 +350,7 @@ export const toolsConfig = [
               "Whether to show the user the list of tabs and require their confirmation " +
               "before executing the action. Default to true. Only set to false when " +
               "the user's request unambiguously identifies the specific tabs to act on, " +
-              "and the action does not close all (or nearly all) of the user's open tabs. " +
+              "and the action does not affect all (or nearly all) of the user's open tabs. " +
               "When in doubt, set to true.",
           },
           url_tokens: {
@@ -362,6 +362,13 @@ export const toolsConfig = [
             minItems: 1,
             description:
               "List of URL tokens identifying the tabs the action should be taken on.",
+          },
+          label: {
+            type: "string",
+            description:
+              "Optional concise label (1-3 words) for the new tab group. " +
+              "Only used when action is 'group_tabs'. Derive from the common " +
+              "theme of the selected tabs. Omit when no clear theme exists.",
           },
         },
         required: ["action", "ask_confirmation", "url_tokens"],
@@ -1237,7 +1244,12 @@ export async function manageTabs(
   toolCallId = ""
 ) {
   const params = toolParams && typeof toolParams === "object" ? toolParams : {};
-  const { action, ask_confirmation = true, url_tokens = [] } = params;
+  const {
+    action,
+    ask_confirmation = true,
+    url_tokens = [],
+    label = "",
+  } = params;
 
   const actionType = getActionType(conversation, action);
 
@@ -1310,7 +1322,14 @@ export async function manageTabs(
   }
 
   return manageTabsAction(
-    { action, validUrls, ask_confirmation, baseTelemetryInfo, toolCallId },
+    {
+      action,
+      validUrls,
+      ask_confirmation,
+      label,
+      baseTelemetryInfo,
+      toolCallId,
+    },
     conversation
   );
 }
