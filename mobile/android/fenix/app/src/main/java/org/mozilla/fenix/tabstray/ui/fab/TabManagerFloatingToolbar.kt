@@ -283,10 +283,14 @@ private fun FloatingToolbarFAB(
     }
 
     FloatingActionButton(
-        icon = painterResource(id = icon),
         modifier = Modifier.testTag(TabsTrayTestTag.FAB),
-        iconModifier = iconModifier,
-        contentDescription = contentDescription,
+        icon = {
+            Icon(
+                painter = painterResource(id = icon),
+                contentDescription = contentDescription,
+                modifier = iconModifier,
+            )
+        },
         colors = colors,
         elevation = elevation,
         onClick = onClick,
