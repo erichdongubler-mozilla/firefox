@@ -376,7 +376,7 @@ void ExpectPaddedFinalBlock(const DecryptedBlockLayout& aBlock,
   EXPECT_TRUE(paddingHasNonZero);
 }
 
-} // namespace
+}  // namespace
 
 // Exercise the same behavior with one partial block, one full block,
 // and a read that must cross into the second block.
