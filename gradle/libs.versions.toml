@@ -311,9 +311,13 @@ zxing = { module = "com.google.zxing:core", version.ref = "zxing" }
 [plugins]
 android-library = { id = "com.android.library", version.ref = "android-gradle-plugin" }
 android-lint-plugin = { id = "com.android.lint", version.ref = "android-gradle-plugin" }
+# No version: supplied by the buildscript classpath, which the plugins DSL must not version-check.
+androidx-safeargs = { id = "androidx.navigation.safeargs.kotlin" }
 dependency-analysis = { id = "com.autonomousapps.dependency-analysis", version.ref = "dependency-analysis" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+# No version: bundled in the Kotlin Gradle plugin classpath, which the plugins DSL must not version-check.
+kotlin-parcelize = { id = "org.jetbrains.kotlin.plugin.parcelize" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 protobuf-plugin = { id = "com.google.protobuf", version.ref = "protobuf-plugin" }

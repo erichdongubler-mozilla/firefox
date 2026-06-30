@@ -4,32 +4,21 @@ import java.time.format.DateTimeFormatter
 
 import static org.mozilla.conventions.BuildConfigKt.getBuildId
 
-buildscript {
-    repositories {
-        gradle.configureMavenRepositories(delegate)
-    }
-
-    dependencies {
-        classpath libs.kotlin.serialization
-    }
-}
-
 plugins {
     id 'com.android.application'
-    alias(libs.plugins.dependency.analysis)
-    alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.python.envs.plugin)
-    alias(libs.plugins.protobuf.plugin)
-    id 'ApkSizePlugin'
     id 'org.mozilla.conventions.zip-test-reports'
     id 'org.mozilla.nimbus-gradle-plugin'
+    id 'ApkSizePlugin'
+    id 'jacoco'
+    alias(libs.plugins.androidx.safeargs)
+    alias(libs.plugins.dependency.analysis)
+    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.parcelize)
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.protobuf.plugin)
+    alias(libs.plugins.python.envs.plugin)
 }
-
-apply plugin: 'kotlin-parcelize'
-apply plugin: 'jacoco'
-apply plugin: 'androidx.navigation.safeargs.kotlin'
-apply plugin: 'kotlinx-serialization'
-apply plugin: 'com.google.devtools.ksp'
 
 // The OSS-licenses plugin is only needed for shipping builds, so skip it during
 // `mach lint` (which always passes `-Pandroid-lint`) to avoid unnecessary overhead.

@@ -1,7 +1,8 @@
 plugins {
     id 'com.android.library'
-    id 'checkstyle'
     id 'org.mozilla.apilint'
+    id 'checkstyle'
+    id 'maven-publish'
 }
 
 import groovy.json.JsonOutput
@@ -368,8 +369,6 @@ afterEvaluate {
         configureLibraryVariantWithJNIWrappers(jniVariantName, javacClasspath(jniVariantName), "Generated")
     }
 }
-
-apply plugin: 'maven-publish'
 
 version = getVersionNumber()
 println("GeckoView version = " + version)
