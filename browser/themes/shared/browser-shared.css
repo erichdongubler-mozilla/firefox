@@ -929,17 +929,15 @@ menupopup::part(drop-indicator) {
   }
 
   &[data-notification-bucket="CFR_MILESTONE_MESSAGE"] {
-    &:not([hidden]) {
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      background: radial-gradient(circle farthest-side at top right, var(--short-notification-gradient), var(--short-notification-background));
-      width: unset;
-      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-      max-width: 700px;
-      overflow-wrap: break-word;
-      padding: var(--space-xsmall);
-    }
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    background: radial-gradient(circle farthest-side at top right, var(--short-notification-gradient), var(--short-notification-background));
+    width: unset;
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    max-width: 700px;
+    overflow-wrap: break-word;
+    padding: var(--space-xsmall);
 
     &:-moz-locale-dir(rtl) {
       background: radial-gradient(circle farthest-side at top left, var(--short-notification-gradient), var(--short-notification-background));
