@@ -308,6 +308,10 @@ function SportsMatchRow({
         const resultsStatusL10nId =
           RESULTS_STATUS_L10N_MAP[status_type?.toLowerCase()] ||
           "newtab-sports-widget-match-full-time";
+        // The medium widget lacks room for "Full time • Penalties", so for a
+        // penalty shootout it shows "Penalties" alone instead. Large keeps
+        // both; list shows only the status (as in the "view all" view).
+        const mediumPenaltiesOnly = hasPenalties && size === "medium";
         return (
           <div className="sports-match-result">
             <ScorePill
@@ -318,8 +322,14 @@ function SportsMatchRow({
               variant="results"
             />
             <div className="sports-match-result-footer">
-              <span data-l10n-id={resultsStatusL10nId} />
-              {hasPenalties && size !== "list" && (
+              <span
+                data-l10n-id={
+                  mediumPenaltiesOnly
+                    ? "newtab-sports-widget-match-penalties"
+                    : resultsStatusL10nId
+                }
+              />
+              {hasPenalties && size === "large" && (
                 <>
                   <span aria-hidden="true">•</span>
                   <span data-l10n-id="newtab-sports-widget-match-penalties" />

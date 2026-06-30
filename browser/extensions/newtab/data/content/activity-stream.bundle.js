@@ -17662,6 +17662,10 @@ function SportsMatchRow({
           // stale live-state value that leaks into this bucket doesn't render
           // raw API text in the UI.
           const resultsStatusL10nId = RESULTS_STATUS_L10N_MAP[status_type?.toLowerCase()] || "newtab-sports-widget-match-full-time";
+          // The medium widget lacks room for "Full time • Penalties", so for a
+          // penalty shootout it shows "Penalties" alone instead. Large keeps
+          // both; list shows only the status (as in the "view all" view).
+          const mediumPenaltiesOnly = hasPenalties && size === "medium";
           return /*#__PURE__*/external_React_default().createElement("div", {
             className: "sports-match-result"
           }, /*#__PURE__*/external_React_default().createElement(ScorePill, {
@@ -17673,8 +17677,8 @@ function SportsMatchRow({
           }), /*#__PURE__*/external_React_default().createElement("div", {
             className: "sports-match-result-footer"
           }, /*#__PURE__*/external_React_default().createElement("span", {
-            "data-l10n-id": resultsStatusL10nId
-          }), hasPenalties && size !== "list" && /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("span", {
+            "data-l10n-id": mediumPenaltiesOnly ? "newtab-sports-widget-match-penalties" : resultsStatusL10nId
+          }), hasPenalties && size === "large" && /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("span", {
             "aria-hidden": "true"
           }, "\u2022"), /*#__PURE__*/external_React_default().createElement("span", {
             "data-l10n-id": "newtab-sports-widget-match-penalties"
