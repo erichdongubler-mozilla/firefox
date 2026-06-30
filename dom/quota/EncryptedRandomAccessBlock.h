@@ -63,9 +63,9 @@ class EncryptedRandomAccessBlock {
 
   static constexpr size_t CipherMetadataSize = 32;
 
- private:
   static constexpr size_t HeaderSize = 32;
 
+ private:
   using VersionType = uint16_t;
   static constexpr size_t VersionSize = sizeof(VersionType);
   static_assert(VersionSize == 2, "Version should take 2 bytes on disk.");
@@ -118,9 +118,10 @@ class EncryptedRandomAccessBlock {
     memcpy(mData.Elements(), aData.data(), BlockSize);
   }
 
+  MutableSpan<BlockSize> MutableWholeBlock() { return mData; }
+
  private:
   ConstSpan<BlockSize> WholeBlock() const { return mData; }
-  MutableSpan<BlockSize> MutableWholeBlock() { return mData; }
   nsTArray<uint8_t> mData;
 };
 
