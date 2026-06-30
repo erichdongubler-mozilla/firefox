@@ -5932,7 +5932,7 @@ pub extern "C" fn Servo_NumericDeclaration_Parse(text: &nsACString) -> *mut Nume
     let mut input = ParserInput::new(&string);
     let mut parser = Parser::new(&mut input);
 
-    let declaration = match NumericDeclaration::parse(&context, &mut parser) {
+    let declaration = match parser.parse_entirely(|p| NumericDeclaration::parse(&context, p)) {
         Ok(declaration) => declaration,
         Err(..) => return ptr::null_mut(),
     };
