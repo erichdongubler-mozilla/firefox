@@ -1240,7 +1240,11 @@ browsertime-speculation-rules:
     raptor:
         apps: [firefox, chrome]
         run-visual-metrics: true
-        subtests: [prefetch]
+        subtests:
+            - [prefetch-immediate, pf-imm]
+            - [prefetch-eager, pf-eag]
+            - [prefetch-moderate, pf-mod]
+            - [prefetch-conservative, pf-con]
     description: Raptor (browsertime) Speculation Rules prefetch pageload test
     limit-platforms:
         by-app:
