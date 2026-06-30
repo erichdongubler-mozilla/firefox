@@ -445,7 +445,7 @@ where *get* and *set* are grips on the property's getter and setter functions; e
 
 *TODO: descriptors for Harmony proxies*
 
-##### Functions
+### Functions
 
 If an object's class as given in the grip is `"Function"`, then the grip's actor responds to the messages given here.
 
