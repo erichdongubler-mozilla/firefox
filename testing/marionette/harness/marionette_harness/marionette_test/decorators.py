@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import functools
-import os
 import subprocess
 import sys
 import types
@@ -11,30 +10,29 @@ from unittest.case import SkipTest
 
 
 @functools.cache
-def _running_without_user_session():
-    """Whether the current user has no GUI (Aqua) login session.
+def _running_on_macos_vm():
+    """Whether we're running on a macOS virtual-machine worker.
 
-    Some hosts have none -- e.g. a headless macOS guest on Apple's
-    Virtualization Framework. Native window focus and activation never happen
-    without a session, so tests that rely on them (e.g.
-    BrowserWindowTracker.getTopWindow() reflecting the focused window) cannot
-    pass. Extend the per-platform checks below as more such environments appear.
+    These headless VM workers (Apple Virtualization Framework guests) still run
+    a WindowServer, hold a logged-in GUI session, and report a framebuffer, so
+    by capability they are indistinguishable from bare metal -- only the
+    hardware model identifies them. Tests that depend on real window
+    focus/activation (e.g. BrowserWindowTracker.getTopWindow() ordering) race on
+    these workers, so they are skipped via skip_if_macos_vm.
     """
-    if sys.platform == "darwin":
-        # A headless macOS host has no GUI (Aqua) session for the user, so its
-        # "gui/<uid>" launchd domain does not exist -- even though a system
-        # WindowServer process may still be running. Checking the session
-        # (rather than the process or the hardware model) stays correct for a
-        # VM that has a display attached.
-        result = subprocess.run(
-            ["launchctl", "print", f"gui/{os.getuid()}"],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+    if sys.platform != "darwin":
+        return False
+    try:
+        model = subprocess.run(
+            ["sysctl", "-n", "hw.model"],
+            capture_output=True,
+            text=True,
+            timeout=5,
             check=False,
-        )
-        # Non-zero => no GUI session for this user.
-        return result.returncode != 0
-    return False
+        ).stdout.strip()
+    except Exception:
+        return False
+    return model.startswith("VirtualMac")
 
 
 def parameterized(func_suffix, *args, **kwargs):
@@ -111,12 +109,11 @@ def skip_if_chrome(reason):
     return decorator
 
 
-def skip_if_no_user_session(reason):
-    """Decorator which skips a test when the user has no GUI login session.
+def skip_if_macos_vm(reason):
+    """Decorator which skips a test on macOS virtual-machine workers.
 
-    Useful for tests that depend on native window focus/activation, which does
-    not happen without a session, e.g. on a headless macOS Virtualization
-    Framework guest.
+    Useful for tests that depend on native window focus/activation, which races
+    on the headless macOS VM workers (Apple Virtualization Framework guests).
     """
 
     def decorator(test_item):
@@ -125,7 +122,7 @@ def skip_if_no_user_session(reason):
 
         @functools.wraps(test_item)
         def skip_wrapper(self, *args, **kwargs):
-            if _running_without_user_session():
+            if _running_on_macos_vm():
                 raise SkipTest(reason)
             return test_item(self, *args, **kwargs)
 
