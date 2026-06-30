@@ -698,7 +698,6 @@ def handle_tier(config, tasks):
                 "android-em-14-x86_64-shippable-lite/opt",
                 "android-em-14-x86_64-lite/opt",
                 "android-em-14-x86_64/debug",
-                "android-em-14-x86_64/debug-isolated-process",
                 "android-em-14-x86-shippable/opt",
                 "android-em-14-x86/opt",
             ]:
@@ -829,7 +828,7 @@ class PlatformSchema(Schema, kw_only=True):
 class BuildSchema(Schema, kw_only=True, forbid_unknown_fields=False):
     """Build configuration schema."""
 
-    type: Literal["opt", "debug", "debug-isolated-process"]
+    type: Literal["opt", "debug"]
     asan: Optional[bool] = None
     ccov: Optional[bool] = None
     clang_trunk: Optional[bool] = None

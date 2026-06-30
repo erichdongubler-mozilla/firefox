@@ -108,10 +108,8 @@ tasks:
                     by-test-platform:
                         linux.*: 2
                         default: default
-                default:
-                    by-test-platform:
-                        android-em.*/debug-isolated-process: 2
-                        default: default
+                geckoview-isolated-process: 2
+                default: default
         chunks: dynamic
         default-chunks:
             by-test-platform:
@@ -144,7 +142,6 @@ tasks:
             by-variant:
                 no-fission:
                     by-test-platform:
-                        android-em.*/debug-isolated-process: []
                         android.*: built-projects
                         linux2404-64/debug: ['mozilla-central']
                         linux2404-64(-shippable)?/opt: ['mozilla-central']
@@ -239,8 +236,16 @@ tasks:
         chunks: dynamic
         default-chunks: 1
         max-run-time: 1800
-        variants: []  # We don't need sw or nofis testing.
-        run-on-projects: built-projects
+        variants:
+            # We don't need sw or nofis testing.
+            - geckoview-isolated-process
+        run-on-projects:
+            by-variant:
+                geckoview-isolated-process:
+                    by-test-platform:
+                        android-em.*/debug: built-projects
+                        default: []
+                default: built-projects
         mozharness:
             chunked: true
             extra-options:
@@ -328,7 +333,6 @@ tasks:
                         default: []
                 no-fission:
                     by-test-platform:
-                        android-em.*/debug-isolated-process: []
                         linux2404-64/.*: ['mozilla-central']
                         linux2404-64-shippable/opt: ['mozilla-central']
                         linux2404-64-asan/opt: ['mozilla-central']
@@ -350,10 +354,8 @@ tasks:
                         linux.*: 2
                         default: default
                 draw-snapshot: 2
-                default:
-                    by-test-platform:
-                        android-em.*/debug-isolated-process: 2
-                        default: default
+                geckoview-isolated-process: 2
+                default: default
         mozharness:
             extra-options:
                 - --test-type=reftest
@@ -524,10 +526,8 @@ tasks:
                     by-test-platform:
                         linux.*: 2
                         default: default
-                default:
-                    by-test-platform:
-                        android-em.*/debug-isolated-process: 3
-                        default: default
+                geckoview-isolated-process: 3
+                default: default
         chunks: dynamic
         default-chunks:
             by-test-platform:
@@ -548,7 +548,6 @@ tasks:
             by-variant:
                 no-fission:
                     by-test-platform:
-                        android-em.*/debug-isolated-process: []
                         android.*: built-projects
                         linux2404-64/.*: ['mozilla-central']
                         linux2404-64-shippable/opt: ['mozilla-central']
@@ -637,6 +636,7 @@ tasks:
                         - --test-type=wdspec
         variants:
             - no-fission
+            - geckoview-isolated-process
             - headless
             - async-event-dispatching
         run-on-projects:
@@ -651,6 +651,10 @@ tasks:
                         linux2404-64-shippable/opt: ['mozilla-central']
                         linux2404-64-asan/opt: ['mozilla-central']
                         android.*: built-projects
+                        default: []
+                geckoview-isolated-process:
+                    by-test-platform:
+                        android-em.*/debug: built-projects
                         default: []
                 async-event-dispatching:
                     by-test-platform:
@@ -798,7 +802,6 @@ tasks:
                         default: []
                 no-fission:
                     by-test-platform:
-                        android-em.*/debug-isolated-process: []
                         linux2404-64/.*: ['mozilla-central']
                         linux2404-64-shippable/opt: ['mozilla-central']
                         linux2404-64-asan/opt: ['mozilla-central']
