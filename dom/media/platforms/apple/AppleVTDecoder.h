@@ -103,7 +103,7 @@ class AppleVTDecoder final : public MediaDataDecoder,
   RefPtr<DecodePromise> ProcessDrain();
   void ProcessShutdown();
   void ProcessDecode(MediaRawData* aSample);
-  void MaybeResolveBufferedFrames();
+  void MaybeResolveBufferedFrames() MOZ_REQUIRES(mMonitor);
 
   void MaybeRegisterCallbackThread();
 
@@ -149,10 +149,9 @@ class AppleVTDecoder final : public MediaDataDecoder,
   // not required and so input samples on mTaskQueue need not be processed.
   Atomic<bool> mIsFlushing;
   std::atomic<ProfilerThreadId> mCallbackThreadId;
-  // Protects mReorderQueue and mPromise.
-  Monitor mMonitor MOZ_UNANNOTATED;
-  ReorderQueue mReorderQueue;
-  MozMonitoredPromiseHolder<DecodePromise> mPromise;
+  Monitor mMonitor;
+  ReorderQueue mReorderQueue MOZ_GUARDED_BY(mMonitor);
+  MozMonitoredPromiseHolder<DecodePromise> mPromise MOZ_GUARDED_BY(mMonitor);
 
   // Decoded frame will be dropped if its pts is smaller than this
   // value. It shold be initialized before Input() or after Flush(). So it is
