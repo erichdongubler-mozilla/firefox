@@ -131,7 +131,7 @@ class DecryptedRandomAccessBlockCipherPayloadView {
   static_assert(TextLengthFieldSize == 2,
                 "TextLength should take 2 bytes on disk.");
 
-  static constexpr size_t MaxTextLength =
+  static constexpr TextLengthType MaxTextLength =
       EncryptedRandomAccessBlock::CipherPayloadSize - TextLengthFieldSize;
   static_assert(MaxTextLength == 4030, "MaxTextLength should be 4030 bytes.");
 

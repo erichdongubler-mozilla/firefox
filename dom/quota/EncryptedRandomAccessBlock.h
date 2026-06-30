@@ -47,18 +47,24 @@ class EncryptedRandomAccessBlock {
  public:
   static constexpr size_t BlockSize = 4096;
 
+  using VersionType = uint16_t;
+  static constexpr VersionType kEncryptedRandomAccessBlockLatestVersion = 1;
+
   template <size_t N>
   using ConstSpan = Span<const uint8_t, N>;
   template <size_t N>
   using MutableSpan = Span<uint8_t, N>;
 
-  EncryptedRandomAccessBlock() {
+  explicit EncryptedRandomAccessBlock(
+      VersionType aVersion = kEncryptedRandomAccessBlockLatestVersion) {
     mData.SetLength(BlockSize);
 
     // Zero-initialize the whole block so that reserved/unused bytes do not
     // expose stale data. This follows the same rationale as EncryptedBlock
     // (Bug 1867394).
     std::fill(mData.begin(), mData.end(), 0);
+
+    SetVersion(aVersion);
   }
 
   static constexpr size_t CipherMetadataSize = 32;
@@ -66,7 +72,6 @@ class EncryptedRandomAccessBlock {
   static constexpr size_t HeaderSize = 32;
 
  private:
-  using VersionType = uint16_t;
   static constexpr size_t VersionSize = sizeof(VersionType);
   static_assert(VersionSize == 2, "Version should take 2 bytes on disk.");
 
@@ -118,10 +123,11 @@ class EncryptedRandomAccessBlock {
     memcpy(mData.Elements(), aData.data(), BlockSize);
   }
 
+  ConstSpan<BlockSize> WholeBlock() const { return mData; }
+
   MutableSpan<BlockSize> MutableWholeBlock() { return mData; }
 
  private:
-  ConstSpan<BlockSize> WholeBlock() const { return mData; }
   nsTArray<uint8_t> mData;
 };
 

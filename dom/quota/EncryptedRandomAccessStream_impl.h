@@ -11,6 +11,7 @@
 #include "EncryptedRandomAccessStream.h"
 #include "ErrorList.h"
 #include "mozilla/CheckedInt.h"
+#include "mozilla/EndianUtils.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Result.h"
 #include "mozilla/ResultExtensions.h"
@@ -144,6 +145,101 @@ nsresult EncryptedRandomAccessStream<CipherStrategy>::DecryptBlockVersion1(
   mCurrentBlockTextLength = textSize;
   memcpy(mPlainBuffer.data(), payloadView.MutableTextAndPadding().Elements(),
          sMaxTextLength);
+
+  return NS_OK;
+}
+
+template <typename CipherStrategy>
+nsresult EncryptedRandomAccessStream<CipherStrategy>::EncryptBlockVersion1(
+    EncryptedRandomAccessBlock& aEncryptedBlock, BlockIndexType aBlockIndex) {
+  const auto aad = BuildAad(aEncryptedBlock, aBlockIndex);
+  auto nonce = CipherStrategy::MakeBlockNonce();
+
+  auto rv = PadPlainBuffer();
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  std::array<uint8_t, sTextLengthFieldSize + sMaxTextLength> payload{};
+  auto payloadSize = mCurrentBlockTextLength;
+  mozilla::LittleEndian::writeUint16(payload.data(), payloadSize);
+  memcpy(payload.data() + sTextLengthFieldSize, mPlainBuffer.data(),
+         sMaxTextLength);
+
+  const typename CipherStrategy::EncryptionInput eInput{
+      .mMasterKey = mMasterKey,
+      .mBlockNumber = aBlockIndex,
+      .mNonce = nonce,
+      .mPlaintext = payload,
+      .mAad = aad,
+  };
+
+  std::array<uint8_t, EncryptedRandomAccessBlock::CipherPayloadSize> cipherText;
+  std::array<
+      uint8_t,
+      EncryptedRandomAccessBlockCipherMetadataViewV1::AuthenticationTagSize>
+      tag;
+  typename CipherStrategy::EncryptionOutput eOutput{
+      .mCiphertext = cipherText,
+      .mTag = tag,
+  };
+
+  rv = CipherStrategy::Encrypt(eInput, eOutput);
+  if (NS_FAILED(rv)) {
+    return NS_ERROR_CORRUPTED_CONTENT;
+  }
+
+  EncryptedRandomAccessBlockCipherMetadataViewV1 view(
+      aEncryptedBlock.MutableCipherMetadata());
+  memcpy(view.MutableNonce().data(), nonce.data(), nonce.size());
+  memcpy(view.MutableAuthenticationTag().data(), tag.data(), tag.size());
+  memcpy(aEncryptedBlock.MutableCipherPayload().data(), cipherText.data(),
+         cipherText.size());
+
+  return NS_OK;
+}
+
+template <typename CipherStrategy>
+nsresult EncryptedRandomAccessStream<CipherStrategy>::SaveCurrentBlock() {
+  if (!mBlockDirty) {
+    return NS_OK;
+  }
+
+  if (mCurrentBlockIndex > mTotalBlockCount) {
+    return NS_ERROR_CORRUPTED_CONTENT;
+  }
+
+  // NOTE: When information held in the original block's header or metadata is
+  // needed, the block must be read back from the base stream. But with the
+  // current |EncryptedRandomAccessBlock| V1 that isn't necessary, so build a
+  // fresh block to avoid the extra I/O.
+  EncryptedRandomAccessBlock encryptedBlock;
+  const bool newBlock = mCurrentBlockIndex == mTotalBlockCount;
+
+  const auto version = encryptedBlock.Version();
+  switch (version) {
+    case 1: {
+      const auto rv = EncryptBlockVersion1(encryptedBlock, mCurrentBlockIndex);
+      if (NS_FAILED(rv)) {
+        return rv;
+      }
+      break;
+    }
+    default: {
+      return NS_ERROR_CORRUPTED_CONTENT;
+    }
+  }
+
+  auto rv = WriteEncryptedBlockToBaseStream(mCurrentBlockIndex, encryptedBlock);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  if (newBlock) {
+    mTotalBlockCount++;
+  }
+
+  mBlockDirty = false;
 
   return NS_OK;
 }

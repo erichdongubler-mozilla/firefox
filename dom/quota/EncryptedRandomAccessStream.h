@@ -18,6 +18,7 @@
 #include "nsIInputStream.h"
 #include "nsIOutputStream.h"
 #include "nsIRandomAccessStream.h"
+#include "nsIRandomGenerator.h"
 #include "nsISeekableStream.h"
 #include "nsStreamUtils.h"
 #include "nscore.h"
@@ -70,6 +71,50 @@ namespace mozilla::dom::quota {
  * |mLogicalSize|. Other blocks are loaded lazily when a read needs them. So,
  * malformed non-final blocks may not be detected until they are read.
  *
+ * Rules of blocks:
+ *
+ * A block can be in three places: the in-memory current block, the base stream
+ * (not necessarily synced to disk), and the disk.
+ * |LoadBlock()| reads a block from the base stream into memory,
+ * |SaveCurrentBlock()| writes the current block to the base stream, and only
+ * |Flush()| / |Close()| sync the base stream to disk.
+ *
+ *  - |mTotalBlockCount| is the number of encrypted blocks written to the base
+ *    stream. It is derived from the base stream size in |Create()| and only
+ *    ever bumped by |SaveCurrentBlock()| after it writes a brand-new block to
+ *    the base stream.
+ *
+ *  - While |mBlockLoaded|, a single "current block" is held in memory,
+ *    represented by its plaintext (|mPlainBuffer|) and valid length
+ *    (|mCurrentBlockTextLength|). When loaded, |mCurrentBlockIndex| relates to
+ *    the base stream as follows
+ *    (|mCurrentBlockIndex > mTotalBlockCount| is never valid):
+ *
+ *      block index:     0        1        2     |  3 == mTotalBlockCount
+ *                    +--------+--------+--------+ +- - - - - - +
+ *      base stream:  | block0 | block1 | block2 | |   (none)   |
+ *                    +--------+--------+--------+ +- - - - - - +
+ *                    |<-------- written ------->| |<- memory ->|
+ *                                                     only
+ *      mCurrentBlockIndex <  mTotalBlockCount: a block in the base stream
+ *      mCurrentBlockIndex == mTotalBlockCount: a pending append block, not in
+ *                                              the base stream yet (created in
+ *                                              memory by
+ *                                              |LoadNewBlockAtEnd()|)
+ *
+ *  - |LoadBlock()| reads blocks from the base stream. That means it rejects
+ *    |aBlockIndex >= mTotalBlockCount|. So it doesn't read an in-memory block
+ *    not yet on the stream.
+ *
+ *  - |LoadNewBlockAtEnd()| only sets up the pending append block in memory,
+ *    doing no I/O.
+ *
+ *  - Only the current block can be |mBlockDirty|, and it is always written to
+ *    the base stream before moving to another block.
+ *
+ *  - I/O never relies on the base stream cursor position: every read/write
+ *    explicitly seeks first.
+ *
  * This class also implements |nsIInputStream| and |nsIOutputStream| so it can
  * be used with facilities such as |NS_AsyncCopy|.
  */
@@ -104,15 +149,29 @@ class EncryptedRandomAccessStreamBase : public nsIRandomAccessStream,
   virtual ~EncryptedRandomAccessStreamBase() = default;
 
   static constexpr auto sBlockSize = EncryptedRandomAccessBlock::BlockSize;
+  static constexpr auto sTextLengthFieldSize =
+      DecryptedRandomAccessBlockCipherPayloadView::TextLengthFieldSize;
   static constexpr auto sMaxTextLength =
       DecryptedRandomAccessBlockCipherPayloadView::MaxTextLength;
 
   virtual nsresult LoadBlock(BlockIndexType aBlockIndex) = 0;
 
-  nsresult FlushCurrentBlock();
+  nsresult LoadNewBlockAtEnd();
+
+  virtual nsresult SaveCurrentBlock() = 0;
 
   nsresult ReadEncryptedBlockFromBaseStream(
       BlockIndexType aBlockIndex, EncryptedRandomAccessBlock& aEncryptedBlock);
+
+  nsresult WriteEncryptedBlockToBaseStream(
+      BlockIndexType aBlockIndex,
+      const EncryptedRandomAccessBlock& aEncryptedBlock);
+
+  nsresult ZeroExtendTo(uint64_t aNewLogicalSize);
+
+  nsresult PadPlainBuffer();
+
+  nsresult GenerateRandomBytes(uint8_t* aBuffer, uint32_t aLength);
 
   static AadType BuildAad(const EncryptedRandomAccessBlock& aEncryptedBlock,
                           BlockIndexType aBlockIndex);
@@ -120,6 +179,7 @@ class EncryptedRandomAccessStreamBase : public nsIRandomAccessStream,
   // Because the current cipher strategies for random access are
   // stateless, this class doesn't have to own a strategy.
   const NotNull<nsCOMPtr<nsIRandomAccessStream>> mBaseStream;
+  nsCOMPtr<nsIRandomGenerator> mRandomGenerator;
 
   // |mLogicalPosition| is the current read/write position and |mLogicalSize| is
   // the total size of the plaintext stream, both measured in plaintext bytes
@@ -169,6 +229,11 @@ class EncryptedRandomAccessStream final
   ~EncryptedRandomAccessStream();
 
   nsresult LoadBlock(BlockIndexType aBlockIndex) override;
+
+  nsresult SaveCurrentBlock() override;
+
+  nsresult EncryptBlockVersion1(EncryptedRandomAccessBlock& aEncryptedBlock,
+                                BlockIndexType aBlockIndex);
 
   nsresult DecryptBlockVersion1(EncryptedRandomAccessBlock& aEncryptedBlock,
                                 BlockIndexType aBlockIndex);
