@@ -261,23 +261,6 @@ export class SidebarCustomize extends SidebarPage {
             )}
             </moz-checkbox>
           </moz-fieldset>
-          ${when(
-            !this.verticalTabsEnabled,
-            () => html`
-              <moz-fieldset
-                class="customize-group medium-top-margin no-end-margin no-label"
-              >
-                <moz-checkbox
-                  type="checkbox"
-                  id="hide-launcher"
-                  name="hideLauncher"
-                  data-l10n-id="sidebar-hide-sidebar"
-                  @change=${this.#handleHideLauncherChange}
-                  ?checked=${this.visibility == "hide-launcher"}
-                ></moz-checkbox>
-              </moz-fieldset>
-            `
-          )}
           <moz-fieldset class="customize-group medium-top-margin no-label">
             <moz-checkbox
               type="checkbox"
@@ -343,18 +326,6 @@ export class SidebarCustomize extends SidebarPage {
     Services.prefs.setStringPref(
       VISIBILITY_SETTING_PREF,
       e.target.checked ? "hide-sidebar" : "always-show"
-    );
-    Glean.sidebarCustomize.sidebarDisplay.record({
-      preference: e.target.checked ? "hide" : "always",
-    });
-  }
-
-  #handleHideLauncherChange(e) {
-    e.stopPropagation();
-    this.visibility = e.target.checked ? "hide-launcher" : "hide-on-close";
-    Services.prefs.setStringPref(
-      VISIBILITY_SETTING_PREF,
-      e.target.checked ? "hide-launcher" : "hide-on-close"
     );
     Glean.sidebarCustomize.sidebarDisplay.record({
       preference: e.target.checked ? "hide" : "always",
