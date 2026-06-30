@@ -957,6 +957,8 @@ RefPtr<PrintPromise> CanonicalBrowsingContext::Print(
 #ifndef NS_PRINTING
   return PrintPromise::CreateAndReject(NS_ERROR_NOT_AVAILABLE, __func__);
 #else
+// Content analysis is not supported on non-Windows platforms.
+#  if defined(XP_WIN)
   bool needContentAnalysis = false;
   nsCOMPtr<nsIContentAnalysis> contentAnalysis =
       mozilla::components::nsIContentAnalysis::Service();
@@ -999,6 +1001,7 @@ RefPtr<PrintPromise> CanonicalBrowsingContext::Print(
             });
     return done;
   }
+#  endif
   return PrintWithNoContentAnalysis(aPrintSettings, false, nullptr);
 #endif
 }

@@ -83,7 +83,8 @@ function assertContentAnalysisRequest(request, expectedUrl) {
   );
   is(request.textContent, "", "request textContent should be empty");
   is(request.filePath, "", "request filePath should be empty");
-  isnot(request.getPrintData().length, 0, "request should have print data");
+  isnot(request.printDataHandle, 0, "request printDataHandle should not be 0");
+  isnot(request.printDataSize, 0, "request printDataSize should not be 0");
   is(
     request.userActionRequestsCount,
     1,
@@ -117,7 +118,7 @@ add_task(
 
         await waitForFileToAlmostMatchSize(
           filePath,
-          mockCA.calls[0].getPrintData().length
+          mockCA.calls[0].printDataSize
         );
 
         await IOUtils.remove(filePath);
@@ -203,7 +204,7 @@ add_task(async function testPrintThroughDialogWithContentAnalysisActive() {
 
       await waitForFileToAlmostMatchSize(
         file.path,
-        mockCA.calls[0].getPrintData().length
+        mockCA.calls[0].printDataSize
       );
     },
     testPDFUrl,

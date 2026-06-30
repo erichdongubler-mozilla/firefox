@@ -18,7 +18,6 @@ let lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
-  ContentAnalysisUtils: "resource://gre/modules/ContentAnalysisUtils.sys.mjs",
   Finder: "resource://gre/modules/Finder.sys.mjs",
   FinderParent: "resource://gre/modules/FinderParent.sys.mjs",
   PopupAndRedirectBlocker:
@@ -180,21 +179,17 @@ export class MozBrowser extends MozElements.MozElementMixin(XULFrameElement) {
             // Submit a content analysis request for the DataTransfer and
             // stop dispatching this drop event.  Reissue the drop if all
             // requests are permitted, otherwise issue a dragexit.
-            let request =
-              lazy.ContentAnalysisUtils.createContentAnalysisRequest(
-                {
-                  analysisType: Ci.nsIContentAnalysisRequest.eBulkDataEntry,
-                  operationTypeForDisplay:
-                    Ci.nsIContentAnalysisRequest.eDroppedText,
-                  reason: Ci.nsIContentAnalysisRequest.eDragAndDrop,
-                  url: contentAnalysis.getURIForDropEvent(event),
-                  windowGlobalParent: this.browsingContext.currentWindowContext,
-                },
-                {
-                  dataTransfer: event.dataTransfer,
-                  sourceWindowGlobal: dragSession.sourceWindowContext,
-                }
-              );
+            let request = {
+              analysisType: Ci.nsIContentAnalysisRequest.eBulkDataEntry,
+              dataTransfer: event.dataTransfer,
+              operationTypeForDisplay:
+                Ci.nsIContentAnalysisRequest.eDroppedText,
+              reason: Ci.nsIContentAnalysisRequest.eDragAndDrop,
+              resources: [],
+              sourceWindowGlobal: dragSession.sourceWindowContext,
+              uri: contentAnalysis.getURIForDropEvent(event),
+              windowGlobalParent: this.browsingContext.currentWindowContext,
+            };
 
             // Tell browser to record the event target and to delay EndDragSession
             // until the content analysis results are given.

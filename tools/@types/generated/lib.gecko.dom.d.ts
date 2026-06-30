@@ -529,10 +529,10 @@ interface CompositionEventInit extends UIEventInit {
 }
 
 interface ComputedEffectTiming extends EffectTiming {
-    activeDuration?: CSSNumberish;
+    activeDuration?: number;
     currentIteration?: number | null;
-    endTime?: CSSNumberish;
-    localTime?: CSSNumberish | null;
+    endTime?: number;
+    localTime?: number | null;
     progress?: number | null;
 }
 
@@ -701,10 +701,8 @@ interface DOMRectInit {
 interface DateTimeValue {
     day?: number;
     hour?: number;
-    millisecond?: number;
     minute?: number;
     month?: number;
-    second?: number;
     year?: number;
 }
 
@@ -857,7 +855,7 @@ interface EditContextInit {
 interface EffectTiming {
     delay?: number;
     direction?: PlaybackDirection;
-    duration?: number | CSSNumericValue | string;
+    duration?: number | string;
     easing?: string;
     endDelay?: number;
     fill?: FillMode;
@@ -1804,7 +1802,6 @@ interface InvokeToolOptions {
 
 interface JSActorOptions {
     remoteTypes?: string[];
-    safeForUntrustedWebProcess?: boolean;
 }
 
 interface JSActorSidedOptions {
@@ -2644,7 +2641,7 @@ interface OpenPopupOptions {
 interface OptionalEffectTiming {
     delay?: number;
     direction?: PlaybackDirection;
-    duration?: number | CSSNumericValue | string;
+    duration?: number | string;
     easing?: string;
     endDelay?: number;
     fill?: FillMode;
@@ -3291,13 +3288,6 @@ interface RTCBandwidthEstimationInternal {
     trackIdentifier: string;
 }
 
-interface RTCCertificateStats extends RTCStats {
-    base64Certificate: string;
-    fingerprint: string;
-    fingerprintAlgorithm: string;
-    issuerCertificateId?: string;
-}
-
 interface RTCCodecStats extends RTCStats {
     channels?: number;
     clockRate?: number;
@@ -3420,8 +3410,6 @@ interface RTCIceCandidatePairStats extends RTCStats {
     lastPacketSentTimestamp?: DOMHighResTimeStamp;
     localCandidateId?: string;
     nominated?: boolean;
-    packetsReceived?: number;
-    packetsSent?: number;
     priority?: number;
     readable?: boolean;
     remoteCandidateId?: string;
@@ -3429,7 +3417,7 @@ interface RTCIceCandidatePairStats extends RTCStats {
     selected?: boolean;
     state?: RTCStatsIceCandidatePairState;
     totalRoundTripTime?: number;
-    transportId: string;
+    transportId?: string;
     writable?: boolean;
 }
 
@@ -3443,7 +3431,7 @@ interface RTCIceCandidateStats extends RTCStats {
     proxied?: string;
     relayProtocol?: string;
     tcpType?: RTCIceTcpCandidateType;
-    transportId: string;
+    transportId?: string;
     usernameFragment?: string;
 }
 
@@ -3566,7 +3554,6 @@ interface RTCOutboundRtpStreamStats extends RTCSentRtpStreamStats {
     framesSent?: number;
     headerBytesSent?: number;
     hugeFramesSent?: number;
-    keyFramesEncoded?: number;
     mid?: string;
     nackCount?: number;
     pliCount?: number;
@@ -3738,7 +3725,6 @@ interface RTCStats {
 
 interface RTCStatsCollection {
     bandwidthEstimations?: RTCBandwidthEstimationInternal[];
-    certificateStats?: RTCCertificateStats[];
     codecStats?: RTCCodecStats[];
     dataChannelStats?: RTCDataChannelStats[];
     iceCandidatePairStats?: RTCIceCandidatePairStats[];
@@ -3780,21 +3766,13 @@ interface RTCTrackEventInit extends EventInit {
 }
 
 interface RTCTransportStats extends RTCStats {
-    bytesReceived?: number;
-    bytesSent?: number;
-    dtlsCipher?: string;
     dtlsRole?: RTCDtlsRole;
     dtlsState: RTCDtlsTransportState;
     iceLocalUsernameFragment?: string;
     iceRole?: RTCIceRole;
     iceState?: RTCIceTransportState;
-    localCertificateId?: string;
-    packetsReceived?: number;
-    packetsSent?: number;
-    remoteCertificateId?: string;
     selectedCandidatePairId?: string;
     srtpCipher?: string;
-    tlsVersion?: string;
 }
 
 interface RTCVideoFrameHistoryEntryInternal {
@@ -3951,10 +3929,8 @@ interface SanitizerConfig {
     comments?: boolean;
     dataAttributes?: boolean;
     elements?: SanitizerElementWithAttributes[];
-    processingInstructions?: SanitizerPI[];
     removeAttributes?: SanitizerAttribute[];
     removeElements?: SanitizerElement[];
-    removeProcessingInstructions?: SanitizerPI[];
     replaceWithChildrenElements?: SanitizerElement[];
 }
 
@@ -3966,10 +3942,6 @@ interface SanitizerElementNamespace {
 interface SanitizerElementNamespaceWithAttributes extends SanitizerElementNamespace {
     attributes?: SanitizerAttribute[];
     removeAttributes?: SanitizerAttribute[];
-}
-
-interface SanitizerProcessingInstruction {
-    target: string;
 }
 
 interface SchedulerPostTaskOptions {
@@ -4070,7 +4042,6 @@ interface SetHTMLUnsafeOptions {
 
 interface ShadowRootInit {
     clonable?: boolean;
-    customElementRegistry?: CustomElementRegistry | null;
     delegatesFocus?: boolean;
     mode: ShadowRootMode;
     referenceTarget?: string | null;
@@ -7114,7 +7085,6 @@ interface CSSStyleProperties extends CSSStyleDeclaration {
     lightingColor: string;
     lineBreak: string;
     lineHeight: string;
-    linkParameters: string;
     listStyle: string;
     listStyleImage: string;
     listStylePosition: string;
@@ -7912,7 +7882,6 @@ interface ChannelWrapper extends EventTarget {
     readonly canModify: boolean;
     channel: MozChannel | null;
     contentType: string;
-    readonly documentInnerWindowId: number;
     readonly documentURI: URI | null;
     readonly documentURL: string | null;
     readonly errorString: string | null;
@@ -7929,7 +7898,6 @@ interface ChannelWrapper extends EventTarget {
     onstop: ((this: ChannelWrapper, ev: Event) => any) | null;
     readonly originURI: URI | null;
     readonly originURL: string | null;
-    readonly parentDocumentInnerWindowId: number;
     readonly parentFrameId: number;
     readonly proxyInfo: MozProxyInfo | null;
     readonly remoteAddress: string | null;
@@ -8428,7 +8396,6 @@ interface CustomElementRegistry {
     define(name: string, constructor: CustomElementConstructor, options?: ElementDefinitionOptions): void;
     get(name: string): CustomElementConstructor | undefined;
     getName(constructor: CustomElementConstructor): string | null;
-    initialize(root: Node): void;
     setElementCreationCallback(name: string, callback: CustomElementCreationCallback): void;
     upgrade(root: Node): void;
     whenDefined(name: string): Promise<CustomElementConstructor>;
@@ -11786,6 +11753,7 @@ interface HTMLAnchorElement extends HTMLElement, HTMLHyperlinkElementUtils, Hype
     charset: string;
     coords: string;
     download: string;
+    hreflang: string;
     name: string;
     ping: string;
     referrerPolicy: string;
@@ -11793,7 +11761,9 @@ interface HTMLAnchorElement extends HTMLElement, HTMLHyperlinkElementUtils, Hype
     readonly relList: DOMTokenList;
     rev: string;
     shape: string;
+    target: string;
     text: string;
+    type: string;
     addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLAnchorElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
     addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
     removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLAnchorElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
@@ -11816,6 +11786,7 @@ interface HTMLAreaElement extends HTMLElement, HTMLHyperlinkElementUtils, Hyperl
     rel: string;
     readonly relList: DOMTokenList;
     shape: string;
+    target: string;
     addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLAreaElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
     addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
     removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLAreaElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
@@ -12337,7 +12308,6 @@ declare var HTMLHtmlElement: {
 interface HTMLHyperlinkElementUtils {
     href: string;
     toString(): string;
-    target: string;
 }
 
 interface HTMLIFrameElement extends HTMLElement, MozFrameLoaderOwner {
@@ -12675,7 +12645,6 @@ interface HTMLMediaElement extends HTMLElement {
     readonly mozMediaSourceObject: MediaSource | null;
     muted: boolean;
     readonly mutedPlayTime: number;
-    readonly mutedReasons: number;
     readonly networkState: number;
     onencrypted: ((this: HTMLMediaElement, ev: Event) => any) | null;
     onwaitingforkey: ((this: HTMLMediaElement, ev: Event) => any) | null;
@@ -13624,14 +13593,12 @@ interface HyperlinkElementUtils {
     hash: string;
     host: string;
     hostname: string;
-    hreflang: string;
     readonly origin: string;
     password: string;
     pathname: string;
     port: string;
     protocol: string;
     search: string;
-    type: string;
     username: string;
 }
 
@@ -15331,7 +15298,6 @@ interface MediaController extends EventTarget {
     readonly isActive: boolean;
     readonly isAnyMediaBeingControlled: boolean;
     readonly isAudible: boolean;
-    readonly isMuted: boolean;
     readonly isPlaying: boolean;
     onactivated: ((this: MediaController, ev: Event) => any) | null;
     onaudiblechange: ((this: MediaController, ev: Event) => any) | null;
@@ -15345,18 +15311,15 @@ interface MediaController extends EventTarget {
     readonly supportedKeys: MediaControlKey[];
     focus(): void;
     getMetadata(): MediaMetadataInit;
-    mute(): void;
     nextTrack(): void;
-    pause(reason: AudioFocusLossReason): void;
+    pause(): void;
     play(): void;
     prevTrack(): void;
-    resume(): void;
     seekBackward(seekOffset: number): void;
     seekForward(seekOffset: number): void;
     seekTo(seekTime: number, fastSeek?: boolean): void;
     skipAd(): void;
     stop(): void;
-    unmute(): void;
     addEventListener<K extends keyof MediaControllerEventMap>(type: K, listener: (this: MediaController, ev: MediaControllerEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
     addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
     removeEventListener<K extends keyof MediaControllerEventMap>(type: K, listener: (this: MediaController, ev: MediaControllerEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
@@ -18172,7 +18135,6 @@ interface RTCDtlsTransport extends EventTarget {
     readonly iceTransport: RTCIceTransport;
     onstatechange: ((this: RTCDtlsTransport, ev: Event) => any) | null;
     readonly state: RTCDtlsTransportState;
-    getRemoteCertificates(): ArrayBuffer[];
     addEventListener<K extends keyof RTCDtlsTransportEventMap>(type: K, listener: (this: RTCDtlsTransport, ev: RTCDtlsTransportEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
     addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
     removeEventListener<K extends keyof RTCDtlsTransportEventMap>(type: K, listener: (this: RTCDtlsTransport, ev: RTCDtlsTransportEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
@@ -20638,11 +20600,9 @@ interface SVGZoomAndPan {
 interface Sanitizer {
     allowAttribute(attribute: SanitizerAttribute): boolean;
     allowElement(element: SanitizerElementWithAttributes): boolean;
-    allowProcessingInstruction(pi: SanitizerPI): boolean;
     get(): SanitizerConfig;
     removeAttribute(attribute: SanitizerAttribute): boolean;
     removeElement(element: SanitizerElement): boolean;
-    removeProcessingInstruction(pi: SanitizerPI): boolean;
     removeUnsafe(): boolean;
     replaceElementWithChildren(element: SanitizerElement): boolean;
     setComments(allow: boolean): boolean;
@@ -22037,29 +21997,20 @@ declare var TestInterfaceMaplikeObject: {
     isInstance: IsInstance<TestInterfaceMaplikeObject>;
 };
 
-interface TestInterfaceObservableArray extends TestInterfaceObservableArrayBase {
-    observableArrayInterface: TestInterfaceObservableArray[];
-    interfaceAppendElementInternal(value: TestInterfaceObservableArray): void;
-    interfaceElementAtInternal(index: number): TestInterfaceObservableArray;
-    interfaceLengthInternal(): number;
-    interfaceRemoveLastElementInternal(): void;
-    interfaceReplaceElementAtInternal(index: number, value: TestInterfaceObservableArray): void;
-}
-
-declare var TestInterfaceObservableArray: {
-    prototype: TestInterfaceObservableArray;
-    new(callbacks?: ObservableArrayCallbacks): TestInterfaceObservableArray;
-    isInstance: IsInstance<TestInterfaceObservableArray>;
-};
-
-interface TestInterfaceObservableArrayBase {
+interface TestInterfaceObservableArray {
     observableArrayBoolean: boolean[];
+    observableArrayInterface: TestInterfaceObservableArray[];
     observableArrayObject: any[];
     booleanAppendElementInternal(value: boolean): void;
     booleanElementAtInternal(index: number): boolean;
     booleanLengthInternal(): number;
     booleanRemoveLastElementInternal(): void;
     booleanReplaceElementAtInternal(index: number, value: boolean): void;
+    interfaceAppendElementInternal(value: TestInterfaceObservableArray): void;
+    interfaceElementAtInternal(index: number): TestInterfaceObservableArray;
+    interfaceLengthInternal(): number;
+    interfaceRemoveLastElementInternal(): void;
+    interfaceReplaceElementAtInternal(index: number, value: TestInterfaceObservableArray): void;
     objectAppendElementInternal(value: any): void;
     objectElementAtInternal(index: number): any;
     objectLengthInternal(): number;
@@ -22067,10 +22018,10 @@ interface TestInterfaceObservableArrayBase {
     objectReplaceElementAtInternal(index: number, value: any): void;
 }
 
-declare var TestInterfaceObservableArrayBase: {
-    prototype: TestInterfaceObservableArrayBase;
-    new(): TestInterfaceObservableArrayBase;
-    isInstance: IsInstance<TestInterfaceObservableArrayBase>;
+declare var TestInterfaceObservableArray: {
+    prototype: TestInterfaceObservableArray;
+    new(callbacks?: ObservableArrayCallbacks): TestInterfaceObservableArray;
+    isInstance: IsInstance<TestInterfaceObservableArray>;
 };
 
 interface TestInterfaceSetlike {
@@ -23289,8 +23240,8 @@ declare var VideoTrackList: {
 };
 
 interface ViewTimeline extends ScrollTimeline {
-    readonly endOffset: CSSNumericValue | null;
-    readonly startOffset: CSSNumericValue | null;
+    readonly endOffset: number | null;
+    readonly startOffset: number | null;
     readonly subject: Element | null;
 }
 
@@ -25966,13 +25917,11 @@ interface WindowGlobalParent extends WindowContext {
     readonly contentBlockingLog: string;
     readonly contentParentId: number;
     readonly cookieJarSettings: nsICookieJarSettings | null;
-    readonly documentChannel: MozChannel | null;
     readonly documentPrincipal: Principal;
     readonly documentStoragePrincipal: Principal;
     readonly documentTitle: string;
     readonly documentURI: URI | null;
     readonly domProcess: nsIDOMProcessParent | null;
-    readonly failedChannel: MozChannel | null;
     fullscreen: boolean;
     readonly isActiveInTab: boolean;
     readonly isClosed: boolean;
@@ -27064,8 +27013,6 @@ declare namespace InspectorUtils {
     function getCSSValuesForProperty(property: string): string[];
     function getCSSWideKeywords(): string[];
     function getChildrenForNode(node: Node, showingAnonymousContent: boolean, includeAssignedNodes: boolean): Node[];
-    function getComputationSteps(expression: string, element: Element, pseudo?: string): string[];
-    function getComputationStepsSupportedCSSFunctions(): string[];
     function getContentState(element: Element): number;
     function getGridContainerType(aElement: Element): number;
     function getMatchingCSSRules(element: Element, pseudo?: string, relevantLinkVisited?: boolean, withStartingStyle?: boolean): (CSSRule | InspectorDeclaration)[];
@@ -27090,7 +27037,6 @@ declare namespace InspectorUtils {
     function isInheritedProperty(document: Document, property: string): boolean;
     function isUsedColorSchemeDark(element: Element): boolean;
     function isValidCSSColor(colorString: string): boolean;
-    function isValidCSSImage(imageString: string): boolean;
     function parseStyleSheet(sheet: CSSStyleSheet, input: string): void;
     function relativeLuminance(r: number, g: number, b: number): number;
     function removeContentState(element: Element, state: number, clearActiveDocument?: boolean): boolean;
@@ -28130,7 +28076,6 @@ type RequestInfo = Request | string;
 type SanitizerAttribute = string | SanitizerAttributeNamespace;
 type SanitizerElement = string | SanitizerElementNamespace;
 type SanitizerElementWithAttributes = string | SanitizerElementNamespaceWithAttributes;
-type SanitizerPI = string | SanitizerProcessingInstruction;
 type StackFrame = nsIStackFrame;
 type StringOrOpenPopupOptions = string | OpenPopupOptions;
 type StructuredClonable = any;
@@ -28158,7 +28103,6 @@ type AnimationPlayState = "finished" | "idle" | "paused" | "running";
 type AnimationReplaceState = "active" | "persisted" | "removed";
 type AriaNotifyPriority = "high" | "normal";
 type AudioContextState = "closed" | "running" | "suspended";
-type AudioFocusLossReason = "system-permanent" | "system-transient" | "user";
 type AudioSampleFormat = "f32" | "f32-planar" | "s16" | "s16-planar" | "s32" | "s32-planar" | "u8" | "u8-planar";
 type AudioSessionState = "active" | "inactive" | "interrupted";
 type AudioSessionType = "ambient" | "auto" | "play-and-record" | "playback" | "transient" | "transient-solo";
@@ -28378,7 +28322,7 @@ type RTCSctpTransportState = "closed" | "connected" | "connecting";
 type RTCSdpType = "answer" | "offer" | "pranswer" | "rollback";
 type RTCSignalingState = "closed" | "have-local-offer" | "have-local-pranswer" | "have-remote-offer" | "have-remote-pranswer" | "stable";
 type RTCStatsIceCandidatePairState = "cancelled" | "failed" | "frozen" | "in-progress" | "succeeded" | "waiting";
-type RTCStatsType = "candidate-pair" | "certificate" | "codec" | "csrc" | "data-channel" | "inbound-rtp" | "local-candidate" | "media-source" | "outbound-rtp" | "peer-connection" | "remote-candidate" | "remote-inbound-rtp" | "remote-outbound-rtp" | "session" | "track" | "transport";
+type RTCStatsType = "candidate-pair" | "codec" | "csrc" | "data-channel" | "inbound-rtp" | "local-candidate" | "media-source" | "outbound-rtp" | "peer-connection" | "remote-candidate" | "remote-inbound-rtp" | "remote-outbound-rtp" | "session" | "track" | "transport";
 type ReadableStreamReaderMode = "byob";
 type RecordingState = "inactive" | "paused" | "recording";
 type ReferrerPolicy = "" | "no-referrer" | "no-referrer-when-downgrade" | "origin" | "origin-when-cross-origin" | "same-origin" | "strict-origin" | "strict-origin-when-cross-origin" | "unsafe-url";

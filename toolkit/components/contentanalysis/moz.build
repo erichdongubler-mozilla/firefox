@@ -8,7 +8,6 @@ with Files("**"):
 UNIFIED_SOURCES += [
     "content_analysis/sdk/analysis.pb.cc",
     "ContentAnalysis.cpp",
-    "ContentAnalysisBackendFactory.cpp",
     "ExternalAgentBackend.cpp",
 ]
 
