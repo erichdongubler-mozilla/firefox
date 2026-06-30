@@ -52,6 +52,22 @@ describe("<SportsMatchRow> upcoming variant", () => {
     expect(codes[1].textContent).toBe("USA");
   });
 
+  it("displays team.region for the code, falling back to team.key", () => {
+    const { container } = renderWithDispatch(
+      <SportsMatchRow
+        match={{
+          ...baseMatch,
+          home_team: { key: "CDR", region: "COD", name: "DR Congo" },
+        }}
+        variant="upcoming"
+      />
+    );
+    const codes = container.querySelectorAll(".sports-match-code");
+    // Home uses region; away has no region so it falls back to key.
+    expect(codes[0].textContent).toBe("COD");
+    expect(codes[1].textContent).toBe("USA");
+  });
+
   it("renders match time element", () => {
     const { container } = renderWithDispatch(
       <SportsMatchRow match={baseMatch} variant="upcoming" />

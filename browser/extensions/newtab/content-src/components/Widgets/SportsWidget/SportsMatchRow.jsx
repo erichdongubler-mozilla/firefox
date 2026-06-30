@@ -109,6 +109,9 @@ function MatchTeam({ team, isFollowed, localizedName }) {
     );
   }
   const displayName = localizedName ?? team.name;
+  // Display the ISO region to match other platforms; team.key stays the
+  // internal identity key. Fall back to key when region is absent.
+  const displayCode = team.region ?? team.key;
   return (
     <div className="sports-match-team">
       <span
@@ -125,7 +128,7 @@ function MatchTeam({ team, isFollowed, localizedName }) {
         )}
       </span>
       <span className="sports-match-code">
-        {isFollowed ? <strong>{team.key}</strong> : team.key}
+        {isFollowed ? <strong>{displayCode}</strong> : displayCode}
       </span>
     </div>
   );
