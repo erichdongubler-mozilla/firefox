@@ -304,12 +304,19 @@ export class BrowserToolboxLauncher extends EventEmitter {
       BROWSER_TOOLBOX_WINDOW_URL,
     ];
 
+    // get() returns an empty string for non-existing variables, so we need to
+    // check explicitly with exists().
+    function envForChild(p) {
+      if (!Services.env.exists(p)) {
+        return null;
+      }
+      return Services.env.get(p);
+    }
+
     const environment = {
       // Allow recording the startup of the browser toolbox when setting
       // MOZ_BROWSER_TOOLBOX_PROFILER_STARTUP=1 when running firefox.
-      MOZ_PROFILER_STARTUP: Services.env.get(
-        "MOZ_BROWSER_TOOLBOX_PROFILER_STARTUP"
-      ),
+      MOZ_PROFILER_STARTUP: envForChild("MOZ_BROWSER_TOOLBOX_PROFILER_STARTUP"),
       // And prevent profiling any subsequent toolbox
       MOZ_BROWSER_TOOLBOX_PROFILER_STARTUP: "0",
 
@@ -324,8 +331,8 @@ export class BrowserToolboxLauncher extends EventEmitter {
       // Don't inherit debug settings from the process launching us.  This can
       // cause errors when log files collide. But allow logging via and env var
       // so that we can debug the toolbox when needed.
-      MOZ_LOG: Services.env.get("MOZ_BROWSER_TOOLBOX_LOG"),
-      MOZ_LOG_FILE: Services.env.get("MOZ_BROWSER_TOOLBOX_LOG_FILE"),
+      MOZ_LOG: envForChild("MOZ_BROWSER_TOOLBOX_LOG"),
+      MOZ_LOG_FILE: envForChild("MOZ_BROWSER_TOOLBOX_LOG_FILE"),
       XPCOM_MEM_BLOAT_LOG: null,
       XPCOM_MEM_LEAK_LOG: null,
       XPCOM_MEM_LOG_CLASSES: null,
