@@ -351,7 +351,6 @@ for var in (
     "MOZ_SYSTEM_POLICIES",
     "MOZ_SELECTABLE_PROFILES",
     "USE_LIBZ_RS",
-    "MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_PROCESS",
 ):
     DEFINES[f"{var}_BOOL"] = "true" if CONFIG[var] else "false"
 
