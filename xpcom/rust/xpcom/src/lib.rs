@@ -39,10 +39,6 @@ pub mod interfaces;
 // XPCOM component getters.
 pub mod components;
 
-// XPConnect wrappers.
-mod xpc;
-pub use xpc::*;
-
 // Implementation details of the xpcom_macros crate.
 #[doc(hidden)]
 pub mod reexports;

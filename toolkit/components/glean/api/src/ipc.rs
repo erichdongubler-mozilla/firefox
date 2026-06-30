@@ -223,7 +223,11 @@ pub fn is_in_automation() -> bool {
 
 #[cfg(feature = "with_gecko")]
 pub fn is_in_automation() -> bool {
-    xpcom::is_in_automation()
+    extern "C" {
+        fn FOG_IPCIsInAutomation() -> bool;
+    }
+    // SAFETY NOTE: Safe because it returns a primitive by value.
+    unsafe { FOG_IPCIsInAutomation() }
 }
 
 // Reason: We instrument the error counts,

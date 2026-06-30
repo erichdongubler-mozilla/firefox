@@ -805,14 +805,15 @@ let ShellServiceInternal = {
     // Currently this only works on certain Windows versions.
     try {
       // First check if we can even pin the app where an exception means no.
-      this.shellService.canPinToTaskbar();
-
+      await this.shellService
+        .QueryInterface(Ci.nsIWindowsShellService)
+        .checkPinCurrentAppToTaskbarAsync(privateBrowsing);
       let winTaskbar = Cc["@mozilla.org/windows-taskbar;1"].getService(
         Ci.nsIWinTaskbar
       );
 
       // Then check if we're already pinned.
-      return !(await this.shellService.isCurrentAppPinnedToTaskbar(
+      return !(await this.shellService.isCurrentAppPinnedToTaskbarAsync(
         privateBrowsing
           ? winTaskbar.defaultPrivateGroupId
           : winTaskbar.defaultGroupId
@@ -837,7 +838,7 @@ let ShellServiceInternal = {
     if (await this.doesAppNeedPin(privateBrowsing)) {
       try {
         if (AppConstants.platform == "win") {
-          await this.shellService.pinCurrentAppToTaskbar(
+          await this.shellService.pinCurrentAppToTaskbarAsync(
             privateBrowsing,
             fireAndForget
           );
@@ -860,11 +861,12 @@ let ShellServiceInternal = {
   async pinToStartMenu() {
     if (await this.doesAppNeedStartMenuPin()) {
       try {
-        let pinSuccess = await this.shellService.pinCurrentAppToStartMenu();
+        let pinSuccess =
+          await this.shellService.pinCurrentAppToStartMenuAsync(false);
         Services.prefs.setBoolPref(MSIX_PREVIOUSLY_PINNED_PREF, pinSuccess);
         return pinSuccess;
       } catch (err) {
-        lazy.log.warn("Error thrown during pinCurrentAppToStartMenu", err);
+        lazy.log.warn("Error thrown during pinCurrentAppToStartMenuAsync", err);
         Services.prefs.setBoolPref(MSIX_PREVIOUSLY_PINNED_PREF, false);
       }
     }
@@ -900,7 +902,7 @@ let ShellServiceInternal = {
       return (
         AppConstants.platform === "win" &&
         Services.sysinfo.getProperty("hasWinPackageId") &&
-        !(await this.shellService.isCurrentAppPinnedToStartMenu())
+        !(await this.shellService.isCurrentAppPinnedToStartMenuAsync())
       );
     } catch (ex) {}
     return false;
@@ -917,7 +919,7 @@ let ShellServiceInternal = {
     if (!Services.sysinfo.getProperty("hasWinPackageId")) {
       return;
     }
-    let isPinned = await this.shellService.isCurrentAppPinnedToStartMenu();
+    let isPinned = await this.shellService.isCurrentAppPinnedToStartMenuAsync();
     if (
       !isPinned &&
       Services.prefs.getBoolPref(MSIX_PREVIOUSLY_PINNED_PREF, false)

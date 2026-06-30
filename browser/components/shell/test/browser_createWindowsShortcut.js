@@ -52,23 +52,17 @@ const gDirectoryServiceProvider = {
   QueryInterface: ChromeUtils.generateQI([Ci.nsIDirectoryServiceProvider]),
 };
 
-add_setup(async () => {
+add_setup(() => {
   Services.dirsvc
     .QueryInterface(Ci.nsIDirectoryService)
     .registerProvider(gDirectoryServiceProvider);
-
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.shell.shortcut.test", true]],
-  });
 });
 
-registerCleanupFunction(async () => {
+registerCleanupFunction(() => {
   gBase.remove(true);
   Services.dirsvc
     .QueryInterface(Ci.nsIDirectoryService)
     .unregisterProvider(gDirectoryServiceProvider);
-
-  await SpecialPowers.popPrefEnv();
 });
 
 add_task(async function test_CreateWindowsShortcut() {

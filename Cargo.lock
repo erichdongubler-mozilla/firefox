@@ -7391,16 +7391,13 @@ name = "shell_windows"
 version = "0.1.0"
 dependencies = [
  "base64 0.22.1",
- "futures",
  "log",
  "moz_task",
  "nserror",
  "nsstring",
- "scopeguard",
  "sha2",
  "thin-vec",
  "windows",
- "windows-core",
  "xpcom",
 ]
 

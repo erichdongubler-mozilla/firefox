@@ -6,7 +6,7 @@
 add_task(async function test_PIN_PRIVATE_FIREFOX_TO_TASKBAR() {
   const sandbox = sinon.createSandbox();
   let shell = {
-    canPinToTaskbar() {},
+    async checkPinCurrentAppToTaskbarAsync() {},
     QueryInterface: () => shell,
     get macDockSupport() {
       return this;
@@ -16,8 +16,8 @@ add_task(async function test_PIN_PRIVATE_FIREFOX_TO_TASKBAR() {
     },
 
     ensureAppIsPinnedToDock: sandbox.stub(),
-    isCurrentAppPinnedToTaskbar: sandbox.stub(),
-    pinCurrentAppToTaskbar: sandbox.stub().resolves(undefined),
+    isCurrentAppPinnedToTaskbarAsync: sandbox.stub(),
+    pinCurrentAppToTaskbarAsync: sandbox.stub().resolves(undefined),
     isAppInDock: false,
   };
 
@@ -48,15 +48,15 @@ add_task(async function test_PIN_PRIVATE_FIREFOX_TO_TASKBAR() {
 
   function check(count, message, arg) {
     Assert.equal(
-      shell.pinCurrentAppToTaskbar.callCount,
+      shell.pinCurrentAppToTaskbarAsync.callCount,
       count,
-      `pinCurrentAppToTaskbar was ${message} by the action for windows`
+      `pinCurrentAppToTaskbarAsync was ${message} by the action for windows`
     );
     if (arg) {
       Assert.equal(
-        shell.pinCurrentAppToTaskbar.calledWith(arg),
+        shell.pinCurrentAppToTaskbarAsync.calledWith(arg),
         true,
-        `pinCurrentAppToTaskbar was ${message} with the arg: ${JSON.stringify(
+        `pinCurrentAppToTaskbarAsync was ${message} with the arg: ${JSON.stringify(
           arg
         )}`
       );
@@ -65,13 +65,13 @@ add_task(async function test_PIN_PRIVATE_FIREFOX_TO_TASKBAR() {
   check(1, "called", true);
 
   // Pretend the app is already pinned.
-  shell.isCurrentAppPinnedToTaskbar.resolves(true);
+  shell.isCurrentAppPinnedToTaskbarAsync.resolves(true);
   shell.isAppInDock = true;
   await test();
   check(1, "not called");
 
   // Pretend the app became unpinned.
-  shell.isCurrentAppPinnedToTaskbar.resolves(false);
+  shell.isCurrentAppPinnedToTaskbarAsync.resolves(false);
   shell.isAppInDock = false;
   await test();
   check(2, "called again", true);

@@ -141,7 +141,7 @@ export var WindowsLaunchOnLogin = {
     let shellService = Cc["@mozilla.org/browser/shell-service;1"].getService(
       Ci.nsIWindowsShellService
     );
-    return shellService.enableLaunchOnLoginMSIX(LAUNCH_ON_LOGIN_TASKID);
+    return shellService.enableLaunchOnLoginMSIXAsync(LAUNCH_ON_LOGIN_TASKID);
   },
 
   /**
@@ -162,7 +162,7 @@ export var WindowsLaunchOnLogin = {
     let shellService = Cc["@mozilla.org/browser/shell-service;1"].getService(
       Ci.nsIWindowsShellService
     );
-    return shellService.disableLaunchOnLoginMSIX(LAUNCH_ON_LOGIN_TASKID);
+    return shellService.disableLaunchOnLoginMSIXAsync(LAUNCH_ON_LOGIN_TASKID);
   },
 
   /**
@@ -242,7 +242,7 @@ export var WindowsLaunchOnLogin = {
       let shellService = Cc["@mozilla.org/browser/shell-service;1"].getService(
         Ci.nsIWindowsShellService
       );
-      let state = await shellService.getLaunchOnLoginEnabledMSIX(
+      let state = await shellService.getLaunchOnLoginEnabledMSIXAsync(
         LAUNCH_ON_LOGIN_TASKID
       );
       return {
