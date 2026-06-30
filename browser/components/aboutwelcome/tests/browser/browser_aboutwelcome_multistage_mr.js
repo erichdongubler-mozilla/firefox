@@ -1126,9 +1126,7 @@ add_task(
     sandbox
       .stub(ASRouterScreenUtils, "evaluateScreenTargeting")
       .resolves(false)
-      .withArgs(
-        `("messaging-system-action.showEmbeddedImport" |preferenceValue == true) && useEmbeddedMigrationWizard`
-      )
+      .withArgs("useEmbeddedMigrationWizard")
       .resolves(true)
       .withArgs("backupRestoreEnabled && isDefaultBrowser && !doesAppNeedPin")
       .resolves(true);
