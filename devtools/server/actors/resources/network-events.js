@@ -401,6 +401,7 @@ class NetworkEventWatcher {
         if (Number.isInteger(updateResource.priority)) {
           resourceUpdates.priority = updateResource.priority;
         }
+        resourceUpdates.truncated = updateResource.truncated;
         break;
       case NETWORK_EVENT_TYPES.EVENT_TIMINGS:
         resourceUpdates.totalTime = updateResource.totalTime;
