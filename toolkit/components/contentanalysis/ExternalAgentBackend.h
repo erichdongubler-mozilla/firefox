@@ -10,6 +10,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/Result.h"
 #include "mozilla/StaticString.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/glean/ContentanalysisMetrics.h"
 #include "nsCOMPtr.h"
 #include "nsError.h"
@@ -90,7 +91,8 @@ class ExternalAgentBackend final : public ContentAnalysisBackend {
       content_analysis::sdk::ContentAnalysisRequest&& aRequest,
       bool aAutoAcknowledge,
       const std::shared_ptr<content_analysis::sdk::Client>& aClient,
-      bool aTestOnlyIgnoreCanceled = false);
+      bool aTestOnlyIgnoreCanceled = false,
+      std::shared_ptr<void> aPrintDataHandle = nullptr);
 
   void HandleResponseFromAgent(
       content_analysis::sdk::ContentAnalysisResponse&& aResponse);
@@ -103,8 +105,15 @@ class ExternalAgentBackend final : public ContentAnalysisBackend {
     glean::TimerId mTimerId;
     nsCString mAnalysisTypeStr;
     bool mAutoAcknowledge;
+    // For print requests on Windows, keeps the file-mapping section holding the
+    // PDF bytes alive while the agent processes this request. The agent
+    // duplicates the handle out of our process while servicing the request, and
+    // responses can arrive out of order, so the handle must stay open until
+    // this request's response arrives -- i.e. until this entry is removed.
+    // Empty for requests that do not carry a print-data handle.
+    std::shared_ptr<void> mPrintDataHandle;
   };
-  DataMutex<nsTHashMap<nsCString, BasicRequestInfo>>
+  DataMutex<nsTHashMap<nsCString, UniquePtr<BasicRequestInfo>>>
       mRequestTokenToBasicRequestInfoMap;
 
   // Build a framework ContentAnalysisResponse from an SDK protobuf. Returns

@@ -87,6 +87,10 @@ class ContentAnalysisBackend {
   virtual ~ContentAnalysisBackend() = default;
 };
 
+// Create the backend appropriate for the current platform. The concrete type
+// is chosen at compile time; see ContentAnalysisBackendFactory.cpp.
+already_AddRefed<ContentAnalysisBackend> CreateBackend();
+
 }  // namespace mozilla::contentanalysis
 
 #endif  // mozilla_contentanalysisbackend_h
