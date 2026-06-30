@@ -3839,6 +3839,10 @@ pref("services.common.log.logger.tokenserverclient", "Debug");
   // The URL of the Firefox Accounts auth server backend
   pref("identity.fxaccounts.auth.uri", "https://api.accounts.firefox.com/v1");
 
+  // Authenticate FxA token requests with the auth-server's typed Bearer scheme
+  // instead of Hawk. Kill-switch for the Hawk-to-Bearer migration.
+  pref("identity.fxaccounts.auth.useBearer", true);
+
   // Percentage chance we skip an extension storage sync (kinto life support).
   pref("services.sync.extension-storage.skipPercentageChance", 50);
 #endif // MOZ_SERVICES_SYNC
