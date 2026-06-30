@@ -2305,14 +2305,6 @@ class Settings(
     )
 
     /**
-     * Indicates if the menu CFR should be displayed to the user.
-     */
-    var shouldShowMenuCFR by booleanPreference(
-        key = appContext.getPreferenceKey(R.string.pref_key_menu_cfr),
-        default = false,
-    )
-
-    /**
      * Get the current mode for how https-only is enabled.
      */
     fun getHttpsOnlyMode(): HttpsOnlyMode {

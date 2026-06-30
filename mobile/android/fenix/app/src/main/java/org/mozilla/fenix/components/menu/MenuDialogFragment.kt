@@ -83,7 +83,6 @@ import org.mozilla.fenix.components.menu.compose.Addons
 import org.mozilla.fenix.components.menu.compose.CustomTabAddons
 import org.mozilla.fenix.components.menu.compose.CustomTabMenu
 import org.mozilla.fenix.components.menu.compose.MainMenu
-import org.mozilla.fenix.components.menu.compose.MenuCFRState
 import org.mozilla.fenix.components.menu.compose.MenuDialogBottomSheet
 import org.mozilla.fenix.components.menu.compose.MenuHandleState
 import org.mozilla.fenix.components.menu.compose.MoreSettingsSubmenu
@@ -314,22 +313,6 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                         bottomStart = CornerSize(0.dp),
                         bottomEnd = CornerSize(0.dp),
                     ),
-                    menuCfrState = if (settings.shouldShowMenuCFR && settings.cfrPopupsEnabled) {
-                        MenuCFRState(
-                            showCFR = settings.shouldShowMenuCFR && settings.cfrPopupsEnabled,
-                            titleRes = R.string.menu_cfr_title,
-                            messageRes = R.string.menu_cfr_body,
-                            orientation = appStore.state.orientation,
-                            onShown = {
-                                menuStore.dispatch(MenuAction.OnCFRShown)
-                            },
-                            onDismiss = {
-                                menuStore.dispatch(MenuAction.OnCFRDismiss)
-                            },
-                        )
-                    } else {
-                        null
-                    },
                 ) {
                     val syncStore = components.backgroundServices.syncStore
                     val tabCollectionStorage = components.core.tabCollectionStorage

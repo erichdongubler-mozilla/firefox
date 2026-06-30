@@ -128,7 +128,6 @@ class MenuDialogMiddleware(
             is MenuAction.InstallAddonSuccess -> installAddonSuccess()
             is MenuAction.CustomMenuItemAction -> customMenuItemAction(action.intent, action.url)
             is MenuAction.CustomizeReaderView -> customizeReaderView()
-            is MenuAction.OnCFRShown -> onCFRShown()
             is MenuAction.OnSummarizationMenuExposed -> cacheMenuExposure(store)
             is MenuAction.OnMoreMenuClicked -> cacheMoreMenuClick(store)
             is MenuAction.MoveToNonPrivateTab -> migratePrivateTab(store)
@@ -433,11 +432,6 @@ class MenuDialogMiddleware(
     ) = scope.launch {
         onSendPendingIntentWithUrl(intent, url)
         onDismiss()
-    }
-
-    private fun onCFRShown() = scope.launch {
-        settings.shouldShowMenuCFR = false
-        settings.lastCfrShownTimeInMillis = System.currentTimeMillis()
     }
 
     private fun cacheMenuExposure(store: Store<MenuState, MenuAction>) = scope.launch {

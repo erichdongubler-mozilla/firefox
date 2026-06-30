@@ -307,18 +307,6 @@ class ThreeDotMenuMainRobot(private val composeTestRule: ComposeTestRule) {
         Log.i(TAG, "verifyHomeMainMenuItems: Verified the main menu items on the home page.")
     }
 
-    fun verifyMainMenuCFR() {
-        Log.i(TAG, "verifyMainMenuCFR: Trying to verify the main menu CFR title is displayed.")
-        composeTestRule.mainMenuCFRTitle().assertIsDisplayed()
-        Log.i(TAG, "verifyMainMenuCFR: Verified the main menu CFR title is displayed.")
-        Log.i(TAG, "verifyMainMenuCFR: Trying to verify the main menu CFR message is displayed.")
-        composeTestRule.mainMenuCFRMessage().assertIsDisplayed()
-        Log.i(TAG, "verifyMainMenuCFR: Verified the main menu CFR message is displayed.")
-        Log.i(TAG, "verifyMainMenuCFR: Trying to verify the main menu CFR dismiss button is displayed.")
-        composeTestRule.closeMainMenuCFRButton().assertIsDisplayed()
-        Log.i(TAG, "verifyMainMenuCFR: Verified the main menu CFR dismiss button is displayed.")
-    }
-
     fun clickTheQuitFirefoxButton() {
         Log.i(TAG, "clickTheQuitFirefoxButton: Trying to click the \"Quit $appName\" button from the new main menu design.")
         composeTestRule.quitFirefoxButton().performClick()
@@ -891,12 +879,6 @@ private fun shareAllTabsButton() =
     onView(allOf(withText("Share all tabs"))).inRoot(RootMatchers.isPlatformPopup())
 
 // ComposeMainMenu
-
-private fun ComposeTestRule.mainMenuCFRTitle() = onNodeWithText(getStringResource(R.string.menu_cfr_title))
-
-private fun ComposeTestRule.mainMenuCFRMessage() = onNodeWithText(getStringResource(R.string.menu_cfr_body))
-
-private fun ComposeTestRule.closeMainMenuCFRButton() = onNodeWithTag("cfr.dismiss")
 
 private fun ComposeTestRule.backButton() = onNodeWithText("Back")
 

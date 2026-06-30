@@ -67,7 +67,6 @@ class MainMenuTest {
         AndroidComposeTestRuleV2(
             HomeActivityIntentTestRule(
                 skipOnboarding = true,
-                isMenuRedesignCFREnabled = false,
                 isPageLoadTranslationsPromptEnabled = false,
                 shakeToSummarizeFeatureFlagEnabled = true,
             ),
@@ -616,22 +615,6 @@ class MainMenuTest {
             verifySettingsToolbar()
         }.goBack(composeTestRule) {
             verifyHomeWordmark()
-        }
-    }
-
-    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080121
-    @Ignore("Disabled after enabling the composable toolbar and main menu: https://bugzilla.mozilla.org/show_bug.cgi?id=2006295")
-    @Test
-    fun verifyTheBrowserViewMainMenuCFRTest() {
-        val genericURL = mockWebServer.getGenericAsset(1)
-
-        composeTestRule.activityRule.applySettingsExceptions {
-            it.isMenuRedesignCFREnabled = true
-        }
-        navigationToolbar(composeTestRule) {
-        }.enterURLAndEnterToBrowser(genericURL.url) {
-        }.openThreeDotMenu {
-            verifyMainMenuCFR()
         }
     }
 

@@ -935,27 +935,6 @@ class MenuDialogMiddlewareTest {
     }
 
     @Test
-    fun `WHEN CFR is shown THEN on CFR shown action is dispatched`() = runTest(testDispatcher) {
-        var shownWasCalled = false
-
-        val appStore = spyk(AppStore())
-        val store = createStore(
-            appStore = appStore,
-            menuState = MenuState(
-                browserMenuState = null,
-            ),
-            onDismiss = { shownWasCalled = true },
-        )
-        testScheduler.advanceUntilIdle()
-
-        store.dispatch(MenuAction.OnCFRShown)
-        testScheduler.advanceUntilIdle()
-
-        assertFalse(settings.shouldShowMenuCFR)
-        assertFalse(shownWasCalled)
-    }
-
-    @Test
     fun `GIVEN summarization feature setting indicates the menu item is not visible, WHEN menu is initialized, THEN the menu item is not visible`() =
         runTest(testDispatcher) {
             summarizeFeatureSettings.showMenuItem = false
