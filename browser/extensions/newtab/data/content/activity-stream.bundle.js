@@ -15101,6 +15101,10 @@ const FocusTimer = ({
   } = useWidgetCelebration(widgetCelebrationRef);
   // Guards against a double-fire that would re-toggle SET_TYPE.
   const celebrationCompletedRef = (0,external_React_namespaceObject.useRef)(false);
+  // The timer is shared across open newtab/home pages, but each page fires its
+  // own end-of-session switch. Set the next type directly rather than toggling
+  // the shared value, so two pages don't toggle it and cancel out.
+  const completingTypeRef = (0,external_React_namespaceObject.useRef)(timerType);
   (0,external_React_namespaceObject.useEffect)(() => {
     if (isCelebrating) {
       celebrationCompletedRef.current = false;
@@ -15120,14 +15124,16 @@ const FocusTimer = ({
     }
     celebrationCompletedRef.current = true;
     resetProgressCircle();
+    const completedType = completingTypeRef.current;
+    const nextType = completedType === "focus" ? "break" : "focus";
+    const userAction = completedType === "focus" ? FocusTimer_USER_ACTION_TYPES.TIMER_TOGGLE_BREAK : FocusTimer_USER_ACTION_TYPES.TIMER_TOGGLE_FOCUS;
     (0,external_ReactRedux_namespaceObject.batch)(() => {
       dispatch(actionCreators.AlsoToMain({
         type: actionTypes.WIDGETS_TIMER_SET_TYPE,
         data: {
-          timerType: timerType === "focus" ? "break" : "focus"
+          timerType: nextType
         }
       }));
-      const userAction = timerType === "focus" ? FocusTimer_USER_ACTION_TYPES.TIMER_TOGGLE_BREAK : FocusTimer_USER_ACTION_TYPES.TIMER_TOGGLE_FOCUS;
       dispatch(actionCreators.OnlyToMain({
         type: actionTypes.WIDGETS_TIMER_USER_EVENT,
         data: {
@@ -15145,7 +15151,7 @@ const FocusTimer = ({
       }));
     });
     completeCelebration();
-  }, [completeCelebration, dispatch, resetProgressCircle, timerType, widgetSize]);
+  }, [completeCelebration, dispatch, resetProgressCircle, widgetSize]);
   const showSystemNotifications = prefs["widgets.focusTimer.showSystemNotifications"];
 
   // Held in a ref so the ticker effect below doesn't re-arm whenever
@@ -15178,6 +15184,7 @@ const FocusTimer = ({
         }
       }));
     });
+    completingTypeRef.current = timerType;
     celebrationCompletedRef.current = false;
 
     // animate the progress circle to turn solid green
