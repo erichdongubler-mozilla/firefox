@@ -132,8 +132,14 @@ export class FormHistoryAutoCompleteResult {
 
   getImageAt(index) {
     const item = this.getAt(index);
-    // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
-    return item?.image || "chrome://browser/skin/history.svg";
+
+    return (
+      item?.image ||
+      (this.getStyleAt(index) === "fromhistory"
+        ? // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
+          "chrome://browser/skin/history.svg"
+        : "")
+    );
   }
 
   getFinalCompleteValueAt(index) {

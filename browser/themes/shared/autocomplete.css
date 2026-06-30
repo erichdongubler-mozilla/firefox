@@ -28,6 +28,7 @@
 
   &[selected] {
     background-color: unset;
+    color: unset;
 
     &:not(:hover) > autocomplete-row-item {
       border-color: var(--focus-outline-color);
@@ -44,7 +45,10 @@
   }
 
   &[type="payment"] > autocomplete-row-item {
+    /* Payment icons are credit-card network logos, which are wider than they
+       are tall, so use a wider width to preserve their aspect ratio. */
     --icon-height: var(--icon-size-medium);
+    --icon-width: var(--icon-size-large);
   }
 
   > autocomplete-row-item {
