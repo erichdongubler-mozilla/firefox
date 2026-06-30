@@ -237,6 +237,8 @@ skip-if = [
 
 ["browser_toolbox_options_multiple_tabs.js"]
 
+["browser_toolbox_options_network_body_limit.js"]
+
 ["browser_toolbox_options_panel_toggle.js"]
 
 ["browser_toolbox_popups_debugging.js"]
