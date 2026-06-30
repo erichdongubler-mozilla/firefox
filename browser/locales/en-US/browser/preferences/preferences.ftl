@@ -1252,8 +1252,8 @@ containers-new-tab-check3 =
 
 containers-settings-button2 =
     .title = Settings
-containers-remove-button2 =
-    .title = Remove
+containers-remove-button3 =
+    .title = Delete
 
 ## Account and sync
 
