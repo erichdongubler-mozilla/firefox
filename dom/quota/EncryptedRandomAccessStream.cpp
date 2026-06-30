@@ -9,6 +9,7 @@
 #include "ErrorList.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/CheckedInt.h"
+#include "mozilla/EndianUtils.h"
 #include "mozilla/Span.h"
 #include "mozilla/ipc/RandomAccessStreamParams.h"
 #include "nsCOMPtr.h"
@@ -92,7 +93,7 @@ NS_IMETHODIMP EncryptedRandomAccessStreamBase::ReadSegments(
   // end is allowed, so reading from there must report EOF (zero bytes) rather
   // than loading a block that does not exist.
   while (aCount > 0 && mLogicalPosition < mLogicalSize) {
-    uint64_t blockIndex = mLogicalPosition / sMaxTextLength;
+    BlockIndexType blockIndex = mLogicalPosition / sMaxTextLength;
     const auto offsetInBlock =
         static_cast<uint32_t>(mLogicalPosition % sMaxTextLength);
 
@@ -206,6 +207,49 @@ NS_IMETHODIMP EncryptedRandomAccessStreamBase::GetOutputStream(
   nsCOMPtr<nsIOutputStream> outputStream(this);
   outputStream.forget(aResult);
   return NS_OK;
+}
+
+nsresult EncryptedRandomAccessStreamBase::ReadEncryptedBlockFromBaseStream(
+    BlockIndexType aBlockIndex, EncryptedRandomAccessBlock& aEncryptedBlock) {
+  const auto blockOffset = CheckedInt64(aBlockIndex) * sBlockSize;
+  if (!blockOffset.isValid()) {
+    return NS_ERROR_FILE_TOO_BIG;
+  }
+  auto rv = mBaseStream->Seek(NS_SEEK_SET, blockOffset.value());
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  uint32_t readBytes = 0;
+  rv = mBaseStream->InputStream()->Read(
+      AsWritableChars(aEncryptedBlock.MutableWholeBlock()).Elements(),
+      sBlockSize, &readBytes);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  // The base random access stream should return a complete block because it
+  // receives |sBlockSize| as a |aCount|. So, a short read is treated as a
+  // failure here.
+  if (readBytes != sBlockSize) {
+    return NS_ERROR_CORRUPTED_CONTENT;
+  }
+
+  return NS_OK;
+}
+
+EncryptedRandomAccessStreamBase::AadType
+EncryptedRandomAccessStreamBase::BuildAad(
+    const EncryptedRandomAccessBlock& aEncryptedBlock,
+    BlockIndexType aBlockIndex) {
+  AadType aad{};
+  auto header = aEncryptedBlock.Header();
+
+  static_assert(aad.size() == header.size() + sizeof(aBlockIndex));
+
+  memcpy(aad.data(), header.data(), header.size());
+  mozilla::LittleEndian::writeUint64(aad.data() + header.size(), aBlockIndex);
+
+  return aad;
 }
 
 //////////////////////////////////////////

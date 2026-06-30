@@ -91,6 +91,12 @@ class EncryptedRandomAccessStreamBase : public nsIRandomAccessStream,
   NS_IMETHOD Available(uint64_t* _retval) override;
 
  protected:
+  using BlockIndexType = uint64_t;
+  using TextLengthType =
+      DecryptedRandomAccessBlockCipherPayloadView::TextLengthType;
+  using AadType = std::array<uint8_t, EncryptedRandomAccessBlock::HeaderSize +
+                                          sizeof(BlockIndexType)>;
+
   EncryptedRandomAccessStreamBase(
       MovingNotNull<nsCOMPtr<nsIRandomAccessStream>> aStream)
       : mBaseStream(std::move(aStream)) {}
@@ -101,9 +107,15 @@ class EncryptedRandomAccessStreamBase : public nsIRandomAccessStream,
   static constexpr auto sMaxTextLength =
       DecryptedRandomAccessBlockCipherPayloadView::MaxTextLength;
 
-  virtual nsresult LoadBlock(uint64_t aBlockIndex) = 0;
+  virtual nsresult LoadBlock(BlockIndexType aBlockIndex) = 0;
 
   nsresult FlushCurrentBlock();
+
+  nsresult ReadEncryptedBlockFromBaseStream(
+      BlockIndexType aBlockIndex, EncryptedRandomAccessBlock& aEncryptedBlock);
+
+  static AadType BuildAad(const EncryptedRandomAccessBlock& aEncryptedBlock,
+                          BlockIndexType aBlockIndex);
 
   // Because the current cipher strategies for random access are
   // stateless, this class doesn't have to own a strategy.
@@ -118,11 +130,11 @@ class EncryptedRandomAccessStreamBase : public nsIRandomAccessStream,
   uint64_t mLogicalPosition = 0;
   uint64_t mLogicalSize = 0;  // It's initialized in |Create()|.
 
-  uint64_t mTotalBlockCount = 0;  // It's initialized in |Create()|.
+  BlockIndexType mTotalBlockCount = 0;  // It's initialized in |Create()|.
+  BlockIndexType mCurrentBlockIndex = 0;
 
-  uint64_t mCurrentBlockIndex = 0;
-  uint32_t mCurrentBlockTextLength = 0;  // |uint32_t| is enough.
   std::array<uint8_t, sMaxTextLength> mPlainBuffer{};
+  TextLengthType mCurrentBlockTextLength = 0;
 
   bool mBlockLoaded = false;
   bool mBlockDirty = false;
@@ -156,7 +168,10 @@ class EncryptedRandomAccessStream final
 
   ~EncryptedRandomAccessStream();
 
-  nsresult LoadBlock(uint64_t aBlockIndex) override;
+  nsresult LoadBlock(BlockIndexType aBlockIndex) override;
+
+  nsresult DecryptBlockVersion1(EncryptedRandomAccessBlock& aEncryptedBlock,
+                                BlockIndexType aBlockIndex);
 
   // Because the current cipher strategies for random access are
   // stateless, this class doesn't have to own a strategy.
