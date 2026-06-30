@@ -216,6 +216,15 @@ When using sccache, because of the operation on the files and storage,
 the initial build of Firefox will be slower.
 :::
 
+From version 0.14, the build system automatically sets `SCCACHE_BASEDIRS` to
+the object and source directories, as well as the sysroot and SDKs. sccache
+rewrites paths under those prefixes to be relative before computing cache keys,
+so builds performed in different worktrees (or in automation versus locally)
+share cache entries instead of missing on differing absolute paths. If you run a
+persistent sccache server, stop it once (`sccache --stop-server`) after
+upgrading so the new server picks up the setting. Set `SCCACHE_BASEDIRS`
+yourself at configure time to override the default.
+
 ### buildcache
 
 [BuildCache](https://gitlab.com/bits-n-bites/buildcache) is another compiler
