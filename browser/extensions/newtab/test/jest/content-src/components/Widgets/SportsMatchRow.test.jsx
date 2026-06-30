@@ -484,6 +484,29 @@ describe("<SportsMatchRow> results variant", () => {
     ).toBeInTheDocument();
   });
 
+  it("shows 'Penalties' instead of 'Full time' for medium-size rows", () => {
+    const { container } = renderWithDispatch(
+      <SportsMatchRow
+        match={{ ...baseMatch, home_penalty: 4, away_penalty: 3 }}
+        variant="results"
+        size="medium"
+      />
+    );
+    // Penalty scores still render inside the score pill.
+    expect(container.querySelectorAll(".sports-score-penalty")).toHaveLength(2);
+    // Medium replaces the status text with "Penalties" (no "Full time").
+    expect(
+      container.querySelector(
+        "[data-l10n-id='newtab-sports-widget-match-penalties']"
+      )
+    ).toBeInTheDocument();
+    expect(
+      container.querySelector(
+        "[data-l10n-id='newtab-sports-widget-match-full-time']"
+      )
+    ).not.toBeInTheDocument();
+  });
+
   it("does not render the penalties footer label for list-size rows", () => {
     const { container } = renderWithDispatch(
       <SportsMatchRow
@@ -494,7 +517,12 @@ describe("<SportsMatchRow> results variant", () => {
     );
     // Penalty scores still render inside the score pill.
     expect(container.querySelectorAll(".sports-score-penalty")).toHaveLength(2);
-    // The footer label is suppressed in list view.
+    // List view keeps only the status text, with no penalties label.
+    expect(
+      container.querySelector(
+        "[data-l10n-id='newtab-sports-widget-match-full-time']"
+      )
+    ).toBeInTheDocument();
     expect(
       container.querySelector(
         "[data-l10n-id='newtab-sports-widget-match-penalties']"
