@@ -37,11 +37,22 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "insecureConnectionTextPBModeEnabled",
   "security.insecure_connection_text.pbmode.enabled"
 );
+// [pref-trie-audit] "dom.security.https_only_mode" is an ambiguous prefix of
+// "dom.security.https_only_mode_break_upgrade_downgrade_endless_loop",
+// "dom.security.https_only_mode_error_page_user_suggestions",
+// "dom.security.https_only_mode_ever_enabled", "dom.security.https_only_mode_ever_enabled_pbm",
+// "dom.security.https_only_mode_pbm", "dom.security.https_only_mode_send_http_background_request";
+// triggers only for the exact pref (all siblings have their own registrations).
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
   "httpsOnlyModeEnabled",
   "dom.security.https_only_mode"
 );
+// [pref-trie-audit] "dom.security.https_first" is an ambiguous prefix of
+// "dom.security.https_first_add_exception_on_failure", "dom.security.https_first_exception_lifetime",
+// "dom.security.https_first_for_custom_ports", "dom.security.https_first_for_local_addresses",
+// "dom.security.https_first_for_unknown_suffixes", "dom.security.https_first_schemeless";
+// triggers only for the exact pref (all siblings have their own registrations).
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
   "httpsFirstModeEnabled",
