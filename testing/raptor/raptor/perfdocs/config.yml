@@ -6,12 +6,6 @@ name: raptor
 manifest: testing/raptor/raptor/raptor.toml
 static-only: False
 metrics:
-    "Seek Latency":
-        aliases:
-            - seekedWarmLatency
-            - seekedColdLatency
-        description: >
-            Time (in ms) from issuing a buffered currentTime seek to the seeked event, measured with the video decoder warm (kept playing) and cold (released while paused and recreated per seek).
     "cpu Time":
         aliases:
             - cpuTime
@@ -269,7 +263,6 @@ suites:
             throttled: "Pageload test using a throttled network environment"
             sample-python-support: "A sample test that uses a python support file to modify the test command."
             connect: "Verifies that connection time on a pageload is zero when a speculative connection has first been made"
-            media-seek: "Measures buffered video seek latency (time from a currentTime seek to the seeked event) with the decoder warm and cold."
             prefetch: "Speculation Rules prefetch test: clicks a link on a landing page whose inline speculationrules script (moderate eagerness) prefetches the target during hover, so a prefetch-capable browser serves the navigation from the prefetch cache."
             tp6-bench: >
                 A pageload benchmark test that quickly runs through a selection of the
