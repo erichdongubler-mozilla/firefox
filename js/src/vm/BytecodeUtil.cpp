@@ -3006,7 +3006,11 @@ static bool GenerateLcovInfo(JSContext* cx, JS::Realm* realm,
       }
       fun = &obj->as<JSFunction>();
 
-      MOZ_ASSERT(fun->isInterpreted());
+      // getOrCreateScript requires an interpreted function. Skip native or
+      // partially-initialized functions seen while walking gcthings directly.
+      if (!fun->isInterpreted()) {
+        continue;
+      }
 
       // Queue the script in the list of script associated to the
       // current source.
