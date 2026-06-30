@@ -6973,14 +6973,6 @@ bool nsDisplayTransform::CreateWebRenderCommands(
   params.paired_with_perspective = mHasAssociatedPerspective;
   params.mDeferredTransformItem = deferredTransformItem;
   params.mAnimated = animated;
-  // We used to rasterize content in local raster space (disabling subpixel AA)
-  // for animated transforms, to avoid re-rasterizing glyphs every frame. But
-  // local raster space skips WebRender's device-pixel snapping, so text under
-  // an animated transform that composites at a fractional device offset
-  // rendered blurry (Bug 2051166). Glyphs are now positioned with device-space
-  // offsets snapped on the CPU, so device raster space stays sharp and reuses
-  // cached glyphs across frames, making local rasterization here unnecessary.
-  params.mRasterizeLocally = false;
   params.SetPreserve3D(mFrame->Extend3DContext() && !mIsTransformSeparator);
   params.clip =
       wr::WrStackingContextClip::ClipChain(aBuilder.CurrentClipChainId());
