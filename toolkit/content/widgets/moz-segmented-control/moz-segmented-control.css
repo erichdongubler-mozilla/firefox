@@ -15,3 +15,7 @@
 moz-fieldset {
   --fieldset-gap-column: var(--space-xsmall);
 }
+
+::slotted(moz-segmented-control-item) {
+  flex-grow: 1;
+}

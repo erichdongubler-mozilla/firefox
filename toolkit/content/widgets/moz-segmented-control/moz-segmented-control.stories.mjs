@@ -45,6 +45,7 @@ control-option3-icon-only =
 };
 
 const Template = ({
+  className = "",
   value = options[0],
   name = "segmented-control",
   showIcons = false,
@@ -66,7 +67,13 @@ const Template = ({
         </style>
       `
     : ""}
+  <style>
+    .wide {
+      width: 100%;
+    }
+  </style>
   <moz-segmented-control
+    class=${className}
     name=${name}
     value=${value}
     ?disabled=${disabled}
@@ -150,4 +157,10 @@ WithNamedDeck.args = {
   ...Default.args,
   withDeck: true,
   showIcons: true,
+};
+
+export const Wide = Template.bind({});
+Wide.args = {
+  ...Default.args,
+  className: "wide",
 };
