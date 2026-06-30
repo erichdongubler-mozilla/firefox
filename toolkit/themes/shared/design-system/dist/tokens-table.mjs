@@ -2177,6 +2177,11 @@ export const tokensTable = {
       value: {
         default: "var(--button-text-color-ghost-selected)",
         forcedColors: "var(--button-text-color-primary-selected)",
+        nativeTheme: "currentColor",
+        platform: {
+          default: "currentColor",
+          browserTheme: { default: "var(--button-text-color-ghost-selected)" },
+        },
       },
       name: "--button-text-color-menu-selected",
     },
@@ -4010,6 +4015,11 @@ export const variableLookupTable = {
   "button-text-color-menu-selected": {
     default: "var(--button-text-color-ghost-selected)",
     forcedColors: "var(--button-text-color-primary-selected)",
+    nativeTheme: "currentColor",
+    platform: {
+      default: "currentColor",
+      browserTheme: { default: "var(--button-text-color-ghost-selected)" },
+    },
   },
   "button-text-color-primary": {
     forcedColors: "ButtonFace",

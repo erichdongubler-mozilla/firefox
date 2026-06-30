@@ -568,7 +568,8 @@
         "selected": {
           "value": {
             "default": "{button.text.color.ghost.selected}",
-            "forcedColors": "{button.text.color.primary.selected}"
+            "forcedColors": "{button.text.color.primary.selected}",
+            "nativeTheme": "currentColor"
           }
         }
       },
