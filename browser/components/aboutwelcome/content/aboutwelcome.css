@@ -909,9 +909,6 @@ div#feature-callout.hidden {
   justify-content: flex-start;
   margin-block-end: 16px;
 }
-#feature-callout .screen[pos=callout] .action-checklist .action-checklist-progress-bar:dir(rtl) {
-  justify-content: flex-end;
-}
 #feature-callout .screen[pos=callout] .action-checklist .action-checklist-progress-bar .indicator {
   width: var(--action-checklist-progress-bar-progress);
   height: 100%;
