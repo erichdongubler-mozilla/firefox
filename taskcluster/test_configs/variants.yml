@@ -229,19 +229,6 @@ geckoview-fission-isolate-high-value:
             extra-options:
                 - "--setpref=fission.webContentIsolationStrategy=2"
 
-geckoview-isolated-process:
-    description: "{description} with content service isolated process"
-    component: "GeckoView::General"
-    expiration: "2026-09-01"
-    when:
-        <<: *gv_e10s_filter
-    suffix: "isolated"
-    mozinfo: "isolated_process"
-    merge:
-        mozharness:
-            extra-options:
-                - "--enable-isolated-process"
-
 no-fission:
     description: "{description} without fission enabled"
     component: "Core::DOM: Content Processes"

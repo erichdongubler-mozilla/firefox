@@ -408,7 +408,6 @@ class XPCShellRemote(xpcshell.XPCShellTests):
         )
         mozinfo.info["os_version"] = os_version
         mozinfo.info["is_emulator"] = self.device._device_serial.startswith("emulator-")
-        mozinfo.info["isolated_process"] = options["isolated_process"]
 
         self.localBin = options["localBin"]
         self.pathMapping = []
@@ -431,7 +430,6 @@ class XPCShellRemote(xpcshell.XPCShellTests):
         self.remoteDebugger = options["debugger"]
         self.remoteDebuggerArgs = options["debuggerArgs"]
         self.testingModulesDir = options["testingModulesDir"]
-        self.isolatedProcess = options["isolated_process"]
 
         self.initDir(self.remoteTmpDir)
         self.initDir(self.profileDir)
@@ -558,9 +556,6 @@ class XPCShellRemote(xpcshell.XPCShellTests):
         self.env["XPCSHELL_TEST_TEMP_DIR"] = self.remoteTmpDir
         self.env["MOZ_ANDROID_DATA_DIR"] = self.remoteBinDir
         self.env["MOZ_IN_AUTOMATION"] = "1"
-
-        if self.isolatedProcess:
-            self.env["MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_PROCESS"] = "1"
 
         # Guard against intermittent failures to retrieve abi property;
         # without an abi, xpcshell cannot find greprefs.js and crashes.

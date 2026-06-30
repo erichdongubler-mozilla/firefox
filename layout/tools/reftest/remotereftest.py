@@ -201,7 +201,6 @@ class RemoteReftest(RefTest):
         options.logFile = options.remoteLogFile
         self.remoteProfile = options.remoteProfile
         self.remoteTestRoot = options.remoteTestRoot
-        self.isolatedProcess = options.isolated_process
 
         if not options.ignoreWindowSize:
             parts = self.device.get_info("screen")["screen"][0].split()
@@ -388,9 +387,6 @@ class RemoteReftest(RefTest):
         env.setdefault("R_LOG_LEVEL", "6")
         env.setdefault("R_LOG_DESTINATION", "stderr")
         env.setdefault("R_LOG_VERBOSE", "1")
-
-        if self.isolatedProcess:
-            env["MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_PROCESS"] = "1"
 
         return env
 

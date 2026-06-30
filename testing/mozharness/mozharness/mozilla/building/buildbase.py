@@ -275,6 +275,8 @@ class BuildOptionParser:
         "x86_64": path_base + "%s_x86_64.py",
         "x86_64-lite": path_base + "%s_x86_64_lite.py",
         "x86_64-debug": path_base + "%s_x86_64_debug.py",
+        "x86_64-debug-isolated-process": path_base
+        + "%s_x86_64_debug_isolated_process.py",
         "x86_64-profile-generate": path_base + "%s_x86_64_profile_generate.py",
         "aarch64": path_base + "%s_aarch64.py",
         "aarch64-lite": path_base + "%s_aarch64_lite.py",

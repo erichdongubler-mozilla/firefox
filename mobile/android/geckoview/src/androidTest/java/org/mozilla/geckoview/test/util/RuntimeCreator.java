@@ -13,6 +13,7 @@ import androidx.annotation.UiThread;
 import androidx.test.platform.app.InstrumentationRegistry;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.json.JSONObject;
+import org.mozilla.geckoview.BuildConfig;
 import org.mozilla.geckoview.ContentBlocking;
 import org.mozilla.geckoview.ExperimentDelegate;
 import org.mozilla.geckoview.GeckoPreferenceController;
@@ -205,7 +206,7 @@ public class RuntimeCreator {
             .consoleOutput(true)
             .crashHandler(TestCrashHandler.class)
             .experimentDelegate(sRuntimeExperimentDelegateProxy)
-            .isolatedProcessEnabled(env.isIsolatedProcess())
+            .isolatedProcessEnabled(BuildConfig.MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_PROCESS)
             .appZygoteProcessEnabled(env.isAppZygoteProcess())
             .build();
 

@@ -720,9 +720,7 @@ function BuildConditionSandbox(aURL) {
   // GeckoView is currently uniquely identified by "android + e10s" but
   // we might want to make this condition more precise in the future.
   sandbox.geckoview = sandbox.Android && g.browserIsRemote;
-  sandbox.isolated_process =
-    sandbox.Android &&
-    Services.env.get("MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_PROCESS") === "1";
+  sandbox.isolated_process = sandbox.Android && mozinfo.isolated_process;
 
   if (sandbox.Android) {
     sandbox.AndroidVersion = Services.sysinfo.getPropertyAsInt32("version");

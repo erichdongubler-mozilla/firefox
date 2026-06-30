@@ -3708,7 +3708,6 @@ toolbar#nav-bar {
             "is_emulator": mozinfo.info.get("is_emulator", False),
             "coverage": mozinfo.info.get("coverage", False),
             "nogpu": mozinfo.info.get("nogpu", False),
-            "isolated_process": options.isolated_process,
         })
 
         if not self.mozinfo_variables_shown:
