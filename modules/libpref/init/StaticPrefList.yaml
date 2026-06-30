@@ -14729,6 +14729,15 @@
   value: 393216
   mirror: always
 
+# When true (default), decode Content-Encoding (e.g. gzip) when saving to disk
+# even if the URL extension matches the encoding (.gz, .tgz, .zip, .z, .svgz),
+# avoiding double-compressed files. When false, restore the legacy behavior of
+# not decoding. See bug 610679, bug 1470011.
+- name: network.http.decode_content_for_known_compressed_extensions
+  type: RelaxedAtomicBool
+  value: true
+  mirror: always
+
 # Whether or not we give more priority to active tab.
 - name: network.http.active_tab_priority
   type: RelaxedAtomicBool
