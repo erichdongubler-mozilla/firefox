@@ -101,10 +101,8 @@ class AggregateCapturer final
     // allocated and not deallocated, which controls the presence of this stream
     // altogether.
     bool mActive{false};
-    // The ideal timestamp of the next frame to be sent to mParent for this
-    // stream. Initialized to negative infinity so the first frame is always
-    // sent.
-    media::TimeUnit mNextFrameTime{media::TimeUnit::FromNegativeInfinity()};
+    // The timestamp of the last frame sent to mParent for this stream.
+    media::TimeUnit mLastFrameTime{media::TimeUnit::FromNegativeInfinity()};
   };
   // The video capture thread is where all access to this class must happen.
   const nsCOMPtr<nsISerialEventTarget> mVideoCaptureThread;
