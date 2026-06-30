@@ -180,7 +180,7 @@ async function _test(testCase) {
   if (!testCase.isLoggedIn) {
     await LoginTestUtils.primaryPassword.disable();
   }
-  LoginTestUtils.clearData();
+  await LoginTestUtils.clearData();
 }
 
 add_task(async function test_LoginManagerPrompter_getUsernameSuggestions() {

@@ -40,6 +40,7 @@ EXTRA_JS_MODULES += [
     "LoginManagerPrompter.sys.mjs",
     "LoginRecipes.sys.mjs",
     "LoginRelatedRealms.sys.mjs",
+    "LoginStorageMigrator.sys.mjs",
     "PasswordRulesManager.sys.mjs",
     "storage-json.sys.mjs",
     "storage-rust.sys.mjs",

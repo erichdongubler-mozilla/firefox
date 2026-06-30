@@ -120,6 +120,11 @@ run-if = [
   "os != 'android'", # Only used by migrator, which isn't on Android
 ]
 
+["test_LoginStorageMigrator.js"]
+run-if = [
+  "os != 'android'", # The migrator only runs on desktop
+]
+
 ["test_module_LoginCSVImport.js"]
 
 ["test_module_LoginExport.js"]
