@@ -65,19 +65,16 @@ tasks:
                 by-build-type:
                     release:
                         - ':components:{component}:assembleRelease'
-                        - ':components:{component}:testRelease'
                         - ':components:{component}:lintRelease'
                         - ':components:{component}:publish'
                     beta:
                         # /!\ Beta builds are considered Release in gradle
                         - ':components:{component}:assembleRelease'
-                        - ':components:{component}:testRelease'
                         - ':components:{component}:lintRelease'
                         - ':components:{component}:publish'
                     nightly:
                         - '-PnightlyVersion={nightlyVersion}'
                         - ':components:{component}:assembleRelease'
-                        - ':components:{component}:testRelease'
                         - ':components:{component}:lintRelease'
                         - ':components:{component}:publish'
                     default:
@@ -90,12 +87,12 @@ tasks:
                                 # No publish of these components
                                 - ':components:{component}:assemble'
                                 - ':components:{component}:assembleAndroidTest'
-                                - ':components:{component}:testRelease'
+                                - ':components:{component}:test'
                                 - ':components:{component}:lintRelease'
                             default:
                                 - ':components:{component}:assemble'
                                 - ':components:{component}:assembleAndroidTest'
-                                - ':components:{component}:testRelease'
+                                - ':components:{component}:test'
                                 - ':components:{component}:lintRelease'
                                 - ':components:{component}:publish'
             pre-gradlew:

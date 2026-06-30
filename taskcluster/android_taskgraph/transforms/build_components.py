@@ -168,6 +168,7 @@ def add_artifacts(config, tasks):
             "artifacts", []
         )
 
+        runs_unit_tests = any(t.endswith(":test") for t in task["run"]["gradlew"])
         for key in [
             "tests-artifact-template",
             "lint-artifact-template",
@@ -175,6 +176,10 @@ def add_artifacts(config, tasks):
         ]:
             if key in task:
                 optional_artifact_template = task.pop(key, {})
+                # The shipping graphs don't run unit tests, so don't declare a test-report
+                # artifact they won't produce.
+                if key == "tests-artifact-template" and not runs_unit_tests:
+                    continue
                 build_artifact_definitions.append({
                     "type": optional_artifact_template["type"],
                     "name": optional_artifact_template["name"],
