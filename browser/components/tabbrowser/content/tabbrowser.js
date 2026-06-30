@@ -56,6 +56,11 @@
 
     let userContextId = gBrowser.selectedBrowser.getAttribute("usercontextid");
     if (!userContextId) {
+      // The container-creation panel can temporarily reveal this indicator to
+      // use it as its anchor; don't hide it again while that's the case.
+      if (window.gContainerCreation?.isPillPinned) {
+        return;
+      }
       replaceContainerClass("color", hbox, "");
       hbox.hidden = true;
       return;
