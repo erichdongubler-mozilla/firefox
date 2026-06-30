@@ -735,6 +735,8 @@ export class FormAutofillParent extends JSWindowActorParent {
         this._onAddressSubmit(record, browser),
       [AutofillDataTypes.CREDIT_CARD]: record =>
         this._onCreditCardSubmit(record, browser),
+      [AutofillDataTypes.PASSPORT]: record =>
+        this._onPassportSubmit(record, browser),
     };
 
     const pendingDoorhangers = await Promise.all(
@@ -962,6 +964,10 @@ export class FormAutofillParent extends JSWindowActorParent {
         { oldRecord: duplicateRecord, newRecord: creditCard.record }
       );
     };
+  }
+
+  async _onPassportSubmit() {
+    return false;
   }
 
   _shouldShowSaveAddressPrompt(record) {
