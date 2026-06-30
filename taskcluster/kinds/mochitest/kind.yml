@@ -578,6 +578,9 @@ tasks:
         suite:
             name: mochitest-browser-screenshots
         treeherder-symbol: M(ss)
+        index:
+            product: test
+            job-name: mochitest-browser-screenshots
         loopback-video: true
         variants: ["no-fission"]
         run-on-projects:
