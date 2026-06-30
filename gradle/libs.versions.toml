@@ -112,6 +112,7 @@ jetbrains-markdown = "0.7.3"
 jna = "5.18.1"
 json = "20260522"
 jsoup = "1.22.2"
+lottie = "6.5.0"
 okhttp = "5.4.0"
 okio = "3.17.0"
 sentry = "8.44.0"
@@ -303,6 +304,7 @@ jetbrains-markdown = { module = "org.jetbrains:markdown", version.ref = "jetbrai
 jna = { module = "net.java.dev.jna:jna", version.ref = "jna" }
 json = { module = "org.json:json", version.ref = "json" }
 jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
+lottie-compose = { module = "com.airbnb.android:lottie-compose", version.ref = "lottie" }
 mockwebserver = { module = "com.squareup.okhttp3:mockwebserver3", version.ref = "okhttp" }
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 okhttp-urlconnection = { module = "com.squareup.okhttp3:okhttp-urlconnection", version.ref = "okhttp" }
