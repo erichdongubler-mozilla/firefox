@@ -383,7 +383,8 @@ void IDBTransaction::OnRequestFinished(
     const bool aRequestCompletedSuccessfully) {
   AssertIsOnOwningThread();
   MOZ_ASSERT(mReadyState != ReadyState::Active);
-  MOZ_ASSERT_IF(mReadyState == ReadyState::Finished, !NS_SUCCEEDED(mAbortCode));
+  MOZ_ASSERT_IF(mReadyState == ReadyState::Finished,
+                NS_FAILED(mAbortCode) || mFiredCompleteOrAbort);
   MOZ_ASSERT(mPendingRequestCount);
 
   --mPendingRequestCount;
