@@ -452,8 +452,8 @@ function dumpn(str) {
 
 var wantLogging = Services.prefs.getBoolPref("devtools.debugger.log");
 const prefObserver = {
-  observe: (...args) => {
-    wantLogging = Services.prefs.getBoolPref(args.pop());
+  observe: () => {
+    wantLogging = Services.prefs.getBoolPref("devtools.debugger.log");
   },
 };
 Services.prefs.addObserver("devtools.debugger.log", prefObserver);
