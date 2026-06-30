@@ -214,8 +214,12 @@ nsPrefetchNode::OnStartRequest(nsIRequest* aRequest) {
   bool fromCache;
   if (NS_SUCCEEDED(cacheInfoChannel->IsFromCache(&fromCache)) && fromCache) {
     LOG(("document is already in the cache; canceling prefetch\n"));
-    // although it's canceled we still want to fire load event
-    mShouldFireLoadEvent = true;
+    // Cancelled, but still fire load only if the channel succeeded. A failure
+    // status (e.g. a failed CORS check) is a network error and fires error.
+    nsresult status;
+    if (NS_SUCCEEDED(aRequest->GetStatus(&status)) && NS_SUCCEEDED(status)) {
+      mShouldFireLoadEvent = true;
+    }
     return NS_BINDING_ABORTED;
   }
 
