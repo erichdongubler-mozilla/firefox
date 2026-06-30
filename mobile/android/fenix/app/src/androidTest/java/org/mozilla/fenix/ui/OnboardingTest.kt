@@ -6,6 +6,7 @@ package org.mozilla.fenix.ui
 
 import android.os.Build
 import androidx.test.filters.SdkSuppress
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.customannotations.SmokeTest
@@ -52,6 +53,7 @@ class OnboardingTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3814795
+    @Ignore("Disabled temporarily,as the default prompt is being turned off for tests, for more info check: https://bugzilla.mozilla.org/show_bug.cgi?id=2051502")
     @SdkSuppress(minSdkVersion = 29)
     @SmokeTest
     @Test
