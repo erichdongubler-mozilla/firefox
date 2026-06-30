@@ -7240,6 +7240,84 @@ tabs_tray:
       - android-probes@mozilla.com
     expires: never
 
+  tab_group_named:
+    type: event
+    description: |
+      Fired when a user assigns a name to a tab group.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2029227
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D301300
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+
+  tab_group_name_changed:
+    type: event
+    description: |
+      Fired when a user changes an existing tab group's name.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2029227
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D301300
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+
+  tab_group_color_assigned:
+    type: event
+    description: |
+      Fired when a user assigns a color to a tab group.
+    extra_keys:
+      color:
+        description: The color name of the tab group.
+        type: string
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2029221
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D301300
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+
+  tab_group_color_changed:
+    type: event
+    description: |
+      Fired when a user changes an existing tab group's color.
+    extra_keys:
+      tab_group_color_changed:
+        description: The new color name of the tab group.
+        type: string
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2029221
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D301300
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+
+  tab_group_edited:
+    type: event
+    description: |
+      Fired when a user clicks on the edit button of an existing tab group.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2029221
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D301300
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+
   tab_group_create_cancel:
     type: event
     description: |
