@@ -3358,6 +3358,14 @@ var gUIDensity = {
   },
 
   _shouldAutoCompact() {
+    // Auto-compact reclaims some of the space taken by the chrome in small
+    // windows. Popups (window.open without toolbar features) hide the tabstrip,
+    // so the heuristic is less valuable. And we end up changing density
+    // mid-flight as the window gets resized during opening, which throws off
+    // the content area sizing, inflating it past the requested dimensions (bug 2050255).
+    if (!window.toolbar.visible) {
+      return false;
+    }
     const threshold = parseFloat(
       Services.prefs.getCharPref(this.autoCompactThresholdPref, "0.05")
     );
