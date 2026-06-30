@@ -88,24 +88,34 @@ export var Policies = {
   _cleanup: {
     onBeforeAddons() {
       if (Cu.isInAutomation || isXpcshell) {
-        console.log("_cleanup from onBeforeAddons");
         clearBlockedAboutPages();
       }
+      Services.obs.notifyObservers(
+        null,
+        "EnterprisePolicies:Cleanup",
+        "onBeforeAddons"
+      );
     },
     onProfileAfterChange() {
-      if (Cu.isInAutomation || isXpcshell) {
-        console.log("_cleanup from onProfileAfterChange");
-      }
+      Services.obs.notifyObservers(
+        null,
+        "EnterprisePolicies:Cleanup",
+        "onProfileAfterChange"
+      );
     },
     onBeforeUIStartup() {
-      if (Cu.isInAutomation || isXpcshell) {
-        console.log("_cleanup from onBeforeUIStartup");
-      }
+      Services.obs.notifyObservers(
+        null,
+        "EnterprisePolicies:Cleanup",
+        "onBeforeUIStartup"
+      );
     },
     onAllWindowsRestored() {
-      if (Cu.isInAutomation || isXpcshell) {
-        console.log("_cleanup from onAllWindowsRestored");
-      }
+      Services.obs.notifyObservers(
+        null,
+        "EnterprisePolicies:Cleanup",
+        "onAllWindowsRestored"
+      );
     },
   },
 
