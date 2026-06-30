@@ -58,11 +58,11 @@
 #include "nsPrintfCString.h"
 
 #ifdef MOZ_THUNDERBIRD
-#  include "nsIPKCS11Token.h"
 #  ifdef XP_MACOSX
 #    include "MacApplicationDelegate.h"
 #  endif
-#  include "nsComponentManagerUtils.h"
+#  include "ScopedNSSTypes.h"
+#  include "nsNSSComponent.h"
 #endif
 
 #include <stdlib.h>
@@ -672,10 +672,12 @@ nsXREDirProvider::DoStartup() {
       // to avoid the race that triggers multiple prompts (see bug 177175).
       // We use this code until we have a better solution, possibly as
       // described in bug 177175 comment 384.
-      nsCOMPtr<nsIPKCS11Token> token(
-          do_CreateInstance("@mozilla.org/security/internalkeytoken;1"));
-      if (token) {
-        (void)token->Login();
+      // Ensure NSS is initialized; it may not be this early in startup.
+      nsCOMPtr<nsINSSComponent> nssComponent(
+          do_GetService(NS_NSSCOMPONENT_CID));
+      mozilla::UniquePK11SlotInfo slot(PK11_GetInternalKeySlot());
+      if (slot) {
+        (void)PK11_Authenticate(slot.get(), true, nullptr);
       }
     }
 #endif
