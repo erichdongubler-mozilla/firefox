@@ -13,7 +13,10 @@
  */
 
 import { searchBrowsingHistory as implSearchBrowsingHistory } from "moz-src:///browser/components/aiwindow/models/SearchBrowsingHistory.sys.mjs";
-import { closeTabsAction } from "moz-src:///browser/components/aiwindow/models/ManageTabs.sys.mjs";
+import {
+  manageTabsAction,
+  TAB_ACTIONS,
+} from "moz-src:///browser/components/aiwindow/models/ManageTabs.sys.mjs";
 import { WCSMerinoClient } from "moz-src:///browser/components/aiwindow/models/WCSMerinoClient.sys.mjs";
 import { PageExtractorParent } from "resource://gre/actors/PageExtractorParent.sys.mjs";
 import {
@@ -339,7 +342,7 @@ export const toolsConfig = [
           action: {
             type: "string",
             description: "The action to be performed on the tabs.",
-            enum: ["close_tabs"],
+            enum: TAB_ACTIONS,
           },
           ask_confirmation: {
             type: "boolean",
@@ -1203,7 +1206,7 @@ function countOpenAIWindowTabs() {
  * @returns {"unsupported" | "tab_mention" | "description"}
  */
 function getActionType(conversation, action) {
-  if (action !== "close_tabs") {
+  if (!TAB_ACTIONS.includes(action)) {
     return "unsupported";
   }
 
@@ -1260,6 +1263,20 @@ export async function manageTabs(
     submit_type: conversation?.lastSubmitType || "",
   });
 
+  if (actionType === "unsupported") {
+    lazy.ToolUITelemetry.recordBrowserActionComplete({
+      ...baseTelemetryInfo,
+      result: "error",
+      tabs_affected: 0,
+      undo_available: false,
+      error: "unsupported_action",
+    });
+    return {
+      toolResult: `Error: Unsupported manage_tabs action "${action}".`,
+      uiData: null,
+    };
+  }
+
   if (!Array.isArray(url_tokens)) {
     lazy.ToolUITelemetry.recordBrowserActionComplete({
       ...baseTelemetryInfo,
@@ -1292,24 +1309,10 @@ export async function manageTabs(
     };
   }
 
-  if (action === "close_tabs") {
-    return closeTabsAction(
-      { validUrls, ask_confirmation, mode, model, toolCallId },
-      conversation
-    );
-  }
-
-  lazy.ToolUITelemetry.recordBrowserActionComplete({
-    ...baseTelemetryInfo,
-    result: "error",
-    tabs_affected: 0,
-    undo_available: false,
-    error: "unsupported_action",
-  });
-  return {
-    toolResult: `Error: Unsupported action for manage_tabs: ${action}`,
-    uiData: null,
-  };
+  return manageTabsAction(
+    { action, validUrls, ask_confirmation, baseTelemetryInfo, toolCallId },
+    conversation
+  );
 }
 
 export const toolFns = {
