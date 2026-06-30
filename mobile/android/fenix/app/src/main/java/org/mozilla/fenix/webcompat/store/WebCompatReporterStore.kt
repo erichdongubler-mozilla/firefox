@@ -15,6 +15,8 @@ import mozilla.components.lib.state.State
 import mozilla.components.lib.state.Store
 import org.mozilla.fenix.R
 
+private const val MIN_PROBLEM_DESCRIPTION_LENGTH = 10
+
 /**
  * Value type that represents the state of the WebCompat Reporter.
  *
@@ -100,10 +102,22 @@ data class WebCompatReporterState(
         get() = !isValidUrl(editedUrl)
 
     /**
+     * Whether the reason dropdown has an error.
+     */
+    val hasReasonDropdownError: Boolean
+        get() = reason == null
+
+    /**
+     * Whether the problem description has an error.
+     */
+    val hasDescriptionError: Boolean
+        get() = reason == BrokenSiteReason.Other && problemDescription.trim().length < MIN_PROBLEM_DESCRIPTION_LENGTH
+
+    /**
      * Whether the submit button is enabled.
      */
     val isSubmitEnabled: Boolean
-        get() = !hasUrlTextError && reason != null
+        get() = !hasUrlTextError && !hasReasonDropdownError && !hasDescriptionError
 }
 
 /**
