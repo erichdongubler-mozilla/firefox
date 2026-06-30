@@ -12,6 +12,17 @@ const VERTICAL_TABS_PREF = "sidebar.verticalTabs";
 const INSTALLED_EXTENSIONS = "sidebar.installed.extensions";
 const PINNED_PROMO_PREF = "sidebar.verticalTabs.dragToPinPromo.dismissed";
 
+// Visibility values are orientation-exclusive: each value implies the tab
+// orientation it belongs to, so a stored value is never ambiguous.
+const VERTICAL_VISIBILITIES = [
+  "always-show",
+  "expand-on-hover",
+  "hide-sidebar",
+];
+const HORIZONTAL_VISIBILITIES = ["hide-on-close", "hide-launcher"];
+const DEFAULT_VERTICAL_VISIBILITY = "always-show";
+const DEFAULT_HORIZONTAL_VISIBILITY = "hide-on-close";
+
 // New panels that are ready to be introduced to new sidebar users should be added to this list;
 // ensure your feature flag is enabled at the same time you do this and that its the same value as
 // what you added to .
@@ -56,8 +67,12 @@ XPCOMUtils.defineLazyPreferenceGetter(
       // Disable vertical tabs if revamped sidebar is turned off
       Services.prefs.setBoolPref("sidebar.verticalTabs", false);
     } else if (newVal && !lazy.verticalTabsEnabled) {
-      // horizontal tabs with sidebar.revamp must have visibility of "hide-sidebar"
-      Services.prefs.setStringPref(VISIBILITY_SETTING_PREF, "hide-sidebar");
+      // Horizontal tabs with sidebar.revamp default to "hide-on-close"; users
+      // can opt into the switcher-only "hide-launcher" from the customize panel.
+      Services.prefs.setStringPref(
+        VISIBILITY_SETTING_PREF,
+        DEFAULT_HORIZONTAL_VISIBILITY
+      );
     }
   }
 );
@@ -95,6 +110,8 @@ class SidebarManager extends EventTarget {
     this.checkForPinnedTabsComplete = false;
   }
   #initialized = false;
+  // Preserves an "expand-on-hover" choice while in horizontal tabs so it can be
+  // restored when switching back to vertical tabs.
   #savedVisibility = null;
   init() {
     lazy.CustomizableUI.addListener(this);
@@ -108,7 +125,8 @@ class SidebarManager extends EventTarget {
       this.checkForPinnedTabs();
     });
 
-    // if there's no user visibility pref, we may need to update it to the default value for the tab orientation
+    // If the user hasn't explicitly chosen a visibility, we may need to update
+    // it to the default value for the tab orientation.
     const shouldResetVisibility = !Services.prefs.prefHasUserValue(
       VISIBILITY_SETTING_PREF
     );
@@ -220,28 +238,46 @@ class SidebarManager extends EventTarget {
   }
 
   /**
-   * Adjust for a change to the verticalTabs pref.
+   * Adjust for a change to the verticalTabs pref. Visibility values are
+   * orientation-exclusive, so on an orientation switch we move to a value valid
+   * for the new orientation: its default, except that an "expand-on-hover"
+   * choice is preserved and restored when switching back to vertical tabs.
    */
   handleVerticalTabsPrefChange(isEnabled, resetVisibility = true) {
+    const currentVisibility = Services.prefs.getStringPref(
+      VISIBILITY_SETTING_PREF,
+      DEFAULT_VERTICAL_VISIBILITY
+    );
     if (!isEnabled) {
-      const currentVisibility = Services.prefs.getStringPref(
-        VISIBILITY_SETTING_PREF,
-        "always-show"
-      );
-      if (currentVisibility == "expand-on-hover") {
+      // Switching to (or initializing) horizontal tabs.
+      if (currentVisibility === "expand-on-hover") {
         this.#savedVisibility = currentVisibility;
       }
-      Services.prefs.setStringPref(VISIBILITY_SETTING_PREF, "hide-sidebar");
-    } else if (resetVisibility) {
-      if (this.#savedVisibility) {
+      // Only fall back to the horizontal default when asked to reset (a real
+      // orientation switch, or no explicit user value) or when the current
+      // value isn't valid for horizontal tabs. Otherwise the user's
+      // "hide-on-close"/"hide-launcher" choice is preserved across restarts.
+      if (
+        resetVisibility ||
+        !HORIZONTAL_VISIBILITIES.includes(currentVisibility)
+      ) {
         Services.prefs.setStringPref(
           VISIBILITY_SETTING_PREF,
-          this.#savedVisibility
+          DEFAULT_HORIZONTAL_VISIBILITY
         );
-        this.#savedVisibility = null;
-      } else {
-        Services.prefs.setStringPref(VISIBILITY_SETTING_PREF, "always-show");
       }
+    } else if (
+      resetVisibility ||
+      !VERTICAL_VISIBILITIES.includes(currentVisibility)
+    ) {
+      // Switching to (or initializing) vertical tabs: restore a preserved
+      // choice (always-show, expand-on-hover, hide-sidebar) otherwise fall
+      // back to the vertical default.
+      Services.prefs.setStringPref(
+        VISIBILITY_SETTING_PREF,
+        this.#savedVisibility ?? DEFAULT_VERTICAL_VISIBILITY
+      );
+      this.#savedVisibility = null;
     }
   }
 

@@ -303,11 +303,17 @@ export class SidebarState {
       this.launcherVisible = false;
     }
     if (this.command && this.panelOpen) {
-      if (!hasExplicitHiddenLauncher) {
+      if (!hasExplicitHiddenLauncher && !this.launcherHiddenWithPanel) {
         this.launcherVisible = true;
       }
       // show() is async, so make sure we return its promise here
       return this.#controller.showInitially(this.command);
+    }
+    if (["hide-sidebar", "hide-launcher"].includes(this.revampVisibility)) {
+      // No panel is open, so the launcher stays hidden as these modes intend. A
+      // new or restored window can otherwise inherit a visible launcher state,
+      // which shouldn't carry over here.
+      this.launcherVisible = false;
     }
     return this.#controller.hide();
   }
@@ -365,8 +371,11 @@ export class SidebarState {
     }
     this.#props.panelOpen = !!open;
     if (open) {
-      // Launcher must be visible to open a panel.
-      this.launcherVisible = true;
+      // Launcher must be visible to open a panel, except in horizontal-tabs
+      // "hide sidebar" mode where the launcher stays hidden and only the panel
+      // is shown. Re-run the setter either way so the box padding tracks the
+      // launcher-less layout.
+      this.launcherVisible = !this.launcherHiddenWithPanel;
 
       Services.prefs.setBoolPref(
         this.revampEnabled ? REVAMP_USED_PREF : LEGACY_USED_PREF,
@@ -436,11 +445,30 @@ export class SidebarState {
       return false;
     }
 
+    // Vertical "hide-sidebar" and horizontal "hide-launcher" both keep the
+    // launcher hidden initially (with vertical "hide-sidebar" it becomes visible
+    // while a panel is open).
+    if (["hide-sidebar", "hide-launcher"].includes(this.revampVisibility)) {
+      return false;
+    }
+
     // default/fallback value for vertical tabs is to always be visible initially
     if (lazy.verticalTabsEnabled) {
       return true;
     }
     return DEFAULT_LAUNCHER_VISIBLE;
+  }
+
+  /**
+   * Whether the launcher should stay hidden while a panel is open. This is the
+   * case in horizontal-tabs "hide-launcher" mode, where the launcher is replaced
+   * by the panel header dropdown: the toolbar button then toggles only the
+   * panel and the launcher remains hidden until the user leaves that mode.
+   *
+   * @returns {boolean}
+   */
+  get launcherHiddenWithPanel() {
+    return this.revampVisibility === "hide-launcher";
   }
 
   get fullscreen() {
@@ -477,14 +505,26 @@ export class SidebarState {
   ) {
     switch (this.revampVisibility) {
       case "hide-sidebar":
-        if (lazy.verticalTabsEnabled) {
-          forceExpandValue = visible;
-        }
+        // Vertical tabs: the toolbar button toggles the launcher (which expands
+        // when shown).
+        forceExpandValue = visible;
         this.launcherVisible = visible;
         break;
       case "always-show":
+        // Vertical tabs: launcher always visible; the toolbar button only
+        // toggles expansion.
+        this.launcherVisible = true;
+        break;
       case "expand-on-hover":
         this.launcherVisible = true;
+        break;
+      case "hide-on-close":
+      case "hide-launcher":
+        // Horizontal tabs have no expanded launcher state. "hide-on-close"
+        // shows/hides the collapsed launcher via the toolbar button;
+        // "hide-launcher" keeps it hidden (the panel header switcher replaces
+        // it).
+        this.launcherVisible = visible;
         break;
     }
     if (forceExpandValue !== null) {
@@ -576,25 +616,28 @@ export class SidebarState {
       }
 
       this.#launcherEl.toggleAttribute("customWidth", true);
-    } else if (this.launcherWidth < LAUNCHER_MINIMUM_WIDTH) {
-      // Re-enable expand on hover if necessary
-      if (this.#controller.sidebarRevampVisibility === "expand-on-hover") {
-        this.#controller.toggleExpandOnHover(true, true);
-      }
-
-      // Snap back to collapsed state when the new width is too narrow.
-      this.launcherExpanded = false;
-      if (this.revampVisibility === "hide-sidebar") {
-        this.launcherVisible = false;
-      }
     } else {
+      // launcherWidth is updated by an async ResizeObserver, which may not have
+      // reported the final post-drag width yet on slower configurations.
+      // Measure the launcher synchronously so the snap decision below reflects
+      // the launcher's actual width at the end of the drag.
+      const currentWidth = this.#launcherEl.getBoundingClientRect().width;
+
       // Re-enable expand on hover if necessary
       if (this.#controller.sidebarRevampVisibility === "expand-on-hover") {
         this.#controller.toggleExpandOnHover(true, true);
       }
 
-      // Store the user-preferred launcher width.
-      this.expandedLauncherWidth = this.launcherWidth;
+      if (currentWidth < LAUNCHER_MINIMUM_WIDTH) {
+        // Snap back to collapsed state when the new width is too narrow.
+        this.launcherExpanded = false;
+        if (this.revampVisibility === "hide-sidebar") {
+          this.launcherVisible = false;
+        }
+      } else {
+        // Store the user-preferred launcher width.
+        this.expandedLauncherWidth = this.launcherWidth;
+      }
     }
     const rootEl = this.#controllerGlobal.document.documentElement;
     rootEl.toggleAttribute("sidebar-launcher-drag-active", active);
