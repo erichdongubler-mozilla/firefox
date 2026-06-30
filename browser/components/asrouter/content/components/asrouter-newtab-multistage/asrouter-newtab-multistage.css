@@ -966,24 +966,24 @@ div#feature-callout.hidden {
 }
 #feature-callout .screen[pos=callout] .action-checklist .action-checklist-items button .action-arrow, #feature-callout .screen[pos=callout] .action-checklist .action-checklist-items button .check-filled {
   border: none;
-  -moz-context-properties: fill;
   width: 1em;
   height: 1em;
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
+  -moz-context-properties: fill;
   flex-shrink: 0;
 }
 #feature-callout .screen[pos=callout] .action-checklist .action-checklist-items button .action-arrow {
   background-image: url("chrome://global/skin/icons/arrow-right.svg");
-  fill: var(--fc-icon-success-color);
+  fill: currentColor;
 }
 #feature-callout .screen[pos=callout] .action-checklist .action-checklist-items button .action-arrow:dir(rtl) {
   background-image: url("chrome://global/skin/icons/arrow-left.svg");
 }
 #feature-callout .screen[pos=callout] .action-checklist .action-checklist-items button .check-filled {
   background-image: url("chrome://global/skin/icons/check-filled.svg");
-  fill: var(--fc-icon-success-color);
+  fill: var(--fc-accent-color);
 }
 panel#feature-callout:is([side=top], [side=bottom]):not([hide-arrow=permanent]) {
   margin-inline: var(--panel-margin-offset);
@@ -4425,6 +4425,19 @@ html {
 .onboardingContainer .screen[pos=center] {
   background-color: unset;
   overflow: unset;
+}
+.onboardingContainer .screen[pos=split]:where(:not([fullscreen])) {
+  margin: auto;
+  min-height: 280px;
+  height: 280px;
+}
+.onboardingContainer .screen[pos=split]:where(:not([fullscreen]))::before {
+  height: 100%;
+}
+.onboardingContainer .screen[pos=split] .section-secondary,
+.onboardingContainer .screen[pos=split] .section-main {
+  height: 100%;
+  min-height: 280px;
 }
 
 .section-main {

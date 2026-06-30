@@ -3336,7 +3336,7 @@ class ProtonScreen extends (external_React_default()).PureComponent {
           ${screenClassName} ${textColorClass}`,
       "reverse-split": content.reverse_split ? "" : null,
       fullscreen: content.fullscreen ? "" : null,
-      style: content.screen_style && MultiStageUtils.getValidStyle(content.screen_style, ["overflow", "display"]),
+      style: content.screen_style && MultiStageUtils.getValidStyle(content.screen_style, ["overflow", "display", "height"]),
       role: ariaRole ?? "alertdialog",
       layout: content.layout,
       pos: content.position || "center",
@@ -3351,7 +3351,7 @@ class ProtonScreen extends (external_React_default()).PureComponent {
       className: `section-main ${isEmbeddedMigration ? "embedded-migration" : ""}${isSystemPromptStyleSpotlight ? "system-prompt-spotlight" : ""}`,
       "hide-secondary-section": content.hide_secondary_section ? String(content.hide_secondary_section) : null,
       role: "document",
-      style: content.screen_style && MultiStageUtils.getValidStyle(content.screen_style, ["width", "padding", "height"])
+      style: content.screen_style && MultiStageUtils.getValidStyle(content.screen_style, ["width", "padding"])
     }, content.secondary_button_top ? /*#__PURE__*/external_React_default().createElement(SecondaryCTA, {
       content: content,
       handleAction: this.props.handleAction,
