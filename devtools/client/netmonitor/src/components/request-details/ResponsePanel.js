@@ -173,9 +173,7 @@ class ResponsePanel extends Component {
    * as text/plain instead.
    */
   handleJSONResponse(mimeType, response) {
-    const limit = Services.prefs.getIntPref(
-      "devtools.netmonitor.responseBodyLimit"
-    );
+    const limit = Services.prefs.getIntPref("devtools.netmonitor.bodyLimit");
     const { request } = this.props;
 
     // Check if the response has been truncated, in which case no parse should

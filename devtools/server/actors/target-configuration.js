@@ -46,6 +46,9 @@ const SUPPORTED_OPTIONS = {
   isTracerFeatureEnabled: true,
   // Enable JavaScript
   javascriptEnabled: true,
+  // Maximum number of bytes used to save all network request/response body
+  // Set it to 0 to have unlimited recording.
+  networkBodyLimit: true,
   // Force a custom device pixel ratio (used in RDM). Set to null to restore origin ratio.
   overrideDPPX: true,
   // Enable print simulation mode.
@@ -249,9 +252,12 @@ class TargetConfigurationActor extends Actor {
    * @param {object} configuration: See `updateConfiguration`
    */
   _updateParentProcessConfiguration(configuration) {
-    // Process "tracerOptions" for all session types, as this isn't specific to tab debugging
+    // Process "tracerOptions" and "networkBodyLimit" for all session types, as this isn't specific to tab debugging
     if ("tracerOptions" in configuration) {
       this._setTracerOptions(configuration.tracerOptions);
+    }
+    if ("networkBodyLimit" in configuration) {
+      this._setNetworkBodyLimit(configuration.networkBodyLimit);
     }
 
     if (!this._shouldHandleConfigurationInParentProcess()) {
@@ -580,6 +586,23 @@ class TargetConfigurationActor extends Actor {
       LOG_DISABLED
     );
     Services.prefs.setIntPref("logging.PageMessages", LOG_VERBOSE);
+  }
+
+  _setNetworkBodyLimit(networkBodyLimit) {
+    const networkParentActor =
+      this.watcherActor.getExistingNetworkParentActor();
+    if (networkParentActor) {
+      networkParentActor.setBodyLimit(networkBodyLimit);
+    }
+  }
+
+  /**
+   * Queried by network observing logic to know about current request/response body limit.
+   *
+   * @return {number}
+   */
+  getNetworkBodyLimit() {
+    return this._getConfiguration().networkBodyLimit;
   }
 
   /**

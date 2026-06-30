@@ -251,6 +251,9 @@ const CONFIGURATION_PREFS = {
   "devtools.command-button-jstracer.enabled": {
     name: "isTracerFeatureEnabled",
   },
+  "devtools.netmonitor.bodyLimit": {
+    name: "networkBodyLimit",
+  },
 };
 exports.CONFIGURATION_PREFS = CONFIGURATION_PREFS;
 
@@ -2449,6 +2452,30 @@ class Toolbox extends EventEmitter {
     await this.commands.threadConfigurationCommand.updateConfiguration(
       threadConfiguration
     );
+
+    // @backward-compat { version 153 } Fx 153 unified the two following pref into a unique one.
+    // Migrate the value from old profiles.
+    const requestBodyLimit = Services.prefs.getIntPref(
+      "devtools.netmonitor.requestBodyLimit",
+      1048576
+    );
+    const responseBodyLimit = Services.prefs.getIntPref(
+      "devtools.netmonitor.responseBodyLimit",
+      1048576
+    );
+    if (responseBodyLimit != 1048576) {
+      Services.prefs.setIntPref(
+        "devtools.netmonitor.bodyLimit",
+        responseBodyLimit
+      );
+    } else if (requestBodyLimit != 1048576) {
+      Services.prefs.setIntPref(
+        "devtools.netmonitor.bodyLimit",
+        requestBodyLimit
+      );
+    }
+    Services.prefs.clearUserPref("devtools.netmonitor.requestBodyLimit");
+    Services.prefs.clearUserPref("devtools.netmonitor.responseBodyLimit");
   }
 
   /**

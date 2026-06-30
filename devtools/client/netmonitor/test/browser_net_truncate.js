@@ -7,9 +7,7 @@
  * Verifies that truncated response bodies still have the correct reported size.
  */
 add_task(async function () {
-  const limit = Services.prefs.getIntPref(
-    "devtools.netmonitor.responseBodyLimit"
-  );
+  const limit = Services.prefs.getIntPref("devtools.netmonitor.bodyLimit");
   const URL = EXAMPLE_URL + "sjs_truncate-test-server.sjs?limit=" + limit;
   const { monitor } = await initNetMonitor(URL, { requestCount: 1 });
 
