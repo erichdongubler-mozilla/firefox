@@ -41,9 +41,8 @@ const MAX_CELEBRATED_IDS = 100;
 // the generic newtab source; the search team may ask us to switch to a
 // widget-specific source later.
 const SEARCH_SAP_SOURCE = "about_newtab";
-// Status types that count as in-progress for the Now tab. Mirrors the keys in
-// LIVE_STATUS_L10N_MAP in SportsMatchRow.jsx plus the catch-all "live"; keep
-// the two in sync when new live sub-statuses are added.
+// Status types that count as in-progress for the Now tab. Kept as a
+// defensive filter so the Now tab only ever surfaces actually-live matches.
 const LIVE_STATUS_TYPES = new Set(["live", "halftime", "extra time"]);
 
 // Adaptive live-polling prefs and constants
@@ -417,9 +416,7 @@ export class SportsFeed {
     const liveMatchesValid = Array.isArray(liveData?.matches);
     // The /live endpoint is meant to be pre-filtered to in-progress games,
     // but we re-filter against LIVE_STATUS_TYPES as a defensive guard so the
-    // Now tab only ever surfaces actually-live matches. Keep the set in sync
-    // with LIVE_STATUS_L10N_MAP in SportsMatchRow.jsx when new live
-    // sub-statuses are introduced.
+    // Now tab only ever surfaces actually-live matches.
     const liveMatches = liveMatchesValid
       ? liveData.matches.filter(match =>
           LIVE_STATUS_TYPES.has(match?.status_type?.toLowerCase())
