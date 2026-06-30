@@ -111,6 +111,9 @@ Preferences.addSetting({
   pref: "widget.gtk.overlay-scrollbars.enabled",
   visible: () => AppConstants.MOZ_WIDGET_GTK,
 });
+Preferences.addSetting({
+  id: "keyboardCustomkeysLink",
+});
 
 /**
  * Helper object for managing the various zoom related settings.
@@ -599,6 +602,14 @@ SettingGroupManager.registerGroups({
       {
         id: "useOverlayScrollbars",
         l10nId: "browsing-gtk-use-non-overlay-scrollbars",
+      },
+      {
+        id: "keyboardCustomkeysLink",
+        l10nId: "settings-keyboard-shortcuts-customkeys-link",
+        control: "moz-box-link",
+        controlAttrs: {
+          href: "about:keyboard",
+        },
       },
     ],
   },
