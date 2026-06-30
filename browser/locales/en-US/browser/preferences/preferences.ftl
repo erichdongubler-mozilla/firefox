@@ -884,6 +884,12 @@ browsing-search-on-start-typing =
     .label = Search for text when you start typing
     .accesskey = x
 
+settings-keyboard-shortcuts-group =
+    .label = Keyboard shortcuts
+    .description = Control how you move around and interact with { -brand-short-name }.
+settings-keyboard-shortcuts-customkeys-link =
+    .label = Customize keyboard shortcuts
+
 settings-media-group =
     .label = Media
 

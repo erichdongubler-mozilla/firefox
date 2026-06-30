@@ -464,6 +464,7 @@ const CONFIG_PANES = Object.freeze({
       "browserLayout",
       "tabs",
       "pageNavigation",
+      "keyboardShortcuts",
       "media",
       "performance",
       "recommendations",

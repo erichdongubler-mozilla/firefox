@@ -69,6 +69,8 @@ tags = "os_integration"
 ["browser_subdialogs.js"]
 support-files = ["subdialog.xhtml", "subdialog2.xhtml"]
 
+["browser_tabs_browsing_pane.js"]
+
 ["browser_tabs_open_external_next_to_active_tab.js"]
 
 ["browser_updates_managed_by_os.js"]
