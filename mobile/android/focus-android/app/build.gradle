@@ -1,13 +1,12 @@
 plugins {
+    id 'com.android.application'
     alias(libs.plugins.dependency.analysis)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.python.envs.plugin)
     id 'org.mozilla.conventions.zip-test-reports'
     id 'org.mozilla.nimbus-gradle-plugin'
 }
 
-apply plugin: 'com.android.application'
 apply plugin: 'kotlin-parcelize'
 apply plugin: 'jacoco'
 

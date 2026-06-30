@@ -15,8 +15,8 @@ buildscript {
 }
 
 plugins {
+    id 'com.android.application'
     alias(libs.plugins.dependency.analysis)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.python.envs.plugin)
     alias(libs.plugins.protobuf.plugin)
@@ -25,7 +25,6 @@ plugins {
     id 'org.mozilla.nimbus-gradle-plugin'
 }
 
-apply plugin: 'com.android.application'
 apply plugin: 'kotlin-parcelize'
 apply plugin: 'jacoco'
 apply plugin: 'androidx.navigation.safeargs.kotlin'
@@ -177,8 +176,10 @@ android {
     }
 
     buildFeatures {
-        viewBinding = true
         buildConfig = true
+        compose = true
+        resValues = true
+        viewBinding = true
     }
 
     androidResources {
@@ -213,7 +214,6 @@ android {
             returnDefaultValues = true
         }
     }
-
 
     sourceSets {
         androidTest {
@@ -271,10 +271,6 @@ android {
                 useLegacyPackaging = true
             }
         }
-    }
-
-    buildFeatures {
-        compose = true
     }
 
     namespace = 'org.mozilla.fenix'
