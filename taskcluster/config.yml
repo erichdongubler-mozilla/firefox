@@ -369,6 +369,7 @@ treeherder:
         'service-merino-manifest': 'service-merino-manifest'
         'service-nimbus': 'service-nimbus'
         'service-pocket': 'service-pocket'
+        'service-sync': 'service-sync'
         'service-sync-autofill': 'service-sync-autofill'
         'service-sync-logins': 'service-sync-logins'
         'support-android-test': 'support-android-test'
