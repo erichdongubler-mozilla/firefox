@@ -911,9 +911,40 @@ mozilla::ipc::IPCResult HttpChannelParent::RecvRedirect2Verify(
       }
 
       if (aTargetLoadInfoForwarder.isSome()) {
+        const auto& fw = aTargetLoadInfoForwarder.ref();
+        auto* cp = static_cast<ContentParent*>(Manager()->Manager());
+        auto checkPrincipalInfo =
+            [&](const PrincipalInfo& aPrincipalInfo) -> bool {
+          auto principalOrErr = PrincipalInfoToPrincipal(aPrincipalInfo);
+          if (principalOrErr.isErr()) {
+            return false;
+          }
+          nsCOMPtr<nsIPrincipal> principal = principalOrErr.unwrap();
+          if (!cp->ValidatePrincipal(principal,
+                                     {ValidatePrincipalOptions::AllowSystem})) {
+            ContentParent::LogAndAssertFailedPrincipalValidationInfo(principal,
+                                                                     __func__);
+            return false;
+          }
+          return true;
+        };
+
+        if (fw.reservedClientInfo().isSome() &&
+            !checkPrincipalInfo(
+                fw.reservedClientInfo().ref().principalInfo())) {
+          return IPC_FAIL(this, "Invalid reservedClientInfo principal");
+        }
+        if (fw.initialClientInfo().isSome() &&
+            !checkPrincipalInfo(fw.initialClientInfo().ref().principalInfo())) {
+          return IPC_FAIL(this, "Invalid initialClientInfo principal");
+        }
+        if (fw.controller().isSome() &&
+            !checkPrincipalInfo(fw.controller().ref().principalInfo())) {
+          return IPC_FAIL(this, "Invalid controller principal");
+        }
+
         nsCOMPtr<nsILoadInfo> newLoadInfo = newHttpChannel->LoadInfo();
-        rv = MergeChildLoadInfoForwarder(aTargetLoadInfoForwarder.ref(),
-                                         newLoadInfo);
+        rv = MergeChildLoadInfoForwarder(fw, newLoadInfo);
         if (NS_FAILED(rv) && NS_SUCCEEDED(result)) {
           result = rv;
         }
