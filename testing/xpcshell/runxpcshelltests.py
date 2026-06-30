@@ -1820,6 +1820,9 @@ class XPCShellTests:
         # we default to false for e10s on xpcshell
         self.mozInfo["e10s"] = self.mozInfo.get("e10s", False)
 
+        # isolated_process is used in manifest but this is Android only
+        self.mozInfo["isolated_process"] = False
+
         mozinfo.update(self.mozInfo)
         return True
 

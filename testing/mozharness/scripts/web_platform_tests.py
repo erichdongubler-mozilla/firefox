@@ -230,6 +230,15 @@ class WebPlatformTest(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidM
                     "help": "Sets whether to update the test status if a crash dump is detected",
                 },
             ],
+            [
+                ["--enable-isolated-process"],
+                {
+                    "action": "store_true",
+                    "dest": "isolated_process",
+                    "default": False,
+                    "help": "Run the tests with content service isolated process enabled.",
+                },
+            ],
         ]
         + copy.deepcopy(testing_config_options)
         + copy.deepcopy(code_coverage_config_options)
@@ -454,6 +463,9 @@ class WebPlatformTest(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidM
             cmd.append("--update-status-on-crash")
         else:
             cmd.append("--no-update-status-on-crash")
+
+        if c["isolated_process"]:
+            cmd.append("--enable-isolated-process")
 
         test_paths = set()
         if not (self.verify_enabled or self.per_test_coverage):

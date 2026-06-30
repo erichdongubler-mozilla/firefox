@@ -19,6 +19,7 @@ import android.view.Surface;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -493,10 +494,14 @@ public class TestRunnerActivity extends Activity {
                   .safeBrowsingProviders(google, googleLegacy, google5)
                   .build())
           .lowMemoryDetection(false) // Avoid unpredictability in tests
-          .isolatedProcessEnabled(BuildConfig.MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_PROCESS)
           .appZygoteProcessEnabled(
               Objects.equals(
                   System.getenv("MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_WITH_ZYGOTE"), "1"));
+
+      final List<String> env = getEnvFromExtras(extras);
+      if (env.contains("MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_PROCESS=1")) {
+        runtimeSettingsBuilder.isolatedProcessEnabled(true);
+      }
 
       sRuntime = GeckoRuntime.create(this, runtimeSettingsBuilder.build());
 
@@ -752,6 +757,26 @@ public class TestRunnerActivity extends Activity {
 
   public GeckoSession getGeckoSession() {
     return mSession;
+  }
+
+  /* package */ static ArrayList<String> getEnvFromExtras(final Bundle extras) {
+    if (extras == null) {
+      return new ArrayList<>();
+    }
+
+    final ArrayList<String> result = new ArrayList<>();
+    if (extras != null) {
+      String env = extras.getString("env0");
+      for (int c = 1; env != null; c++) {
+        if (BuildConfig.DEBUG_BUILD) {
+          Log.d(LOGTAG, "env var: " + env);
+        }
+        result.add(env);
+        env = extras.getString("env" + c);
+      }
+    }
+
+    return result;
   }
 
   class TestRunnerExperimentDelegate implements ExperimentDelegate {

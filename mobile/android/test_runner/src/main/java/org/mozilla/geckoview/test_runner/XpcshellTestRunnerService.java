@@ -10,8 +10,8 @@ import android.os.IBinder;
 import android.util.Log;
 import androidx.annotation.Nullable;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Objects;
-import org.mozilla.geckoview.BuildConfig;
 import org.mozilla.geckoview.ContentBlocking;
 import org.mozilla.geckoview.GeckoResult;
 import org.mozilla.geckoview.GeckoRuntime;
@@ -74,7 +74,7 @@ public class XpcshellTestRunnerService extends Service {
             .updateUrl("http://mochi.test:8888/safebrowsing4-dummy/update")
             .build();
 
-    final GeckoRuntimeSettings runtimeSettings =
+    final GeckoRuntimeSettings.Builder runtimeSettingsBuilder =
         new GeckoRuntimeSettings.Builder()
             .arguments(new String[] {"-xpcshell"})
             .extras(extras)
@@ -84,13 +84,16 @@ public class XpcshellTestRunnerService extends Service {
                     .safeBrowsingProviders(google, googleLegacy)
                     .build())
             .lowMemoryDetection(false) // Avoid unpredictability in tests
-            .isolatedProcessEnabled(BuildConfig.MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_PROCESS)
             .appZygoteProcessEnabled(
                 Objects.equals(
-                    System.getenv("MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_WITH_ZYGOTE"), "1"))
-            .build();
+                    System.getenv("MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_WITH_ZYGOTE"), "1"));
 
-    sRuntime = GeckoRuntime.create(this, runtimeSettings);
+    final List<String> env = TestRunnerActivity.getEnvFromExtras(extras);
+    if (env.contains("MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_PROCESS=1")) {
+      runtimeSettingsBuilder.isolatedProcessEnabled(true);
+    }
+
+    sRuntime = GeckoRuntime.create(this, runtimeSettingsBuilder.build());
 
     webExtensionController()
         .setDebuggerDelegate(
