@@ -34,6 +34,8 @@
 -mdn-brand-name = MDN Web Docs
 -yelp-brand-name = Yelp
 
+##
+
 # Note the name of the website is capitalized.
 -fakespot-website-name = Fakespot.com
 
