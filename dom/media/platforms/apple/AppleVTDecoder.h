@@ -153,10 +153,8 @@ class AppleVTDecoder final : public MediaDataDecoder,
   ReorderQueue mReorderQueue MOZ_GUARDED_BY(mMonitor);
   MozMonitoredPromiseHolder<DecodePromise> mPromise MOZ_GUARDED_BY(mMonitor);
 
-  // Decoded frame will be dropped if its pts is smaller than this
-  // value. It shold be initialized before Input() or after Flush(). So it is
-  // safe to access it in OutputFrame without protecting.
-  Maybe<media::TimeUnit> mSeekTargetThreshold;
+  // Decoded frame will be dropped if its pts is smaller than this value.
+  Maybe<media::TimeUnit> mSeekTargetThreshold MOZ_GUARDED_BY(mMonitor);
 
   AutoCFTypeRef<CMVideoFormatDescriptionRef> mFormat;
   AutoCFTypeRef<VTDecompressionSessionRef> mSession;
