@@ -231,7 +231,7 @@ loader.lazyGetter(this, "ProfilerBackground", () => {
 const DEVTOOLS_STYLESHEETS_IN_DEBUGGER =
   "devtools.debugger.features.stylesheets-in-debugger";
 
-const BOOLEAN_CONFIGURATION_PREFS = {
+const CONFIGURATION_PREFS = {
   "devtools.cache.disabled": {
     name: "cacheDisabled",
   },
@@ -252,7 +252,7 @@ const BOOLEAN_CONFIGURATION_PREFS = {
     name: "isTracerFeatureEnabled",
   },
 };
-exports.BOOLEAN_CONFIGURATION_PREFS = BOOLEAN_CONFIGURATION_PREFS;
+exports.CONFIGURATION_PREFS = CONFIGURATION_PREFS;
 
 /**
  * A "Toolbox" is the component that holds all the tools for one specific
@@ -2427,11 +2427,11 @@ class Toolbox extends EventEmitter {
     // Get the current thread settings from the prefs as well as debugger internal storage for breakpoints.
     const threadConfiguration = await getThreadOptions();
 
-    for (const prefName in BOOLEAN_CONFIGURATION_PREFS) {
-      const { name, thread } = BOOLEAN_CONFIGURATION_PREFS[prefName];
-      const value = Services.prefs.getBoolPref(prefName, false);
+    for (const prefName in CONFIGURATION_PREFS) {
+      const { name, thread } = CONFIGURATION_PREFS[prefName];
+      const value = this.#getPrefValue(prefName);
 
-      // Based on the pref name, this will be stored in either target or thread specific configuration
+      // Based on the `thread` boolean, this will be stored in either target or thread specific configuration
       if (thread) {
         threadConfiguration[name] = value;
       } else {
@@ -2439,10 +2439,7 @@ class Toolbox extends EventEmitter {
       }
 
       // Also listen for any future change
-      Services.prefs.addObserver(
-        prefName,
-        this.#onBooleanConfigurationPrefChange
-      );
+      Services.prefs.addObserver(prefName, this.#onConfigurationPrefChange);
     }
 
     // Now communicate the configurations to the server
@@ -2455,7 +2452,29 @@ class Toolbox extends EventEmitter {
   }
 
   /**
-   * Called whenever a preference registered in BOOLEAN_CONFIGURATION_PREFS
+   * Helper to retrieve any preference value regardless of its type.
+   *
+   * @param {string} name
+   *        Preference name.
+   * @return {string|number|boolean}
+   *        Preference value
+   */
+  #getPrefValue(name) {
+    const type = Services.prefs.getPrefType(name);
+    switch (type) {
+      case Services.prefs.PREF_STRING:
+        return Services.prefs.getStringPref(name, "");
+      case Services.prefs.PREF_INT:
+        return Services.prefs.getIntPref(name, 0);
+      case Services.prefs.PREF_BOOL:
+        return Services.prefs.getBoolPref(name, false);
+      default:
+        throw new Error("Unknown pref type for: " + name);
+    }
+  }
+
+  /**
+   * Called whenever a preference registered in CONFIGURATION_PREFS
    * changes.
    * This is used to communicate the new setting's value to the server.
    *
@@ -2464,9 +2483,9 @@ class Toolbox extends EventEmitter {
    * @param {string} prefName
    *        The preference name which changed
    */
-  #onBooleanConfigurationPrefChange = async (subject, topic, prefName) => {
-    const { name, thread } = BOOLEAN_CONFIGURATION_PREFS[prefName];
-    const value = Services.prefs.getBoolPref(prefName, false);
+  #onConfigurationPrefChange = async (subject, topic, prefName) => {
+    const { name, thread } = CONFIGURATION_PREFS[prefName];
+    const value = this.#getPrefValue(prefName);
 
     const configurationCommand = thread
       ? this.commands.threadConfigurationCommand
@@ -4369,11 +4388,8 @@ class Toolbox extends EventEmitter {
     gDevTools.off("tool-registered", this.#toolRegistered);
     gDevTools.off("tool-unregistered", this.#toolUnregistered);
 
-    for (const prefName in BOOLEAN_CONFIGURATION_PREFS) {
-      Services.prefs.removeObserver(
-        prefName,
-        this.#onBooleanConfigurationPrefChange
-      );
+    for (const prefName in CONFIGURATION_PREFS) {
+      Services.prefs.removeObserver(prefName, this.#onConfigurationPrefChange);
     }
     Services.prefs.removeObserver(
       BROWSERTOOLBOX_SCOPE_PREF,
