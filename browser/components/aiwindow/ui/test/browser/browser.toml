@@ -241,8 +241,6 @@ skip-if = [
 
 ["browser_smartwindow_smartbar_glow.js"]
 
-["browser_smartwindow_smartbar_mentions_filter.js"]
-
 ["browser_smartwindow_smartbar_model_select.js"]
 
 ["browser_smartwindow_smartbar_tab_state.js"]

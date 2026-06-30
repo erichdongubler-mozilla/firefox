@@ -17,11 +17,7 @@ ChromeUtils.defineESModuleGetters(this, {
     "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
   IntentClassifier:
     "moz-src:///browser/components/aiwindow/models/IntentClassifier.sys.mjs",
-  MENTION_TYPE:
-    "moz-src:///browser/components/urlbar/SmartbarMentionsPanelSearch.sys.mjs",
   openAIEngine: "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
-  SmartbarMentionsPanelSearch:
-    "moz-src:///browser/components/urlbar/SmartbarMentionsPanelSearch.sys.mjs",
   PlacesTestUtils: "resource://testing-common/PlacesTestUtils.sys.mjs",
   SessionStore: "resource:///modules/sessionstore/SessionStore.sys.mjs",
   SessionWindowUI: "resource:///modules/sessionstore/SessionWindowUI.sys.mjs",
