@@ -533,6 +533,7 @@
                 <data android:host="settings_delete_browsing_data"/>
                 <data android:host="settings_logins"/>
                 <data android:host="settings_notifications"/>
+                <data android:host="settings_marketing_notifications"/>
                 <data android:host="settings_privacy"/>
                 <data android:host="settings_search_engine"/>
                 <data android:host="settings_tracking_protection"/>

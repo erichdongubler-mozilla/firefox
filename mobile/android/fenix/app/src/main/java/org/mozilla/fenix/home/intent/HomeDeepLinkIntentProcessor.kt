@@ -24,6 +24,7 @@ import org.mozilla.fenix.components.share.ShareSource
 import org.mozilla.fenix.components.usecases.ShareUseCases
 import org.mozilla.fenix.ext.alreadyOnDestination
 import org.mozilla.fenix.ext.openSetDefaultBrowserOption
+import org.mozilla.fenix.onboarding.MARKETING_CHANNEL_ID
 import org.mozilla.fenix.utils.maybeShowAddSearchWidgetPrompt
 import org.mozilla.fenix.utils.Settings as AppSettings
 
@@ -134,6 +135,10 @@ class HomeDeepLinkIntentProcessor(
             }
             "settings_notifications" -> {
                 val intent = notificationSettings(activity)
+                activity.startActivity(intent)
+            }
+            "settings_marketing_notifications" -> {
+                val intent = notificationSettings(activity, MARKETING_CHANNEL_ID)
                 activity.startActivity(intent)
             }
             "install_search_widget" -> {
