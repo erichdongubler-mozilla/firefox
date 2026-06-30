@@ -93,6 +93,9 @@ home-prefs-sports-widget-header =
 # Clock is a widget on New Tab that displays time zones around the world.
 home-prefs-clocks-header =
     .label = Klokke
+# Privacy is a widget on New Tab that shows tracking protection activity.
+home-prefs-privacy-header =
+    .label = Personvern
 home-prefs-mission-message2 =
     .message = Sponsorane våre støttar oppdraget vårt om å byggje eit betre internett.
 home-prefs-manage-topics-link2 =
@@ -152,6 +155,16 @@ home-prefs-support-firefox-header-srd =
     .label = Støtt { -brand-product-name }
 home-prefs-mission-message-learn-more-link-srd = Finn ut korleis
 
+## Strings for the Privacy widget
+
+# Context menu item linking to more information about the Privacy widget.
+newtab-privacy-menu-learn-more = Les meir
+
+## Strings for the Stocks widget
+
+# Context menu item linking to more information about the Stocks widget.
+newtab-stocks-menu-learn-more = Les meir
+
 ## Search box component.
 
 # "Search" is a verb/action
@@ -187,6 +200,7 @@ newtab-topsites-add-shortcut-label = Legg til snarveg
 newtab-topsites-add-shortcut-title =
     .title = Legg til snarveg
     .aria-label = Legg til snarveg
+newtab-shortcuts-pinned-area = Festa områda
 newtab-topsites-title-label = Tittel
 newtab-topsites-title-input =
     .placeholder = Skriv inn ein tittel
@@ -495,6 +509,8 @@ newtab-custom-widget-clock-toggle =
     .label = Klokke
 newtab-custom-widget-sports-toggle2 =
     .label = Sport
+newtab-custom-widget-privacy-toggle =
+    .label = Personvern
 newtab-custom-widget-section-title = Widgetar
 newtab-custom-widget-section-toggle =
     .label = Widgetar
@@ -971,6 +987,8 @@ newtab-widget-timer-reset =
 newtab-widget-timer-menu-notifications = Slå av varsel
 newtab-widget-timer-menu-notifications-on = Slå på varsel
 newtab-widget-timer-menu-learn-more = Les meir
+newtab-widget-timer-menu-button =
+    .aria-label = Timer-innstillingar
 # The title displays above a set of top news headlines.
 newtab-daily-briefing-card-title = Toppoverskrifter
 newtab-daily-briefing-card-menu-dismiss = Ignorer
@@ -1265,6 +1283,8 @@ newtab-sports-widget-team-tbd = Skal bestemmast
 newtab-sports-widget-message-wallpapers-title = Spark i gang VM med nye bakgrunnsbilde
 newtab-sports-widget-message-wallpapers-body = Gi nettlesaren litt kampstemning under turneringa.
 newtab-sports-widget-message-wallpapers-cta = Vel bakgrunnsbilde
+newtab-sports-widget-message-wallpapers-semifinals-title = Få ein ny bakgrunn for semifinalane
+newtab-sports-widget-message-wallpapers-semifinals-body = Gjer deg klar for VMs største kampar.
 newtab-sports-widget-message-add-widgets-cta =
     .label = Legg til widgetar
 newtab-sports-widget-message-day-in-play-title = Hald dagen i gang med widgetar i { -brand-product-name }
