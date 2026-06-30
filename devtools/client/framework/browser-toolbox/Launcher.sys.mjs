@@ -278,7 +278,7 @@ export class BrowserToolboxLauncher extends EventEmitter {
    * @param {boolean} options.forceMultiprocess: Set to true to force the Browser Toolbox to be in
    *                    multiprocess mode.
    */
-  #create({ forceMultiprocess } = {}) {
+  async #create({ forceMultiprocess } = {}) {
     dumpn("Initializing chrome debugging process.");
 
     let command = Services.dirsvc.get("XREExeF", Ci.nsIFile).path;
@@ -332,6 +332,7 @@ export class BrowserToolboxLauncher extends EventEmitter {
       XPCOM_MEM_REFCNT_LOG: null,
       XRE_PROFILE_PATH: null,
       XRE_PROFILE_LOCAL_PATH: null,
+      XDG_ACTIVATION_TOKEN: await ChromeUtils.requestXDGActivationToken(),
     };
 
     // During local development, incremental builds can trigger the main process
@@ -345,56 +346,52 @@ export class BrowserToolboxLauncher extends EventEmitter {
       args.push("-purgecaches");
     }
 
-    dump(`Starting Browser Toolbox ${command} ${args.join(" ")}\n`);
-    IOUtils.makeDirectory(profilePath, { ignoreExisting: true })
-      .then(() =>
-        Subprocess.call({
-          command,
-          arguments: args,
-          environmentAppend: true,
-          stderr: "stdout",
-          environment,
-        })
-      )
-      .then(proc => {
-        this.#dbgProcess = proc;
-
-        this.#telemetry.toolOpened("jsbrowserdebugger", this);
-
-        dumpn("Chrome toolbox is now running...");
-        this.emit("run", this, proc, this.#dbgProfilePath);
-
-        proc.stdin.close();
-        const dumpPipe = async pipe => {
-          let leftover = "";
-          let data = await pipe.readString();
-          while (data) {
-            data = leftover + data;
-            const lines = data.split(/\r\n|\r|\n/);
-            if (lines.length) {
-              for (const line of lines.slice(0, -1)) {
-                dump(`${proc.pid}> ${line}\n`);
-              }
-              leftover = lines[lines.length - 1];
-            }
-            data = await pipe.readString();
-          }
-          if (leftover) {
-            dump(`${proc.pid}> ${leftover}\n`);
-          }
-        };
-        dumpPipe(proc.stdout);
-
-        proc.wait().then(() => this.close());
-
-        return proc;
-      })
-      .catch(err => {
-        console.log(
-          `Error loading Browser Toolbox: ${command} ${args.join(" ")}`,
-          err
-        );
+    try {
+      dump(`Starting Browser Toolbox ${command} ${args.join(" ")}\n`);
+      await IOUtils.makeDirectory(profilePath, { ignoreExisting: true });
+      const proc = await Subprocess.call({
+        command,
+        arguments: args,
+        environmentAppend: true,
+        stderr: "stdout",
+        environment,
       });
+
+      this.#dbgProcess = proc;
+
+      this.#telemetry.toolOpened("jsbrowserdebugger", this);
+
+      dumpn("Chrome toolbox is now running...");
+      this.emit("run", this, proc, this.#dbgProfilePath);
+
+      proc.stdin.close();
+      const dumpPipe = async pipe => {
+        let leftover = "";
+        let data = await pipe.readString();
+        while (data) {
+          data = leftover + data;
+          const lines = data.split(/\r\n|\r|\n/);
+          if (lines.length) {
+            for (const line of lines.slice(0, -1)) {
+              dump(`${proc.pid}> ${line}\n`);
+            }
+            leftover = lines[lines.length - 1];
+          }
+          data = await pipe.readString();
+        }
+        if (leftover) {
+          dump(`${proc.pid}> ${leftover}\n`);
+        }
+      };
+      dumpPipe(proc.stdout);
+
+      proc.wait().then(() => this.close());
+    } catch (err) {
+      console.log(
+        `Error loading Browser Toolbox: ${command} ${args.join(" ")}`,
+        err
+      );
+    }
   }
 
   /**
