@@ -506,6 +506,37 @@
         {
           "type": "object",
           "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["SET_DEFAULT_PROTOCOL_HANDLER"]
+            },
+            "data": {
+              "type": "object",
+              "properties": {
+                "protocol": {
+                  "type": "string",
+                  "description": "The protocol to claim, e.g. \"mailto\"."
+                },
+                "url": {
+                  "type": "string",
+                  "description": "URL passed to the OS default-app picker."
+                },
+                "openInFirefox": {
+                  "type": "boolean",
+                  "description": "If the OS hands the URL back to Firefox after the user picks Firefox in the open-with dialog, open the protocol's default URL in a new tab instead of suppressing the launch."
+                }
+              },
+              "required": ["protocol"],
+              "additionalProperties": false
+            }
+          },
+          "required": ["type", "data"],
+          "additionalProperties": false,
+          "description": "Message action to set Firefox as the default protocol handler"
+        },
+        {
+          "type": "object",
+          "properties": {
             "data": {
               "type": "object",
               "properties": {
