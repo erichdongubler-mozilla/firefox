@@ -1534,7 +1534,7 @@ struct CallbackTrieNode {
 
   // Append this node's live callbacks (skipping dead, null-Func nodes) to aOut
   // in LIFO order (newest registration first).
-  void AppendAll(nsTArray<CallbackNode*>& aOut) const {
+  void AppendAll(nsTArray<RefPtr<CallbackNode>>& aOut) const {
     for (const RefPtr<CallbackNode>& node : Reversed(mCallbacks)) {
       if (node->Func()) aOut.AppendElement(node);
     }
@@ -1542,7 +1542,7 @@ struct CallbackTrieNode {
 
   // Like AppendAll but only prefix-registered callbacks.  Used at non-terminal
   // trie nodes during notification.
-  void AppendPrefix(nsTArray<CallbackNode*>& aOut) const {
+  void AppendPrefix(nsTArray<RefPtr<CallbackNode>>& aOut) const {
     for (const RefPtr<CallbackNode>& node : Reversed(mCallbacks)) {
       if (node->Func() && node->IsPrefix()) aOut.AppendElement(node);
     }
@@ -1653,7 +1653,7 @@ class CallbackTrie {
   // callbacks fire.  Within each node callbacks fire in LIFO order (newest
   // registration first).
   void CollectMatchingForNotify(const nsCString& aPrefName,
-                                nsTArray<CallbackNode*>& aOut) {
+                                nsTArray<RefPtr<CallbackNode>>& aOut) {
     mRoot.AppendPrefix(aOut);
     Walk(aPrefName,
          [&aOut](CallbackTrieNode* aNode, const nsACString& aSegment,
@@ -3618,8 +3618,6 @@ nsPrefBranch::PrefName nsPrefBranch::GetPrefName(
 
 // static
 void nsPrefBranch::ReapAndCompactCallbacks() {
-  MOZ_ASSERT(!sPImpl->mCallbacksInProgress);
-
   // Mirror callbacks are never pref-branch observers, so only the trie is swept
   // and compacted here.
   if (sPImpl->mShouldSweepWeakObservers) {
@@ -3884,9 +3882,9 @@ void PreferencesImpl::NotifyCallbacks(const nsCString& aPrefName,
   // Observer callbacks are snapshotted by pointer into their (stable,
   // refcounted) trie nodes, so a callback unregistered mid-round (which clears
   // its func) is skipped here at fire time.
-  AutoTArray<CallbackNode*, 16> toNotify;
+  AutoTArray<RefPtr<CallbackNode>, 16> toNotify;
   mCallbacks.CollectMatchingForNotify(aPrefName, toNotify);
-  for (CallbackNode* node : toNotify) {
+  for (const RefPtr<CallbackNode>& node : toNotify) {
     if (PrefChangedFunc func = node->Func()) {
       MOZ_LOG(sPrefLog, LogLevel::Debug,
               ("NotifyCallbacks: pref='%s' -> domain='%s'", aPrefName.get(),
