@@ -260,7 +260,7 @@
   "button/background/color/ghost": {
     "light": "transparent",
     "dark": "transparent",
-    "forcedColors": "transparent"
+    "forcedColors": "{HCM Theme$ButtonFace}"
   },
   "button/background/color/ghost/active": {
     "light": "{Theme$button/background/color/active}",

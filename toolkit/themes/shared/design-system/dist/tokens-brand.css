@@ -75,7 +75,7 @@
     :root,
     :host(.anonymous-content-host) {
       /** button **/
-      --button-background-color-ghost: var(--button-background-color);
+      --button-background-color-ghost: ButtonFace;
       --button-background-color-ghost-disabled: var(--button-background-color-disabled);
       --button-background-color-toolbar: var(--button-background-color);
       --button-background-color-toolbar-disabled: var(--button-background-color-disabled);
