@@ -126,9 +126,20 @@ import org.mozilla.gecko.annotation.WrapForJNI;
           gGameRotationVectorSensor = sm.getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR);
         }
         if (gGameRotationVectorSensor != null) {
-          sm.registerListener(
-              sListeners, gGameRotationVectorSensor, SensorManager.SENSOR_DELAY_FASTEST);
-          break;
+          // The game rotation vector sensor is available according to the system, but a few devices
+          // seem to have a broken implementation (Bug 1356921). We also check the gyroscope sensor
+          // for it.
+          if (gGyroscopeSensor == null) {
+            gGyroscopeSensor = sm.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+          }
+          if (gGyroscopeSensor != null) {
+            sm.registerListener(
+                sListeners, gGameRotationVectorSensor, SensorManager.SENSOR_DELAY_FASTEST);
+            break;
+          }
+          // This device has a broken game rotation vector sensor. Use rotation vector sensor if
+          // available.
+          gGameRotationVectorSensor = null;
         }
       // Fallthrough
 
