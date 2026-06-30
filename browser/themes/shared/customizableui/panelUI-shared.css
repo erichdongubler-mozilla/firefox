@@ -220,7 +220,7 @@ panelview {
   transition: height var(--panelui-subview-transition-duration);
 }
 
-.panel-subview-body {
+.panel-subview-body:where(:not([hidden])) {
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -2042,7 +2042,7 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
   color: var(--text-color-deemphasized);
 }
 
-#PanelUI-profiler-content-recording {
+#PanelUI-profiler-content-recording:not([hidden]) {
   display: flex;
   place-items: center;
   place-content: center;

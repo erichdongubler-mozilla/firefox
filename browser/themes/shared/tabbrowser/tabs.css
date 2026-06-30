@@ -2986,18 +2986,18 @@ toolbar:not(#TabsToolbar) #firefox-view-button {
   display: none;
 }
 
-#tab-group-suggestions-heading,
-#tab-group-main,
-#tab-group-suggestions-separator,
-#tab-group-suggestions-load-actions,
-#tab-group-suggestions-loading,
-#tab-group-default-actions,
-#tab-group-suggestion-button {
+#tab-group-suggestions-heading:not([hidden]),
+#tab-group-main:not([hidden]),
+#tab-group-suggestions-separator:not([hidden]),
+#tab-group-suggestions-load-actions:not([hidden]),
+#tab-group-suggestions-loading:not([hidden]),
+#tab-group-default-actions:not([hidden]),
+#tab-group-suggestion-button:not([hidden]) {
   display: flex;
 }
 
-#tab-group-suggestions-message-container,
-#tab-group-suggestions-container {
+#tab-group-suggestions-message-container:not([hidden]),
+#tab-group-suggestions-container:not([hidden]) {
   display: block;
 }
 
@@ -3006,7 +3006,7 @@ toolbar:not(#TabsToolbar) #firefox-view-button {
   color: inherit;
 }
 
-#tab-group-suggestions-disclaimer {
+#tab-group-suggestions-disclaimer:not([hidden]) {
   display: initial;
 }
 

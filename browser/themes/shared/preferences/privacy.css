@@ -151,7 +151,7 @@
   display: none;
 }
 
-.content-blocking-warning.reload-tabs {
+.content-blocking-warning.reload-tabs:not([hidden]) {
   display: flex;
   flex-wrap: wrap;
 }

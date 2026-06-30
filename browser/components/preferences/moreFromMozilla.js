@@ -232,7 +232,7 @@ var gMoreFromMozillaPane = {
 
       if (product.qrcode) {
         let qrcode = template.querySelector(".qr-code-box");
-        qrcode.hidden = false;
+        qrcode.setAttribute("hidden", "false");
 
         let qrcode_title = template.querySelector(".qr-code-box-title");
         document.l10n.setAttributes(

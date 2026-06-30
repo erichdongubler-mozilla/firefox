@@ -26,12 +26,17 @@ toolbar[overflowable][customizing] > .customization-target {
 }
 
 #customization-container {
-  display: flex;
   flex-direction: column;
   min-height: 0;
   background-color: var(--toolbar-background-color);
   color: var(--toolbar-text-color);
   color-scheme: var(--toolbar-color-scheme);
+
+  &:not([hidden]) {
+    /* In a separate rule to avoid 'display:flex' causing the node to be
+     * displayed while the container is still hidden. */
+    display: flex;
+  }
 }
 
 #customization-content-container {
@@ -86,14 +91,17 @@ toolbar[overflowable][customizing] > .customization-target {
 }
 
 #customization-palette {
-  display: block;
-  flex: 1 1 auto;
-  overflow: auto;
-  min-height: 3em;
-  margin-bottom: 20px;
   padding: 5px 20px 20px;
   transition: opacity 0.3s ease-in-out;
   opacity: 0;
+
+  &:not([hidden]) {
+    display: block;
+    flex: 1 1 auto;
+    overflow: auto;
+    min-height: 3em;
+    margin-bottom: 20px;
+  }
 
   &[showing="true"] {
     opacity: 1;

@@ -436,9 +436,7 @@ treecol {
 
 treecol[hidden] {
   visibility: collapse;
-  /* `!important` to keep the column laid out (collapsed, not removed) over the
-     global `[hidden] { display: none !important }` rule. */
-  display: flex !important;
+  display: flex;
 }
 
 /* ::::: lines connecting cells ::::: */

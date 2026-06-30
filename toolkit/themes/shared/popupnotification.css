@@ -12,7 +12,7 @@
   flex-direction: column;
 }
 
-.popup-notification-panel > popupnotification {
+.popup-notification-panel > popupnotification:not([hidden]) {
   /* Since the anonymous parent (::part(content)) has display: flex, sizing
    * computations work better with display: block; than with the XUL default
    * display: flex;

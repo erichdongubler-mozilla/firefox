@@ -132,7 +132,7 @@ setting-group[data-category] {
 }
 
 /* Bug 2002963 - payments and addresses are in a groupbox together, but they probably shouldn't be */
-#formAutofillGroupBox {
+#formAutofillGroupBox:not([hidden]) {
   display: flex;
   flex-direction: column;
   gap: 32px;
@@ -515,7 +515,7 @@ richlistitem[selected] .actionsMenu:focus-visible {
   margin-inline-end: var(--space-small);
 }
 
-a[is="moz-support-link"] {
+a[is="moz-support-link"]:not([hidden]) {
   display: inline-block;
   white-space: initial;
 }
@@ -912,7 +912,7 @@ dialog > .sync-engines-list + hbox {
   margin-block-end: 10px;
 }
 
-.sync-engines-list > div {
+.sync-engines-list > div:not([hidden]) {
   display: flex;
   break-inside: avoid;
 }
@@ -1176,8 +1176,8 @@ richlistitem .text-link:hover {
   align-items: center;
 }
 
-.proxy-grid-row,
-.dnsOverHttps-grid-row {
+.proxy-grid-row:not([hidden]),
+.dnsOverHttps-grid-row:not([hidden]) {
   display: contents;
 }
 
@@ -1216,8 +1216,10 @@ richlistitem .text-link:hover {
 }
 
 /* This is an HTML div (not XUL hbox), so it needs explicit display:flex for
-   horizontal icon+title layout. */
-#moreFromMozillaCategory-header {
+   horizontal icon+title layout. The :not([hidden]) guard prevents this from
+   overriding the hidden attribute's display:none (inline styles and CSS rules
+   both beat the UA stylesheet's hidden handling for HTML elements). */
+#moreFromMozillaCategory-header:not([hidden]) {
   display: flex;
   flex-wrap: wrap;
 }
@@ -1228,7 +1230,7 @@ richlistitem .text-link:hover {
   margin-block-end: var(--space-xlarge);
 }
 
-#moreFromMozillaCategory {
+#moreFromMozillaCategory:not([hidden]) {
   display: flex;
   flex-direction: column;
 }
@@ -1293,7 +1295,11 @@ richlistitem .text-link:hover {
   }
 }
 
-.qr-code-box {
+/*
+ * The :not clause is required because hiding an element with `display: flex` only
+ * partially hides it.
+ */
+.qr-code-box:not([hidden="true"]) {
   max-width: 320px; /* a unit better than px for this & next? */
   min-height: 204px;
   margin-block: 10px 0;
@@ -1304,8 +1310,10 @@ richlistitem .text-link:hover {
   align-items: center;
   justify-content: space-evenly;
   border-radius: var(--border-radius-small);
+}
 
-  @media (forced-colors) {
+@media (forced-colors) {
+  .qr-code-box:not([hidden="true"]) {
     border: 1px solid currentColor;
   }
 }
@@ -1364,7 +1372,7 @@ richlistitem .text-link:hover {
 }
 
 @media (prefers-color-scheme: dark) {
-  .qr-code-box {
+  .qr-code-box:not([hidden="true"]) {
     background-color: rgba(91, 91, 102, 0.45);
   }
 

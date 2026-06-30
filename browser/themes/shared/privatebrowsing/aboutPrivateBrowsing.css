@@ -603,7 +603,10 @@ content-search-handoff-ui {
     }
   }
 
-  .nova-promo-wrapper {
+  /* `:not([hidden])` so the `hidden` attribute keeps the wrapper collapsed
+     until renderNovaPromo populates it and clears `hidden`. Author `display`
+     otherwise overrides the UA `[hidden]` rule, flashing an empty promo. */
+  .nova-promo-wrapper:not([hidden]) {
     position: relative;
     display: flex;
     width: 100%;
