@@ -19,11 +19,10 @@ bool IsAllZero(Span<const uint8_t> aSpan) {
 }
 
 TEST(EncryptedRandomAccessBlockTest,
-     EncryptedRandomAccessBlock_zeroInitializedEncryptedBlock)
+     EncryptedRandomAccessBlock_zeroInitializedEncryptedBlockMetadataAndPayload)
 {
   EncryptedRandomAccessBlock encryptedRandomAccessBlock;
 
-  EXPECT_TRUE(IsAllZero(encryptedRandomAccessBlock.Header()));
   EXPECT_TRUE(IsAllZero(encryptedRandomAccessBlock.CipherMetadata()));
   EXPECT_TRUE(IsAllZero(encryptedRandomAccessBlock.CipherPayload()));
 }

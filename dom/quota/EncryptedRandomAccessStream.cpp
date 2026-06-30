@@ -19,6 +19,7 @@
 #include "nsIRandomAccessStream.h"
 #include "nsISeekableStream.h"
 #include "nsISupports.h"
+#include "nsServiceManagerUtils.h"
 #include "nsStreamUtils.h"
 #include "nscore.h"
 
@@ -99,7 +100,7 @@ NS_IMETHODIMP EncryptedRandomAccessStreamBase::ReadSegments(
 
     if (blockIndex != mCurrentBlockIndex || !mBlockLoaded) {
       if (mBlockDirty) {
-        const auto rv = FlushCurrentBlock();
+        const auto rv = SaveCurrentBlock();
         if (NS_FAILED(rv)) {
           return rv;
         }
@@ -162,13 +163,19 @@ NS_IMETHODIMP EncryptedRandomAccessStreamBase::Close() {
     return NS_OK;
   }
 
-  // TODO: Implement |FlushCurrentBlock()|.
-  // auto rv = FlushCurrentBlock();
-  // if (NS_FAILED(rv)) {
-  //   return rv;
-  // }
+  if (mBlockDirty) {
+    const auto rv = SaveCurrentBlock();
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+  }
 
-  const auto rv = mBaseStream->InputStream()->Close();
+  auto rv = mBaseStream->OutputStream()->Flush();
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  rv = mBaseStream->InputStream()->Close();
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -209,6 +216,114 @@ NS_IMETHODIMP EncryptedRandomAccessStreamBase::GetOutputStream(
   return NS_OK;
 }
 
+NS_IMETHODIMP EncryptedRandomAccessStreamBase::Write(const char* aBuf,
+                                                     uint32_t aCount,
+                                                     uint32_t* aResultOut) {
+  return WriteSegments(NS_CopyBufferToSegment, const_cast<char*>(aBuf), aCount,
+                       aResultOut);
+}
+
+NS_IMETHODIMP EncryptedRandomAccessStreamBase::WriteSegments(
+    nsReadSegmentFun aReader, void* aClosure, uint32_t aCount,
+    uint32_t* aWrittenBytes) {
+  *aWrittenBytes = 0;
+
+  if (mClosed) {
+    return NS_BASE_STREAM_CLOSED;
+  }
+
+  if (aCount == 0) {
+    return NS_OK;
+  }
+
+  // Fill any gap left by a seek past the end once, before the write loop, so
+  // the loop below only ever loads/switches blocks and never deals with gaps.
+  if (mLogicalPosition > mLogicalSize) {
+    if (mBlockDirty) {
+      const auto rv = SaveCurrentBlock();
+      if (NS_FAILED(rv)) {
+        return rv;
+      }
+    }
+    const auto rv = ZeroExtendTo(mLogicalPosition);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+  }
+
+  while (aCount > 0) {
+    BlockIndexType blockIndex = mLogicalPosition / sMaxTextLength;
+    const auto offsetInBlock =
+        static_cast<uint32_t>(mLogicalPosition % sMaxTextLength);
+
+    if (blockIndex != mCurrentBlockIndex || !mBlockLoaded) {
+      if (mBlockDirty) {
+        const auto rv = SaveCurrentBlock();
+        if (NS_FAILED(rv)) {
+          return rv;
+        }
+      }
+      MOZ_ASSERT(blockIndex <= mTotalBlockCount);
+      const auto rv = blockIndex < mTotalBlockCount ? LoadBlock(blockIndex)
+                                                    : LoadNewBlockAtEnd();
+      if (NS_FAILED(rv)) {
+        return rv;
+      }
+    }
+
+    uint32_t bytesToWrite = std::min(aCount, sMaxTextLength - offsetInBlock);
+    uint32_t bytesWritten = 0;
+    auto rv = aReader(this, aClosure,
+                      reinterpret_cast<char*>(&mPlainBuffer[offsetInBlock]),
+                      *aWrittenBytes, bytesToWrite, &bytesWritten);
+    // As defined in nsIOutputStream.idl, do not pass reader func errors.
+    if (NS_FAILED(rv)) {
+      return NS_OK;
+    }
+    // NOTE: nsIOutputStream.idl only lists "nothing left to write" and "reader
+    // returns an error" as stop conditions, but the current other
+    // implementations (e.g. |nsPipeOutputStream::WriteSegments|,
+    // |EncryptingOutputStream::WriteSegments|) treats a reader that produces
+    // zero bytes the same as an error: it stops, swallows the result, and keeps
+    // the progress already made.
+    if (bytesWritten == 0) {
+      break;
+    }
+
+    mCurrentBlockTextLength =
+        std::max(static_cast<TextLengthType>(offsetInBlock + bytesWritten),
+                 mCurrentBlockTextLength);
+    mLogicalPosition += bytesWritten;
+    mLogicalSize = std::max(mLogicalSize, mLogicalPosition);
+
+    aCount -= bytesWritten;
+    *aWrittenBytes += bytesWritten;
+
+    mBlockDirty = true;
+  }
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP EncryptedRandomAccessStreamBase::WriteFrom(nsIInputStream*,
+                                                         uint32_t, uint32_t*) {
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP EncryptedRandomAccessStreamBase::Flush() {
+  if (mClosed) {
+    return NS_BASE_STREAM_CLOSED;
+  }
+
+  // No need to flush other blocks, because the only current block can be dirty.
+  const auto rv = SaveCurrentBlock();
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  return mBaseStream->OutputStream()->Flush();
+}
+
 nsresult EncryptedRandomAccessStreamBase::ReadEncryptedBlockFromBaseStream(
     BlockIndexType aBlockIndex, EncryptedRandomAccessBlock& aEncryptedBlock) {
   const auto blockOffset = CheckedInt64(aBlockIndex) * sBlockSize;
@@ -237,6 +352,32 @@ nsresult EncryptedRandomAccessStreamBase::ReadEncryptedBlockFromBaseStream(
   return NS_OK;
 }
 
+nsresult EncryptedRandomAccessStreamBase::WriteEncryptedBlockToBaseStream(
+    BlockIndexType aBlockIndex,
+    const EncryptedRandomAccessBlock& aEncryptedBlock) {
+  const auto blockOffset = CheckedInt64(aBlockIndex) * sBlockSize;
+  if (!blockOffset.isValid()) {
+    return NS_ERROR_FILE_TOO_BIG;
+  }
+  auto rv = mBaseStream->Seek(NS_SEEK_SET, blockOffset.value());
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  uint32_t writtenBytes = 0;
+  rv = mBaseStream->OutputStream()->Write(
+      reinterpret_cast<const char*>(aEncryptedBlock.WholeBlock().data()),
+      sBlockSize, &writtenBytes);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  if (writtenBytes != sBlockSize) {
+    return NS_ERROR_CORRUPTED_CONTENT;
+  }
+
+  return NS_OK;
+}
+
 EncryptedRandomAccessStreamBase::AadType
 EncryptedRandomAccessStreamBase::BuildAad(
     const EncryptedRandomAccessBlock& aEncryptedBlock,
@@ -252,35 +393,123 @@ EncryptedRandomAccessStreamBase::BuildAad(
   return aad;
 }
 
+/**
+ * Note the followings:
+ * - Loads the last block at the end.
+ * - Doesn't change |mLogicalPosition|, but changes |mLogicalSize|.
+ */
+nsresult EncryptedRandomAccessStreamBase::ZeroExtendTo(
+    uint64_t aNewLogicalSize) {
+  if (mLogicalSize >= aNewLogicalSize) {
+    return NS_OK;
+  }
+
+  if (mTotalBlockCount == 0) {
+    const auto rv = LoadNewBlockAtEnd();
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+  } else {
+    BlockIndexType lastBlockIndex = mTotalBlockCount - 1;
+    if (lastBlockIndex != mCurrentBlockIndex || !mBlockLoaded) {
+      if (mBlockDirty) {
+        const auto rv = SaveCurrentBlock();
+        if (NS_FAILED(rv)) {
+          return rv;
+        }
+      }
+      const auto rv = LoadBlock(lastBlockIndex);
+      if (NS_FAILED(rv)) {
+        return rv;
+      }
+    }
+  }
+
+  while (mLogicalSize < aNewLogicalSize) {
+    // The current block must always be the final block while this loop.
+    MOZ_ASSERT(
+        mCurrentBlockIndex == mTotalBlockCount ||
+        (mTotalBlockCount > 0 && mCurrentBlockIndex == mTotalBlockCount - 1));
+
+    auto fromOffset = mCurrentBlockTextLength;
+    auto endOffset = aNewLogicalSize / sMaxTextLength == mCurrentBlockIndex
+                         ? aNewLogicalSize % sMaxTextLength
+                         : sMaxTextLength;
+
+    MOZ_ASSERT(fromOffset <= endOffset);
+
+    if (fromOffset < endOffset) {
+      std::fill(mPlainBuffer.begin() + fromOffset,
+                mPlainBuffer.begin() + endOffset, 0);
+
+      mCurrentBlockTextLength = static_cast<TextLengthType>(endOffset);
+      mLogicalSize += endOffset - fromOffset;
+      mBlockDirty = true;
+    }
+
+    if (mLogicalSize < aNewLogicalSize) {
+      if (mBlockDirty) {
+        auto rv = SaveCurrentBlock();
+        if (NS_FAILED(rv)) {
+          return rv;
+        }
+      }
+
+      auto rv = LoadNewBlockAtEnd();
+      if (NS_FAILED(rv)) {
+        return rv;
+      }
+    }
+  }
+
+  return NS_OK;
+}
+
+nsresult EncryptedRandomAccessStreamBase::LoadNewBlockAtEnd() {
+  mPlainBuffer.fill(0u);
+  mCurrentBlockIndex = mTotalBlockCount;
+  mCurrentBlockTextLength = 0;
+  mBlockLoaded = true;
+  mBlockDirty = false;
+  return NS_OK;
+}
+
+nsresult EncryptedRandomAccessStreamBase::GenerateRandomBytes(
+    uint8_t* aBuffer, uint32_t aLength) {
+  if (aLength == 0) {
+    return NS_OK;
+  }
+
+  if (!mRandomGenerator) {
+    mRandomGenerator =
+        do_GetService("@mozilla.org/security/random-generator;1");
+    if (NS_WARN_IF(!mRandomGenerator)) {
+      return NS_ERROR_FAILURE;
+    }
+  }
+
+  nsresult rv = mRandomGenerator->GenerateRandomBytesInto(aBuffer, aLength);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  return NS_OK;
+}
+
+nsresult EncryptedRandomAccessStreamBase::PadPlainBuffer() {
+  if (mCurrentBlockTextLength < sMaxTextLength) {
+    return GenerateRandomBytes(mPlainBuffer.data() + mCurrentBlockTextLength,
+                               sMaxTextLength - mCurrentBlockTextLength);
+  }
+
+  return NS_OK;
+}
+
 //////////////////////////////////////////
 // TODO: The below is NOT implemented yet.
 //////////////////////////////////////////
 
-nsresult EncryptedRandomAccessStreamBase::FlushCurrentBlock() {
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
-
 NS_IMETHODIMP EncryptedRandomAccessStreamBase::SetEOF() {
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
-
-NS_IMETHODIMP EncryptedRandomAccessStreamBase::Flush() {
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
-
-NS_IMETHODIMP EncryptedRandomAccessStreamBase::Write(const char*, uint32_t,
-                                                     uint32_t*) {
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
-
-NS_IMETHODIMP EncryptedRandomAccessStreamBase::WriteFrom(nsIInputStream*,
-                                                         uint32_t, uint32_t*) {
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
-
-NS_IMETHODIMP EncryptedRandomAccessStreamBase::WriteSegments(nsReadSegmentFun,
-                                                             void*, uint32_t,
-                                                             uint32_t*) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
