@@ -4,6 +4,7 @@
 
 #include "PrintTargetSkPDF.h"
 
+#include "mozilla/AppShutdown.h"
 #include "imgIEncoder.h"
 #include "include/codec/SkCodec.h"
 #include "include/codec/SkEncodedImageFormat.h"
@@ -272,7 +273,9 @@ nsresult PrintTargetSkPDF::EndPrinting() {
 }
 
 void PrintTargetSkPDF::Finish() {
-  if (mIsFinished) {
+  if (mIsFinished ||
+      AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
+    // See PrintTargetPDF::Finish().
     return;
   }
   mOStream->flush();
