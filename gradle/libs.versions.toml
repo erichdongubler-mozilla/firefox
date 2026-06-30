@@ -96,6 +96,7 @@ androidx-test-monitor = "1.8.0"
 androidx-test-orchestrator = "1.6.1"
 androidx-test-runner = "1.7.0"
 androidx-test-uiautomator = "2.3.0"
+hamcrest = "2.2"
 junit4 = "4.13.2"
 junit6 = "6.1.0"
 leakcanary = "2.14"
@@ -281,6 +282,8 @@ androidx-test-orchestrator = { module = "androidx.test:orchestrator", version.re
 androidx-test-rules = { module = "androidx.test:rules", version.ref = "androidx-test" }
 androidx-test-runner = { module = "androidx.test:runner", version.ref = "androidx-test-runner" }
 androidx-test-uiautomator = { module = "androidx.test.uiautomator:uiautomator", version.ref = "androidx-test-uiautomator" }
+hamcrest-core = { module = "org.hamcrest:hamcrest-core", version.ref = "hamcrest" }
+hamcrest-library = { module = "org.hamcrest:hamcrest-library", version.ref = "hamcrest" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit6" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }

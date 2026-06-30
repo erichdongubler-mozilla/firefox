@@ -667,6 +667,9 @@ dependencies {
         implementation(libs.androidx.startup.runtime)
         // okhttp is test-only; prevents older releases being resolved on the main classpath.
         implementation(libs.okio)
+        // espresso-contrib pulls hamcrest 2.2 only at runtime; align the test compile classpath to match.
+        androidTestImplementation(libs.hamcrest.core)
+        androidTestImplementation(libs.hamcrest.library)
     }
 
     androidTestUtil libs.androidx.test.orchestrator
