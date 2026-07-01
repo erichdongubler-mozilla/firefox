@@ -1812,13 +1812,6 @@ class JSScript : public js::BaseScript {
     return static_cast<JSScript*>(lazy);
   }
 
-  // NOTE: If you use createPrivateScriptData directly instead of via
-  // fullyInitFromStencil, you are responsible for notifying the debugger
-  // after successfully creating the script.
-  static bool createPrivateScriptData(JSContext* cx,
-                                      JS::Handle<JSScript*> script,
-                                      uint32_t ngcthings);
-
  public:
   static bool fullyInitFromStencil(
       JSContext* cx, const js::frontend::CompilationAtomCache& atomCache,
