@@ -861,7 +861,7 @@ static void CollectClientRectsForSubtree(
     return;
   }
 
-  FlattenedChildIterator childIter(content);
+  FlattenedChildIteratorForSelection childIter(content);
   for (nsIContent* child = childIter.GetNextChild(); child;
        child = childIter.GetNextChild()) {
     CollectClientRectsForSubtree(child, aCollector, aTextList, aStartContainer,
