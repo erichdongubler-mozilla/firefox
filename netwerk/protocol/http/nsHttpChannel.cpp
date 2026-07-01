@@ -17,6 +17,7 @@
 #include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
 #include "mozilla/net/CaptivePortalService.h"
 #include "mozilla/net/CookieServiceParent.h"
+#include "mozilla/net/NoVarySearchUtils.h"
 #include "mozilla/StoragePrincipalHelper.h"
 
 #include "nsCOMPtr.h"
@@ -6319,6 +6320,16 @@ nsresult nsHttpChannel::UpdateCacheEntryHeaders(nsICacheEntry* entry,
       NS_SUCCEEDED(
           mResponseHead->GetHeader(nsHttp::No_Vary_Search, noVarySearch)) &&
       !noVarySearch.IsEmpty()) {
+    glean::network::no_vary_search_header_received.Add(1);
+    bool parseError = false;
+    auto data = ParseNoVarySearchHeader(noVarySearch, &parseError);
+    glean::network::no_vary_search_rule_type
+        .Get(NoVarySearchRuleLabel(data.paramsRule))
+        .Add(1);
+    if (parseError) {
+      glean::network::no_vary_search_parse_error.Add(1);
+    }
+
     rv = entry->SetMetaDataElement("no-vary-search", noVarySearch.get());
     if (NS_FAILED(rv)) {
       return rv;

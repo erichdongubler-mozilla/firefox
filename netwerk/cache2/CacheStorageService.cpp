@@ -29,6 +29,7 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/glean/NetwerkMetrics.h"
+#include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
 #include "mozilla/Services.h"
 #include "mozilla/StoragePrincipalHelper.h"
 #include "mozilla/IntegerPrintfMacros.h"
@@ -1645,6 +1646,10 @@ nsresult CacheStorageService::AddStorageEntry(
   RefPtr<CacheEntry> entry;
   RefPtr<CacheEntryHandle> handle;
 
+  bool nvsHadCandidates = false;
+  bool nvsMatched = false;
+  nsAutoCString nvsMatchedRuleLabel;
+
   {
     StaticMutexAutoLock lock(sLock);
 
@@ -1693,6 +1698,7 @@ nsresult CacheStorageService::AddStorageEntry(
           NS_SUCCEEDED(ExtractNoVarySearchBasePath(incomingURI, basePath))) {
         auto candidates = entries->mNoVarySearchIndex.Lookup(basePath);
         if (candidates) {
+          nvsHadCandidates = true;
           for (const auto& fullKey : *candidates) {
             RefPtr<CacheEntry> candidate;
             if (!entries->Get(fullKey, getter_AddRefs(candidate))) {
@@ -1717,6 +1723,8 @@ nsresult CacheStorageService::AddStorageEntry(
             auto data = ParseNoVarySearchHeader(nvsVal);
             if (URLsAreEquivalentModuloVariationConfig(incomingURI,
                                                        candidateURI, data)) {
+              nvsMatched = true;
+              nvsMatchedRuleLabel = NoVarySearchRuleLabel(data.paramsRule);
               entry = candidate;
               entryExists = true;
               break;
@@ -1784,6 +1792,18 @@ nsresult CacheStorageService::AddStorageEntry(
       // Here, if this entry was not for a long time referenced by any consumer,
       // gets again first 'handles count' reference.
       handle = entry->NewHandle();
+    }
+  }
+
+  // Glean must not be called while holding sLock, so record the NVS outcome
+  // here, after the lock has been released.
+  if (nvsHadCandidates) {
+    if (nvsMatched) {
+      glean::network::no_vary_search_match.Get("matched"_ns).Add(1);
+      glean::network::no_vary_search_hit_by_rule.Get(nvsMatchedRuleLabel)
+          .Add(1);
+    } else {
+      glean::network::no_vary_search_match.Get("not_matched"_ns).Add(1);
     }
   }
 
@@ -2097,6 +2117,7 @@ nsresult CacheStorageService::DoomStorageEntries(
         if (memoryEntries) {
           RemoveExactEntry(memoryEntries, iter.Key(), entry, false);
         }
+        diskEntries->RemoveNoVarySearchEntryByKey(iter.Key());
         iter.Remove();
       }
     }
