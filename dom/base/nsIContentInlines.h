@@ -273,42 +273,6 @@ inline mozilla::dom::ShadowRoot* nsINode::GetContainingShadowForSelection()
   return shadowRoot && !shadowRoot->IsUAShadowRootSlow() ? shadowRoot : nullptr;
 }
 
-inline mozilla::dom::ShadowRoot* nsINode::GetClosestShadowRootInFlattenedTree()
-    const {
-  for (nsINode* node = const_cast<nsINode*>(this); node && node->IsContent();
-       node = node->GetParentNode()) {
-    // If this node is an inclusive descendant of a shadow root, return it.
-    if (auto* const shadowRoot = mozilla::dom::ShadowRoot::FromNode(node)) {
-      return shadowRoot;
-    }
-    // If this node is an inclusive descendant of an assigned node, return the
-    // containing shadow of the <slot>.
-    if (auto* const slot = node->AsContent()->GetAssignedSlot()) {
-      return slot->GetContainingShadow();
-    }
-  }
-  return nullptr;
-}
-
-inline mozilla::dom::ShadowRoot*
-nsINode::GetClosestShadowRootInFlattenedTreeForSelection() const {
-  for (nsINode* node = const_cast<nsINode*>(this); node && node->IsContent();
-       node = node->GetParentNode()) {
-    // If this node is an inclusive descendant of a shadow root, return it.
-    if (auto* const shadowRoot = mozilla::dom::ShadowRoot::FromNode(node)) {
-      if (!shadowRoot->IsUAShadowRootSlow()) {
-        return shadowRoot;
-      }
-    }
-    // If this node is an inclusive descendant of an assigned node, return the
-    // containing shadow of the <slot>.
-    if (auto* const slot = node->AsContent()->GetAssignedSlotForSelection()) {
-      return slot->GetContainingShadow();
-    }
-  }
-  return nullptr;
-}
-
 inline bool nsINode::NodeOrAncestorHasDirAuto() const {
   return AncestorHasDirAuto() || (IsElement() && AsElement()->HasDirAuto());
 }
