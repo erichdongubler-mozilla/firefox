@@ -1656,6 +1656,7 @@ static inline size_t NumUsedDynamicSlots(NativeObject* obj) {
 void GCMarker::updateRangesAtStartOfSlice() {
   MOZ_ASSERT(!stack.elementsRangesAreValid);
 
+  JSTracer* trc = tracer();
   for (MarkStackIter iter(stack); !iter.done(); iter.next()) {
     if (iter.isSlotsOrElementsRange()) {
       MarkStack::SlotsOrElementsRange range = iter.slotsOrElementsRange();
@@ -1663,8 +1664,13 @@ void GCMarker::updateRangesAtStartOfSlice() {
       MOZ_ASSERT(obj->is<NativeObject>());
       if (range.kind() == SlotsOrElementsKind::Elements) {
         NativeObject* nobj = &obj->as<NativeObject>();
+        HeapSlot* elementsPtr = nobj->elements_.getForTracing();
+        ObjectElements* elementsHeader =
+            ObjectElements::fromElements(elementsPtr);
+        MemoryAcquireFence(trc);  // Elements reallocation fence.
+        uint32_t flags = elementsHeader->getFlagsForTracing();
+        size_t numShifted = ObjectElements::numShiftedElementsFromFlags(flags);
         size_t index = range.start();
-        size_t numShifted = nobj->getElementsHeader()->numShiftedElements();
         index -= std::min(numShifted, index);
         range.setStart(index);
         iter.setSlotsOrElementsRange(range);
@@ -1680,12 +1686,19 @@ void GCMarker::updateRangesAtStartOfSlice() {
 void GCMarker::updateRangesAtEndOfSlice() {
   MOZ_ASSERT(stack.elementsRangesAreValid);
 
+  JSTracer* trc = tracer();
   for (MarkStackIter iter(stack); !iter.done(); iter.next()) {
     if (iter.isSlotsOrElementsRange()) {
       MarkStack::SlotsOrElementsRange range = iter.slotsOrElementsRange();
       if (range.kind() == SlotsOrElementsKind::Elements) {
-        NativeObject* obj = &range.ptr().asRangeObject()->as<NativeObject>();
-        size_t numShifted = obj->getElementsHeader()->numShiftedElements();
+        JSObject* obj = range.ptr().asRangeObject();
+        NativeObject* nobj = &obj->as<NativeObject>();
+        HeapSlot* elementsPtr = nobj->elements_.getForTracing();
+        ObjectElements* elementsHeader =
+            ObjectElements::fromElements(elementsPtr);
+        MemoryAcquireFence(trc);  // Elements reallocation fence.
+        uint32_t flags = elementsHeader->getFlagsForTracing();
+        size_t numShifted = ObjectElements::numShiftedElementsFromFlags(flags);
         range.setStart(range.start() + numShifted);
         iter.setSlotsOrElementsRange(range);
       }

@@ -924,6 +924,7 @@ class NativeObject : public JSObject {
   friend class DictionaryPropMap;
   template <uint32_t>
   friend class gc::MarkingTracerT;
+  friend class GCMarker;
   friend class Shape;
 
   void invalidateSlotRange(uint32_t start, uint32_t end) {
