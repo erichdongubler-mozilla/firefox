@@ -74,6 +74,30 @@ inline void nsIContent::SetPrimaryFrame(nsIFrame* aFrame) {
   mPrimaryFrame = aFrame;
 }
 
+/**
+ * Return the parent node of aNode in the specified tree. If aNode is the root
+ * of a native anonymous subtree, this returns the parent as-is.
+ *
+ * When aType is eNormal, return the parent node in the flattened tree. If the
+ * parent node of aNode is a shadow host, return its assigned <slot> or nullptr.
+ * If the parent node is a <slot> in a shadow, return nullptr if the <slot> has
+ * some assigned nodes or otherwise, the <slot> (i.e., when the node is a used
+ * fallback content). If the parent node is a shadow root, return its host
+ * element.
+ *
+ * When aType is eForStyle, return the almost same value as when aType is
+ * eNormal. However, if aNode is the root of a native anonymous subtree and the
+ * parent node in the DOM is the document element, return the document.
+ *
+ * When aType is eForSelection, return the parent node in the DOM even if aNode
+ * is not a part of the flattened tree, e.g., it is a child node of a shadow
+ * host but is not assigned to any <slot>, or it is a child node of a <slot>
+ * which has some assigned nodes. The reason is, Selection API accepts any node
+ * in the DOM as the container. On the other hand, UA shadow tree such as a
+ * shadow for <details>, <video>, <audio> or SVG <use> should not be treated as
+ * a shadow. Therefore, if the parent node is a shadow root of a UA shadow DOM,
+ * return the shadow root instead of the host.
+ */
 template <nsINode::FlattenedParentType aType>
 static inline nsINode* GetFlattenedTreeParentNode(const nsINode* aNode) {
   if (!aNode->IsContent()) {
@@ -119,30 +143,26 @@ static inline nsINode* GetFlattenedTreeParentNode(const nsINode* aNode) {
 
     MOZ_ASSERT(aType == nsINode::eForSelection);
     // When aType is nsINode::eForSelection, we use the parent of the
-    // content even if it's not assigned to any slot.
-    // XXX I think this should be handled by the caller if this returns nullptr
-    // because using this result means that the caller handles it without
-    // understanding the situation. And this is inconsistent behavior from the
-    // <slot> case below.
+    // content even if it's not assigned to any slot because Selection API
+    // accepts any node in the DOM as a container of a range boundary.
     return parent;
   }
 
   if (parentAsContent->IsInShadowTree()) {
-    // If the parent is a <slot> and its assigned nodes list is empty, we're
-    // fallback content which is active, otherwise we are not part of the flat
-    // tree.
     if (auto* slot = mozilla::dom::HTMLSlotElement::FromNode(parentAsContent)) {
       if constexpr (aType == nsINode::eForSelection) {
-        const mozilla::dom::ShadowRoot* const shadowRoot =
-            slot->GetContainingShadow();
-        if (!shadowRoot || shadowRoot->IsUAShadowRootSlow()) {
-          // The <slot> is not a part of the flat tree for selection. Even if
-          // the <slot> does not have assigned nodes, we the node is not a part
-          // of the flattened tree for selection.
-          slot = nullptr;
-        }
-      }
-      if (slot) {
+        // Even if the parent node is a <slot> in any shadow (for either content
+        // or UA such as <details>, <video>, <audio> or SVG <use>), we can
+        // return the <slot> as parent for nsINode::eForSelection because any
+        // node in the DOM can be a container of a range boundary. E.g., even if
+        // the <slot> has some assigned nodes, the fallback content can be
+        // selected by the Selection API. So, we should not treat the unused
+        // fallback content as disconnected from the flattened tree.
+        return slot;
+      } else {
+        // If the parent is a <slot> and its assigned nodes list is empty, aNode
+        // is a fallback content which is active, otherwise we are not part of
+        // the flattened tree.
         return slot->AssignedNodes().IsEmpty() ? slot : nullptr;
       }
     }

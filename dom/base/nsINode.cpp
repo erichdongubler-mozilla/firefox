@@ -215,6 +215,84 @@ bool nsINode::IsShadowIncludingInclusiveDescendantOf(
   return IsShadowIncludingDescendantOf(aNode);
 }
 
+template Element* nsINode::GetClosestFlatTreeAncestorElementForNonFlatTreeNode<
+    TreeKind::Flat>() const;
+template Element* nsINode::GetClosestFlatTreeAncestorElementForNonFlatTreeNode<
+    TreeKind::FlatForSelection>() const;
+
+template <TreeKind aKind, typename Dummy>
+Element* nsINode::GetClosestFlatTreeAncestorElementForNonFlatTreeNode() const {
+  const ShadowRoot* const asShadowRoot = ShadowRoot::FromNode(this);
+  MOZ_ASSERT_IF(aKind == TreeKind::FlatForSelection && asShadowRoot,
+                !asShadowRoot->IsUAShadowRootSlow());
+  const nsINode* childNode = IsShadowRoot() ? asShadowRoot->GetHost() : this;
+  if (!childNode || childNode->IsRootOfNativeAnonymousSubtree()) [[unlikely]] {
+    return nullptr;
+  }
+  for (nsIContent* parentContent = childNode->GetParent(); parentContent;
+       childNode = parentContent, parentContent = parentContent->GetParent()) {
+    if (parentContent->IsRootOfNativeAnonymousSubtree()) [[unlikely]] {
+      return nullptr;
+    }
+    if (auto* const shadowRoot = ShadowRoot::FromNode(parentContent)) {
+      Element* const host = shadowRoot->GetHost();
+      if (!host) [[unlikely]] {
+        return nullptr;  // Reached unattached UA shadow root
+      }
+      // Okay, check whether the host element is a part of the flattened tree.
+      parentContent = host;
+      continue;
+    }
+    if (!parentContent->IsElement()) {
+      return nullptr;  // Reached a document fragment
+    }
+    if (parentContent->GetShadowRoot<aKind>()) {
+      MOZ_ASSERT(childNode->IsContent());
+      if (HTMLSlotElement* slot = childNode->AsContent()->GetAssignedSlot()) {
+        // childNode is assigned to a <slot> so that this may be part of the
+        // flattened tree. However, the host may be not part of the flattened
+        // tree, keep climbing up the flattened tree.
+        parentContent = slot;
+        continue;
+      }
+      // childNode is an unassigned slottable node. So, it's a non-flattened
+      // node.
+      return parentContent->AsElement();
+    }
+    if (auto* const slot = HTMLSlotElement::FromNode(parentContent)) {
+      if (slot->GetContainingShadow<aKind>()) {
+        if (slot->AssignedNodes().IsEmpty()) {
+          // childNode is a fallback content and a part of the flattened tree.
+          continue;
+        }
+        // childNode is a fallback content but replaced with the assigned nodes.
+        // So, this is a non-flattened node.
+        return slot;
+      }
+    }
+  }
+  return nullptr;
+}
+
+template Element*
+nsINode::GetFlatTreeAncestorElementForNonFlatTreeNode<TreeKind::Flat>() const;
+template Element* nsINode::GetFlatTreeAncestorElementForNonFlatTreeNode<
+    TreeKind::FlatForSelection>() const;
+
+template <TreeKind aKind, typename Dummy>
+Element* nsINode::GetFlatTreeAncestorElementForNonFlatTreeNode() const {
+  Element* flattenedAncestorElement = nullptr;
+  for (Element* excluderShadowHostOrSlotElement =
+           GetClosestFlatTreeAncestorElementForNonFlatTreeNode<aKind>();
+       excluderShadowHostOrSlotElement;
+       excluderShadowHostOrSlotElement =
+           excluderShadowHostOrSlotElement
+               ->GetClosestFlatTreeAncestorElementForNonFlatTreeNode<aKind>()) {
+    flattenedAncestorElement = excluderShadowHostOrSlotElement;
+  }
+  return flattenedAncestorElement;
+}
+
 nsINode::nsSlots::nsSlots() : mWeakReference(nullptr) {}
 
 nsINode::nsSlots::~nsSlots() {
