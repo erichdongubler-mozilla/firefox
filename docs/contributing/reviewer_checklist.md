@@ -30,6 +30,9 @@ will lead to a smoother, more rapid process of review and acceptance.
 - If you can unit-test it, you should unit-test it.
 - If it's JS, try to design and build so that xpcshell can exercise
   most functionality. It's quicker.
+- Use the [phab-test-policy
+  add-on](https://addons.mozilla.org/firefox/addon/phab-test-policy/) to
+  help select the right test policy for the patch in Phabricator.
 - Make sure the patch doesn't create any unused code (e.g., remove
   strings when removing a feature)
 - All caught exceptions should be logged at the appropriate level,
