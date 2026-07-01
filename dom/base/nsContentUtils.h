@@ -43,6 +43,7 @@
 #include "mozilla/fallible.h"
 #include "mozilla/gfx/Point.h"
 #include "nsCOMPtr.h"
+#include "nsIContent.h"
 #include "nsIContentPolicy.h"
 #include "nsINode.h"
 #include "nsIScriptError.h"
@@ -79,7 +80,6 @@ class nsIArray;
 class nsIBidiKeyboard;
 class nsIChannel;
 class nsIConsoleService;
-class nsIContent;
 class nsIDocShell;
 class nsIDocShellTreeItem;
 class nsIDocumentLoaderFactory;
@@ -619,8 +619,8 @@ class nsContentUtils {
      * Looks up or computes two indices in one loop.
      */
     template <TreeKind aTreeKind>
-    void ComputeIndicesOf(const nsINode* aParent, const nsINode* aChild1,
-                          const nsINode* aChild2,
+    void ComputeIndicesOf(const nsINode* aParent, const nsIContent* aChild1,
+                          const nsIContent* aChild2,
                           mozilla::Maybe<int32_t>& aChild1Index,
                           mozilla::Maybe<int32_t>& aChild2Index) {
       AssertTreeKind(aTreeKind);
@@ -660,7 +660,7 @@ class nsContentUtils {
      */
     template <TreeKind aTreeKind>
     mozilla::Maybe<int32_t> ComputeIndexOf(const nsINode* aParent,
-                                           const nsINode* aChild) {
+                                           const nsIContent* aChild) {
       AssertTreeKind(aTreeKind);
       for (size_t cacheIndex = 0; cacheIndex < cache_size; ++cacheIndex) {
         const nsINode* node = mNodes[cacheIndex];
@@ -681,7 +681,7 @@ class nsContentUtils {
      */
     template <TreeKind aTreeKind>
     mozilla::Maybe<int32_t> ComputeAndInsertIndexIntoCache(
-        const nsINode* aParent, const nsINode* aChild) {
+        const nsINode* aParent, const nsIContent* aChild) {
       AssertTreeKind(aTreeKind);
       mozilla::Maybe<int32_t> childIndex =
           nsContentUtils::GetIndexInParent<aTreeKind>(aParent, aChild);
@@ -3667,8 +3667,8 @@ class nsContentUtils {
   //   anonymous content (n..m)
   //   ::after (m + 1)
   template <TreeKind>
-  static mozilla::Maybe<int32_t> GetIndexInParent(const nsINode* aParent,
-                                                  const nsINode* aNode);
+  static mozilla::Maybe<int32_t> GetIndexInParent(
+      const nsINode* aParent, const nsIContent* aPossibleChild);
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   static nsIContent* AttachDeclarativeShadowRoot(
@@ -3744,7 +3744,7 @@ class nsContentUtils {
    */
   template <TreeKind aKind>
   static mozilla::Maybe<int32_t> CompareChildNodes(
-      const nsINode* aChild1, const nsINode* aChild2,
+      const nsIContent* aChild1, const nsIContent* aChild2,
       NodeIndexCache* aIndexCache = nullptr);
 
   /**
@@ -3755,7 +3755,7 @@ class nsContentUtils {
    */
   template <TreeKind aKind>
   static mozilla::Maybe<int32_t> CompareChildOffsetAndChildNode(
-      uint32_t aOffset1, const nsINode& aChild2,
+      uint32_t aOffset1, const nsIContent& aChild2,
       NodeIndexCache* aIndexCache = nullptr);
 
   /**
@@ -3766,7 +3766,7 @@ class nsContentUtils {
    */
   template <TreeKind aKind>
   static mozilla::Maybe<int32_t> CompareChildNodeAndChildOffset(
-      const nsINode& aChild1, uint32_t aOffset2,
+      const nsIContent& aChild1, uint32_t aOffset2,
       NodeIndexCache* aIndexCache = nullptr);
 
   /**
@@ -3776,7 +3776,7 @@ class nsContentUtils {
    */
   template <TreeKind aKind = TreeKind::ShadowIncludingDOM>
   static mozilla::Maybe<int32_t> CompareClosestCommonAncestorChildren(
-      const nsINode&, const nsINode*, const nsINode*,
+      const nsINode&, const nsIContent*, const nsIContent*,
       NodeIndexCache* = nullptr);
 
   static nsIXPConnect* sXPConnect;
