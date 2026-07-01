@@ -694,12 +694,12 @@ nsresult TRRServiceChannel::SetupTransaction() {
 
   struct LNAPerms perms{};
 
-  rv = mTransaction->Init(
-      mCaps, mConnectionInfo, &mRequestHead, mUploadStream, mReqContentLength,
-      LoadUploadStreamHasHeaders(), mCurrentEventTarget, callbacks, this,
-      mBrowserId, HttpTrafficCategory::eInvalid, mRequestContext,
-      mClassOfService, mInitialRwin, LoadResponseTimeoutEnabled(), mChannelId,
-      nullptr, nsILoadInfo::IPAddressSpace::Unknown, perms);
+  rv = mTransaction->Init(mCaps, mConnectionInfo, &mRequestHead, mUploadStream,
+                          mReqContentLength, mCurrentEventTarget, callbacks,
+                          this, mBrowserId, HttpTrafficCategory::eInvalid,
+                          mRequestContext, mClassOfService, mInitialRwin,
+                          LoadResponseTimeoutEnabled(), mChannelId, nullptr,
+                          nsILoadInfo::IPAddressSpace::Unknown, perms);
 
   if (NS_FAILED(rv)) {
     mTransaction = nullptr;

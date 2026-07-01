@@ -1706,8 +1706,7 @@ nsresult PendingLookup::SendRemoteQueryInternal(Reason& aReason) {
   NS_ENSURE_SUCCESS(rv, rv);
 
   rv = uploadChannel->ExplicitSetUploadStream(
-      sstream, "application/octet-stream"_ns, serialized.size(), "POST"_ns,
-      false);
+      sstream, "application/octet-stream"_ns, serialized.size(), "POST"_ns);
   NS_ENSURE_SUCCESS(rv, rv);
 
   uint32_t timeoutMs =
