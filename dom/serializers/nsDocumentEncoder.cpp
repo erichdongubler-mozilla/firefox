@@ -1429,10 +1429,10 @@ nsresult nsDocumentEncoder::RangeSerializer::SerializeRangeToString(
   nsContentUtils::GetInclusiveAncestors(mClosestCommonInclusiveAncestorOfRange,
                                         mCommonInclusiveAncestors);
   if (mAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes) {
-    nsContentUtils::GetFlattenedTreeAncestorsAndOffsetsForSelection(
+    nsContentUtils::GetFlattenedTreeAncestorsAndOffsets(
         startContainer, startOffset, inclusiveAncestorsOfStart,
         inclusiveAncestorsOffsetsOfStart);
-    nsContentUtils::GetFlattenedTreeAncestorsAndOffsetsForSelection(
+    nsContentUtils::GetFlattenedTreeAncestorsAndOffsets(
         endContainer, endOffset, inclusiveAncestorsOfEnd,
         inclusiveAncestorsOffsetsOfEnd);
   } else {
@@ -1647,7 +1647,7 @@ class nsHTMLCopyEncoder final : public nsDocumentEncoder {
  protected:
   [[nodiscard]] TreeKind GetTreeKind() const {
     return mFlags & nsIDocumentEncoder::AllowCrossShadowBoundary
-               ? TreeKind::FlatForSelection
+               ? TreeKind::Flat
                : TreeKind::DOM;
   }
   nsresult PromoteRange(nsRange* inRange);
@@ -1667,7 +1667,7 @@ class nsHTMLCopyEncoder final : public nsDocumentEncoder {
 
     [[nodiscard]] nsINode* GetParentNode() const {
       MOZ_ASSERT(mContainer);
-      return mTreeKind == TreeKind::FlatForSelection
+      return mTreeKind == TreeKind::Flat
                  ? mContainer->GetFlattenedTreeParentNodeForSelection()
                  : mContainer->GetParentNode();
     }
@@ -1683,7 +1683,7 @@ class nsHTMLCopyEncoder final : public nsDocumentEncoder {
   /**
    * Return a promoted start point which may be extended to a point at an
    * ancestor element or error.  This climbs up the flattened tree if
-   * aPoint.GetTreeKind() is TreeKind::FlatForSelection.
+   * aPoint.GetTreeKind() is TreeKind::Flat.
    *
    * @param aPoint      Must be set to a valid point.
    * @param aCommon     This is used as an ancestor limiter when climbing up the
@@ -1696,7 +1696,7 @@ class nsHTMLCopyEncoder final : public nsDocumentEncoder {
   /**
    * Return a promoted end point which may be extended to a point after an
    * ancestor element or error.  This climbs up the flattened tree if
-   * aPoint.GetTreeKind() is TreeKind::FlatForSelection.
+   * aPoint.GetTreeKind() is TreeKind::Flat.
    *
    * @param aPoint      Must be set to a valid point.
    * @param aCommon     This is used as an ancestor limiter when climbing up the
@@ -1738,7 +1738,7 @@ class nsHTMLCopyEncoder final : public nsDocumentEncoder {
   /**
    * Return true if the child node at the offset of aPoint does not follow a
    * meaningful child in the container.  This checks the flattened tree siblings
-   * if aPoint.GetTreeKind() is TreeKind::FlatForSelection.
+   * if aPoint.GetTreeKind() is TreeKind::Flat.
    *
    * @param aPoint      Must refers a child node, i.e., must not point the end
    *                    of the container.
@@ -1748,7 +1748,7 @@ class nsHTMLCopyEncoder final : public nsDocumentEncoder {
   /**
    * Return true if the child node at the offset of aPoint is not followed by a
    * meaningful child in the container.  This checks the flattened tree siblings
-   * if aPoint.GetTreeKind() is TreeKind::FlatForSelection.
+   * if aPoint.GetTreeKind() is TreeKind::Flat.
    *
    * @param aPoint      Must refers a child node if not pointing to the end of
    *                    the container.
@@ -1981,10 +1981,9 @@ nsresult nsHTMLCopyEncoder::PromoteRange(nsRange* inRange) {
   const RawRangeBoundary startRef = [&]() -> RawRangeBoundary {
     const auto& ref = inRange->MayCrossShadowBoundaryStartRef();
     // XXX If GetTreeKind() returns TreeKind::DOM but ref.GetTreeKind() returns
-    // TreeKind::FlatForSelection, what should we do?  The result may cross the
-    // shadow DOM boundaries even though the our user do not want that.
-    if (GetTreeKind() == TreeKind::FlatForSelection &&
-        ref.GetTreeKind() == TreeKind::DOM) {
+    // TreeKind::Flat, what should we do?  The result may cross the shadow DOM
+    // boundaries even though the our user do not want that.
+    if (GetTreeKind() == TreeKind::Flat && ref.GetTreeKind() == TreeKind::DOM) {
       return ref.AsRaw().AsRangeBoundaryInFlatTree(
           inRange->Collapsed() ? RangeBoundaryFor::Collapsed
                                : RangeBoundaryFor::Start);
@@ -1993,8 +1992,7 @@ nsresult nsHTMLCopyEncoder::PromoteRange(nsRange* inRange) {
   }();
   const RawRangeBoundary endRef = [&]() -> RawRangeBoundary {
     const auto& ref = inRange->MayCrossShadowBoundaryEndRef();
-    if (GetTreeKind() == TreeKind::FlatForSelection &&
-        ref.GetTreeKind() == TreeKind::DOM) {
+    if (GetTreeKind() == TreeKind::Flat && ref.GetTreeKind() == TreeKind::DOM) {
       return ref.AsRaw().AsRangeBoundaryInFlatTree(
           inRange->Collapsed() ? RangeBoundaryFor::Collapsed
                                : RangeBoundaryFor::End);
@@ -2365,7 +2363,7 @@ Result<RawRangeBoundary, nsresult> nsHTMLCopyEncoder::GetParentPoint(
 
   // If the container is a ShadowRoot, GetFlattenedTreeParentNodeForSelection()
   // returns nullptr. However, we want to keep handling in the host.
-  if (aPoint.GetTreeKind() == TreeKind::FlatForSelection) {
+  if (aPoint.GetTreeKind() == TreeKind::Flat) {
     if (ShadowRoot* const shadowRoot = ShadowRoot::FromNode(containerContent)) {
       Element* const host = shadowRoot->GetHost();
       if (MOZ_UNLIKELY(!host)) {
@@ -2386,7 +2384,7 @@ Result<RawRangeBoundary, nsresult> nsHTMLCopyEncoder::GetParentPoint(
   }
 
   nsINode* const containerParentNode =
-      aPoint.GetTreeKind() == TreeKind::FlatForSelection
+      aPoint.GetTreeKind() == TreeKind::Flat
           ? containerContent->GetFlattenedTreeParentNodeForSelection()
           : containerContent->GetParentNode();
   if (MOZ_UNLIKELY(!containerParentNode)) {
@@ -2417,7 +2415,7 @@ Result<RawRangeBoundary, nsresult> nsHTMLCopyEncoder::GetPointAfterContainer(
 
   // If the container is a ShadowRoot, RawRangeBoundary::After() returns an
   // unset point. However, we want to keep handling in the host.
-  if (aPoint.GetTreeKind() == TreeKind::FlatForSelection) {
+  if (aPoint.GetTreeKind() == TreeKind::Flat) {
     if (ShadowRoot* const shadowRoot = ShadowRoot::FromNode(containerContent)) {
       Element* const host = shadowRoot->GetHost();
       if (MOZ_UNLIKELY(!host)) {
@@ -2449,7 +2447,7 @@ bool nsHTMLCopyEncoder::IsRoot(nsINode* aNode, TreeKind aKind) const {
     return content->IsHTMLElement(nsGkAtoms::div);
   }
 
-  if (aKind == TreeKind::FlatForSelection) {
+  if (aKind == TreeKind::Flat) {
     // If we're handling the flattened tree and aNode is a ShadowRoot,
     // GetParentPoint() for a point whose container is aNode will return the
     // point at the host. However, if the host is not a part of the flattened
@@ -2502,7 +2500,7 @@ bool nsHTMLCopyEncoder::ChildIsFirstNode(const RawRangeBoundary& aPoint) {
   const auto ChildIsSignificant = [](nsIContent& aContent) {
     return !aContent.TextIsOnlyWhitespace();
   };
-  if (aPoint.GetTreeKind() == TreeKind::FlatForSelection) {
+  if (aPoint.GetTreeKind() == TreeKind::Flat) {
     FlattenedChildIteratorForSelection iter(aPoint.GetContainer());
     if (!iter.Seek(aPoint.GetChildAtOffset())) {
       return false;
@@ -2552,7 +2550,7 @@ bool nsHTMLCopyEncoder::ChildIsLastNode(const RawRangeBoundary& aPoint) {
     }
     return !aContent.TextIsOnlyWhitespace();
   };
-  if (aPoint.GetTreeKind() == TreeKind::FlatForSelection) {
+  if (aPoint.GetTreeKind() == TreeKind::Flat) {
     FlattenedChildIteratorForSelection iter(aPoint.GetContainer());
     if (!iter.Seek(aPoint.GetChildAtOffset())) {
       return false;

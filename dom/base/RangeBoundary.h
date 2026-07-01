@@ -41,7 +41,7 @@ class EditorDOMPointBase;
 // For text nodes, mRef will always be null and the offset will
 // be kept up-to-date.
 //
-// One special case is when mTreeKind is TreeKind::FlatForSelection and
+// One special case is when mTreeKind is TreeKind::Flat and
 // mParent is slot and slot has assigned nodes, it'll use
 // the assigned nodes to determine the reference with the
 // same idea as above.
@@ -208,9 +208,8 @@ class RangeBoundaryBase {
         mSetBy(RangeBoundarySetBy::Ref),
         mTreeKind(aTreeKind) {
     MOZ_ASSERT(
-        aTreeKind == TreeKind::DOM || aTreeKind == TreeKind::FlatForSelection,
-        "Only TreeKind::DOM and TreeKind::FlatForSelection are valid at the "
-        "moment.");
+        aTreeKind == TreeKind::DOM || aTreeKind == TreeKind::Flat,
+        "Only TreeKind::DOM and TreeKind::Flat are valid at the moment.");
     if (mRef) {
       NS_WARNING_ASSERTION(
           IsValidParent(mParent, mRef),
@@ -246,9 +245,8 @@ class RangeBoundaryBase {
         mSetBy(aSetBy),
         mTreeKind(aTreeKind) {
     MOZ_ASSERT(
-        aTreeKind == TreeKind::DOM || aTreeKind == TreeKind::FlatForSelection,
-        "Only TreeKind::DOM and TreeKind::FlatForSelection are valid at the "
-        "moment.");
+        aTreeKind == TreeKind::DOM || aTreeKind == TreeKind::Flat,
+        "Only TreeKind::DOM and TreeKind::Flat are valid at the moment.");
     if (IsSetByOffset()) {
       // If aPointTo is "Offset", this may be created for a StaticRange so that
       // we may not need to warn invalid boundary.
@@ -296,14 +294,13 @@ class RangeBoundaryBase {
   [[nodiscard]] TreeKind GetTreeKind() const { return mTreeKind; }
 
   RangeBoundaryBase AsRangeBoundaryInFlatTree(RangeBoundaryFor aFor) const {
-    if (mTreeKind == TreeKind::FlatForSelection) {
+    if (mTreeKind == TreeKind::Flat) {
       return *this;
     }
     MOZ_ASSERT(IsSet());
     if (!mParent->IsContainerNode()) {
       MOZ_ASSERT(mOffset);
-      return RangeBoundaryBase(mParent, *mOffset, mSetBy,
-                               TreeKind::FlatForSelection);
+      return RangeBoundaryBase(mParent, *mOffset, mSetBy, TreeKind::Flat);
     }
     enum class ChildKind : bool { ChildAtOffset, Ref };
     // The child node which we're pointing may have different parent node in the
@@ -312,10 +309,9 @@ class RangeBoundaryBase {
     // from the pointing child.
     const auto ComputeRangeBoundaryInFlatTreeFromChildNode =
         [&](RawRefType* aChild, ChildKind aChildKind) {
-          RangeBoundaryBase ret =
-              aChildKind == ChildKind::ChildAtOffset
-                  ? FromChild(*aChild, TreeKind::FlatForSelection)
-                  : FromRef(*aChild, TreeKind::FlatForSelection);
+          RangeBoundaryBase ret = aChildKind == ChildKind::ChildAtOffset
+                                      ? FromChild(*aChild, TreeKind::Flat)
+                                      : FromRef(*aChild, TreeKind::Flat);
           if (MOZ_LIKELY(ret.IsSet())) {
             return ret;
           }
@@ -331,10 +327,8 @@ class RangeBoundaryBase {
           // we should use the start of the shadow root.  Otherwise, we should
           // use the end of the shadow root.
           return IsStartOfContainer()
-                     ? StartOfParent(*shadowRoot, mSetBy,
-                                     TreeKind::FlatForSelection)
-                     : EndOfParent(*shadowRoot, mSetBy,
-                                   TreeKind::FlatForSelection);
+                     ? StartOfParent(*shadowRoot, mSetBy, TreeKind::Flat)
+                     : EndOfParent(*shadowRoot, mSetBy, TreeKind::Flat);
         };
     // Each RangeBoundaryBase instance may have implicit "direction".  There are
     // following scenarios:
@@ -387,7 +381,7 @@ class RangeBoundaryBase {
     }
     // Otherwise, return the point in the empty parent.
     MOZ_ASSERT(!mParent->HasChildNodes());
-    return EndOfParent(*mParent, mSetBy, TreeKind::FlatForSelection);
+    return EndOfParent(*mParent, mSetBy, TreeKind::Flat);
   }
 
   RangeBoundaryBase AsRangeBoundaryInDOMTree() const {
@@ -774,7 +768,7 @@ class RangeBoundaryBase {
     if (aParent == ComputeParentNode(aChild, aKind)) {
       return true;
     }
-    if (aKind == TreeKind::FlatForSelection) {
+    if (aKind == TreeKind::Flat) {
       // It's okay if aParent is a host of a shadow tree and aChild is a child
       // of the ShadowRoot.
       if (aParent->GetShadowRootForSelection() == aChild->GetParentNode()) {

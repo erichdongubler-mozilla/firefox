@@ -637,9 +637,8 @@ class IsItemInRangeComparator {
     auto ComparePoints = [](const nsINode* aNode1, const uint32_t aOffset1,
                             const nsINode* aNode2, const uint32_t aOffset2,
                             nsContentUtils::NodeIndexCache* aCache) {
-      return nsContentUtils::ComparePointsWithIndices<
-          TreeKind::FlatForSelection>(aNode1, aOffset1, aNode2, aOffset2,
-                                      aCache);
+      return nsContentUtils::ComparePointsWithIndices<TreeKind::Flat>(
+          aNode1, aOffset1, aNode2, aOffset2, aCache);
     };
 
     Maybe<int32_t> cmp = ComparePoints(
@@ -748,7 +747,7 @@ bool nsINode::IsSelected(const uint32_t aStartOffset, const uint32_t aEndOffset,
         auto ComparePoints = [](const ConstRawRangeBoundary& aBoundary1,
                                 const RangeBoundary& aBoundary2,
                                 nsContentUtils::NodeIndexCache* aCache) {
-          return nsContentUtils::ComparePoints<TreeKind::FlatForSelection>(
+          return nsContentUtils::ComparePoints<TreeKind::Flat>(
               aBoundary1, aBoundary2, aCache);
         };
 

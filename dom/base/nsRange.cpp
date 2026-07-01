@@ -303,10 +303,10 @@ static RangeBehaviour GetRangeBehaviour(
                     : aRange->GetCrossShadowBoundaryRange()->StartRef();
     const Maybe<int32_t> withCrossShadowBoundaryOrder =
         aIsSetStart
-            ? nsContentUtils::ComparePoints<TreeKind::FlatForSelection>(
+            ? nsContentUtils::ComparePoints<TreeKind::Flat>(
                   aNewBoundaryInFlat.ref(),
                   otherSideExistingCrossShadowBoundaryBoundaryInFlat.AsRaw())
-            : nsContentUtils::ComparePoints<TreeKind::FlatForSelection>(
+            : nsContentUtils::ComparePoints<TreeKind::Flat>(
                   otherSideExistingCrossShadowBoundaryBoundaryInFlat.AsRaw(),
                   aNewBoundaryInFlat.ref());
     if (withCrossShadowBoundaryOrder && *withCrossShadowBoundaryOrder != 1) {
@@ -3221,7 +3221,7 @@ void nsRange::CreateOrUpdateCrossShadowBoundaryRangeIfNeeded(
     const mozilla::RangeBoundaryBase<EPT, ERT>& aEndBoundary) {
   MOZ_ASSERT(aStartBoundary.IsSetAndValid() && aEndBoundary.IsSetAndValid());
   MOZ_ASSERT(aStartBoundary.GetTreeKind() == aEndBoundary.GetTreeKind());
-  MOZ_ASSERT(aStartBoundary.GetTreeKind() == TreeKind::FlatForSelection);
+  MOZ_ASSERT(aStartBoundary.GetTreeKind() == TreeKind::Flat);
 
   nsINode* startNode = aStartBoundary.GetContainer();
   nsINode* endNode = aEndBoundary.GetContainer();
