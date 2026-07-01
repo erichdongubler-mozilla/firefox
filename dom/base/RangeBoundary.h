@@ -316,7 +316,8 @@ class RangeBoundaryBase {
    * If you need a range boundary whose container is in the flattened tree, use
    * GetRangeBoundaryInFlatTree() instead.
    */
-  RangeBoundaryBase AsRangeBoundaryInFlatTree(RangeBoundaryFor aFor) const {
+  RangeBoundaryBase AsRangeBoundaryInFlatTreeOrNonFlattenedNode(
+      RangeBoundaryFor aFor) const {
     if (mTreeKind == TreeKind::FlatForSelection) {
       return *this;
     }
@@ -423,7 +424,8 @@ class RangeBoundaryBase {
    */
   RangeBoundaryBase GetRangeBoundaryInFlatTree(RangeBoundaryFor aFor) const {
     MOZ_ASSERT(IsSet());
-    RangeBoundaryBase inFlatTree = AsRangeBoundaryInFlatTree(aFor);
+    RangeBoundaryBase inFlatTree =
+        AsRangeBoundaryInFlatTreeOrNonFlattenedNode(aFor);
     if (NS_WARN_IF(!inFlatTree.IsSet())) {
       MOZ_ASSERT(inFlatTree.mTreeKind == TreeKind::FlatForSelection);
       return inFlatTree;

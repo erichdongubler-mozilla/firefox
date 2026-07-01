@@ -738,8 +738,8 @@ class IsItemInRangeComparator {
            const ConstRawRangeBoundary& aRef2, RangeBoundaryFor aFor2,
            nsContentUtils::NodeIndexCache* aCache) {
           return nsContentUtils::ComparePoints<TreeKind::FlatForSelection>(
-              aRef1.AsRangeBoundaryInFlatTree(aFor1),
-              aRef2.AsRangeBoundaryInFlatTree(aFor2), aCache);
+              aRef1.AsRangeBoundaryInFlatTreeOrNonFlattenedNode(aFor1),
+              aRef2.AsRangeBoundaryInFlatTreeOrNonFlattenedNode(aFor2), aCache);
         };
 
     Maybe<int32_t> cmp = ComparePoints(
@@ -866,16 +866,19 @@ bool nsINode::IsSelected(const uint32_t aStartOffset, const uint32_t aEndOffset,
           }
         }
 
-        auto ComparePoints =
-            [](const ConstRawRangeBoundary& aBoundary1, RangeBoundaryFor aFor1,
-               const RangeBoundary& aBoundary2, RangeBoundaryFor aFor2,
-               nsContentUtils::NodeIndexCache* aCache) {
-              MOZ_ASSERT(aBoundary1.GetTreeKind() == TreeKind::DOM);
-              MOZ_ASSERT(aBoundary2.GetTreeKind() == TreeKind::DOM);
-              return nsContentUtils::ComparePoints<TreeKind::FlatForSelection>(
-                  aBoundary1.AsRangeBoundaryInFlatTree(aFor1),
-                  aBoundary2.AsRaw().AsRangeBoundaryInFlatTree(aFor2), aCache);
-            };
+        auto ComparePoints = [](const ConstRawRangeBoundary& aBoundary1,
+                                RangeBoundaryFor aFor1,
+                                const RangeBoundary& aBoundary2,
+                                RangeBoundaryFor aFor2,
+                                nsContentUtils::NodeIndexCache* aCache) {
+          MOZ_ASSERT(aBoundary1.GetTreeKind() == TreeKind::DOM);
+          MOZ_ASSERT(aBoundary2.GetTreeKind() == TreeKind::DOM);
+          return nsContentUtils::ComparePoints<TreeKind::FlatForSelection>(
+              aBoundary1.AsRangeBoundaryInFlatTreeOrNonFlattenedNode(aFor1),
+              aBoundary2.AsRaw().AsRangeBoundaryInFlatTreeOrNonFlattenedNode(
+                  aFor2),
+              aCache);
+        };
 
         const AbstractRange* middlePlus1;
         const AbstractRange* middleMinus1;

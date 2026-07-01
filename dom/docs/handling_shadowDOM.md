@@ -314,15 +314,17 @@ nodes of the `<slot>` element.
 `RangeBoundaryBase` supports `TreeKind::DOM` and `TreeKind::FlatForSelection`
 and it has factory methods to create the instance in those kinds of tree.
 Use `AsRangeBoundaryInDOMTree()` to get a point in `TreeKind::DOM` and use
-`AsRangeBoundaryInFlatTree()` to get a point in `TreeKind::FlatForSelection`.
-If the referring child node has different parent in the trees, these methods
-compute the proper parent automatically.
+`AsRangeBoundaryInFlatTreeOrNonFlattenedNode()` to get a point in
+`TreeKind::FlatForSelection`. If the referring child node has different parent
+in the trees, these methods compute the proper parent automatically.
 
-When `AsRangeBoundaryInFlatTree()` converts a `TreeKind::DOM` point, the point
-may be not in the flattened tree. E.g., the referring child node may be
-replaced with a shadow tree without assigned to a `<slot>`. In this case, it
-converts the point to the start or end of the container because `ShadowRoot` is
-treated as positioned at index 0.5.
+When `AsRangeBoundaryInFlatTreeOrNonFlattenedNode()` converts a `TreeKind::DOM`
+point, the container may be a non-flattened node. If the referring child is not
+flattened by the parent [shadow host](#shadow-host) or `<slot>`, this converts
+to start or end of the corresponding `ShadowRoot` or the `<slot>`. (Only when
+the boundary is start of the container, it converts to the start. Otherwise,
+converts to the end because non-flattened nodes are treated as if they were
+at end of the container.)
 
 `GetRangeBoundaryInFlatTree()` returns a point in flattened tree whose
 container is never a [non-flattened node](#non-flattened-node). If the given

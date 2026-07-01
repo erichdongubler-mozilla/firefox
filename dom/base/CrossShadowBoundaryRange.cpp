@@ -227,7 +227,7 @@ void CrossShadowBoundaryRange::CharacterDataChanged(
       RawRangeBoundary newStart =
           nsRange::ComputeNewBoundaryWhenBoundaryInsideChangedText(
               aInfo, aBoundary.AsRaw());
-      return Some(newStart.AsRangeBoundaryInFlatTree(aFor));
+      return Some(newStart.AsRangeBoundaryInFlatTreeOrNonFlattenedNode(aFor));
     }
     return Nothing();
   };
