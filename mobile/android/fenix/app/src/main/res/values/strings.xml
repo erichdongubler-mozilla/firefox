@@ -3705,6 +3705,21 @@
     <!-- Text shown in the survey title for 'describe your experience so far' microsurvey. Note: The word "Firefox" should NOT be translated. -->
     <string name="microsurvey_describe_your_experience_title" tools:ignore="BrandUsage,UnusedResources">Help us improve Firefox. Which best describes your experience so far?</string>
     <!-- Uninstall Survey -->
+    <!-- Title text for the uninstall survey dialog, asking the user for the reason they are removing the app -->
+    <string name="microsurvey_uninstall_survey_title">Your feedback matters. Why are you uninstalling?</string>
+    <!-- Uninstall survey answer option -->
+    <string name="uninstall_survey_option_1">Webpage issues</string>
+    <!-- Uninstall survey answer option -->
+    <string name="uninstall_survey_option_2">Video and download issues</string>
+    <!-- Uninstall survey answer option -->
+    <string name="uninstall_survey_option_3">Performance issues</string>
+    <!-- Uninstall survey answer option -->
+    <string name="uninstall_survey_option_4">Function and design issues</string>
+    <!-- Uninstall survey answer option -->
+    <string name="uninstall_survey_option_5">Privacy-related issues</string>
+    <!-- Uninstall survey answer option -->
+    <string name="uninstall_survey_option_6">Payment and subscription issues</string>
+    <!-- Button label shown at the bottom of the uninstall survey -->
     <string name="uninstall_survey_button_label">Submit feedback and uninstall</string>
     <!-- Accessibility -->
     <!-- Content description for the survey application icon. Note: The word "Firefox" should NOT be translated.  -->

@@ -41,7 +41,6 @@ import org.mozilla.fenix.microsurvey.ui.MicrosurveyHeader
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import mozilla.components.ui.icons.R as iconsR
 
 private const val BOTTOM_SHEET_HANDLE_WIDTH_PERCENT = 0.1f
 
@@ -151,18 +150,18 @@ private fun UninstallSurveyBottomSheetPreview(
 ) {
     FirefoxTheme(theme) {
         UninstallSurveyBottomSheet(
-            question = "How satisfied are you with printing in Firefox?",
-            icon = iconsR.drawable.mozac_ic_print_24,
+            question = stringResource(id = R.string.microsurvey_uninstall_survey_title),
+            icon = R.drawable.ic_delete_black,
             onPrivacyPolicyLinkClick = {},
             onCloseButtonClicked = {},
             onSubmitButtonClicked = {},
             answers = listOf(
-                stringResource(id = R.string.likert_scale_option_1),
-                stringResource(id = R.string.likert_scale_option_2),
-                stringResource(id = R.string.likert_scale_option_3),
-                stringResource(id = R.string.likert_scale_option_4),
-                stringResource(id = R.string.likert_scale_option_5),
-                stringResource(id = R.string.likert_scale_option_6),
+                stringResource(id = R.string.uninstall_survey_option_1),
+                stringResource(id = R.string.uninstall_survey_option_2),
+                stringResource(id = R.string.uninstall_survey_option_3),
+                stringResource(id = R.string.uninstall_survey_option_4),
+                stringResource(id = R.string.uninstall_survey_option_5),
+                stringResource(id = R.string.uninstall_survey_option_6),
             ),
             isSubmitAlwaysEnabled = true,
             buttonLabel = stringResource(id = R.string.uninstall_survey_button_label),

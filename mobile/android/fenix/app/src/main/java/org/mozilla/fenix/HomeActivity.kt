@@ -671,10 +671,11 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
             onBackPressedCallback = onBackPressedCallback,
         )
 
+        lifecycleScope.launch(IO) {
+            uninstallSurveyManager.updateUninstallSurveyShortcut()
+        }
+
         if (components.settings.uninstallSurveyFeatureFlagEnabled) {
-            lifecycleScope.launch(IO) {
-                uninstallSurveyManager.updateUninstallSurveyShortcut()
-            }
             uninstallSurveyManager.showUninstallSurvey(intent.action, navHost.navController)
         }
 

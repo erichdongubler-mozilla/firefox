@@ -72,7 +72,7 @@ class UninstallSurveyManager(
 
             if (!isAlreadyShowing) {
                 navController.navigate(
-                    HomeFragmentDirections.actionGlobalUninstallSurveyDialog(UNINSTALL_SURVEY_ARG),
+                    HomeFragmentDirections.actionGlobalUninstallSurveyDialog(UNINSTALL_MICROSURVEY_ID),
                 )
             }
         }
@@ -81,6 +81,6 @@ class UninstallSurveyManager(
     companion object {
         const val ACTION_UNINSTALL_SURVEY = "org.mozilla.fenix.ACTION_UNINSTALL_SURVEY"
         private const val SHORTCUT_ID = "uninstall_survey_shortcut"
-        private const val UNINSTALL_SURVEY_ARG = "uninstall_survey_arg"
+        private const val UNINSTALL_MICROSURVEY_ID = "microsurvey-uninstall-survey"
     }
 }
