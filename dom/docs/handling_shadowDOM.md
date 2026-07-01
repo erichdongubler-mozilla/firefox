@@ -324,14 +324,6 @@ replaced with a shadow tree without assigned to a `<slot>`. In this case, it
 converts the point to the start or end of the container because `ShadowRoot` is
 treated as positioned at index 0.5.
 
-`GetRangeBoundaryInFlatTree()` returns a point in flattened tree whose
-container is never a [non-flattened node](#non-flattened-node). If the given
-point is in an [unassigned node](#unassigned-node), it's converted to the end
-of the corresponding [shadow root](#shadowroot) (i.e., after the last child of
-the shadow root). Similarly, if the given point is in
-[unused fallback content](#unused-fallback-content), it's converted to the end
-of the `<slot>` element (i.e., after the last assigned node).
-
 ## nsINode API list
 
 | `TreeKind` | `nsINode::GetParentNode<TreeKind>()` |
@@ -368,13 +360,6 @@ of the `<slot>` element (i.e., after the last assigned node).
 | `TreeKind::ShadowIncludingDOM` | N/A |
 | `TreeKind::FlatForSelection` | `nsINode::GetFlatTreeForSelectionChildCount()` |
 | `TreeKind::Flat` | `nsINode::GetFlatTreeChildCount()` |
-
-| `TreeKind` | `nsINode::HasChildren<TreeKind>()` |
-| ---------- | ------------------------------------ |
-| `TreeKind::DOM` | `nsINode::GetChildCount()` |
-| `TreeKind::ShadowIncludingDOM` | N/A |
-| `TreeKind::FlatForSelection` | N/A |
-| `TreeKind::Flat` | N/A |
 
 | `TreeKind` | `nsINode::ComputeIndexOf<TreeKind>()` |
 | ---------- | ------------------------------------- |
