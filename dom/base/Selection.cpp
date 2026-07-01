@@ -3193,8 +3193,6 @@ void Selection::ExtendInternal(nsINode& aContainer, uint32_t aOffset,
 
   auto ComparePoints = [](const nsINode* aNode1, const uint32_t aOffset1,
                           const nsINode* aNode2, const uint32_t aOffset2) {
-    // FIXME: The node and offset may not be a point in a flattened tree. So,
-    // this comparison is odd.
     return nsContentUtils::ComparePointsWithIndices<TreeKind::FlatForSelection>(
         aNode1, aOffset1, aNode2, aOffset2);
   };
