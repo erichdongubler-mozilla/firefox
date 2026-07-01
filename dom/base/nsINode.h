@@ -812,7 +812,12 @@ class nsINode : public mozilla::dom::EventTarget {
   /**
    * Return if this node has any children.
    */
-  bool HasChildren() const { return !!mFirstChild; }
+  [[nodiscard]] bool HasChildren() const { return !!mFirstChild; }
+
+  template <TreeKind aKind>
+  [[nodiscard]] bool HasChildren() const {
+    return !!GetChildCount<aKind>();
+  }
 
   /**
    * Get the number of children

@@ -2437,6 +2437,27 @@ already_AddRefed<nsRange> nsRange::CloneRange() const {
   return range.forget();
 }
 
+already_AddRefed<nsRange> nsRange::GetRangeInFlatTree() const {
+  const auto& startRef = MayCrossShadowBoundaryStartRef();
+  const auto& endRef = MayCrossShadowBoundaryEndRef();
+  const bool collapsed = startRef == endRef;
+  auto formedStart = startRef.GetRangeBoundaryInFlatTree(
+      collapsed ? RangeBoundaryFor::Collapsed : RangeBoundaryFor::Start);
+  auto formedEnd = [&]() {
+    if (collapsed) {
+      return formedStart;
+    }
+    return endRef.GetRangeBoundaryInFlatTree(RangeBoundaryFor::End);
+  }();
+  if (formedStart == startRef && formedEnd == endRef) {
+    return do_AddRef(const_cast<nsRange*>(this));
+  }
+  RefPtr range = nsRange::Create(mOwner);
+  range->DoSetRange(mStart, mEnd, mRoot);
+  range->CreateOrUpdateCrossShadowBoundaryRangeIfNeeded(formedStart, formedEnd);
+  return range.forget();
+}
+
 void nsRange::InsertNode(nsINode& aNode, ErrorResult& aRv) {
   if (!CanAccess(aNode)) {
     aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);

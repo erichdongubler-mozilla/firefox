@@ -306,6 +306,16 @@ class RangeBoundaryBase {
 
   [[nodiscard]] TreeKind GetTreeKind() const { return mTreeKind; }
 
+  /**
+   * Return a RangeBoundaryBase whose TreeKind is FlatForSelection.
+   *
+   * Note that the result may not be a part of the flattened tree, e.g., the
+   * container may be an inclusive descendant of a non-flattened node. However,
+   * to compute composed range, the boundary point is required.
+   *
+   * If you need a range boundary whose container is in the flattened tree, use
+   * GetRangeBoundaryInFlatTree() instead.
+   */
   RangeBoundaryBase AsRangeBoundaryInFlatTree(RangeBoundaryFor aFor) const {
     if (mTreeKind == TreeKind::FlatForSelection) {
       return *this;
@@ -331,20 +341,23 @@ class RangeBoundaryBase {
             return ret;
           }
           // If we're pointing a node which won't appear in the flat tree, the
-          // parent must be a shadow host.  Let's return start or end of the
-          // shadow root.
+          // parent must be a shadow host or a <slot>.  Let's return start or
+          // end of the parent.
           dom::ShadowRoot* const shadowRoot =
               mParent->GetShadowRootForSelection();
-          MOZ_ASSERT(shadowRoot);
-          MOZ_ASSERT(aChild->GetContainingShadow() != shadowRoot);
-          // See nsContentUtils::ComparePointsWithIndices(), we treat the offset
-          // of `ShadowRoot` as `0.5`.  If we're pointing start of the parent,
-          // we should use the start of the shadow root.  Otherwise, we should
-          // use the end of the shadow root.
+          RawParentType* const slot =
+              mParent->GetAsHTMLSlotElementIfFilledForSelection();
+          MOZ_ASSERT(shadowRoot || slot);
+          MOZ_ASSERT_IF(shadowRoot,
+                        aChild->GetContainingShadow() != shadowRoot);
+          // We treat the unassigned children of a shadow root and the fallback
+          // content of filled <slot> are collapsed at end of the container.  If
+          // we're pointing start of the parent, we should use the start of the
+          // container.  Otherwise, we should use the end of the container.
           return IsStartOfContainer()
-                     ? StartOfParent(*shadowRoot, mSetBy,
+                     ? StartOfParent(shadowRoot ? *shadowRoot : *slot, mSetBy,
                                      TreeKind::FlatForSelection)
-                     : EndOfParent(*shadowRoot, mSetBy,
+                     : EndOfParent(shadowRoot ? *shadowRoot : *slot, mSetBy,
                                    TreeKind::FlatForSelection);
         };
     // Each RangeBoundaryBase instance may have implicit "direction".  There are
@@ -401,6 +414,41 @@ class RangeBoundaryBase {
         !mParent->HasChildNodes(),
         fmt::format("Called with invalid offset?\nthis={}", *this).c_str());
     return EndOfParent(*mParent, mSetBy, TreeKind::FlatForSelection);
+  }
+
+  /**
+   * Return a RangeBoundaryBase whose TreeKind is FlatForSelection and the
+   * container is a part of the flattened tree, i.e., the container is never a
+   * non-flattened node.
+   */
+  RangeBoundaryBase GetRangeBoundaryInFlatTree(RangeBoundaryFor aFor) const {
+    MOZ_ASSERT(IsSet());
+    RangeBoundaryBase inFlatTree = AsRangeBoundaryInFlatTree(aFor);
+    if (NS_WARN_IF(!inFlatTree.IsSet())) {
+      MOZ_ASSERT(inFlatTree.mTreeKind == TreeKind::FlatForSelection);
+      return inFlatTree;
+    }
+    dom::Element* const shadowHostOrSlotElementNotFlatingTheParent =
+        inFlatTree.mParent
+            ->template GetFlatTreeAncestorElementForNonFlatTreeNode<
+                TreeKind::FlatForSelection>();
+    if (!shadowHostOrSlotElementNotFlatingTheParent) [[likely]] {
+      return inFlatTree;
+    }
+    // If mParent is a non-flattened node because mParent is an inclusive
+    // descendant of
+    // - an unslotted child of the shadow host element
+    // - a fallback content node of the <slot> element
+    // Then, we should treat the boundary is at end of the shadow root or the
+    // <slot>.
+    nsIContent* const shadowRoot =
+        shadowHostOrSlotElementNotFlatingTheParent->GetShadowRootForSelection();
+    MOZ_ASSERT_IF(!shadowRoot,
+                  shadowHostOrSlotElementNotFlatingTheParent
+                      ->GetAsHTMLSlotElementIfFilledForSelection());
+    return EndOfParent(
+        shadowRoot ? *shadowRoot : *shadowHostOrSlotElementNotFlatingTheParent,
+        mSetBy, TreeKind::FlatForSelection);
   }
 
   RangeBoundaryBase AsRangeBoundaryInDOMTree() const {
@@ -761,6 +809,11 @@ class RangeBoundaryBase {
 
     nsINode* const parentNode = aChild->GetParentNode();
     if (!parentNode) {
+      return nullptr;
+    }
+    if (parentNode->GetAsHTMLSlotElementIfFilledForSelection()) {
+      // If the parent node is a filled <slot>, aChild is a fallback content
+      // node which is not in the flattened tree.
       return nullptr;
     }
     const dom::ShadowRoot* const shadowRoot = parentNode->GetShadowRoot();
