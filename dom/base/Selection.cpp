@@ -3582,14 +3582,6 @@ bool Selection::ContainsNode(nsINode& aNode, bool aAllowPartial,
     return false;
   }
 
-  // If aNode is a non-flattened node in the flattened tree for selection, i.e.,
-  // an inclusive descendant is an unassigned child of a shadow host or a
-  // fallback content node of a <slot> in a shadow.
-  if (aNode.GetClosestFlatTreeAncestorElementForNonFlatTreeNode<
-          TreeKind::FlatForSelection>()) {
-    return false;
-  }
-
   // XXXbz this duplicates the GetNodeLength code in nsRange.cpp
   uint32_t nodeLength;
   auto* nodeAsCharData = CharacterData::FromNode(aNode);

@@ -3723,29 +3723,12 @@ class nsContentUtils {
       nsIContent* aContent1, nsIContent* aContent2);
 
   /**
-   * Compare aChild1 and aChild2 which are children of aParent at least in a
-   * TreeKind.
-   * If aKind is TreeKind::FlatForSelection, there are some special cases:
-   * - If aChild1 and aChild2 are fallback content of a <slot> element which has
-   *   some assigned nodes, will compare them as in TreeKind::DOM.
-   * - If only aChild1 is a fallback content node of a <slot>, return 1 because
-   *   aChild1 is treated as after the last assigned node of the <slot>.
-   * - If only aChild2 is a fallback content node of a <slot>, return -1 because
-   *   aChild2 is treated as after the last assigned node of the <slot>.
-   *
-   * @param aParent The common parent of aChild1 and aChild2.
-   * @param aChild1 A child of aParent. If this is set to nullptr, it means that
-   * you're comparing aChild2 with end of aParent.
-   * @param aChild2 Another child of aParent (or maybe the same as aChild1). If
-   * this is set to nullptr, it means that you're comparing aChild1 with end of
-   * aParent.
-   * @return 0 if aChild1 is same as aChild2.
-   *         -1 if aChild1 is a preceding sibling of aChild2.
-   *         1 if aChild1 is a following sibling of aChild2.
-   *         Nothing if:
-   *         - aChild1 or aChild2 is a document fragment or a shadow root.
-   *         - aChild1 or aChild2 is assigned to a <slot>, but the other is not
-   *           assigned to the same <slot>.
+   * Return 0 if aChild1 is same as aChild2.
+   * Return -1 if aChild1 is a preceding sibling of aChild2.
+   * Return 1 if aChild1 is a following sibling of aChild2.
+   * If aChild1 and/or aChild2 is nullptr, it's treated as end of the parent
+   * node.
+   * Return Nothing if aChild1 is a root of the native anonymous subtree.
    */
   template <TreeKind aKind,
             typename = std::enable_if_t<aKind != TreeKind::ShadowIncludingDOM>>
@@ -3754,24 +3737,10 @@ class nsContentUtils {
       const nsIContent* aChild2, NodeIndexCache* aIndexCache = nullptr);
 
   /**
-   * Compare aOffset1 in aParent and aChild2 which is a child of aParent at
-   * least in a TreeKind.
-   * If aKind is TreeKind::FlatForSelection and aParent is a <slot> which has
-   * some assigned nodes and aChild2 is a fallback content of the <slot>, this
-   * returns 0 or -1 because this treats fallback content of a <slot> as if they
-   * were collapsed at end of the <slot>.
-   *
-   * @param aParent The common parent of aOffset1 and aChild2.
-   * @param aOffset1 An offset in aParent. Invalid value (a greater offset than
-   * the actual child count of aParent in the tree for aKind is allowed and
-   * treated as after the end of aParent).
-   * @param aChild2 A child in aParent. If this is set to nullptr, it means that
-   * you're comparing aOffset1 with end of aParent, i.e., the result of
-   * aParent.GetChildCount<aKind>().
-   * @return 0 if aOffset1 is same as the offset of aChild2.
-   *         -1 if aOffset1 is a smaller index of aChild2.
-   *         1 if aOffset1 is a greater index of aChild2.
-   *         Nothing if aChild2 is a document fragment or a shadow root.
+   * Return 0 if aChild2 is at aOffset1.
+   * Return -1 if aChild2 is a following sibling of a child at aOffset1
+   * Return 1 if aChild2 is a preceding sibling of a child at aOffset1.
+   * Return Nothing if aChild2 is a root of the native anonymous subtree.
    */
   template <TreeKind aKind,
             typename = std::enable_if_t<aKind != TreeKind::ShadowIncludingDOM>>

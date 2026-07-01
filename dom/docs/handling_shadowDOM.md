@@ -25,7 +25,7 @@ inclusive ancestors of a node in a `ShadowRoot` with `ToString(*node).c_str()`,
 you'll see `#document-fragment` as the root node
 ([spec](https://dom.spec.whatwg.org/#concept-shadow-root)).
 
-In the flattened tree, the children of a `ShadowRoot` are formed as children
+In the flattened tree, the children of a `ShadowRoot` are formatted as children
 of the [shadow host](#shadow-host) and the children of the shadow host are not
 part of the flattened tree unless they are assigned to `<slot>` elements.
 
@@ -36,7 +36,7 @@ When comparing attached `ShadowRoot` and a child of the shadow host element,
 
 When it appears in a shadow DOM, it may have assigned nodes which are children
 of the host element. In the flattened tree, the assigned nodes of a `<slot>`
-element are formed as its children and the children of the `<slot>` are not
+element are formatted as its children and the children of the `<slot>` are not
 part of the flattened tree
 ([spec](https://html.spec.whatwg.org/#the-slot-element)). However, if a
 `<slot>` does not have assigned node, the element is treated as a usual
@@ -65,44 +65,10 @@ For example, `<details>`, `<video>` and SVG `<use>`. You can check it with
 `ShadowRoot::IsUAShadowRootSlow()` (returning `true` means it's a UA shadow's
 `ShadowRoot`). Often the children of the UA shadow host element will be assigned
 to one or more `<slot>`s in the shadow. Therefore, they can be selected by the
-user. Additionally, [Selection API](https://w3c.github.io/selection-api/) can
-specify any points in the host element as a range boundary. However, from the
-shadow including DOM point of view, children should be treated as replaced by
-the children of the UA `ShadowRoot`. Therefore, when we handle selection
-including DOM ranges, we need to ignore the UA shadow.
-
-## Unassigned node
-
-We refer to children of a shadow host element that are not assigned to any
-`<slot>` element in the shadow as "unassigned node". (As far as we know, there
-is no formal term for these nodes.)
-
-## Fallback content
-
-We refer to children of `<slot>` that has some assigned nodes as
-"fallback content" or "fallback node". (As far as we know, there is no formal
-term for these nodes.)
-
-## Unused fallback content
-
-We refer to [fallback content](#fallback-content) of a `<slot>` element that
-has some assigned nodes as "unused fallback content". (As far as we know, there
-is no formal term for these nodes.)
-
-## Non-flattened node
-
-We refer to inclusive descendants of an [unassigned node](#unassigned-node) and
-[unused fallback content](#unused-fallback-content) as "non-flattened node". (As
-far as we know, there is no formal term for such node.)
-
-If a node is a non-flattened node,
-`nsINode::GetFlatTreeAncestorElementForNonFlatTreeNode()` and
-`nsINode::GetClosestFlatTreeAncestorElementForNonFlatTreeNode()` return the
-element which is an ancestor of this node and has a non-flattened child node
-which is an inclusive ancestor of the node. I.e., the result is the nearest
-ancestor element formed in the flattened tree. (The latter returns maybe
-non-flattened node if the node is a non-flattened node. Therefore, it's faster
-than the former if you need to check whether the node is a non-flattened node.)
+user. Additionally, Selection API can specify any points in the host element as
+a range boundary. However, from the shadow including DOM point of view, children
+should be treated as replaced by the children of the UA `ShadowRoot`. Therefore,
+when we handle selection including DOM ranges, we need to ignore the UA shadow.
 
 ## Kinds of DOM tree
 
@@ -151,53 +117,12 @@ Note that the [UA shadow tree](#ua-shadow-tree)s are ignored when reaching the
 shadow DOM boundary. Therefore, the UA shadow host element is treated as same
 as not hosting the shadow.
 
-### TreeKind::Flat
-
-Handle [the flattened tree](#flattened-tree) including the
-[UA shadow tree](#ua-shadow-tree)s. The assigned nodes of `<slot>` elements are
-treated as children of the `<slot>` element (if a `<slot>` does not have
-assigned node, it's treated as a normal element which may have some children).
-
-`nsINode::GetChildAt<TreeKind::Flat>()`,
-`nsINode::GetChildCount<TreeKind::Flat>()` and
-`nsINode::ComputeIndexOf<TreeKind::Flat>()` of a `<slot>` which has some
-assigned nodes treat the assigned nodes as the children of the `<slot>` and if
-a `<slot>` does not have assigned nodes, it treats its real child nodes as the
-children.
-
-`nsINode::GetChildAt<TreeKind::Flat>()`,
-`nsINode::GetChildCount<TreeKind::Flat>()` and
-`nsINode::ComputeIndexOf<TreeKind::Flat()` of a [shadow host](#shadow-host)
-treat the shadow root children as the children.
-
-`nsINode::GetParentNode<TreeKind::Flat>()` of an assigned node of a `<slot>`
-returns the `<slot>` element.
-
-`nsINode::GetParentNode<TreeKind::Flat>()` of a child of a
-[ShadowRoot](#shadowroot) returns the host. So, `ShadowRoot` is ignored.
-
-`nsINode::GetParentNode<TreeKind::Flat>()` of a [ShadowRoot](#shadowroot)
-returns `nullptr`.
-
-The [UA shadow tree](#ua-shadow-tree)s are not ignored. So, we could say this
-treats the flattened tree as what you see.
-
-When you call `nsINode::GetParentNode<TreeKind::Flat>()` on a child of a
-`<slot>` which has some assigned nodes, it'll return `nullptr` because the node
-is not a part of the [flattened tree](#flattened-tree).
-
 ### TreeKind::FlatForSelection
 
-Handle [the flattened tree](#flattened-tree) except the
+Handle [the flattened tree](#flattened-tree) except formatting the
 [UA shadow tree](#ua-shadow-tree)s. The assigned nodes of `<slot>` elements are
 treated as children of the `<slot>` element (if a `<slot>` does not have
 assigned node, it's treated as a normal element which may have some children).
-
-The normal flattened tree does not contain
-[non-flattened nodes](#non-flattened-node). From Selection API point of view,
-they can be a container of a range boundary. Therefore, we need to treat them
-as a part of the flattened tree for selection especially when we retrieve
-ancestor nodes.
 
 `nsINode::GetChildAt<TreeKind::FlatForSelection>()`,
 `nsINode::GetChildCount<TreeKind::FlatForSelection>()` and
@@ -218,17 +143,26 @@ a `<slot>` returns the `<slot>` element.
 `nsINode::GetParentNode<TreeKind::FlatForSelection>()` of a
 [ShadowRoot](#shadowroot) returns `nullptr`.
 
-`nsINode::GetParentNode<TreeKind::FlatForSelection>()` of a child of a
-[shadow host](#shadow-host) and not assigned to a `<slot>` returns the shadow
-host.
-
-`nsINode::GetParentNode<TreeKind::FlatForSelection>()` of a child of a `<slot>`
-which has some assigned nodes returns the `<slot>`.
-
 The [UA shadow tree](#ua-shadow-tree)s are ignored too. Similarly, when you
 handle a `<slot>` element which has some assigned nodes, the APIs for
 `TreeKind::FlatForSelection` check whether the `<slot>`'s `ShadowRoot` is a UA
 one. If it's so, the `<slot>` element is treated as a usual container element.
+
+When you call `nsINode::GetParentNode<TreeKind::FlatForSelection>()` of a child
+of a `<slot>` which has some assigned nodes, it'll return the parent node in
+`TreeKind::DOM`. This behavior is different from `TreeKind::Flat` and odd.
+This should be fixed in
+[bug 2014622](https://bugzilla.mozilla.org/show_bug.cgi?id=2014622).
+
+### TreeKind::Flat
+
+Almost same as `TreeKind::FlatForSelection`. Additionally, the
+[UA shadow tree](#ua-shadow-tree)s won't be ignored. Thus, you can handle all
+things which aren't bound to a UA shadow tree.
+
+When you call `nsINode::GetParentNode<TreeKind::Flat>()` on a child of a
+`<slot>` which has some assigned nodes, it'll return `nullptr` because the node
+is not a part of the [flattened tree](#flattened-tree).
 
 ## Iterating children of a node
 
@@ -299,15 +233,6 @@ use the corresponding method.
 
 (Probably, we should stop allowing different `TreeKind` range boundaries as
 the parameters of `nsContentUtils::ComparePoints`.)
-
-[Non-flattened nodes](#non-flattened-node) are treated as disconnected in
-`TreeKind::Flat`. However, they are treated as connected in
-`TreeKind::FlatForSelection`. [Unassigned nodes](#unassigned-node) in
-`TreeKind::FlatForSelection` are treated as if they were at end of the
-corresponding [shadow root](#shadowroot). Similarly,
-[unused fallback content](#unused-fallback-content) in
-`TreeKind::FlatForSelection` are treated as if they were after the assigned
-nodes of the `<slot>` element.
 
 ## Convert a point in `TreeKind::DOM` or `TreeKind::FlatForSelection` to the other
 

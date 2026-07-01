@@ -352,23 +352,20 @@ enum class TreeKind : uint8_t {
   // replaced with the shadow root in the shadow including DOM.
   ShadowIncludingDOM,
   // Handle the flattened tree which assigned nodes of <slot> are treated as
-  // children of the <slot>.
+  // children of the <slot>. However, the non-content shadows are ignored and
+  // treat the host as not a shadow host.
+  // Treat a shadow DOM host as having the shadow root children as its
+  // children. However, non-content shadow is ignored because they must have
+  // <slot>s to use the direct child of the host, but in this mode, <slot> is
+  // treated as not having assigned nodes.
+  // FYI: This is a good TreeKind for DOM Selection it that may cross the shadow
+  // DOM boundaries.
+  FlatForSelection,
+  // Similar to FlatForSelection, treat non-content shadow trees too. E.g., the
+  // shadow of <details>, <video>, and SVG <use>.
   // FYI: This is a good TreeKind for the cases which need to work with the
   // visual order and/or any visible nodes. E.g., for the layout module.
   Flat,
-  // Handle the flattened tree for Selection. Selection API accepts any nodes in
-  // the DOM as a container of a range boundary. I.e., even if a node is not
-  // part of the flattened tree. On the other hand, shadow for UA shadow DOM for
-  // elements such as <details>, <video>, <audio> and SVG <use> should not be
-  // treated as a shadow. Therefore, their content in the DOM are treated as-is
-  // and the nodes only in the UA shadow DOM are treated as disconnected
-  // shadow's content from the parent point of view. I.e., DOM APIs should not
-  // cross the shadow DOM boundary from the parent. On the other hand, they may
-  // be treated as connected from the child point of view. E.g., users can
-  // select the default <summary> text of a <details>.
-  // FYI: This is a good TreeKind for DOM Selection that may cross the shadow
-  // DOM boundaries.
-  FlatForSelection,
 };
 
 template <TreeKind aKind>
@@ -385,8 +382,8 @@ inline auto format_as(const TreeKind& aTreeKind) {
   constexpr static const char* sNames[] = {
       "DOM",
       "ShadowIncludingDOM",
-      "Flat",
       "FlatForSelection",
+      "Flat",
   };
   return std::string(sNames[static_cast<uint8_t>(aTreeKind)]);
 }
@@ -1448,12 +1445,10 @@ class nsINode : public mozilla::dom::EventTarget {
   /**
    * Similar to GetFlattenedTreeParentNode, it does two things differently
    *   1. For contents that are not in the flattened tree, use its
-   *   parent rather than nullptr because any nodes in the DOM is a valid
-   *   container node of Selection API.
+   *   parent rather than nullptr.
    *   2. For contents that are slotted into a non-content shadow tree, use its
    *   parent rather than the slot element.
-   *   3. For contents that is a shadow root of a non-content shadow tree,
-   *   return nullptr, i.e., the shadow is treated as "disconnected".
+   *
    *
    * Be aware, this returns the host element if this node is a child of a
    * shadow root. This behavior is different from
@@ -1933,17 +1928,6 @@ class nsINode : public mozilla::dom::EventTarget {
    */
   [[nodiscard]] mozilla::dom::ShadowRoot* GetContainingShadowForSelection()
       const;
-
-  template <TreeKind aKind>
-  [[nodiscard]] mozilla::dom::ShadowRoot* GetContainingShadow() const {
-    if constexpr (aKind == TreeKind::Flat) {
-      return GetContainingShadow();
-    } else if constexpr (aKind == TreeKind::FlatForSelection) {
-      return GetContainingShadowForSelection();
-    } else {
-      MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Handle the new TreeKind value");
-    }
-  }
 
   /**
    * Gets the shadow host if this content is in a shadow tree. That is, the host
@@ -2741,36 +2725,6 @@ class nsINode : public mozilla::dom::EventTarget {
       MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Handle the new TreeKind value");
     }
   }
-
-  /**
-   * If this node is a non-flattened node in the flattened tree, i.e., if this
-   * node is an inclusive descendant of:
-   * - a child of <slot> which has some assigned nodes
-   * - a child of shadow host element and not assigned to a <slot>
-   * then, return the shadow host element or the <slot> which exclude an
-   * inclusive ancestor of this node from the flattened tree. Otherwise, i.e.,
-   * this node is a part of the flattened tree, return nullptr.
-   */
-  template <TreeKind aKind,
-            typename = std::enable_if_t<aKind == TreeKind::Flat ||
-                                        aKind == TreeKind::FlatForSelection>>
-  [[nodiscard]] mozilla::dom::Element*
-  GetClosestFlatTreeAncestorElementForNonFlatTreeNode() const;
-
-  /**
-   * If this node is a non-flattened node in the flattened tree, i.e., if this
-   * node is an inclusive descendant of:
-   * - a child of <slot> which has some assigned nodes
-   * - a child of shadow host element and not assigned to a <slot>
-   * then, return the most distant <slot> or shadow host element which exclude
-   * an inclusive ancestor of this node from the flattened tree. Otherwise,
-   * i.e., this node is a part of the flattened tree, return nullptr.
-   */
-  template <TreeKind aKind,
-            typename = std::enable_if_t<aKind == TreeKind::Flat ||
-                                        aKind == TreeKind::FlatForSelection>>
-  [[nodiscard]] mozilla::dom::Element*
-  GetFlatTreeAncestorElementForNonFlatTreeNode() const;
 
  protected:
   void SetParentIsContent(bool aValue) { SetBoolFlag(ParentIsContent, aValue); }
