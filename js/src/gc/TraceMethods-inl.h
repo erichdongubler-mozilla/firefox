@@ -56,11 +56,11 @@ template <uint32_t opts>
 void js::gc::MarkingTracerT<opts>::eagerlyMarkChildren(Shape* shape) {
   MOZ_ASSERT(shape->isMarked(markColor()));
 
-  BaseShape* base = shape->base();
+  BaseShape* base = shape->headerPtrForTracing();
   markAndTraverseEdge(shape, base);
 
   if (shape->isNative()) {
-    if (PropMap* map = shape->asNative().propMap()) {
+    if (PropMap* map = shape->asNative().propMap_.getForTracing()) {
       markAndTraverseEdge(shape, map);
     }
   }
@@ -73,9 +73,7 @@ inline void js::BaseShape::traceChildren(JSTracer* trc) {
     TraceManuallyBarrieredEdge(trc, &global, "baseshape_global");
   }
 
-  if (proto_.isObject()) {
-    TraceEdge(trc, &proto_, "baseshape_proto");
-  }
+  TraceEdge(trc, &proto_, "baseshape_proto");
 }
 
 template <uint32_t opts>
@@ -85,7 +83,7 @@ void js::gc::MarkingTracerT<opts>::eagerlyMarkChildren(BaseShape* base) {
     markAndTraverseEdge(base, global);
   }
 
-  TaggedProto proto = base->proto();
+  TaggedProto proto = base->proto_.getForTracing();
   if (proto.isObject()) {
     markAndTraverseEdge(base, proto.toObject());
   }

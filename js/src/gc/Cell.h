@@ -809,12 +809,12 @@ class alignas(gc::CellAlignBytes) TenuredCellWithFlags : public TenuredCell {
   }
 
 #if JS_GC_CONCURRENT_MARKING
-  uintptr_t headerFlagsForTracing() const {
+  uintptr_t headerFlagsFieldForTracing() const {
     MOZ_ASSERT(flags() == 0);
     return header_.getAtomic();
   }
 #else
-  uintptr_t headerFlagsForTracing() const { return headerFlagsField(); }
+  uintptr_t headerFlagsFieldForTracing() const { return headerFlagsField(); }
 #endif
 
   void setHeaderFlagBits(uintptr_t flags) {

@@ -130,6 +130,8 @@ class PropertyIteratorObject;
 
 namespace gc {
 class TenuringTracer;
+template <uint32_t opts>
+class MarkingTracerT;
 }  // namespace gc
 
 namespace wasm {
@@ -244,6 +246,8 @@ class BaseShape : public gc::TenuredCellWithNonGCPointer<const JSClass> {
  private:
   JS::Realm* const realm_;
   const GCPtr<TaggedProto> proto_;
+  template <uint32_t opts>
+  friend class gc::MarkingTracerT;
 
  public:
   BaseShape(JSContext* cx, const JSClass* clasp, JS::Realm* realm,
@@ -487,6 +491,8 @@ class NativeShape : public Shape {
   // initial SharedShape with no properties), a SharedPropMap (for
   // SharedShape) or a DictionaryPropMap (for DictionaryShape).
   GCPtr<PropMap*> propMap_;
+  template <uint32_t opts>
+  friend class gc::MarkingTracerT;
 
   NativeShape(Kind kind, BaseShape* base, ObjectFlags objectFlags,
               uint32_t nfixed, PropMap* map, uint32_t mapLength)
