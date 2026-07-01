@@ -403,8 +403,7 @@ nsINode* ShadowDOMSelectionHelpers::GetParentNodeInSameSelection(
 
   if (aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes) {
     if (aNode.IsContent()) {
-      if (HTMLSlotElement* slot =
-              aNode.AsContent()->GetAssignedSlotForSelection();
+      if (HTMLSlotElement* slot = aNode.AsContent()->GetAssignedSlot();
           slot && GetShadowRoot(slot->GetContainingShadowHost(),
                                 aAllowCrossShadowBoundary)) {
         return slot;
