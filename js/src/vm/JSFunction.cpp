@@ -362,7 +362,7 @@ static bool ResolveInterpretedFunctionPrototype(JSContext* cx,
   }
 
   Rooted<PlainObject*> proto(
-      cx, NewPlainObjectWithProto(cx, objProto, TenuredObject));
+      cx, NewPlainObjectWithProto(cx, objProto, {.newKind = TenuredObject}));
   if (!proto) {
     return false;
   }

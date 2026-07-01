@@ -775,7 +775,7 @@ static NativeObject* CreateBlankProto(JSContext* cx, const JSClass* clasp,
     // NOTE: There should be no reason currently to support this. It could
     // however be added later if needed.
     MOZ_ASSERT(objFlags.isEmpty());
-    return NewPlainObjectWithProto(cx, proto, TenuredObject);
+    return NewPlainObjectWithProto(cx, proto, {.newKind = TenuredObject});
   }
 
   return NewObjectWithGivenProto(cx, clasp, proto,
@@ -868,7 +868,7 @@ RegExpStatics* GlobalObject::getRegExpStatics(JSContext* cx,
 bool GlobalObject::createIntrinsicsHolder(JSContext* cx,
                                           Handle<GlobalObject*> global) {
   NativeObject* intrinsicsHolder =
-      NewPlainObjectWithProto(cx, nullptr, TenuredObject);
+      NewPlainObjectWithProto(cx, nullptr, {.newKind = TenuredObject});
   if (!intrinsicsHolder) {
     return false;
   }

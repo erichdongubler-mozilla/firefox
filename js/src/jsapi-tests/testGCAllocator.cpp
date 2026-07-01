@@ -840,7 +840,7 @@ BEGIN_TEST(testBufferAllocator_stress) {
   std::srand(seed);
 
   Rooted<PlainObject*> holder(
-      cx, NewPlainObjectWithAllocKind(cx, gc::AllocKind::OBJECT2));
+      cx, NewPlainObject(cx, {.allocKind = gc::AllocKind::OBJECT2}));
   CHECK(holder);
 
   JS::NonIncrementalGC(cx, JS::GCOptions::Shrink, JS::GCReason::API);

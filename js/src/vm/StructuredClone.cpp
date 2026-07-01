@@ -3273,7 +3273,7 @@ bool JSStructuredCloneReader::startReadUnchecked(
         obj = NewDenseUnallocatedArray(
             context(), NativeEndian::swapFromLittleEndian(data), kind);
       } else {
-        obj = NewPlainObject(context(), kind);
+        obj = NewPlainObject(context(), {.newKind = kind});
       }
       if (!obj || !objs.append(ObjectValue(*obj))) {
         return false;

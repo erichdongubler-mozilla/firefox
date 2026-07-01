@@ -1394,7 +1394,8 @@ PlainObject* GlobalObject::getOrCreateIterResultTemplateObject(JSContext* cx) {
 /* static */
 PlainObject* GlobalObject::createIterResultTemplateObject(JSContext* cx) {
   // Create template plain object
-  Rooted<PlainObject*> templateObject(cx, NewPlainObject(cx, TenuredObject));
+  Rooted<PlainObject*> templateObject(
+      cx, NewPlainObject(cx, {.newKind = TenuredObject}));
   if (!templateObject) {
     return nullptr;
   }

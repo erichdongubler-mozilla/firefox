@@ -5171,7 +5171,7 @@ JSObject* js::NewObjectOperation(JSContext* cx, HandleScript script,
   uint8_t propCount = GET_UINT8(pc);
   if (propCount > 0) {
     gc::AllocKind allocKind = gc::GetGCObjectKind(propCount);
-    return NewPlainObjectWithAllocKind(cx, allocKind);
+    return NewPlainObject(cx, {.allocKind = allocKind});
   }
   return NewPlainObject(cx);
 }
