@@ -302,11 +302,10 @@ nsresult RangeUtils::CompareNodeToRangeBoundaries(
           ? aStartBoundary.AsConstRaw()
           : (boundaryKind == TreeKind::DOM
                  ? aStartBoundary.AsConstRaw().AsRangeBoundaryInDOMTree()
-                 : aStartBoundary.AsConstRaw()
-                       .AsRangeBoundaryInFlatTreeOrNonFlattenedNode(
-                           aStartBoundary == aEndBoundary
-                               ? RangeBoundaryFor::Collapsed
-                               : RangeBoundaryFor::Start));
+                 : aStartBoundary.AsConstRaw().AsRangeBoundaryInFlatTree(
+                       aStartBoundary == aEndBoundary
+                           ? RangeBoundaryFor::Collapsed
+                           : RangeBoundaryFor::Start));
   // is RANGE(start) <= NODE(start) ?
   Maybe<int32_t> order =
       nsContentUtils::ComparePoints<aKind>(startBoundary, nodeStart);
@@ -320,11 +319,10 @@ nsresult RangeUtils::CompareNodeToRangeBoundaries(
           ? aEndBoundary.AsConstRaw()
           : (boundaryKind == TreeKind::DOM
                  ? aEndBoundary.AsConstRaw().AsRangeBoundaryInDOMTree()
-                 : aEndBoundary.AsConstRaw()
-                       .AsRangeBoundaryInFlatTreeOrNonFlattenedNode(
-                           aStartBoundary == aEndBoundary
-                               ? RangeBoundaryFor::Collapsed
-                               : RangeBoundaryFor::End));
+                 : aEndBoundary.AsConstRaw().AsRangeBoundaryInFlatTree(
+                       aStartBoundary == aEndBoundary
+                           ? RangeBoundaryFor::Collapsed
+                           : RangeBoundaryFor::End));
   // is RANGE(end) >= NODE(end) ?
   order = nsContentUtils::ComparePoints<aKind>(endBoundary, nodeEnd);
   if (NS_WARN_IF(!order)) {

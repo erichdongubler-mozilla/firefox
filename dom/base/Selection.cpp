@@ -992,23 +992,19 @@ static int32_t CompareToRangeStart(
             : RangeBoundaryFor::Start;
     const Maybe<int32_t> order =
         nsContentUtils::ComparePoints<TreeKind::FlatForSelection>(
-            aCompareBoundary.AsRangeBoundaryInFlatTreeOrNonFlattenedNode(aFor),
-            startRef.AsRangeBoundaryInFlatTreeOrNonFlattenedNode(
-                rangeBoundaryFor),
-            aCache);
+            aCompareBoundary.AsRangeBoundaryInFlatTree(aFor),
+            startRef.AsRangeBoundaryInFlatTree(rangeBoundaryFor), aCache);
     NS_WARNING_ASSERTION(
         order.isSome(),
         fmt::format(
             "\naCompareBoundary={}\n"
-            "  .AsRangeBoundaryInFlatTreeOrNonFlattenedNode({})={}\n"
+            "  .AsRangeBoundaryInFlatTree({})={}\n"
             "startRef={}\n"
-            "  .AsRangeBoundaryInFlatTreeOrNonFlattenedNode({})={}\n",
+            "  .AsRangeBoundaryInFlatTree({})={}\n",
             aCompareBoundary, aFor,
-            aCompareBoundary.AsConstRaw()
-                .AsRangeBoundaryInFlatTreeOrNonFlattenedNode(aFor),
+            aCompareBoundary.AsConstRaw().AsRangeBoundaryInFlatTree(aFor),
             startRef, rangeBoundaryFor,
-            startRef.AsConstRaw().AsRangeBoundaryInFlatTreeOrNonFlattenedNode(
-                rangeBoundaryFor))
+            startRef.AsConstRaw().AsRangeBoundaryInFlatTree(rangeBoundaryFor))
             .c_str());
     return order.valueOr(1);
   }
@@ -1063,22 +1059,19 @@ static int32_t CompareToRangeEnd(
             : RangeBoundaryFor::End;
     const Maybe<int32_t> order =
         nsContentUtils::ComparePoints<TreeKind::FlatForSelection>(
-            aCompareBoundary.AsRangeBoundaryInFlatTreeOrNonFlattenedNode(aFor),
-            endRef.AsRangeBoundaryInFlatTreeOrNonFlattenedNode(
-                rangeBoundaryFor));
+            aCompareBoundary.AsRangeBoundaryInFlatTree(aFor),
+            endRef.AsRangeBoundaryInFlatTree(rangeBoundaryFor));
     NS_WARNING_ASSERTION(
         order.isSome(),
         fmt::format(
             "\naCompareBoundary={}\n"
-            "  .AsRangeBoundaryInFlatTreeOrNonFlattenedNode({})={}\n"
+            "  .AsRangeBoundaryInFlatTree({})={}\n"
             "endRef={}\n"
-            "  .AsRangeBoundaryInFlatTreeOrNonFlattenedNode({})={}\n",
+            "  .AsRangeBoundaryInFlatTree({})={}\n",
             aCompareBoundary, aFor,
-            aCompareBoundary.AsConstRaw()
-                .AsRangeBoundaryInFlatTreeOrNonFlattenedNode(aFor),
+            aCompareBoundary.AsConstRaw().AsRangeBoundaryInFlatTree(aFor),
             endRef, rangeBoundaryFor,
-            endRef.AsConstRaw().AsRangeBoundaryInFlatTreeOrNonFlattenedNode(
-                rangeBoundaryFor))
+            endRef.AsConstRaw().AsRangeBoundaryInFlatTree(rangeBoundaryFor))
             .c_str());
     return order.valueOr(1);
   }
