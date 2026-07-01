@@ -106,6 +106,12 @@ const DEFAULT_ACTIONS = {
         .doCommand();
     },
   },
+  manageai: {
+    l10nCommands: ["quickactions-cmd-manageai"],
+    icon: "chrome://global/skin/icons/highlights.svg",
+    label: "quickactions-manageai",
+    onPick: openUrlFun("about:preferences#ai"),
+  },
   downloads: {
     l10nCommands: ["quickactions-cmd-downloads"],
     icon: "chrome://browser/skin/downloads/downloads.svg",
