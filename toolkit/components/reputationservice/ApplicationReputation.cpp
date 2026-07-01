@@ -261,7 +261,8 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     //".hlp", exec // Windows Help
     ".hqx",  // Mac archive
     //".hta", exec // HTML trusted application
-    ".htm", ".html",
+    ".htm",
+    ".html",
     ".htt",  // MS HTML template
     //".ica",
     ".img",      // Mac disk image
@@ -510,7 +511,9 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     //".wsh", exec  // Windows script
     ".xar",   // MS Excel
     ".xbap",  // XAML Browser Application
-    ".xht", ".xhtm", ".xhtml",
+    ".xht",
+    ".xhtm",
+    ".xhtml",
     ".xip",   // Mac archive
     ".xla",   // MS Excel
     ".xlam",  // MS Excel
