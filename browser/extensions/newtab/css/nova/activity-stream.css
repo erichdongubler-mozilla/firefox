@@ -227,6 +227,8 @@
   --icon-size-medium: 20px;
   --icon-size-large: var(--size-item-medium);
   --icon-size-xlarge: var(--size-item-large);
+  /** info-bar **/
+  --info-bar-margin-block-end: 0;
   /** link **/
   --link-color: var(--color-accent-primary);
   --link-color-hover: var(--color-accent-primary-hover);

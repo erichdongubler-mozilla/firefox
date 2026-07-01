@@ -759,6 +759,11 @@
     "dark": "{Colors$color/red/20}",
     "forcedColors": "{Theme$icon/color}"
   },
+  "info-bar/border/color": {
+    "light": "{Colors$color/violet-desaturated/20}",
+    "dark": "{Colors$color/gray/60}",
+    "forcedColors": "{HCM Theme$CanvasText}"
+  },
   "input/border/color": {
     "light": "{Theme$border/color/interactive}",
     "dark": "{Theme$border/color/interactive}",

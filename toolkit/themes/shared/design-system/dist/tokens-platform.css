@@ -43,6 +43,9 @@
     --font-size-root: unset;
     --font-size-small: unset;
 
+    /** info-bar **/
+    --info-bar-border-color: var(--toolbarseparator-color);
+
     /** input **/
     --input-text-background-color: Field;
     --input-text-color: FieldText;
@@ -116,6 +119,9 @@
       --color-accent-primary-hover: light-dark(var(--color-blue-70), var(--color-cyan-20));
       --color-accent-primary-active: light-dark(var(--color-blue-80), var(--color-cyan-10));
       --color-accent-primary-selected: light-dark(var(--color-blue-60), var(--color-cyan-30));
+
+      /** info-bar **/
+      --info-bar-border-color: light-dark(var(--color-violet-desaturated-20), var(--color-gray-60));
 
       /** input **/
       --input-text-background-color: light-dark(var(--color-white), #42414d);
