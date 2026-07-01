@@ -151,3 +151,11 @@ will lead to a smoother, more rapid process of review and acceptance.
   should have role="button" and the aria-label attribute set.
 - [Fennec: Make sure contentDescription is set for parts of the UI that
   should be accessible]
+
+## Landing the patch
+
+- If the patch is simple enough and has no linter errors, the reviewer
+  should not hesitate to land it directly after approving it, rather
+  than leaving it to the author. This reduces round-trips and gets the
+  fix into the tree faster, which is especially helpful for new
+  contributors.
