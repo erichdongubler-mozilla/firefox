@@ -686,6 +686,14 @@ class alignas(gc::CellAlignBytes) CellWithLengthAndFlags : public Cell {
     return uint32_t(header_.getAtomic());
   }
 
+#if JS_GC_CONCURRENT_MARKING
+  uintptr_t headerFlagsFieldForTracing() const { return headerFlagsField(); }
+#else
+  uintptr_t headerFlagsFieldForTracing() const {
+    return headerFlagsFieldAtomic();
+  }
+#endif
+
   void setHeaderFlagBit(uint32_t flag) {
     header_.set(header_.get() | uintptr_t(flag));
   }
@@ -763,6 +771,15 @@ class alignas(gc::CellAlignBytes) TenuredCellWithNonGCPointer
     return reinterpret_cast<PtrT*>(uintptr_t(header_.get()));
   }
 
+#if JS_GC_CONCURRENT_MARKING
+  PtrT* headerPtrForTracing() const {
+    MOZ_ASSERT(flags() == 0);
+    return reinterpret_cast<PtrT*>(uintptr_t(header_.getAtomic()));
+  }
+#else
+  PtrT* headerPtrForTracing() const { return headerPtr(); }
+#endif
+
   void setHeaderPtr(PtrT* newValue) {
     // As above, no flags are expected to be set here.
     uintptr_t data = uintptr_t(newValue);
@@ -790,6 +807,15 @@ class alignas(gc::CellAlignBytes) TenuredCellWithFlags : public TenuredCell {
     MOZ_ASSERT(flags() == 0);
     return header_.get();
   }
+
+#if JS_GC_CONCURRENT_MARKING
+  uintptr_t headerFlagsForTracing() const {
+    MOZ_ASSERT(flags() == 0);
+    return header_.getAtomic();
+  }
+#else
+  uintptr_t headerFlagsForTracing() const { return headerFlagsField(); }
+#endif
 
   void setHeaderFlagBits(uintptr_t flags) {
     header_.set(header_.get() | flags);
@@ -850,6 +876,12 @@ class alignas(gc::CellAlignBytes) CellWithTenuredGCPointer : public BaseCell {
     MOZ_ASSERT(this->flags() == 0);
     return reinterpret_cast<PtrT*>(uintptr_t(this->header_.getAtomic()));
   }
+
+#if JS_GC_CONCURRENT_MARKING
+  PtrT* headerPtrForTracing() const { return headerPtrAtomic(); }
+#else
+  PtrT* headerPtrForTracing() const { return headerPtr(); }
+#endif
 
   void unbarrieredSetHeaderPtr(PtrT* newValue) {
     uintptr_t data = uintptr_t(newValue);
