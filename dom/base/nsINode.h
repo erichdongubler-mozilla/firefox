@@ -5,6 +5,8 @@
 #ifndef nsINode_h_
 #define nsINode_h_
 
+#include <fmt/format.h>
+
 #include <iosfwd>
 
 #include "js/TypeDecls.h"  // for Handle, Value, JSObject, JSContext
@@ -330,6 +332,48 @@ class nsNodeWeakReference final : public nsIWeakReference {
  private:
   ~nsNodeWeakReference();
 };
+
+enum class TreeKind : uint8_t {
+  // The simplest DOM, won't get ShadowRoot from the parent.
+  DOM,
+  // Treat a shadow DOM host as having the shadow root as index at 0.5, e.g.,
+  // after the first child and before the second child. However, non-content
+  // shadow is ignored because they must have <slot>s to use the direct child
+  // of the host, but in this mode, <slot> is treated as not having assigned
+  // nodes.
+  ShadowIncludingDOM,
+  // Handle the flattened tree which assigned nodes of <slot> are treated as
+  // children of the <slot>. However, the non-content shadows are ignored and
+  // treat the host as not a shadow host.
+  FlatForSelection,
+  // Similar to FlatForSelection, treat non-content shadow trees too. E.g., the
+  // shadow of <details>, <video>, and SVG <use>.
+  Flat,
+};
+
+template <TreeKind aKind>
+[[nodiscard]] constexpr static inline bool ShouldIgnoreNonContentShadow() {
+  return aKind != TreeKind::Flat;
+}
+
+template <TreeKind aKind>
+[[nodiscard]] constexpr static inline bool ShouldHandleAssignedNodesOnSlot() {
+  return aKind == TreeKind::Flat || aKind == TreeKind::FlatForSelection;
+}
+
+inline auto format_as(const TreeKind& aTreeKind) {
+  constexpr static const char* sNames[] = {
+      "DOM",
+      "ShadowIncludingDOM",
+      "FlatForSelection",
+      "Flat",
+  };
+  return std::string(sNames[static_cast<uint8_t>(aTreeKind)]);
+}
+
+inline std::ostream& operator<<(std::ostream& aStream, TreeKind aTreeKind) {
+  return aStream << format_as(aTreeKind);
+}
 
 // This should be used for any nsINode sub-class that has fields of its own
 // that it needs to measure; any sub-class that doesn't use it will inherit

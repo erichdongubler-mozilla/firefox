@@ -28,39 +28,40 @@ template bool RangeUtils::IsValidPoints(const RawRangeBoundary&,
 template nsresult
 RangeUtils::CompareNodeToRangeBoundaries<TreeKind::ShadowIncludingDOM>(
     const nsINode*, const RangeBoundary&, const RangeBoundary&, bool*, bool*);
-template nsresult RangeUtils::CompareNodeToRangeBoundaries<TreeKind::Flat>(
+template nsresult
+RangeUtils::CompareNodeToRangeBoundaries<TreeKind::FlatForSelection>(
     const nsINode*, const RangeBoundary&, const RangeBoundary&, bool*, bool*);
 
 template nsresult RangeUtils::CompareNodeToRangeBoundaries<
     TreeKind::ShadowIncludingDOM>(const nsINode*, const RangeBoundary&,
                                   const RawRangeBoundary&, bool*, bool*);
-template nsresult RangeUtils::CompareNodeToRangeBoundaries<TreeKind::Flat>(
-    const nsINode*, const RangeBoundary&, const RawRangeBoundary&, bool*,
-    bool*);
+template nsresult RangeUtils::CompareNodeToRangeBoundaries<
+    TreeKind::FlatForSelection>(const nsINode*, const RangeBoundary&,
+                                const RawRangeBoundary&, bool*, bool*);
 
 template nsresult RangeUtils::CompareNodeToRangeBoundaries<
     TreeKind::ShadowIncludingDOM>(const nsINode*, const RawRangeBoundary&,
                                   const RangeBoundary&, bool*, bool*);
-template nsresult RangeUtils::CompareNodeToRangeBoundaries<TreeKind::Flat>(
-    const nsINode*, const RawRangeBoundary&, const RangeBoundary&, bool*,
-    bool*);
+template nsresult RangeUtils::CompareNodeToRangeBoundaries<
+    TreeKind::FlatForSelection>(const nsINode*, const RawRangeBoundary&,
+                                const RangeBoundary&, bool*, bool*);
 
 template nsresult RangeUtils::CompareNodeToRangeBoundaries<
     TreeKind::ShadowIncludingDOM>(const nsINode*, const RawRangeBoundary&,
                                   const RawRangeBoundary&, bool*, bool*);
-template nsresult RangeUtils::CompareNodeToRangeBoundaries<TreeKind::Flat>(
-    const nsINode*, const RawRangeBoundary&, const RawRangeBoundary&, bool*,
-    bool*);
+template nsresult RangeUtils::CompareNodeToRangeBoundaries<
+    TreeKind::FlatForSelection>(const nsINode*, const RawRangeBoundary&,
+                                const RawRangeBoundary&, bool*, bool*);
 
 template nsresult RangeUtils::CompareNodeToRange<TreeKind::ShadowIncludingDOM>(
     const nsINode*, const AbstractRange*, bool*, bool*);
-template nsresult RangeUtils::CompareNodeToRange<TreeKind::Flat>(
+template nsresult RangeUtils::CompareNodeToRange<TreeKind::FlatForSelection>(
     const nsINode*, const AbstractRange*, bool*, bool*);
 
 template Maybe<bool> RangeUtils::IsNodeContainedInRange<
     TreeKind::ShadowIncludingDOM>(const nsINode&, const AbstractRange*);
-template Maybe<bool> RangeUtils::IsNodeContainedInRange<TreeKind::Flat>(
-    const nsINode&, const AbstractRange*);
+template Maybe<bool> RangeUtils::IsNodeContainedInRange<
+    TreeKind::FlatForSelection>(const nsINode&, const AbstractRange*);
 
 [[nodiscard]] static inline bool ParentNodeIsInSameSelection(
     const nsINode& aNode) {
@@ -147,9 +148,9 @@ bool RangeUtils::IsValidPoints(
   }
 
   const Maybe<int32_t> order =
-      aStartBoundary.GetTreeKind() == TreeKind::Flat
-          ? nsContentUtils::ComparePoints<TreeKind::Flat>(aStartBoundary,
-                                                          aEndBoundary)
+      aStartBoundary.GetTreeKind() == TreeKind::FlatForSelection
+          ? nsContentUtils::ComparePoints<TreeKind::FlatForSelection>(
+                aStartBoundary, aEndBoundary)
           : nsContentUtils::ComparePoints<TreeKind::DOM>(aStartBoundary,
                                                          aEndBoundary);
   if (!order) {
@@ -229,8 +230,9 @@ nsresult RangeUtils::CompareNodeToRangeBoundaries(
   // ShadowRoot has no parent, nor can be represented by parent/offset pair.
   if (!aNode->IsShadowRoot()) {
     parent = ShadowDOMSelectionHelpers::GetParentNodeInSameSelection(
-        *aNode, aKind == TreeKind::Flat ? AllowRangeCrossShadowBoundary::Yes
-                                        : AllowRangeCrossShadowBoundary::No);
+        *aNode, aKind == TreeKind::FlatForSelection
+                    ? AllowRangeCrossShadowBoundary::Yes
+                    : AllowRangeCrossShadowBoundary::No);
   }
 
   if (!parent) {
@@ -241,7 +243,7 @@ nsresult RangeUtils::CompareNodeToRangeBoundaries(
     nodeStart = 0;
     nodeEnd = aNode->GetChildCount();
   } else if (const auto* slotAsParent = HTMLSlotElement::FromNode(parent);
-             slotAsParent && aKind == TreeKind::Flat) {
+             slotAsParent && aKind == TreeKind::FlatForSelection) {
     // aNode is a slotted content, use the index in the assigned nodes
     // to represent this node.
     auto index = slotAsParent->AssignedNodes().IndexOf(aNode);
