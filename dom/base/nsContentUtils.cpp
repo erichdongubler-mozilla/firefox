@@ -10469,6 +10469,10 @@ Result<bool, nsresult> nsContentUtils::SynthesizeMouseEvent(
     }
   } else if (aOptions.mIsAsyncEnabled ||
              StaticPrefs::test_events_async_enabled()) {
+    // The event is dispatched asynchronously via WebDriver when it is not
+    // targeted directly at a window and async dispatching is requested.
+    mouseOrPointerEvent.mFlags.mIsAsyncSynthesizedForTests =
+        aOptions.mIsDOMEventSynthesized;
     status = aWidget->DispatchInputEvent(&mouseOrPointerEvent).mContentStatus;
   } else {
     status = aWidget->DispatchEvent(&mouseOrPointerEvent);

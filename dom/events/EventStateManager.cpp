@@ -2911,6 +2911,8 @@ void EventStateManager::GenerateDragGesture(
                              eDragStart, widget);
   startEvent.mFlags.mIsSynthesizedForTests =
       aMouseOrTouchOrPointerEvent.mFlags.mIsSynthesizedForTests;
+  startEvent.mFlags.mIsAsyncSynthesizedForTests =
+      aMouseOrTouchOrPointerEvent.mFlags.mIsAsyncSynthesizedForTests;
   FillInEventFromGestureDown(&startEvent);
 
   startEvent.mDataTransfer = dataTransfer;

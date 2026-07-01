@@ -323,7 +323,14 @@ nsresult nsBaseDragSession::InvokeDragSession(
   // are in the wrong coord system, so turn off mouse capture.
   PresShell::ClearMouseCapture();
 
-  if (mSessionIsSynthesizedForTests) {
+  // An async-synthesized drag is dispatched through WebDriver from the parent
+  // process, so unlike a plain synthesized drag it must go through the normal
+  // cross-process path: the content process still needs to send
+  // PBrowser::InvokeDragSession (via InvokeDragSessionImpl below) so that the
+  // parent process owns the session and can end it.  In the parent process the
+  // session is backed by the mock drag service, so it is not synthesized and
+  // does not reach here.
+  if (mSessionIsSynthesizedForTests && !mSessionIsAsyncSynthesizedForTests) {
     mDoingDrag = true;
     mDragAction = aActionType;
     mEffectAllowedForTests = aActionType;
@@ -452,6 +459,9 @@ nsresult nsBaseDragSession::InitWithImage(
     DragEvent* aDragEvent, DataTransfer* aDataTransfer,
     bool aIsSynthesizedForTests) {
   mSessionIsSynthesizedForTests = aIsSynthesizedForTests;
+  mSessionIsAsyncSynthesizedForTests =
+      aDragEvent &&
+      aDragEvent->WidgetEventPtr()->mFlags.mIsAsyncSynthesizedForTests;
   mDataTransfer = aDataTransfer;
   mSelection = nullptr;
   mHasImage = true;
@@ -530,6 +540,9 @@ nsresult nsBaseDragSession::InitWithRemoteImage(
     DragEvent* aDragEvent, DataTransfer* aDataTransfer,
     bool aIsSynthesizedForTests) {
   mSessionIsSynthesizedForTests = aIsSynthesizedForTests;
+  mSessionIsAsyncSynthesizedForTests =
+      aDragEvent &&
+      aDragEvent->WidgetEventPtr()->mFlags.mIsAsyncSynthesizedForTests;
   mDataTransfer = aDataTransfer;
   mSelection = nullptr;
   mHasImage = true;
@@ -592,6 +605,9 @@ nsresult nsBaseDragSession::InitWithSelection(
     uint32_t aActionType, DragEvent* aDragEvent, DataTransfer* aDataTransfer,
     nsINode* aTargetContent, bool aIsSynthesizedForTests) {
   mSessionIsSynthesizedForTests = aIsSynthesizedForTests;
+  mSessionIsAsyncSynthesizedForTests =
+      aDragEvent &&
+      aDragEvent->WidgetEventPtr()->mFlags.mIsAsyncSynthesizedForTests;
   mDataTransfer = aDataTransfer;
   mSelection = aSelection;
   mHasImage = true;
@@ -781,6 +797,7 @@ nsresult nsBaseDragSession::EndDragSessionImpl(bool aDoneDrag,
 
   mDoingDrag = false;
   mSessionIsSynthesizedForTests = false;
+  mSessionIsAsyncSynthesizedForTests = false;
   mEffectAllowedForTests = nsIDragService::DRAGDROP_ACTION_UNINITIALIZED;
   mEndingSession = false;
   mCanDrop = false;
