@@ -519,7 +519,9 @@ UniquePtr<nsHttpHeaderArray> nsHttpTransaction::TakeResponseTrailers() {
 
 void nsHttpTransaction::SetProxyConnectFailed() { mProxyConnectFailed = true; }
 
-nsHttpRequestHead* nsHttpTransaction::RequestHead() { return mRequestHead; }
+const nsHttpRequestHead* nsHttpTransaction::RequestHead() {
+  return mRequestHead;
+}
 
 uint32_t nsHttpTransaction::Http1xTransactionCount() { return 1; }
 

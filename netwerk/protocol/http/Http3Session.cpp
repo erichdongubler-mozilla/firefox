@@ -2190,7 +2190,7 @@ void Http3Session::SetProxyConnectFailed() {
   MOZ_ASSERT(false, "Http3Session::SetProxyConnectFailed()");
 }
 
-nsHttpRequestHead* Http3Session::RequestHead() {
+const nsHttpRequestHead* Http3Session::RequestHead() {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   MOZ_ASSERT(false,
              "Http3Session::RequestHead() "
