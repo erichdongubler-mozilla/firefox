@@ -397,7 +397,7 @@ const nsTHashSet<const nsINode*>& SelectionNodeCache::MaybeCollect(
       for (; !subtreeIter.IsDone(); subtreeIter.Next()) {
         MOZ_DIAGNOSTIC_ASSERT(subtreeIter.GetCurrentNode());
         if (subtreeIter.GetCurrentNode()->IsContent()) {
-          TreeIterator<FlattenedChildIteratorForSelection> iter(
+          TreeIterator<FlattenedChildIterator> iter(
               *(subtreeIter.GetCurrentNode()->AsContent()));
           for (; iter.GetCurrent(); iter.GetNext()) {
             AddNodeIfFullySelected(iter.GetCurrent());
@@ -2030,7 +2030,7 @@ nsresult Selection::SelectFrames(nsPresContext* aPresContext,
 void Selection::SelectFramesOfFlattenedTreeOfContent(nsIContent* aContent,
                                                      bool aSelected) const {
   MOZ_ASSERT(aContent);
-  TreeIterator<FlattenedChildIteratorForSelection> iter(*aContent);
+  TreeIterator<FlattenedChildIterator> iter(*aContent);
   for (; iter.GetCurrent(); iter.GetNext()) {
     SelectFramesOf(iter.GetCurrent(), aSelected);
   }
