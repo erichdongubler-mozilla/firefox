@@ -740,17 +740,19 @@ void AggregateCapturer::OnFrame(const webrtc::VideoFrame& aVideoFrame) {
               : maxFramerate;
       const double targetFramerate = std::clamp(desiredFramerate, 0.01, 120.);
 
-      // Allow 5% higher fps than configured as frame time sampling is timing
-      // dependent.
-      const auto minInterval =
-          media::TimeUnit(1000, static_cast<int64_t>(1050 * targetFramerate));
+      const auto targetInterval =
+          media::TimeUnit(1000, static_cast<int64_t>(1000 * targetFramerate));
       const auto frameTime =
           media::TimeUnit::FromMicroseconds(aVideoFrame.timestamp_us());
-      const auto frameInterval = frameTime - stream->mLastFrameTime;
-      if (frameInterval < minInterval) {
+      if (frameTime < stream->mNextFrameTime) {
         continue;
       }
-      stream->mLastFrameTime = frameTime;
+      if (stream->mNextFrameTime + targetInterval <= frameTime) {
+        // First frame, or source gap — reset to avoid burst catch-up.
+        stream->mNextFrameTime = frameTime + targetInterval;
+      } else {
+        stream->mNextFrameTime += targetInterval;
+      }
       LOG_VERBOSE("CamerasParent::{} parent={}, id={}.", __func__,
                   fmt::ptr(stream->mParent), stream->mId);
       parentsAndIds.insert({stream->mParent, stream->mId});
