@@ -2055,7 +2055,7 @@ inline JSObject* MarkStack::TaggedPtr::asRangeObject() const {
 
 inline JSRope* MarkStack::TaggedPtr::asTempRope() const {
   MOZ_ASSERT(tag() == TempRopeTag);
-  return &ptr()->as<JSString>()->asRope();
+  return static_cast<JSRope*>(ptr()->as<JSString>());
 }
 
 inline MarkStack::SlotsOrElementsRange::SlotsOrElementsRange(

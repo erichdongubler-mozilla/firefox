@@ -101,9 +101,11 @@ inline void JSString::traceChildren(JSTracer* trc) {
 }
 template <uint32_t opts>
 void js::gc::MarkingTracerT<opts>::eagerlyMarkChildren(JSString* str) {
-  uint32_t flags = str->flags();
-  if (flags & js::StringFlags::LINEAR_BIT) {
-    eagerlyMarkChildren(static_cast<JSLinearString*>(str));
+  MOZ_ASSERT(str->isMarkedAtLeast(markColor()));
+
+  uint32_t flags = str->getFlagsForTracing();
+  if (StringFlags::isLinear(flags)) {
+    eagerlyMarkChildren(static_cast<JSLinearString*>(str), flags);
   } else {
     eagerlyMarkChildren(static_cast<JSRope*>(str));
   }
@@ -115,23 +117,26 @@ inline void JSString::traceBase(JSTracer* trc) {
 }
 template <uint32_t opts>
 void js::gc::MarkingTracerT<opts>::eagerlyMarkChildren(
-    JSLinearString* linearStr) {
+    JSLinearString* linearStr, uint32_t flags) {
   gc::AssertShouldMarkInZone(gcMarker(), linearStr);
-  MOZ_ASSERT(linearStr->isMarkedAny());
 
   // Use iterative marking to avoid blowing out the stack.
-  while (linearStr->hasBase()) {
-    linearStr = linearStr->base();
+  while (StringFlags::isDependent(flags)) {
+    linearStr = linearStr->getBaseForTracing();
+    if constexpr (hasOption(gc::MarkingOptions::ConcurrentMarking)) {
+      gc::MemoryAcquireFence<opts>(this->runtime());
+    }
+    flags = linearStr->getFlagsForTracing();
 
     // It's possible to observe a rope as the base of a linear string if we
     // process barriers during rope flattening. See the assignment of base in
     // JSRope::flattenInternal's finish_node section.
-    if (static_cast<JSString*>(linearStr)->isRope()) {
+    if (StringFlags::isRope(flags)) {
       MOZ_ASSERT(!JS::RuntimeHeapIsMajorCollecting());
       break;
     }
 
-    MOZ_ASSERT(linearStr->JSString::isLinear());
+    MOZ_ASSERT(StringFlags::isLinear(flags));
     gc::AssertShouldMarkInZone(gcMarker(), linearStr);
     if (!mark(static_cast<JSString*>(linearStr))) {
       break;
@@ -168,8 +173,8 @@ void js::gc::MarkingTracerT<opts>::eagerlyMarkChildren(JSRope* rope) {
     MOZ_ASSERT(rope->isMarkedAny());
     JSRope* next = nullptr;
 
-    JSString* left = rope->leftChild();
-    JSString* right = rope->rightChild();
+    JSString* left = rope->getLeftChildForTracing();
+    JSString* right = rope->getRightChildForTracing();
 
     bool shouldMark = true;
 #ifdef JS_GC_CONCURRENT_MARKING
@@ -189,10 +194,11 @@ void js::gc::MarkingTracerT<opts>::eagerlyMarkChildren(JSRope* rope) {
     // perform the memory fence and then check the flags. When changing the type
     // on the main thread these happen in the reverse order. This ensures that
     // we can't observe updated children with the old type. Observing the new
-    // type with old children is possible but benign.
+    // type with old children is possible and will skip marking.
     if constexpr (hasOption(gc::MarkingOptions::ConcurrentMarking)) {
-      gc::MemoryAcquireFence<opts>(rope->runtimeFromAnyThread());
-      if (!rope->isRopeAtomic()) {
+      gc::MemoryAcquireFence<opts>(this->runtime());
+      uint32_t flags = rope->getFlagsForTracing();
+      if (!StringFlags::isRope(flags)) {
         shouldMark = false;
       }
     }
@@ -202,19 +208,23 @@ void js::gc::MarkingTracerT<opts>::eagerlyMarkChildren(JSRope* rope) {
 
     if (shouldMark) {
       if (mark(right)) {
-        MOZ_ASSERT(!right->isPermanentAtom());
-        if (right->isLinear()) {
-          eagerlyMarkChildren(static_cast<JSLinearString*>(right));
+        uint32_t flags = right->getFlagsForTracing();
+        MOZ_ASSERT(!StringFlags::isPermanentAtom(flags));
+        if (StringFlags::isLinear(flags)) {
+          eagerlyMarkChildren(static_cast<JSLinearString*>(right), flags);
         } else {
+          MOZ_ASSERT(StringFlags::isRope(flags));
           next = static_cast<JSRope*>(right);
         }
       }
 
       if (mark(left)) {
-        MOZ_ASSERT(!left->isPermanentAtom());
-        if (left->isLinear()) {
-          eagerlyMarkChildren(static_cast<JSLinearString*>(left));
+        uint32_t flags = left->getFlagsForTracing();
+        MOZ_ASSERT(!StringFlags::isPermanentAtom(flags));
+        if (StringFlags::isLinear(flags)) {
+          eagerlyMarkChildren(static_cast<JSLinearString*>(left), flags);
         } else {
+          MOZ_ASSERT(StringFlags::isRope(flags));
           // When both children are ropes, set aside the right one to
           // scan it later.
           if (next && !stack.pushTempRope(next)) {

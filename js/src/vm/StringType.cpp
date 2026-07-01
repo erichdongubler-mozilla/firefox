@@ -1152,7 +1152,7 @@ first_visit_node: {
   ropeBarrierDuringFlattening<usingBarrier>(str);
 
   JSString& left = *str->d.s.u2.left;
-  str->d.s.u2.parent = parent;
+  setField(&str->d.s.u2.parent, parent);
   str->setFlagBit(parentFlag);
   parent = nullptr;
   parentFlag = 0;
@@ -1205,8 +1205,11 @@ finish_node: {
   uint32_t flags = StringFlags::dependentStringFlags(encoding);
   flags |= str->flags() & StringFlags::PRESERVE_ROPE_BITS_ON_REPLACE;
   str->changeStringType(str->length(), flags);
-  str->d.s.u3.base =
-      reinterpret_cast<JSLinearString*>(root); /* will be true on exit */
+  {
+    // Will be true on exit.
+    auto* newBase = reinterpret_cast<JSLinearString*>(root);
+    setField(&str->d.s.u3.base, newBase);
+  }
   newRootFlags |= StringFlags::DEPENDED_ON_BIT;
 
   // Every interior (rope) node in the rope's tree will be visited during
