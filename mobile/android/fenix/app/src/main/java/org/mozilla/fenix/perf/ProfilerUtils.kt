@@ -34,6 +34,7 @@ private val firefox_features = arrayOf(
     "screenshots",
     "js",
     "stackwalk",
+    "cpu",
     "java",
     "processcpu",
     "ipcmessages",
@@ -48,7 +49,7 @@ private val firefox_threads = arrayOf(
 )
 
 private val graphics_features =
-    arrayOf("stackwalk", "js", "java", "processcpu", "ipcmessages", "memory")
+    arrayOf("stackwalk", "js", "cpu", "java", "processcpu", "ipcmessages", "memory")
 private val graphics_threads = arrayOf(
     "GeckoMain",
     "Compositor",
@@ -65,6 +66,7 @@ private val graphics_threads = arrayOf(
 private val media_features = arrayOf(
     "js",
     "stackwalk",
+    "cpu",
     "audiocallbacktracing",
     "ipcmessages",
     "processcpu",
@@ -82,6 +84,7 @@ private val networking_features = arrayOf(
     "screenshots",
     "js",
     "stackwalk",
+    "cpu",
     "java",
     "processcpu",
     "bandwidth",
@@ -102,6 +105,7 @@ private val networking_threads = arrayOf(
 )
 
 private val debug_features = arrayOf(
+    "cpu",
     "java",
     "ipcmessages",
     "js",

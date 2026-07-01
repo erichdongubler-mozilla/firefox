@@ -53,7 +53,7 @@ export const presets = {
   "web-developer": {
     entries: 128 * 1024 * 1024,
     interval: 1,
-    features: ["screenshots", "js", "memory"],
+    features: ["screenshots", "js", "cpu", "memory"],
     threads: ["GeckoMain", "Compositor", "Renderer", "DOM Worker"],
     duration: 0,
     profilerViewMode: "active-tab",
@@ -75,6 +75,7 @@ export const presets = {
       "screenshots",
       "js",
       "stackwalk",
+      "cpu",
       "java",
       "processcpu",
       "memory",
@@ -104,7 +105,7 @@ export const presets = {
   graphics: {
     entries: 128 * 1024 * 1024,
     interval: 1,
-    features: ["stackwalk", "js", "java", "processcpu", "memory"],
+    features: ["stackwalk", "js", "cpu", "java", "processcpu", "memory"],
     threads: [
       "GeckoMain",
       "Compositor",
@@ -135,6 +136,7 @@ export const presets = {
     features: [
       "js",
       "stackwalk",
+      "cpu",
       "audiocallbacktracing",
       "ipcmessages",
       "processcpu",
@@ -181,7 +183,7 @@ export const presets = {
   ml: {
     entries: 128 * 1024 * 1024,
     interval: 1,
-    features: ["js", "stackwalk", "ipcmessages", "processcpu", "memory"],
+    features: ["js", "stackwalk", "cpu", "ipcmessages", "processcpu", "memory"],
     threads: [
       "BackgroundThreadPool",
       "DOM Worker",
@@ -209,6 +211,7 @@ export const presets = {
       "screenshots",
       "js",
       "stackwalk",
+      "cpu",
       "java",
       "processcpu",
       "bandwidth",
@@ -245,6 +248,7 @@ export const presets = {
       "screenshots",
       "js",
       "stackwalk",
+      "cpu",
       "processcpu",
       "nostacksampling",
       "ipcmessages",
@@ -270,6 +274,7 @@ export const presets = {
     entries: 128 * 1024 * 1024,
     interval: 1,
     features: [
+      "cpu",
       "ipcmessages",
       "js",
       "markersallthreads",
