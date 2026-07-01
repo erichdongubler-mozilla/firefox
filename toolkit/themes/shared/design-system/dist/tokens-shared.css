@@ -658,6 +658,7 @@
       --button-background-color-destructive-hover: var(--button-background-color-primary-hover);
       --button-background-color-destructive-active: var(--button-background-color-primary-active);
       --button-background-color-destructive-disabled: var(--button-background-color-primary-disabled);
+      --button-background-color-ghost: ButtonFace;
       --button-background-color-menu-hover: var(--button-background-color-primary);
       --button-background-color-menu-active: var(--button-background-color-primary);
       --button-background-color-menu-selected: var(--button-background-color-primary-selected);

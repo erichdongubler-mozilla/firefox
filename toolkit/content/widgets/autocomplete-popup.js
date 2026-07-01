@@ -120,6 +120,12 @@
                 this.mousedOverIndex = index;
 
                 if (item.selectedByMouseOver) {
+                  const prevKeyboardSelected = this.richlistbox.querySelector(
+                    "autocomplete-row-item[selected]"
+                  );
+                  if (prevKeyboardSelected) {
+                    prevKeyboardSelected.selected = false;
+                  }
                   this.richlistbox.selectedIndex = index;
                 }
 

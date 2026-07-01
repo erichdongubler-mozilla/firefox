@@ -339,6 +339,7 @@ AppleVTDecoder::AppleFrameRef* AppleVTDecoder::CreateAppleFrameRef(
 }
 
 void AppleVTDecoder::SetSeekThreshold(const media::TimeUnit& aTime) {
+  MonitorAutoLock mon(mMonitor);
   if (aTime.IsValid()) {
     mSeekTargetThreshold = Some(aTime);
   } else {
@@ -438,12 +439,15 @@ void AppleVTDecoder::OutputFrame(CVPixelBufferRef aImage,
   }
 
   bool useNullSample = false;
-  if (mSeekTargetThreshold.isSome()) {
-    if ((aFrameRef.composition_timestamp + aFrameRef.duration) <
-        mSeekTargetThreshold.ref()) {
-      useNullSample = true;
-    } else {
-      mSeekTargetThreshold.reset();
+  {
+    MonitorAutoLock mon(mMonitor);
+    if (mSeekTargetThreshold.isSome()) {
+      if ((aFrameRef.composition_timestamp + aFrameRef.duration) <
+          mSeekTargetThreshold.ref()) {
+        useNullSample = true;
+      } else {
+        mSeekTargetThreshold.reset();
+      }
     }
   }
 

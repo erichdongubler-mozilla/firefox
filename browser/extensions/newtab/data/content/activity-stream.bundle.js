@@ -17483,6 +17483,9 @@ function MatchTeam({
     }, TBD_PLACEHOLDER));
   }
   const displayName = localizedName ?? team.name;
+  // Display the ISO region to match other platforms; team.key stays the
+  // internal identity key. Fall back to key when region is absent.
+  const displayCode = team.region ?? team.key;
   return /*#__PURE__*/external_React_default().createElement("div", {
     className: "sports-match-team"
   }, /*#__PURE__*/external_React_default().createElement("span", {
@@ -17497,7 +17500,7 @@ function MatchTeam({
     "aria-hidden": "true"
   })), /*#__PURE__*/external_React_default().createElement("span", {
     className: "sports-match-code"
-  }, isFollowed ? /*#__PURE__*/external_React_default().createElement("strong", null, team.key) : team.key));
+  }, isFollowed ? /*#__PURE__*/external_React_default().createElement("strong", null, displayCode) : displayCode));
 }
 
 // Fallback shown in the Upcoming tab if the backend returns no matches.

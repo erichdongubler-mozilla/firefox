@@ -30,7 +30,12 @@
     background-color: unset;
     color: unset;
 
-    &:not(:hover) > autocomplete-row-item {
+    > autocomplete-row-item:not([selected]) {
+      background-color: var(--button-background-color-ghost-hover);
+      color: var(--button-text-color-ghost-hover);
+    }
+
+    &:not(:hover) > autocomplete-row-item[selected] {
       border-color: var(--focus-outline-color);
     }
   }

@@ -17,6 +17,7 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.sys.mjs",
+  ContentAnalysisUtils: "resource://gre/modules/ContentAnalysisUtils.sys.mjs",
   DeferredTask: "resource://gre/modules/DeferredTask.sys.mjs",
   DownloadSpamProtection:
     "moz-src:///browser/components/downloads/DownloadSpamProtection.sys.mjs",
@@ -598,29 +599,33 @@ export var DownloadIntegration = {
     let finalResultPromise = contentAnalysis
       .analyzeContentRequests(
         [
-          {
-            analysisType: Ci.nsIContentAnalysisRequest.eFileDownloaded,
-            operationTypeForDisplay: Ci.nsIContentAnalysisRequest.eDownload,
-            fileNameForDisplay,
-            // "Save As" downloads do not have a browsing context
-            reason:
-              download.source.browsingContextId === 0
-                ? Ci.nsIContentAnalysisRequest.eSaveAsDownload
-                : Ci.nsIContentAnalysisRequest.eNormalDownload,
-            resources,
-            requestToken,
-            url,
-            userActionId,
-            filePath: download.target.path,
-            // When doing a download analysis, the Content Analysis code won't
-            // display dialogs in the window, but the code still wants a
-            // content window and will get the topChromeWindow to show
-            // a notification.
-            windowGlobalParent: BrowsingContext.get(
-              download.source.browsingContextId
-            )?.topWindowContext,
-            sha256Digest: download.saver.getSha256Hash(),
-          },
+          lazy.ContentAnalysisUtils.createContentAnalysisRequest(
+            {
+              analysisType: Ci.nsIContentAnalysisRequest.eFileDownloaded,
+              operationTypeForDisplay: Ci.nsIContentAnalysisRequest.eDownload,
+              // "Save As" downloads do not have a browsing context
+              reason:
+                download.source.browsingContextId === 0
+                  ? Ci.nsIContentAnalysisRequest.eSaveAsDownload
+                  : Ci.nsIContentAnalysisRequest.eNormalDownload,
+              url,
+              // When doing a download analysis, the Content Analysis code won't
+              // display dialogs in the window, but the code still wants a
+              // content window and will get the topChromeWindow to show
+              // a notification.
+              windowGlobalParent: BrowsingContext.get(
+                download.source.browsingContextId
+              )?.topWindowContext,
+            },
+            {
+              fileNameForDisplay,
+              resources,
+              requestToken,
+              userActionId,
+              filePath: download.target.path,
+              sha256Digest: download.saver.getSha256Hash(),
+            }
+          ),
         ],
         /* autoAcknowledge*/ true
       )

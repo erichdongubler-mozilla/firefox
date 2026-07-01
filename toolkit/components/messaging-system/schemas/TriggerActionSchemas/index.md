@@ -69,6 +69,7 @@ let patterns: string[];
 - [`ipProtectionBandwidthReset`](#ipprotectionbandwidthreset)
 - [`selectableProfilesUpdated`](#selectableprofilesupdated)
 - [`smartWindowNewTab`](#smartwindownewtab)
+- [`nimbusUpdate`](#nimbusupdate)
 
 ### `openArticleURL`
 
@@ -521,3 +522,29 @@ Occurs every time a user opens a new Smart Window tab.
   targeting: "isAIWindow && 'browser.smartwindow.firstrun.hasCompleted' | preferenceValue",
 }
 ```
+
+### `nimbusUpdate`
+
+Fired after ASRouter's Nimbus experiment enrollment listener finishes reloading
+messages from the `messaging-experiments` provider. Because messages are already
+in `ASRouter.state.messages` by the time this trigger fires, any message using it
+will be routed synchronously on the same tick as enrollment, without waiting for
+a timer or restart.
+
+This is the correct trigger for moments page (`update_action`) messages delivered
+via Nimbus experiments. It replaces the deprecated `momentsUpdate` pseudo-trigger.
+
+```js
+{
+  trigger: { id: "nimbusUpdate" },
+  template: "update_action",
+  content: {
+    action: {
+      id: "moments-wnp",
+      data: { url: "https://www.mozilla.org/firefox/welcome/12", expireDelta: 172800000 }
+    }
+  }
+}
+```
+
+Does not filter by host, patterns, or params.

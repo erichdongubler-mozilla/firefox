@@ -6332,18 +6332,15 @@ void nsIFrame::DisassociateImage(const StyleImage& aImage) {
       .DisassociateRequestFromFrame(req, this);
 }
 
-StyleImageRendering nsIFrame::UsedImageRendering() const {
-  ComputedStyle* style;
+const ComputedStyle* nsIFrame::UsedStyleForImages() const {
   if (IsCanvasFrame()) {
     // XXXdholbert Maybe we should use FindCanvasBackground here (instead of
     // FindBackground), since we're inside an IsCanvasFrame check? Though then
     // we'd also have to copypaste or abstract-away the multi-part root-frame
     // lookup that the canvas-flavored API requires.
-    style = nsCSSRendering::FindBackground(this);
-  } else {
-    style = Style();
+    return nsCSSRendering::FindBackground(this);
   }
-  return style->StyleVisibility()->mImageRendering;
+  return Style();
 }
 
 // The touch-action CSS property applies to: all elements except: non-replaced

@@ -400,6 +400,8 @@ const BASE_MESSAGES = () => [
           force_hide_steps_indicator: true,
           content: {
             position: "center",
+            zap_border: true,
+            zap_shadow: true,
             screen_style: {
               width: "650px",
               height: "500px",
@@ -450,7 +452,7 @@ const BASE_MESSAGES = () => [
                   type: "backup",
                   icon: {
                     background:
-                      "center / contain no-repeat url('https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/733144c8-a453-49eb-aff7-27a10786fbc1.svg')",
+                      "center / contain no-repeat url('https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/20260630170407--kit-meditate-clouds--d5c6cb35-ef96-499e-8d55-4868d90c0b69.svg')",
                     width: "133.9601px",
                     height: "90.1186px",
                     marginBlockStart: "8px",
@@ -513,7 +515,7 @@ const BASE_MESSAGES = () => [
                   type: "backup",
                   icon: {
                     background:
-                      "center / contain no-repeat url('https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/112b3d3c-5f6b-42c1-b56b-c70b08a6e4ad.svg')",
+                      "center / contain no-repeat url('https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/20260630170315--kit-house--cda7d830-d152-44ce-b7c2-fc636a02ece3.svg')",
                     width: "114.475px",
                     height: "90.1186px",
                     marginBlockStart: "8px",
@@ -620,6 +622,8 @@ const BASE_MESSAGES = () => [
           force_hide_steps_indicator: true,
           content: {
             position: "center",
+            zap_border: true,
+            zap_shadow: true,
             screen_style: {
               width: "650px",
               height: "560px",
@@ -649,7 +653,7 @@ const BASE_MESSAGES = () => [
                   type: "backup",
                   icon: {
                     background:
-                      "center / contain no-repeat url('https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/1741e2ae-2423-4b74-9f3b-b22dcd48d3b3.svg')",
+                      "center / contain no-repeat url('https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/20260630170537--kit-tail-folder-bookmarks--9d2688f2-9e5f-46a2-9cad-e043eaef45fb.svg')",
                     width: "54px",
                     height: "54px",
                     marginBlockStart: "22px",
@@ -734,7 +738,7 @@ const BASE_MESSAGES = () => [
                   type: "backup",
                   icon: {
                     background:
-                      "center / contain no-repeat url('https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/0ddfd632-b9c4-45d6-86c3-b89f94797110.svg')",
+                      "center / contain no-repeat url('https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/20260630170514--kit-sparkle-ai--5fe0137d-e5c4-42f5-8b32-e1a448c2e88c.svg')",
                     width: "54px",
                     height: "54px",
                     marginBlockStart: "22px",
@@ -840,9 +844,11 @@ const BASE_MESSAGES = () => [
           force_hide_steps_indicator: true,
           targeting: "!isEncryptedBackup",
           content: {
+            zap_border: true,
+            zap_shadow: true,
             logo: {
               imageURL:
-                "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/0706f067-eaf8-4537-a9e1-6098d990f511.svg",
+                "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/20260630170437--kit-sleep-lock-chest--e568cedf-5160-4824-91d3-4aec7fa44057.svg",
               height: "110px",
             },
             title: {
@@ -889,10 +895,12 @@ const BASE_MESSAGES = () => [
           force_hide_steps_indicator: true,
           targeting: "isEncryptedBackup",
           content: {
+            zap_border: true,
+            zap_shadow: true,
             isEncryptedBackup: true,
             logo: {
               imageURL:
-                "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/0706f067-eaf8-4537-a9e1-6098d990f511.svg",
+                "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/20260630170437--kit-sleep-lock-chest--e568cedf-5160-4824-91d3-4aec7fa44057.svg",
               height: "110px",
             },
             title: {
@@ -937,6 +945,8 @@ const BASE_MESSAGES = () => [
           force_hide_steps_indicator: true,
           targeting: "isEncryptedBackup",
           content: {
+            zap_border: true,
+            zap_shadow: true,
             isEncryptedBackup: true,
             title: {
               string_id: "create-backup-screen-3-title",
@@ -951,7 +961,7 @@ const BASE_MESSAGES = () => [
             },
             logo: {
               imageURL:
-                "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/0fb332a4-6b15-4d6e-bbd5-0558ac3e004f.svg",
+                "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/20260630170340--kit-lock-hold--ee927c95-6161-4aa0-9b3a-12dec66b7cad.svg",
               height: "130px",
             },
             tiles: {
@@ -986,13 +996,15 @@ const BASE_MESSAGES = () => [
           force_hide_steps_indicator: true,
           targeting: "!isEncryptedBackup",
           content: {
+            zap_border: true,
+            zap_shadow: true,
             screen_style: {
               width: "664px",
               height: "580px",
             },
             logo: {
               imageURL:
-                "chrome://browser/content/asrouter/assets/fox-with-checkmark.svg",
+                "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/20260630170238--kit-checkmark-tail--5e9fb572-37af-426a-bd85-f7f71dd6c3a5.svg",
               height: "96px",
             },
             title: {
@@ -1088,6 +1100,8 @@ const BASE_MESSAGES = () => [
           force_hide_steps_indicator: true,
           targeting: "isEncryptedBackup",
           content: {
+            zap_border: true,
+            zap_shadow: true,
             isEncryptedBackup: true,
             screen_style: {
               width: "664px",
@@ -1095,7 +1109,7 @@ const BASE_MESSAGES = () => [
             },
             logo: {
               imageURL:
-                "chrome://browser/content/asrouter/assets/fox-with-checkmark.svg",
+                "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/20260630170238--kit-checkmark-tail--5e9fb572-37af-426a-bd85-f7f71dd6c3a5.svg",
               height: "96px",
             },
             title: {

@@ -333,6 +333,7 @@ include = [
   "PageOrientation",
   "PageSize",
   "DProperty",
+  "ImageDecoding",
   "ImageRendering",
   "PrintColorAdjust",
   "ForcedColorAdjust",

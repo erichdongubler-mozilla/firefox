@@ -211,7 +211,6 @@ dependencies {
     testRuntimeOnly libs.junit.vintage
     testImplementation libs.robolectric
 
-    androidTestImplementation libs.androidx.core.ktx
     androidTestImplementation libs.androidx.test.espresso.core
     androidTestImplementation libs.androidx.test.junit
     androidTestImplementation libs.androidx.test.rules

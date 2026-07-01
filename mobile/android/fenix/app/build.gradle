@@ -523,6 +523,7 @@ dependencies {
     implementation project(':components:support-utils')
     implementation project(':components:support-webextensions')
     implementation project(':components:lib-publicsuffixlist')
+    implementation project(':components:ui-animation')
     implementation project(':components:ui-icons')
     implementation project(':components:ui-colors')
     implementation project(':components:ui-tabcounter')
@@ -565,7 +566,6 @@ dependencies {
     implementation libs.androidx.constraintlayout
     implementation libs.androidx.coordinatorlayout
     implementation libs.androidx.core
-    implementation libs.androidx.core.ktx
     implementation libs.androidx.core.splashscreen
     implementation libs.androidx.datastore
     implementation libs.androidx.datastore.preferences

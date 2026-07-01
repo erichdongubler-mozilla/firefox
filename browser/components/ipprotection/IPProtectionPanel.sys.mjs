@@ -11,6 +11,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
   IPPExceptionsManager:
     "moz-src:///toolkit/components/ipprotection/IPPExceptionsManager.sys.mjs",
+  IPPPrincipalRules:
+    "moz-src:///toolkit/components/ipprotection/IPPExceptionsManager.sys.mjs",
   IPPOnboardingMessage:
     "moz-src:///browser/components/ipprotection/IPPOnboardingMessageHelper.sys.mjs",
   ERRORS: "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs",
@@ -1021,16 +1023,13 @@ export class IPProtectionPanel {
 
   #getSiteData() {
     const principal = this.gBrowser?.contentPrincipal;
-
-    if (!principal) {
+    if (!principal || !lazy.IPPExceptionsManager.canManage(principal)) {
       return null;
     }
-
-    const isExclusion = lazy.IPPExceptionsManager.hasExclusion(principal);
-    const isPrivileged = this._isPrivilegedPage(principal);
-
-    let siteData = !isPrivileged ? { isExclusion } : null;
-    return siteData;
+    const isExclusion =
+      lazy.IPPExceptionsManager.getPrincipalRule(principal) ===
+      lazy.IPPPrincipalRules.EXCLUDED;
+    return { isExclusion };
   }
 
   /**
@@ -1064,23 +1063,6 @@ export class IPProtectionPanel {
     }
 
     return null;
-  }
-
-  /**
-   * Checks if the given principal represents a privileged page.
-   *
-   * @param {nsIPrincipal} principal
-   *  The principal to evaluate.
-   * @returns {boolean}
-   *  True if the page is privileged (about: pages or system principal).
-   */
-  _isPrivilegedPage(principal) {
-    // Ignore about: pages for automated tests, which load in about:blank pages by default.
-    // Do not register this method as private though so that we can stub it.
-    return (
-      (principal.schemeIs("about") || principal.isSystemPrincipal) &&
-      !Cu.isInAutomation
-    );
   }
 
   /**
