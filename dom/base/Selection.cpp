@@ -969,21 +969,11 @@ static int32_t CompareToRangeStart(
         "`CompareToRangeStart` couldn't compare nodes, pretending some order.");
     return 1;
   }
-  const Maybe<int32_t> order = nsContentUtils::ComparePoints<aKind>(
+  return *nsContentUtils::ComparePoints<aKind>(
       aCompareBoundary,
       ConstRawRangeBoundary{aRange.GetMayCrossShadowBoundaryStartContainer(),
                             aRange.MayCrossShadowBoundaryStartOffset()},
       aCache);
-  if (MOZ_LIKELY(order.isSome())) {
-    return *order;
-  }
-  NS_WARNING(
-      nsFmtCString(
-          FMT_STRING(
-              "Is aCompareBoundary in a UA shadow?\naCompareBoundary={}"),
-          aCompareBoundary)
-          .get());
-  return 1;
 }
 
 template <TreeKind aKind, typename PT, typename RT,
@@ -1015,19 +1005,8 @@ static int32_t CompareToRangeEnd(
 
   nsINode* end = aRange.GetMayCrossShadowBoundaryEndContainer();
   uint32_t endOffset = aRange.MayCrossShadowBoundaryEndOffset();
-  const Maybe<int32_t> order =
-      nsContentUtils::ComparePoints<TreeKind::FlatForSelection>(
-          aCompareBoundary, ConstRawRangeBoundary{end, endOffset});
-  if (MOZ_LIKELY(order.isSome())) {
-    return *order;
-  }
-  NS_WARNING(
-      nsFmtCString(
-          FMT_STRING(
-              "Is aCompareBoundary in a UA shadow?\naCompareBoundary={}"),
-          aCompareBoundary)
-          .get());
-  return 1;
+  return *nsContentUtils::ComparePoints<TreeKind::FlatForSelection>(
+      aCompareBoundary, ConstRawRangeBoundary{end, endOffset});
 }
 
 // Helper to extract AbstractRange* from array elements.
