@@ -413,12 +413,15 @@ void js::gc::MarkingTracerT<opts>::eagerlyMarkChildren(PropMap* map) {
   MOZ_ASSERT(map->isMarkedAny());
   do {
     for (uint32_t i = 0; i < PropMap::Capacity; i++) {
-      if (map->hasKey(i)) {
-        markAndTraverseEdge(map, map->getKey(i));
+      PropertyKey key = map->keys_[i].getForTracing();
+      if (!key.isVoid()) {
+        markAndTraverseEdge(map, key);
       }
     }
 
-    if (map->canHaveTable()) {
+    uint32_t flags = map->getFlagsForTracing();
+
+    if (flags & PropMap::CanHaveTableFlag) {
       // Special case: if a map has a table then all its pointers must point to
       // this map or an ancestor. Since these pointers will be traced by this
       // loop they do not need to be traced here as well.
@@ -426,15 +429,17 @@ void js::gc::MarkingTracerT<opts>::eagerlyMarkChildren(PropMap* map) {
                     map->asLinked()->canSkipMarkingTable());
     }
 
-    if (map->isDictionary()) {
-      map = map->asDictionary()->previous();
+    if (flags & PropMap::IsDictionaryFlag) {
+      map = map->asDictionary()->linkedData_.previous.getForTracing();
     } else {
       // For shared maps follow the |parent| link and not the |previous| link.
       // They're different when a map had a branch that wasn't at the end of the
       // map, but in this case they must have the same |previous| map. This is
       // asserted in SharedPropMap::addChild. In other words, marking all
       // |parent| maps will also mark all |previous| maps.
-      map = map->asShared()->treeDataRef().parent.maybeMap();
+
+      SharedPropMap::TreeData& treeData = map->asShared()->treeDataRef();
+      map = treeData.parent.maybeMapForTracing();
     }
   } while (map && mark(map));
 }
