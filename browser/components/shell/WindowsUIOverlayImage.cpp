@@ -13,11 +13,9 @@
 
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
-#include "mozilla/SyncRunnable.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsDirectoryServiceUtils.h"
 #include "nsIFile.h"
-#include "nsThreadUtils.h"
 
 namespace mozilla {
 
@@ -247,10 +245,7 @@ WindowsUIOverlayImage::WindowsUIOverlayImage(
 
 WindowsUIOverlayImage::~WindowsUIOverlayImage() {
   if (mOverlayWindow) {
-    // Destroy the overlay window on the main thread where it was created
-    NS_DispatchToMainThread(NS_NewRunnableFunction(
-        "WindowsUIOverlayImage::DestroyWindow",
-        [window = mOverlayWindow] { DestroyWindow(window); }));
+    DestroyWindow(mOverlayWindow);
     mOverlayWindow = nullptr;
   }
   if (mMemDC && mOldBmp) {
@@ -350,12 +345,7 @@ bool WindowsUIOverlayImage::Initialize() {
   }
   mRect = *rect;
 
-  // Create the overlay window on the main thread
-  mozilla::SyncRunnable::DispatchToThread(
-      mozilla::GetMainThreadSerialEventTarget(),
-      NS_NewRunnableFunction("WindowsUIOverlayImage::CreateWindow", [this] {
-        mOverlayWindow = CreateOverlayWindow(mRect);
-      }));
+  mOverlayWindow = CreateOverlayWindow(mRect);
   if (!mOverlayWindow) {
     return false;
   }
