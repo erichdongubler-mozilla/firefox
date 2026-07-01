@@ -3276,11 +3276,12 @@ pref("network.trr.builtin-excluded-domains", "localhost,local");
 // Used for progressive rollout of LNA for ETP strict users
 pref("network.lna.etp.enabled", true);
 
-pref("captivedetect.canonicalURL", "http://detectportal.firefox.com/canonical.html");
-pref("captivedetect.canonicalContent", "<meta http-equiv=\"refresh\" content=\"0;url=https://support.mozilla.org/kb/captive-portal\"/>");
+pref("captivedetect.canonicalURL", "http://detectportal.firefox.com/generate_204");
+pref("captivedetect.canonicalContent", "");
 pref("captivedetect.maxWaitingTime", 5000);
 pref("captivedetect.pollingTime", 3000);
 pref("captivedetect.maxRetryCount", 5);
+pref("captivedetect.expectedStatus", 204);
 
 // The tables used for Safebrowsing phishing and malware checks
 pref("urlclassifier.malwareTable", "goog-malware-proto,goog-unwanted-proto,moztest-harmful-simple,moztest-malware-simple,moztest-unwanted-simple");
