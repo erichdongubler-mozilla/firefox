@@ -3125,10 +3125,13 @@ js::UniquePtr<ImmutableScriptData> ImmutableScriptData::new_(
 }
 
 void ScriptWarmUpData::trace(JSTracer* trc) {
-  uintptr_t tag = data_ & TagMask;
+  uintptr_t data = data_.getForTracing();
+  uintptr_t tag = data & TagMask;
+  uintptr_t untagged = data & ~TagMask;
+
   switch (tag) {
     case EnclosingScriptTag: {
-      BaseScript* enclosingScript = toEnclosingScript();
+      auto* enclosingScript = reinterpret_cast<BaseScript*>(untagged);
       BaseScript* prior = enclosingScript;
       TraceManuallyBarrieredEdge(trc, &enclosingScript, "enclosingScript");
       if (enclosingScript != prior) {
@@ -3138,7 +3141,7 @@ void ScriptWarmUpData::trace(JSTracer* trc) {
     }
 
     case EnclosingScopeTag: {
-      Scope* enclosingScope = toEnclosingScope();
+      auto* enclosingScope = reinterpret_cast<Scope*>(untagged);
       Scope* prior = enclosingScope;
       TraceManuallyBarrieredEdge(trc, &enclosingScope, "enclosingScope");
       if (enclosingScope != prior) {
@@ -3148,7 +3151,11 @@ void ScriptWarmUpData::trace(JSTracer* trc) {
     }
 
     case JitScriptTag: {
-      toJitScript()->trace(trc);
+      auto* jitScript = reinterpret_cast<jit::JitScript*>(untagged);
+      // Memory fence so that concurrent marking sees initialized JitScript
+      // data. For GC things this happens in MarkingTracerT::markAndTraverse.
+      gc::MemoryAcquireFence(trc);
+      jitScript->trace(trc);
       break;
     }
 
