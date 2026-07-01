@@ -339,7 +339,7 @@ let interfaceNamesInGlobalScope = [
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "CSSTransition", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
-  { name: "CSSTranslate", insecureContext: true },
+  { name: "CSSTranslate", insecureContext: true, nightly: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "CSSUnitValue", insecureContext: true, nightly: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
