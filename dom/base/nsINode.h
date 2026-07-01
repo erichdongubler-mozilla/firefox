@@ -1925,6 +1925,9 @@ class nsINode : public mozilla::dom::EventTarget {
    *
    * NOTE: Return the shadow root if this is in any kind of shadow tree.
    * Therefore, the result may be non-content shadow root.
+   * NOTE: This does not return a shadow root if this is an inclusive descendant
+   * of a shadow host element in the DOM and the shadow host child is slotted to
+   * a <slot> (and the shadow host is not a part of a shadow).
    */
   mozilla::dom::ShadowRoot* GetContainingShadow() const {
     return IsInShadowTree()
@@ -1957,6 +1960,32 @@ class nsINode : public mozilla::dom::EventTarget {
    * @return The shadow host, if this is in shadow tree, or null.
    */
   mozilla::dom::Element* GetContainingShadowHost() const;
+
+  /**
+   * Gets the closest shadow root if:
+   * - this node is connected to a shadow root
+   * - an inclusive ancestor of this node is slotted to a <slot>
+   */
+  mozilla::dom::ShadowRoot* GetClosestShadowRootInFlattenedTree() const;
+
+  /**
+   * Gets the closest shadow root for selection if:
+   * - this node is connected to a shadow root
+   * - an inclusive ancestor of this node is slotted to a <slot>
+   */
+  mozilla::dom::ShadowRoot* GetClosestShadowRootInFlattenedTreeForSelection()
+      const;
+
+  template <TreeKind aKind>
+  [[nodiscard]] mozilla::dom::ShadowRoot* GetClosestShadowRoot() const {
+    if constexpr (aKind == TreeKind::Flat) {
+      return GetClosestShadowRootInFlattenedTree();
+    } else if constexpr (aKind == TreeKind::FlatForSelection) {
+      return GetClosestShadowRootInFlattenedTreeForSelection();
+    } else {
+      MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Handle the new TreeKind value");
+    }
+  }
 
   bool IsInSVGUseShadowTree() const {
     return !!GetContainingSVGUseShadowHost();

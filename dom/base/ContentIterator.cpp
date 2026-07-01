@@ -14,6 +14,7 @@
 #include "nsContentUtils.h"
 #include "nsElementTable.h"
 #include "nsIContent.h"
+#include "nsIContentInlines.h"
 #include "nsRange.h"
 
 namespace mozilla {
