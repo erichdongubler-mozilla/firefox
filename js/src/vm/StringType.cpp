@@ -2927,7 +2927,7 @@ bool JSString::tryReplaceWithAtomRef(JSAtom* atom) {
            (isRope() ? StringFlags::PRESERVE_ROPE_BITS_ON_REPLACE
                      : StringFlags::PRESERVE_LINEAR_NONATOM_BITS_ON_REPLACE);
   changeStringType(length(), flags);
-  d.s.u3.atom = atom;
+  d.s.u3.base = atom;
   if (atom->hasLatin1Chars()) {
     setNonInlineChars(atom->chars<Latin1Char>(nogc), atom->hasStringBuffer());
   } else {
@@ -2937,6 +2937,7 @@ bool JSString::tryReplaceWithAtomRef(JSAtom* atom) {
   // Redundant, but just a reminder that this needs to be true or else we need
   // to check and conditionally put ourselves in the store buffer
   MOZ_ASSERT(atom->isTenured());
+
   return true;
 }
 

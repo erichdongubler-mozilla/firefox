@@ -320,8 +320,7 @@ class JSString : public js::gc::CellWithLengthAndFlags {
           JSRope* parent;                             /* Used in flattening */
         } u2;
         union {
-          JSLinearString* base; /* JSDependentString */
-          JSAtom* atom;         /* JSAtomRefString */
+          JSLinearString* base; /* JSDependentString or JSAtomRefString */
           JSString* right;      /* JSRope */
           size_t capacity;      /* JSLinearString (extensible) */
           const JSExternalStringCallbacks*
@@ -1221,7 +1220,7 @@ class JSAtomRefString : public JSDependentString {
 
  public:
   inline static size_t offsetOfAtom() {
-    return offsetof(JSAtomRefString, d.s.u3.atom);
+    return offsetof(JSAtomRefString, d.s.u3.base);
   }
 };
 
@@ -2282,17 +2281,15 @@ MOZ_ALWAYS_INLINE JSLinearString* JSString::ensureLinear(JSContext* cx) {
 
 inline JSLinearString* JSString::base() const {
   MOZ_ASSERT(hasBase());
-  MOZ_ASSERT_IF(!isAtomRef(), !d.s.u3.base->isInline());
   MOZ_ASSERT(d.s.u3.base->assertIsValidBase());
-  if (isAtomRef()) {
-    return static_cast<JSLinearString*>(d.s.u3.atom);
-  }
+  MOZ_ASSERT_IF(!isAtomRef(), !d.s.u3.base->isInline());
+  MOZ_ASSERT_IF(isAtomRef(), d.s.u3.base->isAtom());
   return d.s.u3.base;
 }
 
 inline JSAtom* JSString::atom() const {
   MOZ_ASSERT(isAtomRef());
-  return d.s.u3.atom;
+  return &d.s.u3.base->asAtom();
 }
 
 inline JSLinearString* JSString::nurseryBaseOrRelocOverlay() const {
