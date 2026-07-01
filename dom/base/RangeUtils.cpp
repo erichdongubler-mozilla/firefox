@@ -11,6 +11,7 @@
 #include "mozilla/dom/ShadowRoot.h"
 #include "nsContentUtils.h"
 #include "nsFrameSelection.h"
+#include "nsIContentInlines.h"
 
 namespace mozilla {
 
