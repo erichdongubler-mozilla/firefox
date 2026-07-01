@@ -1973,8 +1973,8 @@ JS_PUBLIC_API JSObject* JS_NewObjectWithGivenProtoAndUseAllocSite(
   MOZ_ASSERT(clasp != &ArrayObject::class_);
   MOZ_ASSERT(!(clasp->flags & JSCLASS_IS_GLOBAL));
 
-  return NewObjectWithGivenProtoAndAllocSite(cx, clasp, proto,
-                                             cx->realm()->localAllocSite);
+  return NewObjectWithGivenProto(cx, clasp, proto,
+                                 {.site = cx->realm()->localAllocSite});
 }
 
 JS_PUBLIC_API JSObject* JS_NewPlainObject(JSContext* cx) {

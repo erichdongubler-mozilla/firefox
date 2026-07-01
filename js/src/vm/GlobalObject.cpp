@@ -606,8 +606,8 @@ GlobalObject* GlobalObject::createInternal(JSContext* cx,
     objectFlags.setFlag(ObjectFlag::HasObjectFuse);
   }
 
-  JSObject* obj =
-      NewTenuredObjectWithGivenProto(cx, clasp, nullptr, objectFlags);
+  JSObject* obj = NewObjectWithGivenProto(
+      cx, clasp, nullptr, {.newKind = TenuredObject, .flags = objectFlags});
   if (!obj) {
     return nullptr;
   }
@@ -778,7 +778,8 @@ static NativeObject* CreateBlankProto(JSContext* cx, const JSClass* clasp,
     return NewPlainObjectWithProto(cx, proto, TenuredObject);
   }
 
-  return NewTenuredObjectWithGivenProto(cx, clasp, proto, objFlags);
+  return NewObjectWithGivenProto(cx, clasp, proto,
+                                 {.newKind = TenuredObject, .flags = objFlags});
 }
 
 /* static */

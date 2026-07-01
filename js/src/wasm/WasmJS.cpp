@@ -6018,8 +6018,8 @@ static JSObject* CreateWebAssemblyObject(JSContext* cx, JSProtoKey key) {
   MOZ_RELEASE_ASSERT(HasSupport(cx));
 
   RootedObject proto(cx, &cx->global()->getObjectPrototype());
-  return NewTenuredObjectWithGivenProto(cx, &WasmNamespaceObject::class_,
-                                        proto);
+  return NewObjectWithGivenProto(cx, &WasmNamespaceObject::class_, proto,
+                                 {.newKind = TenuredObject});
 }
 
 struct NameAndProtoKey {

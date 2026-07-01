@@ -8453,7 +8453,8 @@ static bool AllocationMarker(JSContext* cx, unsigned argc, Value* vp) {
   JSObject* obj =
       allocateInsideNursery
           ? NewObjectWithGivenProto<AllocationMarkerObject>(cx, nullptr)
-          : NewTenuredObjectWithGivenProto<AllocationMarkerObject>(cx, nullptr);
+          : NewObjectWithGivenProto<AllocationMarkerObject>(
+                cx, nullptr, {.newKind = TenuredObject});
   if (!obj) {
     return false;
   }

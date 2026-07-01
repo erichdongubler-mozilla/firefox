@@ -279,7 +279,8 @@ void WeakCollectionObject::trace(JSTracer* trc, JSObject* obj) {
 }
 
 JS_PUBLIC_API JSObject* JS::NewWeakMapObject(JSContext* cx) {
-  JSObject* obj = NewTenuredBuiltinClassInstance<WeakMapObject>(cx);
+  JSObject* obj =
+      NewBuiltinClassInstance<WeakMapObject>(cx, {.newKind = TenuredObject});
   MOZ_ASSERT_IF(obj, obj->isTenured());
   return obj;
 }
@@ -378,8 +379,8 @@ bool WeakMapObject::construct(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  Rooted<WeakMapObject*> obj(cx, NewObjectWithClassProtoAndKind<WeakMapObject>(
-                                     cx, proto, TenuredObject));
+  Rooted<WeakMapObject*> obj(cx, NewObjectWithClassProto<WeakMapObject>(
+                                     cx, proto, {.newKind = TenuredObject}));
   if (!obj) {
     return false;
   }

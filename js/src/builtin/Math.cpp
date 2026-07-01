@@ -1259,7 +1259,8 @@ static const JSPropertySpec math_static_properties[] = {
 
 static JSObject* CreateMathObject(JSContext* cx, JSProtoKey key) {
   RootedObject proto(cx, &cx->global()->getObjectPrototype());
-  return NewTenuredObjectWithGivenProto(cx, &MathClass, proto);
+  return NewObjectWithGivenProto(cx, &MathClass, proto,
+                                 {.newKind = TenuredObject});
 }
 
 static const ClassSpec MathClassSpec = {

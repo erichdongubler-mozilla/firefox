@@ -126,8 +126,8 @@
 #include "vm/GeckoProfiler-inl.h"  // for AutoSuppressProfilerSampling
 #include "vm/JSAtomUtils-inl.h"    // for AtomToId, ValueToId
 #include "vm/JSContext-inl.h"      // for JSContext::check
-#include "vm/JSObject-inl.h"  // for JSObject::isCallable, NewTenuredObjectWithGivenProto
-#include "vm/JSScript-inl.h"      // for JSScript::isDebuggee, JSScript
+#include "vm/JSObject-inl.h"       // for JSObject::isCallable
+#include "vm/JSScript-inl.h"       // for JSScript::isDebuggee, JSScript
 #include "vm/NativeObject-inl.h"  // for NativeObject::ensureDenseInitializedLength
 #include "vm/ObjectOperations-inl.h"  // for GetProperty, HasProperty
 #include "vm/Realm-inl.h"             // for AutoRealm::AutoRealm
@@ -4966,7 +4966,8 @@ bool Debugger::construct(JSContext* cx, unsigned argc, Value* vp) {
   // Debugger.{Frame,Object,Script,Memory}.prototype in reserved slots. The
   // rest of the reserved slots are for hooks; they default to undefined.
   Rooted<DebuggerInstanceObject*> obj(
-      cx, NewTenuredObjectWithGivenProto<DebuggerInstanceObject>(cx, proto));
+      cx, NewObjectWithGivenProto<DebuggerInstanceObject>(
+              cx, proto, {.newKind = TenuredObject}));
   if (!obj) {
     return false;
   }

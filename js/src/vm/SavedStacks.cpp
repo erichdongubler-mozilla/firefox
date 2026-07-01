@@ -588,7 +588,8 @@ SavedFrame* SavedFrame::create(JSContext* cx) {
   }
   cx->check(proto);
 
-  return NewTenuredObjectWithGivenProto<SavedFrame>(cx, proto);
+  return NewObjectWithGivenProto<SavedFrame>(cx, proto,
+                                             {.newKind = TenuredObject});
 }
 
 bool SavedFrame::isSelfHosted(JSContext* cx) {

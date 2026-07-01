@@ -950,7 +950,8 @@ class VectorObject : public NativeObject {
 
   static VectorObject* create(JSContext* cx, bool nurseryOwned) {
     NewObjectKind kind = nurseryOwned ? GenericObject : TenuredObject;
-    auto* obj = NewObjectWithClassProtoAndKind<VectorObject>(cx, nullptr, kind);
+    auto* obj =
+        NewObjectWithClassProto<VectorObject>(cx, nullptr, {.newKind = kind});
     if (!obj) {
       return nullptr;
     }
@@ -1101,7 +1102,7 @@ class HashSetObject : public NativeObject {
   static HashSetObject* create(JSContext* cx, bool nurseryOwned) {
     NewObjectKind kind = nurseryOwned ? GenericObject : TenuredObject;
     auto* obj =
-        NewObjectWithClassProtoAndKind<HashSetObject>(cx, nullptr, kind);
+        NewObjectWithClassProto<HashSetObject>(cx, nullptr, {.newKind = kind});
     if (!obj) {
       return nullptr;
     }
