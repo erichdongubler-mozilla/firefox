@@ -354,8 +354,7 @@ mozilla::ipc::IPCResult NeckoParent::RecvConnectBaseChannel(
       new nsBaseParentChannel(ContentParent::Cast(Manager())->GetRemoteType());
 
   nsCOMPtr<nsIChannel> channel;
-  NS_LinkRedirectChannels(channelId,
-                          ContentParent::Cast(Manager())->ChildID(),
+  NS_LinkRedirectChannels(channelId, ContentParent::Cast(Manager())->ChildID(),
                           parentChannel, getter_AddRefs(channel));
   return IPC_OK();
 }

@@ -26,8 +26,8 @@ void ParentChannelWrapper::Register(uint64_t aRegistrarId,
     return;
   }
   nsCOMPtr<nsIChannel> dummy;
-  MOZ_ALWAYS_SUCCEEDS(NS_LinkRedirectChannels(
-      aRegistrarId, aContentParentId, this, getter_AddRefs(dummy)));
+  MOZ_ALWAYS_SUCCEEDS(NS_LinkRedirectChannels(aRegistrarId, aContentParentId,
+                                              this, getter_AddRefs(dummy)));
 
 #ifdef DEBUG
   // The channel registered with the RedirectChannelRegistrar will be the inner
