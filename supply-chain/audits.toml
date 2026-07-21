@@ -999,6 +999,11 @@ who = "Benjamin Beurdouche <bbeurdouche@mozilla.com>"
 criteria = "safe-to-deploy"
 delta = "0.1.80 -> 0.1.89"
 
+[[audits.async-trait]]
+who = "Erich Gubler <erichdongubler@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.1.89 -> 0.1.91"
+
 [[audits.atomic_refcell]]
 who = "Bobby Holley <bholley@mozilla.com>"
 criteria = "safe-to-deploy"
@@ -3916,6 +3921,11 @@ delta = "1.0.2 -> 1.0.3"
 who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
 delta = "1.0.3 -> 1.0.4"
+
+[[audits.inherent]]
+who = "Erich Gubler <erichdongubler@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "1.0.11 -> 1.0.14"
 
 [[audits.inplace_it]]
 who = "Mike Hommey <mh+mozilla@glandium.org>"

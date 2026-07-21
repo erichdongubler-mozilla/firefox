@@ -37,8 +37,6 @@ extern crate rustc_ast_pretty;
 extern crate rustc_data_structures;
 extern crate rustc_driver;
 extern crate rustc_span;
-extern crate smallvec;
-extern crate thin_vec;
 
 use crate::common::eq::SpanlessEq;
 use crate::common::parse;
@@ -204,16 +202,16 @@ fn librustc_parse_and_rewrite(input: &str) -> Option<Box<ast::Expr>> {
 fn librustc_parenthesize(mut librustc_expr: Box<ast::Expr>) -> Box<ast::Expr> {
     use rustc_ast::ast::{
         AssocItem, AssocItemKind, Attribute, BinOpKind, Block, BoundConstness, Expr, ExprField,
-        ExprKind, GenericArg, GenericBound, Local, LocalKind, Pat, PolyTraitRef, Stmt, StmtKind,
-        StructExpr, StructRest, TraitBoundModifiers, Ty,
+        ExprKind, GenericArg, GenericBound, Local, LocalKind, Pat, PatKind, PolyTraitRef, Stmt,
+        StmtKind, StructExpr, StructRest, TraitBoundModifiers, Ty,
     };
-    use rustc_ast::mut_visit::{walk_flat_map_assoc_item, MutVisitor};
+    use rustc_ast::mut_visit::{walk_flat_map_assoc_item, walk_pat, MutVisitor};
     use rustc_ast::visit::{AssocCtxt, BoundKind};
     use rustc_data_structures::flat_map_in_place::FlatMapInPlace;
+    use rustc_data_structures::smallvec::SmallVec;
+    use rustc_data_structures::thin_vec::ThinVec;
     use rustc_span::DUMMY_SP;
-    use smallvec::SmallVec;
     use std::ops::DerefMut;
-    use thin_vec::ThinVec;
 
     struct FullyParenthesize;
 
@@ -366,7 +364,10 @@ fn librustc_parenthesize(mut librustc_expr: Box<ast::Expr>) -> Box<ast::Expr> {
         // types yet. We'll look into comparing those in the future. For now
         // focus on expressions appearing in other places.
         fn visit_pat(&mut self, pat: &mut Pat) {
-            let _ = pat;
+            match &pat.kind {
+                PatKind::Expr(..) | PatKind::Range(..) => {}
+                _ => walk_pat(self, pat),
+            }
         }
 
         fn visit_ty(&mut self, ty: &mut Ty) {
@@ -384,8 +385,10 @@ fn librustc_parenthesize(mut librustc_expr: Box<ast::Expr>) -> Box<ast::Expr> {
 }
 
 fn syn_parenthesize(syn_expr: syn::Expr) -> syn::Expr {
-    use syn::fold::{fold_expr, fold_generic_argument, Fold};
-    use syn::{token, BinOp, Expr, ExprParen, GenericArgument, MetaNameValue, Pat, Stmt, Type};
+    use syn::fold::{fold_expr, fold_generic_argument, fold_pat, Fold};
+    use syn::{
+        token, BinOp, Expr, ExprParen, GenericArgument, Lit, MetaNameValue, Pat, Stmt, Type,
+    };
 
     struct FullyParenthesize;
 
@@ -457,11 +460,21 @@ fn syn_parenthesize(syn_expr: syn::Expr) -> syn::Expr {
         // types yet. We'll look into comparing those in the future. For now
         // focus on expressions appearing in other places.
         fn fold_pat(&mut self, pat: Pat) -> Pat {
-            pat
+            match pat {
+                Pat::Range(_) => pat,
+                _ => fold_pat(self, pat),
+            }
         }
 
         fn fold_type(&mut self, ty: Type) -> Type {
             ty
+        }
+
+        fn fold_lit(&mut self, lit: Lit) -> Lit {
+            if let Lit::Verbatim(lit) = &lit {
+                panic!("unexpected verbatim literal: {lit}");
+            }
+            lit
         }
     }
 
@@ -510,9 +523,8 @@ fn make_parens_invisible(expr: syn::Expr) -> syn::Expr {
 
 /// Walk through a crate collecting all expressions we can find in it.
 fn collect_exprs(file: syn::File) -> Vec<syn::Expr> {
-    use syn::fold::Fold;
-    use syn::punctuated::Punctuated;
-    use syn::{token, ConstParam, Expr, ExprTuple, Pat, Path};
+    use syn::fold::{fold_pat, Fold};
+    use syn::{ConstParam, Expr, Pat, Path};
 
     struct CollectExprs(Vec<Expr>);
     impl Fold for CollectExprs {
@@ -521,16 +533,14 @@ fn collect_exprs(file: syn::File) -> Vec<syn::Expr> {
                 Expr::Verbatim(_) => {}
                 _ => self.0.push(expr),
             }
-
-            Expr::Tuple(ExprTuple {
-                attrs: vec![],
-                elems: Punctuated::new(),
-                paren_token: token::Paren::default(),
-            })
+            Expr::PLACEHOLDER
         }
 
         fn fold_pat(&mut self, pat: Pat) -> Pat {
-            pat
+            match pat {
+                Pat::Range(_) => pat,
+                _ => fold_pat(self, pat),
+            }
         }
 
         fn fold_path(&mut self, path: Path) -> Path {

@@ -1,0 +1,25 @@
+[package]
+name = "syn"
+version = "2.999.999"
+edition = "2018"
+license = "MPL-2.0"
+
+[lib]
+path = "lib.rs"
+
+[dependencies.syn]
+version = "3.0.2"
+
+[features]
+default = ["syn/default"]
+clone-impls = ["syn/clone-impls"]
+derive = ["syn/derive"]
+extra-traits = ["syn/extra-traits"]
+fold = ["syn/fold"]
+full = ["syn/full"]
+parsing = ["syn/parsing"]
+printing = ["syn/printing"]
+proc-macro = ["syn/proc-macro"]
+test = ["syn/test"]
+visit = ["syn/visit"]
+visit-mut = ["syn/visit-mut"]
