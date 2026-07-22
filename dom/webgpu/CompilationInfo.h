@@ -12,12 +12,12 @@
 namespace mozilla::webgpu {
 class ShaderModule;
 
-class CompilationInfo final : public nsWrapperCache, public ChildOf<Device> {
+class CompilationInfo final : public nsWrapperCache {
  public:
   GPU_DECL_CYCLE_COLLECTION(CompilationInfo)
   GPU_DECL_JS_WRAP(CompilationInfo)
 
-  explicit CompilationInfo(Device* const aParent);
+  CompilationInfo();
 
   void SetMessages(
       nsTArray<mozilla::webgpu::WebGPUCompilationMessage>& aMessages);
