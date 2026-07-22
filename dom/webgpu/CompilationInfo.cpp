@@ -10,10 +10,10 @@
 
 namespace mozilla::webgpu {
 
-GPU_IMPL_CYCLE_COLLECTION(CompilationInfo, mParent, mMessages)
+GPU_IMPL_CYCLE_COLLECTION(CompilationInfo, mMessages)
 GPU_IMPL_JS_WRAP(CompilationInfo)
 
-CompilationInfo::CompilationInfo(Device* const aParent) : ChildOf(aParent) {}
+CompilationInfo::CompilationInfo() = default;
 
 CompilationInfo::~CompilationInfo() = default;
 
