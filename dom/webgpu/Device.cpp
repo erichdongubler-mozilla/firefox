@@ -738,7 +738,7 @@ RawId CreateComputePipelineImpl(RawId deviceId, WebGPUChild* aChild,
       ffi::WGPUConstantEntry constantEntry = {};
       nsCString key = NS_ConvertUTF16toUTF8(entry.mKey);
       constantKeys.AppendElement(key);
-      constantEntry.key = key.get();
+      constantEntry.key = constantKeys.LastElement().get();
       constantEntry.value = entry.mValue;
       constants.AppendElement(constantEntry);
     }
@@ -795,7 +795,7 @@ RawId CreateRenderPipelineImpl(RawId deviceId, WebGPUChild* aChild,
         ffi::WGPUConstantEntry constantEntry = {};
         nsCString key = NS_ConvertUTF16toUTF8(entry.mKey);
         vsConstantKeys.AppendElement(key);
-        constantEntry.key = key.get();
+        constantEntry.key = vsConstantKeys.LastElement().get();
         constantEntry.value = entry.mValue;
         vsConstants.AppendElement(constantEntry);
       }
