@@ -29,6 +29,49 @@ pub(crate) struct Dispatch {
     dst_bind_group: Box<dyn hal::DynBindGroup>,
 }
 
+/// Resources owned by a [`Dispatch`].
+///
+/// This struct exists so that resources can be cleaned up properly on error returns
+/// from [`Dispatch::new`].
+struct DispatchResources<'a> {
+    raw: &'a dyn hal::DynDevice,
+    module: Option<Box<dyn hal::DynShaderModule>>,
+    dst_bind_group_layout: Option<Box<dyn hal::DynBindGroupLayout>>,
+    src_bind_group_layout: Option<Box<dyn hal::DynBindGroupLayout>>,
+    pipeline_layout: Option<Box<dyn hal::DynPipelineLayout>>,
+    pipeline: Option<Box<dyn hal::DynComputePipeline>>,
+    dst_buffer: Option<Box<dyn hal::DynBuffer>>,
+    dst_bind_group: Option<Box<dyn hal::DynBindGroup>>,
+}
+
+impl Drop for DispatchResources<'_> {
+    fn drop(&mut self) {
+        unsafe {
+            if let Some(dst_bind_group) = self.dst_bind_group.take() {
+                self.raw.destroy_bind_group(dst_bind_group);
+            }
+            if let Some(dst_buffer) = self.dst_buffer.take() {
+                self.raw.destroy_buffer(dst_buffer);
+            }
+            if let Some(pipeline) = self.pipeline.take() {
+                self.raw.destroy_compute_pipeline(pipeline);
+            }
+            if let Some(pipeline_layout) = self.pipeline_layout.take() {
+                self.raw.destroy_pipeline_layout(pipeline_layout);
+            }
+            if let Some(src_bind_group_layout) = self.src_bind_group_layout.take() {
+                self.raw.destroy_bind_group_layout(src_bind_group_layout);
+            }
+            if let Some(dst_bind_group_layout) = self.dst_bind_group_layout.take() {
+                self.raw.destroy_bind_group_layout(dst_bind_group_layout);
+            }
+            if let Some(module) = self.module.take() {
+                self.raw.destroy_shader_module(module);
+            }
+        }
+    }
+}
+
 pub struct Params<'a> {
     pub pipeline_layout: &'a dyn hal::DynPipelineLayout,
     pub pipeline: &'a dyn hal::DynComputePipeline,
@@ -117,7 +160,18 @@ impl Dispatch {
             ),
             runtime_checks: wgt::ShaderRuntimeChecks::unchecked(),
         };
-        let module =
+        let mut resources = DispatchResources {
+            raw: device,
+            module: None,
+            dst_bind_group_layout: None,
+            src_bind_group_layout: None,
+            pipeline_layout: None,
+            pipeline: None,
+            dst_buffer: None,
+            dst_bind_group: None,
+        };
+
+        resources.module = Some(
             unsafe { device.create_shader_module(&hal_desc, hal_shader) }.map_err(|error| {
                 match error {
                     hal::ShaderError::Device(error) => {
@@ -128,7 +182,8 @@ impl Dispatch {
                         CreateShaderModuleError::Generation
                     }
                 }
-            })?;
+            })?,
+        );
 
         let dst_bind_group_layout_desc = hal::BindGroupLayoutDescriptor {
             label: hal_label(
@@ -147,11 +202,11 @@ impl Dispatch {
                 count: None,
             }],
         };
-        let dst_bind_group_layout = unsafe {
+        resources.dst_bind_group_layout = Some(unsafe {
             device
                 .create_bind_group_layout(&dst_bind_group_layout_desc)
                 .map_err(DeviceError::from_hal)?
-        };
+        });
 
         let src_bind_group_layout_desc = hal::BindGroupLayoutDescriptor {
             label: hal_label(
@@ -170,45 +225,48 @@ impl Dispatch {
                 count: None,
             }],
         };
-        let src_bind_group_layout = unsafe {
+        resources.src_bind_group_layout = Some(unsafe {
             device
                 .create_bind_group_layout(&src_bind_group_layout_desc)
                 .map_err(DeviceError::from_hal)?
-        };
+        });
 
-        let pipeline_layout_desc = hal::PipelineLayoutDescriptor {
-            label: hal_label(
-                Some("(wgpu internal) Indirect dispatch validation pipeline layout"),
-                instance_flags,
-            ),
-            flags: hal::PipelineLayoutFlags::empty(),
-            bind_group_layouts: &[
-                Some(dst_bind_group_layout.as_ref()),
-                Some(src_bind_group_layout.as_ref()),
-            ],
-            immediate_size: 4,
+        let pipeline_layout = {
+            let pipeline_layout_desc = hal::PipelineLayoutDescriptor {
+                label: hal_label(
+                    Some("(wgpu internal) Indirect dispatch validation pipeline layout"),
+                    instance_flags,
+                ),
+                flags: hal::PipelineLayoutFlags::empty(),
+                bind_group_layouts: &[
+                    Some(resources.dst_bind_group_layout.as_deref().unwrap()),
+                    Some(resources.src_bind_group_layout.as_deref().unwrap()),
+                ],
+                immediate_size: 4,
+            };
+            unsafe {
+                device
+                    .create_pipeline_layout(&pipeline_layout_desc)
+                    .map_err(DeviceError::from_hal)?
+            }
         };
-        let pipeline_layout = unsafe {
-            device
-                .create_pipeline_layout(&pipeline_layout_desc)
-                .map_err(DeviceError::from_hal)?
-        };
+        resources.pipeline_layout = Some(pipeline_layout);
 
-        let pipeline_desc = hal::ComputePipelineDescriptor {
-            label: hal_label(
-                Some("(wgpu internal) Indirect dispatch validation pipeline"),
-                instance_flags,
-            ),
-            layout: pipeline_layout.as_ref(),
-            stage: hal::ProgrammableStage {
-                module: module.as_ref(),
-                entry_point: "main",
-                constants: &Default::default(),
-                zero_initialize_workgroup_memory: false,
-            },
-            cache: None,
-        };
-        let pipeline =
+        let pipeline = {
+            let pipeline_desc = hal::ComputePipelineDescriptor {
+                label: hal_label(
+                    Some("(wgpu internal) Indirect dispatch validation pipeline"),
+                    instance_flags,
+                ),
+                layout: resources.pipeline_layout.as_deref().unwrap(),
+                stage: hal::ProgrammableStage {
+                    module: resources.module.as_deref().unwrap(),
+                    entry_point: "main",
+                    constants: &Default::default(),
+                    zero_initialize_workgroup_memory: false,
+                },
+                cache: None,
+            };
             unsafe { device.create_compute_pipeline(&pipeline_desc) }.map_err(|err| match err {
                 hal::PipelineError::Device(error) => {
                     CreateComputePipelineError::Device(DeviceError::from_hal(error))
@@ -222,7 +280,9 @@ impl Dispatch {
                 hal::PipelineError::PipelineConstants(_, error) => {
                     CreateComputePipelineError::PipelineConstants(error)
                 }
-            })?;
+            })?
+        };
+        resources.pipeline = Some(pipeline);
 
         let dst_buffer_desc = hal::BufferDescriptor {
             label: hal_label(
@@ -233,46 +293,62 @@ impl Dispatch {
             usage: wgt::BufferUses::INDIRECT | wgt::BufferUses::STORAGE_READ_WRITE,
             memory_flags: hal::MemoryFlags::empty(),
         };
-        let dst_buffer =
-            unsafe { device.create_buffer(&dst_buffer_desc) }.map_err(DeviceError::from_hal)?;
+        resources.dst_buffer =
+            Some(unsafe { device.create_buffer(&dst_buffer_desc) }.map_err(DeviceError::from_hal)?);
 
-        let dst_bind_group_desc = hal::BindGroupDescriptor {
-            label: hal_label(
-                Some("(wgpu internal) Indirect dispatch validation destination bind group"),
-                instance_flags,
-            ),
-            layout: dst_bind_group_layout.as_ref(),
-            entries: &[hal::BindGroupEntry {
-                binding: 0,
-                resource_index: 0,
-                count: 1,
-            }],
-            // SAFETY: We just created the buffer with this size.
-            buffers: &[hal::BufferBinding::new_unchecked(
-                dst_buffer.as_ref(),
-                0,
-                Some(DST_BUFFER_SIZE),
-            )],
-            samplers: &[],
-            textures: &[],
-            acceleration_structures: &[],
-            external_textures: &[],
+        let dst_bind_group = {
+            let dst_bind_group_desc = hal::BindGroupDescriptor {
+                label: hal_label(
+                    Some("(wgpu internal) Indirect dispatch validation destination bind group"),
+                    instance_flags,
+                ),
+                layout: resources.dst_bind_group_layout.as_deref().unwrap(),
+                entries: &[hal::BindGroupEntry {
+                    binding: 0,
+                    resource_index: 0,
+                    count: 1,
+                }],
+                // SAFETY: We just created the buffer with this size.
+                buffers: &[hal::BufferBinding::new_unchecked(
+                    resources.dst_buffer.as_deref().unwrap(),
+                    0,
+                    Some(DST_BUFFER_SIZE),
+                )],
+                samplers: &[],
+                textures: &[],
+                acceleration_structures: &[],
+                external_textures: &[],
+            };
+            unsafe {
+                device
+                    .create_bind_group(&dst_bind_group_desc)
+                    .map_err(DeviceError::from_hal)
+            }?
         };
-        let dst_bind_group = unsafe {
-            device
-                .create_bind_group(&dst_bind_group_desc)
-                .map_err(DeviceError::from_hal)
-        }?;
+        resources.dst_bind_group = Some(dst_bind_group);
 
-        Ok(Self {
-            module,
-            dst_bind_group_layout,
-            src_bind_group_layout,
-            pipeline_layout,
-            pipeline,
-            dst_buffer,
-            dst_bind_group,
-        })
+        // Error returns after this point could bypass resource cleanup.
+        #[deny(clippy::question_mark_used)]
+        {
+            let module = resources.module.take().unwrap();
+            let dst_bind_group_layout = resources.dst_bind_group_layout.take().unwrap();
+            let src_bind_group_layout = resources.src_bind_group_layout.take().unwrap();
+            let pipeline_layout = resources.pipeline_layout.take().unwrap();
+            let pipeline = resources.pipeline.take().unwrap();
+            let dst_buffer = resources.dst_buffer.take().unwrap();
+            let dst_bind_group = resources.dst_bind_group.take().unwrap();
+            drop(resources);
+
+            Ok(Self {
+                module,
+                dst_bind_group_layout,
+                src_bind_group_layout,
+                pipeline_layout,
+                pipeline,
+                dst_buffer,
+                dst_bind_group,
+            })
+        }
     }
 
     /// `Ok(None)` will only be returned if `buffer_size` is `0`.

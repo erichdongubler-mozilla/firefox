@@ -57,6 +57,47 @@ pub(crate) struct Draw {
     free_metadata_entries: Mutex<Vec<BufferPoolEntry>>,
 }
 
+/// Resources owned by a [`Draw`].
+///
+/// This struct exists so that resources can be cleaned up properly on error returns
+/// from [`Draw::new`]. The buffer pools are not included since they are only
+/// populated after construction.
+struct DrawInitResources<'a> {
+    raw: &'a dyn hal::DynDevice,
+    module: Option<Box<dyn hal::DynShaderModule>>,
+    metadata_bind_group_layout: Option<Box<dyn hal::DynBindGroupLayout>>,
+    src_bind_group_layout: Option<Box<dyn hal::DynBindGroupLayout>>,
+    dst_bind_group_layout: Option<Box<dyn hal::DynBindGroupLayout>>,
+    pipeline_layout: Option<Box<dyn hal::DynPipelineLayout>>,
+    pipeline: Option<Box<dyn hal::DynComputePipeline>>,
+}
+
+impl Drop for DrawInitResources<'_> {
+    fn drop(&mut self) {
+        unsafe {
+            if let Some(pipeline) = self.pipeline.take() {
+                self.raw.destroy_compute_pipeline(pipeline);
+            }
+            if let Some(pipeline_layout) = self.pipeline_layout.take() {
+                self.raw.destroy_pipeline_layout(pipeline_layout);
+            }
+            if let Some(metadata_bind_group_layout) = self.metadata_bind_group_layout.take() {
+                self.raw
+                    .destroy_bind_group_layout(metadata_bind_group_layout);
+            }
+            if let Some(src_bind_group_layout) = self.src_bind_group_layout.take() {
+                self.raw.destroy_bind_group_layout(src_bind_group_layout);
+            }
+            if let Some(dst_bind_group_layout) = self.dst_bind_group_layout.take() {
+                self.raw.destroy_bind_group_layout(dst_bind_group_layout);
+            }
+            if let Some(module) = self.module.take() {
+                self.raw.destroy_shader_module(module);
+            }
+        }
+    }
+}
+
 impl Draw {
     pub(super) fn new(
         device: &dyn hal::DynDevice,
@@ -71,9 +112,19 @@ impl Draw {
         // See also: `u64_offset_to_u32_offset`.
         assert!(limits.max_buffer_size <= u32::MAX as u64);
 
-        let module = create_validation_module(device, instance_flags)?;
+        let mut resources = DrawInitResources {
+            raw: device,
+            module: None,
+            metadata_bind_group_layout: None,
+            src_bind_group_layout: None,
+            dst_bind_group_layout: None,
+            pipeline_layout: None,
+            pipeline: None,
+        };
 
-        let metadata_bind_group_layout = create_bind_group_layout(
+        resources.module = Some(create_validation_module(device, instance_flags)?);
+
+        resources.metadata_bind_group_layout = Some(create_bind_group_layout(
             device,
             true,
             false,
@@ -82,8 +133,8 @@ impl Draw {
                 Some("(wgpu internal) Indirect draw validation metadata bind group layout"),
                 instance_flags,
             ),
-        )?;
-        let src_bind_group_layout = create_bind_group_layout(
+        )?);
+        resources.src_bind_group_layout = Some(create_bind_group_layout(
             device,
             true,
             true,
@@ -92,8 +143,8 @@ impl Draw {
                 Some("(wgpu internal) Indirect draw validation source bind group layout"),
                 instance_flags,
             ),
-        )?;
-        let dst_bind_group_layout = create_bind_group_layout(
+        )?);
+        resources.dst_bind_group_layout = Some(create_bind_group_layout(
             device,
             false,
             false,
@@ -102,50 +153,65 @@ impl Draw {
                 Some("(wgpu internal) Indirect draw validation destination bind group layout"),
                 instance_flags,
             ),
-        )?;
+        )?);
 
-        let pipeline_layout_desc = hal::PipelineLayoutDescriptor {
-            label: hal_label(
-                Some("(wgpu internal) Indirect draw validation pipeline layout"),
-                instance_flags,
-            ),
-            flags: hal::PipelineLayoutFlags::empty(),
-            bind_group_layouts: &[
-                Some(metadata_bind_group_layout.as_ref()),
-                Some(src_bind_group_layout.as_ref()),
-                Some(dst_bind_group_layout.as_ref()),
-            ],
-            immediate_size: 8,
+        let pipeline_layout = {
+            let pipeline_layout_desc = hal::PipelineLayoutDescriptor {
+                label: hal_label(
+                    Some("(wgpu internal) Indirect draw validation pipeline layout"),
+                    instance_flags,
+                ),
+                flags: hal::PipelineLayoutFlags::empty(),
+                bind_group_layouts: &[
+                    Some(resources.metadata_bind_group_layout.as_deref().unwrap()),
+                    Some(resources.src_bind_group_layout.as_deref().unwrap()),
+                    Some(resources.dst_bind_group_layout.as_deref().unwrap()),
+                ],
+                immediate_size: 8,
+            };
+            unsafe {
+                device
+                    .create_pipeline_layout(&pipeline_layout_desc)
+                    .map_err(DeviceError::from_hal)?
+            }
         };
-        let pipeline_layout = unsafe {
-            device
-                .create_pipeline_layout(&pipeline_layout_desc)
-                .map_err(DeviceError::from_hal)?
-        };
+        resources.pipeline_layout = Some(pipeline_layout);
 
         let supports_indirect_first_instance =
             required_features.contains(wgt::Features::INDIRECT_FIRST_INSTANCE);
         let write_d3d12_special_constants = backend == wgt::Backend::Dx12;
-        let pipeline = create_validation_pipeline(
+        resources.pipeline = Some(create_validation_pipeline(
             device,
-            module.as_ref(),
-            pipeline_layout.as_ref(),
+            resources.module.as_deref().unwrap(),
+            resources.pipeline_layout.as_deref().unwrap(),
             supports_indirect_first_instance,
             write_d3d12_special_constants,
             instance_flags,
-        )?;
+        )?);
 
-        Ok(Self {
-            module,
-            metadata_bind_group_layout,
-            src_bind_group_layout,
-            dst_bind_group_layout,
-            pipeline_layout,
-            pipeline,
+        // Error returns after this point could bypass resource cleanup.
+        #[deny(clippy::question_mark_used)]
+        {
+            let module = resources.module.take().unwrap();
+            let metadata_bind_group_layout = resources.metadata_bind_group_layout.take().unwrap();
+            let src_bind_group_layout = resources.src_bind_group_layout.take().unwrap();
+            let dst_bind_group_layout = resources.dst_bind_group_layout.take().unwrap();
+            let pipeline_layout = resources.pipeline_layout.take().unwrap();
+            let pipeline = resources.pipeline.take().unwrap();
+            drop(resources);
 
-            free_indirect_entries: Mutex::new(rank::BUFFER_POOL, Vec::new()),
-            free_metadata_entries: Mutex::new(rank::BUFFER_POOL, Vec::new()),
-        })
+            Ok(Self {
+                module,
+                metadata_bind_group_layout,
+                src_bind_group_layout,
+                dst_bind_group_layout,
+                pipeline_layout,
+                pipeline,
+
+                free_indirect_entries: Mutex::new(rank::BUFFER_POOL, Vec::new()),
+                free_metadata_entries: Mutex::new(rank::BUFFER_POOL, Vec::new()),
+            })
+        }
     }
 
     /// `Ok(None)` will only be returned if `buffer_size` is `0`.

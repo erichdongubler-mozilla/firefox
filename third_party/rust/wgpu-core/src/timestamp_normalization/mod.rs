@@ -46,9 +46,42 @@ pub const TIMESTAMP_NORMALIZATION_BUFFER_USES: wgt::BufferUses =
     wgt::BufferUses::STORAGE_READ_WRITE;
 
 struct InternalState {
+    module: Box<dyn hal::DynShaderModule>,
     temporary_bind_group_layout: Box<dyn hal::DynBindGroupLayout>,
     pipeline_layout: Box<dyn hal::DynPipelineLayout>,
     pipeline: Box<dyn hal::DynComputePipeline>,
+}
+
+/// Resources owned by a [`TimestampNormalizer`]'s [`InternalState`].
+///
+/// This struct exists so that resources can be cleaned up properly on error returns
+/// from [`TimestampNormalizer::new`].
+struct TimestampNormalizerResources<'a> {
+    raw: &'a dyn hal::DynDevice,
+    module: Option<Box<dyn hal::DynShaderModule>>,
+    temporary_bind_group_layout: Option<Box<dyn hal::DynBindGroupLayout>>,
+    pipeline_layout: Option<Box<dyn hal::DynPipelineLayout>>,
+    pipeline: Option<Box<dyn hal::DynComputePipeline>>,
+}
+
+impl Drop for TimestampNormalizerResources<'_> {
+    fn drop(&mut self) {
+        unsafe {
+            if let Some(pipeline) = self.pipeline.take() {
+                self.raw.destroy_compute_pipeline(pipeline);
+            }
+            if let Some(pipeline_layout) = self.pipeline_layout.take() {
+                self.raw.destroy_pipeline_layout(pipeline_layout);
+            }
+            if let Some(temporary_bind_group_layout) = self.temporary_bind_group_layout.take() {
+                self.raw
+                    .destroy_bind_group_layout(temporary_bind_group_layout);
+            }
+            if let Some(module) = self.module.take() {
+                self.raw.destroy_shader_module(module);
+            }
+        }
+    }
 }
 
 #[derive(Debug, Clone, thiserror::Error)]
@@ -109,7 +142,15 @@ impl TimestampNormalizer {
                 return Ok(Self { state: None });
             }
 
-            let temporary_bind_group_layout = device
+            let mut resources = TimestampNormalizerResources {
+                raw: device.raw(),
+                module: None,
+                temporary_bind_group_layout: None,
+                pipeline_layout: None,
+                pipeline: None,
+            };
+
+            resources.temporary_bind_group_layout = Some(device
                 .raw()
                 .create_bind_group_layout(&hal::BindGroupLayoutDescriptor {
                     label: hal_label(
@@ -130,7 +171,7 @@ impl TimestampNormalizer {
                 })
                 .map_err(|e| {
                     TimestampNormalizerInitError::BindGroupLayout(device.handle_hal_error(e))
-                })?;
+                })?);
 
             let common_src = include_str!("common.wgsl");
             let src = include_str!("timestamp_normalization.wgsl");
@@ -175,18 +216,20 @@ impl TimestampNormalizer {
                 ),
                 runtime_checks: wgt::ShaderRuntimeChecks::unchecked(),
             };
-            let module = device
-                .raw()
-                .create_shader_module(&hal_desc, hal_shader)
-                .map_err(|error| match error {
-                    hal::ShaderError::Device(error) => {
-                        CreateShaderModuleError::Device(device.handle_hal_error(error))
-                    }
-                    hal::ShaderError::Compilation(ref msg) => {
-                        log::error!("Shader error: {msg}");
-                        CreateShaderModuleError::Generation
-                    }
-                })?;
+            resources.module = Some(
+                device
+                    .raw()
+                    .create_shader_module(&hal_desc, hal_shader)
+                    .map_err(|error| match error {
+                        hal::ShaderError::Device(error) => {
+                            CreateShaderModuleError::Device(device.handle_hal_error(error))
+                        }
+                        hal::ShaderError::Compilation(ref msg) => {
+                            log::error!("Shader error: {msg}");
+                            CreateShaderModuleError::Generation
+                        }
+                    })?,
+            );
 
             let pipeline_layout = device
                 .raw()
@@ -195,13 +238,16 @@ impl TimestampNormalizer {
                         Some("(wgpu internal) Timestamp normalizer pipeline layout"),
                         device.instance_flags,
                     ),
-                    bind_group_layouts: &[Some(temporary_bind_group_layout.as_ref())],
+                    bind_group_layouts: &[Some(
+                        resources.temporary_bind_group_layout.as_deref().unwrap(),
+                    )],
                     immediate_size: 8,
                     flags: hal::PipelineLayoutFlags::empty(),
                 })
                 .map_err(|e| {
                     TimestampNormalizerInitError::PipelineLayout(device.handle_hal_error(e))
                 })?;
+            resources.pipeline_layout = Some(pipeline_layout);
 
             let (multiplier, shift) = compute_timestamp_period(timestamp_period);
 
@@ -209,45 +255,62 @@ impl TimestampNormalizer {
             constants.insert(String::from("TIMESTAMP_PERIOD_MULTIPLY"), multiplier as f64);
             constants.insert(String::from("TIMESTAMP_PERIOD_SHIFT"), shift as f64);
 
-            let pipeline_desc = hal::ComputePipelineDescriptor {
-                label: hal_label(
-                    Some("(wgpu internal) Timestamp normalizer pipeline"),
-                    device.instance_flags,
-                ),
-                layout: pipeline_layout.as_ref(),
-                stage: hal::ProgrammableStage {
-                    module: module.as_ref(),
-                    entry_point: "main",
-                    constants: &constants,
-                    zero_initialize_workgroup_memory: false,
-                },
-                cache: None,
-            };
-            let pipeline = device
-                .raw()
-                .create_compute_pipeline(&pipeline_desc)
-                .map_err(|err| match err {
-                    hal::PipelineError::Device(error) => {
-                        CreateComputePipelineError::Device(device.handle_hal_error(error))
-                    }
-                    hal::PipelineError::Linkage(_stages, msg) => {
-                        CreateComputePipelineError::Internal(msg)
-                    }
-                    hal::PipelineError::EntryPoint(_stage) => CreateComputePipelineError::Internal(
-                        crate::device::ENTRYPOINT_FAILURE_ERROR.to_string(),
+            let pipeline = {
+                let pipeline_desc = hal::ComputePipelineDescriptor {
+                    label: hal_label(
+                        Some("(wgpu internal) Timestamp normalizer pipeline"),
+                        device.instance_flags,
                     ),
-                    hal::PipelineError::PipelineConstants(_, error) => {
-                        CreateComputePipelineError::PipelineConstants(error)
-                    }
-                })?;
+                    layout: resources.pipeline_layout.as_deref().unwrap(),
+                    stage: hal::ProgrammableStage {
+                        module: resources.module.as_deref().unwrap(),
+                        entry_point: "main",
+                        constants: &constants,
+                        zero_initialize_workgroup_memory: false,
+                    },
+                    cache: None,
+                };
+                device
+                    .raw()
+                    .create_compute_pipeline(&pipeline_desc)
+                    .map_err(|err| match err {
+                        hal::PipelineError::Device(error) => {
+                            CreateComputePipelineError::Device(device.handle_hal_error(error))
+                        }
+                        hal::PipelineError::Linkage(_stages, msg) => {
+                            CreateComputePipelineError::Internal(msg)
+                        }
+                        hal::PipelineError::EntryPoint(_stage) => {
+                            CreateComputePipelineError::Internal(
+                                crate::device::ENTRYPOINT_FAILURE_ERROR.to_string(),
+                            )
+                        }
+                        hal::PipelineError::PipelineConstants(_, error) => {
+                            CreateComputePipelineError::PipelineConstants(error)
+                        }
+                    })?
+            };
+            resources.pipeline = Some(pipeline);
 
-            Ok(Self {
-                state: Some(InternalState {
-                    temporary_bind_group_layout,
-                    pipeline_layout,
-                    pipeline,
-                }),
-            })
+            // Error returns after this point could bypass resource cleanup.
+            #[deny(clippy::question_mark_used)]
+            {
+                let module = resources.module.take().unwrap();
+                let temporary_bind_group_layout =
+                    resources.temporary_bind_group_layout.take().unwrap();
+                let pipeline_layout = resources.pipeline_layout.take().unwrap();
+                let pipeline = resources.pipeline.take().unwrap();
+                drop(resources);
+
+                Ok(Self {
+                    state: Some(InternalState {
+                        module,
+                        temporary_bind_group_layout,
+                        pipeline_layout,
+                        pipeline,
+                    }),
+                })
+            }
         }
     }
 
@@ -367,6 +430,7 @@ impl TimestampNormalizer {
             device.destroy_compute_pipeline(state.pipeline);
             device.destroy_pipeline_layout(state.pipeline_layout);
             device.destroy_bind_group_layout(state.temporary_bind_group_layout);
+            device.destroy_shader_module(state.module);
         }
     }
 

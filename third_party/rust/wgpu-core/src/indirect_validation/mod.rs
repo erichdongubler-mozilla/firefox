@@ -53,6 +53,7 @@ impl IndirectValidation {
             Ok(draw) => draw,
             Err(e) => {
                 log::error!("indirect-draw-validation error: {e:?}");
+                dispatch.dispose(device);
                 return Err(DeviceError::Lost);
             }
         };
