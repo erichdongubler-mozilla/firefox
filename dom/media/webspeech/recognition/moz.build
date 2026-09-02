@@ -31,6 +31,10 @@ EXPORTS.mozilla.dom += [
     "SpeechTrackListener.h",
 ]
 
+EXPORTS.mozilla += [
+    "AudioCaptureTiming.h",
+]
+
 EXPORTS.mozilla.hwinference += [
     "SpeechRecognitionChild.h",
     "SpeechRecognitionParent.h",

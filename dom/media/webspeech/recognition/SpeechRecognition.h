@@ -10,6 +10,8 @@
 #include "SpeechRecognitionResultList.h"
 #include "js/TypeDecls.h"
 #include "mozilla/DOMEventTargetHelper.h"
+#include "mozilla/MozPromise.h"
+#include "mozilla/TimeStamp.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/SpeechRecognitionBinding.h"
@@ -169,7 +171,8 @@ class SpeechRecognition final : public DOMEventTargetHelper,
                                          TimeStamp aTimeStamp);
   // Backend methods
   void HandleRecognitionResultFromBackend(const nsCString& aTranscript,
-                                          bool aIsFinal, float aConfidence);
+                                          bool aIsFinal, float aConfidence,
+                                          TimeStamp aEventTime);
   void HandleRecognitionErrorFromBackend(const nsCString& aError);
   // Called once the backend's session is fully over: for stop(), only after
   // the engine's end-of-stream flush and the results it produced. Fires

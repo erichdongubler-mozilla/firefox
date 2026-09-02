@@ -47,6 +47,9 @@ static LazyLogModule gSpeechRecognitionParentLog("SpeechRecognitionParent");
 
 // Sample rate the Parakeet models operate at.
 static constexpr int32_t PARAKEET_SAMPLE_RATE = 16000;
+// Bound on SpeechRecognitionParent::mCaptureTimeSamples; see the comment at
+// its only push_back() site.
+static constexpr size_t kMaxCaptureTimeSamples = 64;
 
 void SpeechRecognitionParent::ResolveOrRejectInitOnIPCThread(
     InitResolver&& aResolver, bool aSuccess) {
@@ -195,7 +198,8 @@ SpeechRecognitionParent::SpeechRecognitionParent(
       // accelerated recognition, having a very long queue can smooth things
       // out.
       mAudioQueue(PARAKEET_SAMPLE_RATE * 30),
-      mProcessedAudioPos(0) {
+      mProcessedAudioPos(0),
+      mTimingLock("SpeechRecognitionParent::mTimingLock") {
   // MOZ_DUMP_AUDIO=1 MOZ_DISABLE_UTILITY_SANDBOX=1 to activate this
   // It will contain the (repeating segments of audio), precisely that has been
   // sent to the recognizer.
@@ -553,7 +557,7 @@ mozilla::ipc::IPCResult SpeechRecognitionParent::RecvInit(
 }
 
 mozilla::ipc::IPCResult SpeechRecognitionParent::RecvProcessAudioData(
-    nsTArray<float>&& aAudioData) {
+    nsTArray<float>&& aAudioData, const TimeStamp& aCaptureEndTime) {
   LOGV("{} {} samples", __func__, aAudioData.Length());
 
   // All-or-nothing: a partial enqueue would splice a discontinuity into a block
@@ -561,14 +565,46 @@ mozilla::ipc::IPCResult SpeechRecognitionParent::RecvProcessAudioData(
   int length = AssertedCast<int>(aAudioData.Length());
   if (mAudioQueue.AvailableWrite() < length) {
     LOGE("Audio queue full, dropping {} samples", length);
-  } else {
-    int written = mAudioQueue.Enqueue(aAudioData.Elements(), length);
-    if (written != length) {
-      LOGE("Audio queue accepted only {} of {} samples", written, length);
+    return IPC_OK();
+  }
+  int written = mAudioQueue.Enqueue(aAudioData.Elements(), length);
+  if (written != length) {
+    LOGE("Audio queue accepted only {} of {} samples", written, length);
+  }
+
+  {
+    MutexAutoLock lock(mTimingLock);
+    // Advances by what was queued, not what arrived, so this timeline stays
+    // aligned with mProcessedAudioPos when a block is dropped above.
+    mEnqueuedAudioPos += written;
+    mCaptureTimeSamples.push_back({mEnqueuedAudioPos, aCaptureEndTime});
+    // CaptureTimeForPosition() only prunes on the final-result emit path, so a
+    // session that never finalizes (continuous input, silence) would otherwise
+    // grow this deque by one entry per audio block for the session's whole
+    // lifetime. Cap it here too; a handful of entries is enough to
+    // extrapolate from.
+    while (mCaptureTimeSamples.size() > kMaxCaptureTimeSamples) {
+      mCaptureTimeSamples.pop_front();
     }
   }
 
   return IPC_OK();
+}
+
+TimeStamp SpeechRecognitionParent::CaptureTimeForPosition(size_t aPosition) {
+  MutexAutoLock lock(mTimingLock);
+  // Drop samples that are behind aPosition, but always keep at least one to
+  // extrapolate from.
+  while (mCaptureTimeSamples.size() > 1 &&
+         mCaptureTimeSamples.front().mPosition < aPosition) {
+    mCaptureTimeSamples.pop_front();
+  }
+  if (mCaptureTimeSamples.empty()) {
+    return TimeStamp::Now();
+  }
+  const CaptureTimeSample& sample = mCaptureTimeSamples.front();
+  return EstimateSampleTimeStamp(int64_t(sample.mPosition), sample.mTimeStamp,
+                                 int64_t(aPosition), PARAKEET_SAMPLE_RATE);
 }
 
 mozilla::ipc::IPCResult SpeechRecognitionParent::RecvStop(
@@ -653,7 +689,7 @@ void SpeechRecognitionParent::ProcessAudioStreaming() {
   };
 
   auto emit = [self = RefPtr{this}](const nsCString& aText, bool aFinal,
-                                    float aConfidence) {
+                                    float aConfidence, TimeStamp aEventTime) {
     // An empty transcript is not a result; a session that only ever produces
     // these is reported as a nomatch when RecvStop() resolves.
     if (aText.IsEmpty()) {
@@ -664,11 +700,12 @@ void SpeechRecognitionParent::ProcessAudioStreaming() {
     }
     NS_DispatchToMainThread(NS_NewRunnableFunction(
         "SpeechRecognitionParent::StreamResult",
-        [self, payload = nsCString(aText), aFinal, aConfidence]() {
+        [self, payload = nsCString(aText), aFinal, aConfidence, aEventTime]() {
           LOGV("Sending streaming result: '{}' (final={}, conf={})",
                payload.get(), aFinal, aConfidence);
           if (self->CanSend()) {
-            (void)self->SendOnRecognitionResult(payload, aFinal, aConfidence);
+            (void)self->SendOnRecognitionResult(payload, aFinal, aConfidence,
+                                                aEventTime);
           }
         }));
   };
@@ -701,7 +738,8 @@ void SpeechRecognitionParent::ProcessAudioStreaming() {
         LOGV("  word '{}' [{:.2f}-{:.2f}] conf={:.2f}", w.get(), words[i].start,
              words[i].end, words[i].conf);
       }
-      emit(text, /* isFinal */ true, counted ? confSum / counted : 1.0f);
+      emit(text, /* isFinal */ true, counted ? confSum / counted : 1.0f,
+           CaptureTimeForPosition(mProcessedAudioPos));
     }
     lib->parakeet_capi_free_words(words, n > 0 ? n : 0);
   };

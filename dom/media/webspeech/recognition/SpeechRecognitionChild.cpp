@@ -49,6 +49,7 @@ void SpeechRecognitionChild::ActorDestroy(ActorDestroyReason aReason) {
     mDestroyedCallback = nullptr;
     callback(this);
   }
+  mIPCActorUserGuard = nullptr;
 }
 
 void SpeechRecognitionChild::SetResultCallback(
@@ -77,13 +78,13 @@ void SpeechRecognitionChild::SetDestroyedCallback(
 
 mozilla::ipc::IPCResult SpeechRecognitionChild::RecvOnRecognitionResult(
     const nsCString& aTranscript, const bool& aIsFinal,
-    const float& aConfidence) {
+    const float& aConfidence, const TimeStamp& aEventTime) {
   LOG(LogLevel::Info, "RecvOnRecognitionResult: '{}' (final={}, conf={})",
       aTranscript.get(), aIsFinal ? "true" : "false", aConfidence);
 
   if (mResultCallback) {
     LOG(LogLevel::Debug, "Invoking result callback");
-    mResultCallback(aTranscript, aIsFinal, aConfidence);
+    mResultCallback(aTranscript, aIsFinal, aConfidence, aEventTime);
   } else {
     LOG(LogLevel::Warning, "Received result but no callback set");
   }
@@ -104,13 +105,13 @@ mozilla::ipc::IPCResult SpeechRecognitionChild::RecvOnRecognitionError(
 }
 
 mozilla::ipc::IPCResult SpeechRecognitionChild::RecvOnSpeechChange(
-    const bool& aSpeechDetected) {
+    const bool& aSpeechDetected, const TimeStamp& aEventTime) {
   LOG(LogLevel::Info, "RecvOnSpeechChange: speechDetected={}",
       aSpeechDetected ? "true" : "false");
 
   if (mSpeechChangeCallback) {
     LOG(LogLevel::Debug, "Invoking speech change callback");
-    mSpeechChangeCallback(aSpeechDetected);
+    mSpeechChangeCallback(aSpeechDetected, aEventTime);
   } else {
     LOG(LogLevel::Warning, "Received speech change but no callback set");
   }

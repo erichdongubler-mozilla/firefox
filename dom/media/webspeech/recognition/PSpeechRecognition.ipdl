@@ -41,8 +41,9 @@ parent: // HWInference
   // "concurrent-session" when another session is active, "network" when the
   // model could not be retrieved or the engine failed to start).
   async Init(nsCString engineId, nsCString language, nsString[] phrases) returns (nsCString error);
-  // Send audio data for speech recognition (always 16kHz mono f32 samples)
-  async ProcessAudioData(float[] audioData);
+  // Send audio data for speech recognition (always 16kHz mono f32 samples).
+  // captureEndTime is when the last sample in audioData was captured.
+  async ProcessAudioData(float[] audioData, TimeStamp captureEndTime);
   // Stop the speech recognition session.
   // https://webaudio.github.io/web-speech-api/#dom-speechrecognition-stop
   // "The speech service must attempt to return a recognition result (or a
@@ -55,10 +56,10 @@ parent: // HWInference
 
 child: // Content process
   // Speech recognition results
-  async OnRecognitionResult(nsCString transcript, bool isFinal, float confidence);
+  async OnRecognitionResult(nsCString transcript, bool isFinal, float confidence, TimeStamp eventTime);
   async OnRecognitionError(nsCString error);
   // Speech detection events (true = speech started, false = speech ended)
-  async OnSpeechChange(bool speechDetected);
+  async OnSpeechChange(bool speechDetected, TimeStamp eventTime);
 };
 
 } // namespace hwinference
