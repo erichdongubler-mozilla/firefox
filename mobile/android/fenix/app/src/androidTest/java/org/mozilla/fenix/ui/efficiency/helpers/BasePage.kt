@@ -55,6 +55,8 @@ import org.mozilla.fenix.ui.efficiency.core.requireAll
 import org.mozilla.fenix.ui.efficiency.core.requireState
 import org.mozilla.fenix.ui.efficiency.logging.TestLogging
 import org.mozilla.fenix.ui.efficiency.logging.TimedReporter
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationEdge
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationPath
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationStep
 
@@ -128,6 +130,10 @@ abstract class BasePage(protected val composeRule: AndroidComposeTestRule<HomeAc
 
     open fun navigateToPage(url: String = "", forceNavigation: Boolean = false): BasePage {
         val step = rep().start(TimedReporter.Type.STEP, "nav_$pageName", "Attempting to Navigate to $pageName")
+        var fromPage = PageStateTracker.currentPageName
+        var path: NavigationPath? = null
+        var activeEdge: NavigationEdge? = null
+        var activeStepIndex: Int? = null
 
         try {
             if (!forceNavigation && mozIsOnPageNow()) {
@@ -136,45 +142,55 @@ abstract class BasePage(protected val composeRule: AndroidComposeTestRule<HomeAc
                 return this
             }
 
-            val fromPage = PageStateTracker.currentPageName
+            fromPage = PageStateTracker.currentPageName
             Log.i("PageNavigation", "Trying to find path from '$fromPage' to '$pageName'")
 
-            val path = NavigationRegistry.findPath(fromPage, pageName)
-
-            if (path == null) {
-                NavigationRegistry.logGraph()
-                step.fail(
-                    "No navigation path found to '$pageName'",
-                    facts =
-                        facts(
-                            "navigate",
-                            failure = Failure.NO_PATH,
-                            extra = mapOf("page" to pageName, "from" to fromPage),
-                        ),
-                )
-                assertionFailure("No navigation path found from '$fromPage' to '$pageName'")
-            } else {
-                Log.i("PageNavigation", "Navigation path found from '$fromPage' to '$pageName':")
-                path.forEachIndexed { i, step -> Log.i("PageNavigation", "   Step ${i + 1}: $step") }
+            path = NavigationRegistry.findPath(fromPage, pageName)
+            val selectedPath =
+                path
+                    ?: run {
+                        NavigationRegistry.logGraph()
+                        step.fail(
+                            "No navigation path found to '$pageName'",
+                            facts =
+                                facts(
+                                    "navigate",
+                                    failure = Failure.NO_PATH,
+                                    extra = mapOf("page" to pageName, "from" to fromPage),
+                                ),
+                        )
+                        assertionFailure("No navigation path found from '$fromPage' to '$pageName'")
+                    }
+            Log.i("PageNavigation", "Navigation path found from '$fromPage' to '$pageName':")
+            selectedPath.edges.forEachIndexed { edgeIndex, edge ->
+                Log.i("PageNavigation", "   Edge ${edgeIndex + 1}: ${edge.id} (${edge.purpose})")
+                edge.steps.forEachIndexed { index, navigationStep ->
+                    Log.i("PageNavigation", "      Step ${index + 1}: $navigationStep")
+                }
             }
 
-            path.forEach { step ->
-                when (step) {
-                    is NavigationStep.Click -> mozClick(step.selector)
-                    is NavigationStep.LongClick -> mozLongClick(step.selector)
-                    is NavigationStep.ClickIfPresent -> mozClickIfPresent(step.selector)
-                    is NavigationStep.Swipe -> mozSwipeTo(step.selector, step.direction)
-                    is NavigationStep.OpenNotificationsTray -> mozOpenNotificationsTray()
-                    is NavigationStep.Action -> step.action()
-                    is NavigationStep.EnterText -> mozEnterText(url, step.selector)
-                    is NavigationStep.EnterTextValue -> mozEnterText(step.text, step.selector)
-                    is NavigationStep.PressEnter -> mozPressEnter(step.selector)
-                    is NavigationStep.PressBack -> {
-                        mDevice.pressBack()
-                        mDevice.waitForIdle()
+            selectedPath.edges.forEach { edge ->
+                activeEdge = edge
+                edge.steps.forEachIndexed { index, navigationStep ->
+                    activeStepIndex = index
+                    when (navigationStep) {
+                        is NavigationStep.Click -> mozClick(navigationStep.selector)
+                        is NavigationStep.LongClick -> mozLongClick(navigationStep.selector)
+                        is NavigationStep.ClickIfPresent -> mozClickIfPresent(navigationStep.selector)
+                        is NavigationStep.Swipe -> mozSwipeTo(navigationStep.selector, navigationStep.direction)
+                        is NavigationStep.OpenNotificationsTray -> mozOpenNotificationsTray()
+                        is NavigationStep.Action -> navigationStep.action()
+                        is NavigationStep.EnterText -> mozEnterText(url, navigationStep.selector)
+                        is NavigationStep.EnterTextValue -> mozEnterText(navigationStep.text, navigationStep.selector)
+                        is NavigationStep.PressEnter -> mozPressEnter(navigationStep.selector)
+                        is NavigationStep.PressBack -> {
+                            mDevice.pressBack()
+                            mDevice.waitForIdle()
+                        }
+                        is NavigationStep.WaitForIdle -> composeRule.waitForIdle()
+                        is NavigationStep.PressBackUntilGone ->
+                            mozPressBackUntilGone(navigationStep.selector, navigationStep.maxPresses)
                     }
-                    is NavigationStep.WaitForIdle -> composeRule.waitForIdle()
-                    is NavigationStep.PressBackUntilGone -> mozPressBackUntilGone(step.selector, step.maxPresses)
                 }
             }
 
@@ -187,13 +203,36 @@ abstract class BasePage(protected val composeRule: AndroidComposeTestRule<HomeAc
             }
 
             PageStateTracker.currentPageName = pageName
-            step.ok("Navigation to '$pageName' completed", facts("navigate", extra = mapOf("page" to pageName)))
+            step.ok(
+                "Navigation to '$pageName' completed",
+                facts(
+                    "navigate",
+                    extra =
+                        mapOf(
+                            "page" to pageName,
+                            "from" to fromPage,
+                            "path" to selectedPath.edges.map { it.id },
+                        ),
+                ),
+            )
             return this
         } catch (t: Throwable) {
             step.fail(
                 "Navigation to '$pageName' failed: ${t.message ?: "exception"}",
                 cause = t,
-                facts = facts("navigate", failure = Failure.ACTION_FAILED, extra = mapOf("page" to pageName)),
+                facts =
+                    facts(
+                        "navigate",
+                        failure = Failure.ACTION_FAILED,
+                        extra =
+                            mapOf(
+                                "page" to pageName,
+                                "from" to fromPage,
+                                "path" to path?.edges.orEmpty().map { it.id },
+                                "edge" to activeEdge?.id,
+                                "edgeStepIndex" to activeStepIndex,
+                            ),
+                    ),
             )
             // Without this a nav failure says only "did not arrive" - not which page we landed on.
             dumpFailure("navigateToPage failed: $pageName")

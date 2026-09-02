@@ -18,15 +18,29 @@ object NavigationRegistry {
         duplicateRegistrations.clear()
     }
 
-    fun register(from: String, to: String, steps: List<NavigationStep>, launch: LaunchConfig? = null) {
-        val edge = NavigationEdge(from, to, steps, launch)
-        if (edge in graph[from].orEmpty()) {
+    fun register(
+        from: String,
+        to: String,
+        steps: List<NavigationStep>,
+        launch: LaunchConfig? = null,
+        variant: String? = null,
+        purpose: NavigationRoutePurpose = NavigationRoutePurpose.SETUP,
+    ) {
+        require(variant == null || routeVariantPattern.matches(variant)) {
+            "Navigation route variant must match ${routeVariantPattern.pattern}: '$variant'"
+        }
+        val edge = NavigationEdge(from, to, steps, launch, variant, purpose)
+        if (graph.values.flatten().any { it.id == edge.id }) {
             duplicateRegistrations += edge
-            error("Duplicate navigation registration: $from -> $to ($steps, launch=$launch)")
+            error("Duplicate navigation route '${edge.id}' ($steps, launch=$launch)")
+        }
+        val endpointRoutes = graph[from].orEmpty().filter { it.to == to }
+        if (endpointRoutes.isNotEmpty() && (variant == null || endpointRoutes.any { it.variant == null })) {
+            error("Multiple navigation routes for $from -> $to require explicit variants")
         }
         graph.getOrPut(from) { mutableListOf() }.add(edge)
 
-        Log.i(TAG, "Registered navigation: $from -> $to with ${steps.size} step(s)")
+        Log.i(TAG, "Registered navigation: ${edge.id} with ${steps.size} step(s)")
         steps.forEachIndexed { index, step ->
             Log.i(TAG, "   Step ${index + 1}: $step")
         }
@@ -34,16 +48,19 @@ object NavigationRegistry {
 
     /** The LaunchConfig declared on any edge leading INTO [page], if any. */
     fun launchConfigFor(page: String): LaunchConfig? =
-        graph.values.flatten().firstOrNull { it.to == page && it.launch != null }?.launch
+        graph.values.flatten().sortedWith(routeOrder).firstOrNull { it.to == page && it.launch != null }?.launch
 
-    fun findPath(from: String, to: String): List<NavigationStep>? {
+    fun findPath(from: String, to: String): NavigationPath? {
         if (from == to) {
-            val selfLoopEdge = graph[from]?.find { it.to == to }
+            val selfLoopEdge = graph[from].orEmpty().filter { it.to == to }.minWithOrNull(routeOrder)
 
-            return selfLoopEdge?.steps ?: emptyList()
+            return NavigationPath(
+                pages = if (selfLoopEdge == null) listOf(from) else listOf(from, to),
+                edges = listOfNotNull(selfLoopEdge),
+            )
         }
 
-        val queue = ArrayDeque<Pair<String, List<NavigationStep>>>()
+        val queue = ArrayDeque<Pair<String, List<NavigationEdge>>>()
         val visited = mutableSetOf<String>()
 
         queue.add(Pair(from, emptyList()))
@@ -52,12 +69,17 @@ object NavigationRegistry {
         while (queue.isNotEmpty()) {
             val (current, path) = queue.removeFirst()
 
-            for (edge in graph[current].orEmpty()) {
+            for (edge in graph[current].orEmpty().sortedWith(routeOrder)) {
                 if (edge.to in visited) continue
 
-                val newPath = path + edge.steps
+                val newPath = path + edge
 
-                if (edge.to == to) return newPath
+                if (edge.to == to) {
+                    return NavigationPath(
+                        pages = buildPageSequence(newPath, edge.to),
+                        edges = newPath,
+                    )
+                }
 
                 visited.add(edge.to)
                 queue.add(Pair(edge.to, newPath))
@@ -125,7 +147,7 @@ object NavigationRegistry {
             return
         }
 
-        for (edge in graph[current].orEmpty()) {
+        for (edge in graph[current].orEmpty().sortedWith(routeOrder)) {
             if (edge.to in visited) {
                 continue
             }
@@ -246,12 +268,8 @@ object NavigationRegistry {
             }
 
             graph.values.flatten().forEach { edge ->
-                val attrs =
-                    if (edge.steps.isEmpty()) {
-                        """label="0", style="dashed""""
-                    } else {
-                        """label="${edge.steps.size}""""
-                    }
+                val style = if (edge.steps.isEmpty()) ", style=\"dashed\"" else ""
+                val attrs = """label="${escapeDot(edge.id)} (${edge.steps.size})"$style"""
 
                 appendLine("""  "${escapeDot(edge.from)}" -> "${escapeDot(edge.to)}" [$attrs];""")
             }
@@ -263,6 +281,9 @@ object NavigationRegistry {
     private fun escapeDot(value: String): String {
         return value.replace("\\", "\\\\").replace("\"", "\\\"")
     }
+
+    private val routeOrder = compareBy<NavigationEdge>({ it.purpose }, { it.id })
+    private val routeVariantPattern = Regex("[a-z][a-z0-9-]*")
 }
 
 /** Represents one distinct navigation path through the graph. */
@@ -272,6 +293,9 @@ data class NavigationPath(
 ) {
     val totalSteps: Int
         get() = edges.sumOf { it.steps.size }
+
+    val steps: List<NavigationStep>
+        get() = edges.flatMap { it.steps }
 }
 
 data class NavigationGraphDiagnostics(

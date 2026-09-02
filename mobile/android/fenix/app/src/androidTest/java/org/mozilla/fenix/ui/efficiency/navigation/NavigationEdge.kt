@@ -9,4 +9,14 @@ data class NavigationEdge(
     val to: String,
     val steps: List<NavigationStep>,
     val launch: LaunchConfig? = null,
-)
+    val variant: String? = null,
+    val purpose: NavigationRoutePurpose = NavigationRoutePurpose.SETUP,
+) {
+    val id: String
+        get() = listOfNotNull("$from->$to", variant).joinToString("#")
+}
+
+enum class NavigationRoutePurpose {
+    SETUP,
+    COVERAGE,
+}

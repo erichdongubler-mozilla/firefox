@@ -16,6 +16,7 @@ import org.mozilla.fenix.ui.efficiency.selectors.BrowserPageSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.HomeSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.MainMenuSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.SettingsAddonsManagerSelectors
+import org.mozilla.fenix.ui.efficiency.selectors.SettingsSavedPasswordsSelectors
 
 class MainMenuPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule, *>) : BasePage(composeRule) {
     override val pageName = "MainMenuPage"
@@ -43,6 +44,32 @@ class MainMenuPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRul
             from = pageName,
             to = "HomePage",
             steps = listOf(NavigationStep.PressBack),
+        )
+
+        NavigationRegistry.register(
+            from = pageName,
+            to = "SettingsPage",
+            steps =
+                listOf(
+                    NavigationStep.Swipe(MainMenuSelectors.SETTINGS_BUTTON),
+                    NavigationStep.Click(MainMenuSelectors.SETTINGS_BUTTON),
+                ),
+        )
+
+        NavigationRegistry.register(
+            from = pageName,
+            to = "DownloadsPage",
+            steps = listOf(NavigationStep.Click(MainMenuSelectors.DOWNLOADS_BUTTON)),
+        )
+
+        NavigationRegistry.register(
+            from = pageName,
+            to = "SettingsSavedPasswordsPage",
+            steps =
+                listOf(
+                    NavigationStep.Click(MainMenuSelectors.PASSWORDS_BUTTON),
+                    NavigationStep.ClickIfPresent(SettingsSavedPasswordsSelectors.LOGINS_SECURITY_DIALOG_LATER_BUTTON),
+                ),
         )
     }
 

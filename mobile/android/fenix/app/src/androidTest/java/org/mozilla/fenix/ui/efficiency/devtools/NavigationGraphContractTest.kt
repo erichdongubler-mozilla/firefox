@@ -21,7 +21,7 @@ class NavigationGraphContractTest : BaseTest() {
         val diagnostics = NavigationRegistry.diagnostics()
 
         assertEquals(54, diagnostics.pages.size)
-        assertEquals(104, diagnostics.edges.size)
+        assertEquals(103, diagnostics.edges.size)
         assertTrue(diagnostics.duplicateRegistrations.isEmpty())
         assertEquals(
             setOf(
@@ -57,6 +57,14 @@ class NavigationGraphContractTest : BaseTest() {
             .exceptionOrNull()
 
         assertTrue(failure is IllegalStateException)
-        assertTrue(failure?.message.orEmpty().contains("DuplicateSource -> DuplicateTarget"))
+        assertTrue(failure?.message.orEmpty().contains("DuplicateSource->DuplicateTarget"))
+    }
+
+    @Test
+    fun routeVariantsAreExplicitAndSelectedDeterministically() {
+        on
+        val path = NavigationRegistry.findPath("HomePage", "SettingsSavedPasswordsPage")
+
+        assertEquals("direct-main-menu", path?.edges?.single()?.variant)
     }
 }

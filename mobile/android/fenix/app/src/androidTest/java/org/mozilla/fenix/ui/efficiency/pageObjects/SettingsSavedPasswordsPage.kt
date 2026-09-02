@@ -25,6 +25,7 @@ class SettingsSavedPasswordsPage(composeRule: AndroidComposeTestRule<HomeActivit
         NavigationRegistry.register(
             from = "HomePage",
             to = pageName,
+            variant = "via-settings",
             steps =
                 listOf(
                     NavigationStep.Click(HomeSelectors.MAIN_MENU_BUTTON),
@@ -38,6 +39,7 @@ class SettingsSavedPasswordsPage(composeRule: AndroidComposeTestRule<HomeActivit
         NavigationRegistry.register(
             from = "HomePage",
             to = pageName,
+            variant = "direct-main-menu",
             steps =
                 listOf(
                     NavigationStep.Click(HomeSelectors.MAIN_MENU_BUTTON),

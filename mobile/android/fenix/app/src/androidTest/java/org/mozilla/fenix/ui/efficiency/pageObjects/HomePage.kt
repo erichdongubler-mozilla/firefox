@@ -11,9 +11,7 @@ import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeShort
 import org.mozilla.fenix.ui.efficiency.helpers.BasePage
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
-import org.mozilla.fenix.ui.efficiency.navigation.NavigationStep
 import org.mozilla.fenix.ui.efficiency.selectors.HomeSelectors
-import org.mozilla.fenix.ui.efficiency.selectors.MainMenuSelectors
 
 class HomePage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule, *>) : BasePage(composeRule) {
 
@@ -24,28 +22,6 @@ class HomePage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule, *
             from = "AppEntry",
             to = pageName,
             steps = listOf(),
-        )
-
-        NavigationRegistry.register(
-            from = "MainMenuPage",
-            to = "SettingsPage",
-            steps =
-                listOf(
-                    NavigationStep.Swipe(MainMenuSelectors.SETTINGS_BUTTON),
-                    NavigationStep.Click(MainMenuSelectors.SETTINGS_BUTTON),
-                ),
-        )
-
-        NavigationRegistry.register(
-            from = "MainMenuPage",
-            to = "DownloadsPage",
-            steps = listOf(NavigationStep.Click(MainMenuSelectors.DOWNLOADS_BUTTON)),
-        )
-
-        NavigationRegistry.register(
-            from = "MainMenuPage",
-            to = "SettingsSavedPasswordsPage",
-            steps = listOf(NavigationStep.Click(MainMenuSelectors.PASSWORDS_BUTTON)),
         )
     }
 
