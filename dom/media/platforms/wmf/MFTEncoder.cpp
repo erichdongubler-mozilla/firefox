@@ -274,6 +274,8 @@ MFTEncoder::Factory::Factory(Provider aProvider,
 MFTEncoder::Factory::~Factory() { Shutdown(); }
 
 HRESULT MFTEncoder::Factory::Shutdown() {
+  MOZ_ASSERT(mscom::IsCurrentThreadMTA());
+
   HRESULT hr = S_OK;
   if (mActivate) {
     MFT_ENC_LOGE("Shutdown {} encoder {}",
@@ -560,7 +562,7 @@ MFTEncoder::Destroy() {
   mAsyncEventSource = nullptr;
   mEncoder = nullptr;
   mConfig = nullptr;
-  HRESULT hr = mFactory ? S_OK : mFactory->Shutdown();
+  HRESULT hr = mFactory ? mFactory->Shutdown() : S_OK;
   mFactory.reset();
   // TODO: If Factory::Shutdown() fails and the encoder is not reusable, set the
   // state to error.
