@@ -484,6 +484,24 @@
 
 #smartwindow-monitor-button {
   list-style-image: url("chrome://browser/content/aiwindow/assets/agent-watch.svg");
+
+  /* A monitor matched its condition. Same badge dot as #PanelUI-button and
+     #downloads-button, tinted to say the watched condition was met rather than
+     the attention blue those two use to ask for a decision. */
+  &[monitor-attention] > .toolbarbutton-badge-stack > .toolbarbutton-badge {
+    display: block;
+    box-shadow: none;
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    margin-top: -7px !important;
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    margin-inline-end: -6px !important;
+    min-width: var(--icon-size-xsmall);
+    min-height: var(--icon-size-xsmall);
+    -moz-context-properties: fill;
+    fill: var(--tab-attention-dot-color);
+    background: url("chrome://browser/skin/notification-fill-12.svg") no-repeat center;
+    background-size: var(--icon-size-xsmall);
+  }
 }
 
 #document-pip-return-to-opener-button {

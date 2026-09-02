@@ -27,6 +27,8 @@ run-if = [
 
 ["test_FeedbackModal.js"]
 
+["test_MonitorAttention.js"]
+
 ["test_MonitorUIUtils.js"]
 
 ["test_SmartWindowTelemetry.js"]

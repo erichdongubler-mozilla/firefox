@@ -2419,6 +2419,11 @@ pref("browser.smartwindow.agent.enabled", true);
 pref("browser.smartwindow.agent.supportedRegions", "US,CA");
 // Toolbar button that opens the monitor creation panel (bug 2062113).
 pref("browser.smartwindow.agent.toolbar.enabled", false);
+// Announces the monitor agent as a new feature with a dot on the toolbar
+// button, for as long as the rollout runs. Set on the default branch by Nimbus
+// so that dismissing it, which writes the user branch, survives the rollout
+// being re-applied (bug 2066576).
+pref("browser.smartwindow.agent.monitorAnnouncement", false);
 
 
 // Smart Window: Exa search endpoint, used by the search_the_web agentic flow (bug 2037948)
