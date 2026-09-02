@@ -9,7 +9,20 @@
  * liability, trademark and document use rules apply.
  */
 
-[Pref="media.webspeech.recognition.enable",
+dictionary SpeechRecognitionOptions {
+  required sequence<UTF8String> langs;
+  boolean processLocally = false;
+};
+
+enum AvailabilityStatus {
+  "unavailable",
+  "downloadable",
+  "downloading",
+  "available"
+};
+
+[SecureContext,
+ Pref="media.webspeech.recognition.enable",
  LegacyFactoryFunction=webkitSpeechRecognition,
  Exposed=Window]
 interface SpeechRecognition : EventTarget {
@@ -23,14 +36,22 @@ interface SpeechRecognition : EventTarget {
     attribute boolean continuous;
     attribute boolean interimResults;
     attribute unsigned long maxAlternatives;
-    [Throws]
-    attribute DOMString serviceURI;
+
+    attribute boolean processLocally;
+    attribute ObservableArray<SpeechRecognitionPhrase> phrases;
 
     // methods to drive the speech interaction
     [Throws, NeedsCallerType]
-    undefined start(optional MediaStream stream);
+    undefined start();
+    [Throws, NeedsCallerType]
+    undefined start(MediaStreamTrack audioTrack);
     undefined stop();
     undefined abort();
+
+    [NewObject, Throws]
+    static Promise<AvailabilityStatus> available(SpeechRecognitionOptions options);
+    [NewObject, Throws]
+    static Promise<boolean> install(SpeechRecognitionOptions options);
 
     // event methods
     attribute EventHandler onaudiostart;

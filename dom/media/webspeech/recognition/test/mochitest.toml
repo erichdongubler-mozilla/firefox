@@ -1,6 +1,7 @@
 [DEFAULT]
 tags = "mtg"
 subsuite = "media"
+prefs = ["media.navigator.streams.fake=true"]
 support-files = [
   "head.js",
   "hello.ogg",
@@ -11,4 +12,8 @@ support-files = [
   "silence.ogg^headers^",
 ]
 
+["test_abort_end_async.html"]
+
 ["test_preference_enable.html"]
+
+["test_start_after_error.html"]

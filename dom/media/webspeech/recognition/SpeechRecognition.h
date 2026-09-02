@@ -5,29 +5,30 @@
 #ifndef mozilla_dom_SpeechRecognition_h
 #define mozilla_dom_SpeechRecognition_h
 
-#include "AudioSegment.h"
 #include "DOMMediaStream.h"
-#include "MediaTrackGraph.h"
 #include "SpeechGrammarList.h"
 #include "SpeechRecognitionResultList.h"
 #include "js/TypeDecls.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
-#include "mozilla/dom/SpeechRecognitionError.h"
+#include "mozilla/dom/SpeechRecognitionBinding.h"
+#include "mozilla/dom/SpeechRecognitionErrorBinding.h"
 #include "nsCOMPtr.h"
 #include "nsProxyRelease.h"
 #include "nsString.h"
 #include "nsTArray.h"
+#include "nsTHashMap.h"
+#include "nsTHashSet.h"
 #include "nsWrapperCache.h"
 
 namespace mozilla {
 
-namespace media {
-class ShutdownBlocker;
-}
-
 namespace dom {
+
+class Promise;
+class SpeechRecognitionBackend;
+class SpeechRecognitionPhrase;
 
 #define SPEECH_RECOGNITION_TEST_EVENT_REQUEST_TOPIC \
   "SpeechRecognitionTest:RequestEvent"
@@ -38,9 +39,13 @@ class AudioStreamTrack;
 class MediaStreamTrack;
 class SpeechTrackListener;
 
+enum class DownloadOutcome { Failed, Succeeded };
+
 class SpeechRecognition final : public DOMEventTargetHelper,
                                 public SupportsWeakPtr {
  public:
+  MOZ_DECLARE_REFCOUNTED_TYPENAME(SpeechRecognition)
+
   explicit SpeechRecognition(nsPIDOMWindowInner* aOwnerWindow);
 
   NS_DECL_ISUPPORTS_INHERITED
@@ -49,6 +54,8 @@ class SpeechRecognition final : public DOMEventTargetHelper,
 
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
+
+  void DisconnectFromOwner() override;
 
   static already_AddRefed<SpeechRecognition> Constructor(
       const GlobalObject& aGlobal, ErrorResult& aRv);
@@ -76,16 +83,36 @@ class SpeechRecognition final : public DOMEventTargetHelper,
 
   uint32_t MaxAlternatives() const;
 
-  TaskQueue* GetTaskQueueForEncoding() const;
-
   void SetMaxAlternatives(uint32_t aArg);
 
-  void GetServiceURI(nsString& aRetVal, ErrorResult& aRv) const;
+  // New attributes from current spec
+  bool ProcessLocally() const;
+  void SetProcessLocally(bool aProcessLocally);
 
-  void SetServiceURI(const nsAString& aArg, ErrorResult& aRv);
+  // ObservableArray callbacks for phrases
+  void OnSetPhrases(SpeechRecognitionPhrase& aPhrase, uint32_t aIndex,
+                    ErrorResult& aRv);
+  void OnDeletePhrases(SpeechRecognitionPhrase& aPhrase, uint32_t aIndex,
+                       ErrorResult& aRv);
 
-  void Start(const Optional<NonNull<DOMMediaStream>>& aStream,
-             CallerType aCallerType, ErrorResult& aRv);
+  // Static methods from current spec
+  static already_AddRefed<Promise> Available(
+      const GlobalObject& aGlobal, const SpeechRecognitionOptions& aOptions,
+      ErrorResult& aRv);
+  static already_AddRefed<Promise> Install(
+      const GlobalObject& aGlobal, const SpeechRecognitionOptions& aOptions,
+      ErrorResult& aRv);
+
+  static void RemoveDownloadingLanguage(const nsCString& aLanguage,
+                                        DownloadOutcome aOutcome);
+  static already_AddRefed<GenericNonExclusivePromise>
+  GetDownloadCompletionPromise(const nsCString& aLanguage);
+
+  // https://webaudio.github.io/web-speech-api/#dom-speechrecognition-start
+  // Two overloads per spec: start() (microphone) and start(MediaStreamTrack).
+  void Start(CallerType aCallerType, ErrorResult& aRv);
+  void Start(MediaStreamTrack& aAudioTrack, CallerType aCallerType,
+             ErrorResult& aRv);
 
   void Stop();
 
@@ -130,6 +157,24 @@ class SpeechRecognition final : public DOMEventTargetHelper,
                      const char (&aMessage)[N]) {
     DispatchError(aErrorCode, nsLiteralCString(aMessage));
   }
+  // https://webaudio.github.io/web-speech-api/#start-session-algorithm
+  // step 2: "If [[started]] is true and no error event or end event has
+  // fired on it, throw an InvalidStateError and abort these steps." If the
+  // session was actually started (mStarted), this also tears down the
+  // backend and fires "end", so a subsequent start() is allowed again, the
+  // same way it is after stop()/abort().
+  void DispatchErrorAndEnd(SpeechRecognitionErrorCode aErrorCode,
+                           const nsACString& aMessage);
+  void DispatchTrustedEventWithTimestamp(const nsAString& aEventName,
+                                         TimeStamp aTimeStamp);
+  // Backend methods
+  void HandleRecognitionResultFromBackend(const nsCString& aTranscript,
+                                          bool aIsFinal);
+  void HandleRecognitionErrorFromBackend(const nsCString& aError);
+  // Called once the backend's session is initialized and ready to receive
+  // audio; combined with a track being attached (mTrack), this determines
+  // when "start" fires (see MaybeDispatchStart()).
+  void NotifyBackendListening();
 
  private:
   virtual ~SpeechRecognition();
@@ -137,19 +182,37 @@ class SpeechRecognition final : public DOMEventTargetHelper,
   NS_IMETHOD StartRecording(RefPtr<AudioStreamTrack>& aDOMStream);
   RefPtr<GenericNonExclusivePromise> StopRecording();
 
-  uint32_t ProcessAudioSegment(AudioSegment* aSegment, TrackRate aTrackRate);
-
   void Reset();
   void ResetAndEnd();
+  // https://webaudio.github.io/web-speech-api/#eventdef-speechrecognition-end
+  // "The user agent must raise an end event once the speech service is no
+  // longer connected." Posts a task to call ResetAndEnd() rather than firing
+  // synchronously, from Stop()/Abort()/DispatchErrorAndEnd(). mBackend is
+  // expected to already be cleared by the caller; if a subsequent start()
+  // set it again by the time this runs, this stale continuation must not
+  // reset the new session's state out from under it.
+  void PostResetAndEnd();
+  // Shared body of the two start() overloads. aAudioTrack is null for the
+  // microphone start() and the passed track for start(MediaStreamTrack).
+  void StartImpl(MediaStreamTrack* aAudioTrack, CallerType aCallerType,
+                 ErrorResult& aRv);
+  // Fires "start" once the system is successfully listening: the backend
+  // session is initialized and a live track is attached (mTrack).
+  void MaybeDispatchStart();
 
   RefPtr<DOMMediaStream> mStream;
   RefPtr<AudioStreamTrack> mTrack;
   bool mTrackIsOwned = false;
   RefPtr<GenericNonExclusivePromise> mStopRecordingPromise;
   RefPtr<SpeechTrackListener> mSpeechListener;
-  RefPtr<media::ShutdownBlocker> mShutdownBlocker;
 
-  bool mAborted;
+  // Tracks if recognition has been started (spec's [[started]] internal slot)
+  bool mStarted;
+  // Whether the backend has reported its session as initialized. See
+  // MaybeDispatchStart().
+  bool mBackendListening = false;
+  // Whether "start" has already been dispatched for the current session.
+  bool mStartDispatched = false;
 
   nsString mLang;
 
@@ -157,21 +220,25 @@ class SpeechRecognition final : public DOMEventTargetHelper,
 
   bool mContinuous;
   bool mInterimResults;
-
-  // WebSpeechAPI (http://bit.ly/1JAiqeo) states:
-  //
-  // 1. Default value is 1
-  // 2. Subsequent value is the "maximum number of SpeechRecognitionAlternatives
-  // per result"
-  //
-  // Pocketsphinx can only return at maximum a single
-  // SpeechRecognitionAlternative per SpeechRecognitionResult. So defaulting
-  // mMaxAlternatives to 1, for all non zero values ignoring mMaxAlternatives
-  // while for a 0 value returning no SpeechRecognitionAlternative per result is
-  // a conforming implementation.
   uint32_t mMaxAlternatives;
-
+  bool mProcessLocally = false;
+  // The backend gets these at Start() time; spec is unclear on dynamic updates
+  // Probably better as a SimpleMap or something so it's sparse
+  // https://github.com/WebAudio/web-speech-api/issues/172
+  nsTArray<RefPtr<SpeechRecognitionPhrase>> mPhrases;
+  nsTArray<RefPtr<SpeechRecognitionResult>> mRecognitionResults;
   RefPtr<TrackListener> mListener;
+  // Backend instance for handling audio processing
+  RefPtr<SpeechRecognitionBackend> mBackend;
+
+  static nsTHashSet<nsCString> sDownloadingLanguages
+      MOZ_GUARDED_BY(sMainThreadCapability);
+  // One entry per language currently in sDownloadingLanguages, so a second
+  // install() call for the same language can wait on the in-flight download
+  // instead of starting a redundant one. See GetDownloadCompletionPromise().
+  static nsTHashMap<nsCStringHashKey,
+                    RefPtr<GenericNonExclusivePromise::Private>>
+      sLanguageDownloadPromises MOZ_GUARDED_BY(sMainThreadCapability);
 };
 
 }  // namespace dom

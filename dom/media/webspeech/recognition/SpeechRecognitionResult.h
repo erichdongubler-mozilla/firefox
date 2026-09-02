@@ -38,10 +38,13 @@ class SpeechRecognitionResult final : public nsISupports,
 
   nsTArray<RefPtr<SpeechRecognitionAlternative>> mItems;
 
+  void SetFinal(bool aIsFinal) { mIsFinal = aIsFinal; }
+
  private:
   ~SpeechRecognitionResult();
 
   RefPtr<SpeechRecognition> mParent;
+  bool mIsFinal = true;  // Default to true for backwards compatibility
 };
 
 }  // namespace mozilla::dom

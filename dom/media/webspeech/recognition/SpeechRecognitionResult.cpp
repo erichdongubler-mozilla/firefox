@@ -50,8 +50,6 @@ already_AddRefed<SpeechRecognitionAlternative> SpeechRecognitionResult::Item(
   return alternative.forget();
 }
 
-bool SpeechRecognitionResult::IsFinal() const {
-  return true;  // TODO
-}
+bool SpeechRecognitionResult::IsFinal() const { return mIsFinal; }
 
 }  // namespace mozilla::dom

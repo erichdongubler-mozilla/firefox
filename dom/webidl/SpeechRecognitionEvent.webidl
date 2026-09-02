@@ -4,7 +4,8 @@
  */
 interface nsISupports;
 
-[Pref="media.webspeech.recognition.enable",
+[SecureContext,
+ Pref="media.webspeech.recognition.enable",
  Exposed=Window]
 interface SpeechRecognitionEvent : Event
 {

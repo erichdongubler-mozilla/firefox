@@ -9,7 +9,8 @@
  * liability, trademark and document use rules apply.
  */
 
-[Pref="media.webspeech.recognition.enable",
+[SecureContext,
+ Pref="media.webspeech.recognition.enable",
  Exposed=Window]
 interface SpeechRecognitionResultList {
     readonly attribute unsigned long length;
