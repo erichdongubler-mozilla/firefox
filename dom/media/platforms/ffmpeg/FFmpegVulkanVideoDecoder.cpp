@@ -24,10 +24,12 @@
 #  ifndef DRM_FORMAT_MOD_INVALID
 #    define DRM_FORMAT_MOD_INVALID ((1ULL << 56) - 1)
 #  endif
+#  include <stdio.h>
 #  include <string.h>
 #  include <sys/stat.h>
 
 #  include <algorithm>
+#  include <mutex>
 #  include <vector>
 
 #  include "libavutil/hwcontext.h"
@@ -837,6 +839,22 @@ static bool PhysicalDeviceHasVulkanVideoDecodeStack(
   return true;
 }
 
+#  ifdef XP_LINUX
+static bool NvidiaDrmModesetDisabled() {
+  static std::once_flag sOnce;
+  static bool sDisabled = false;
+  std::call_once(sOnce, [] {
+    FILE* f = fopen("/sys/module/nvidia_drm/parameters/modeset", "r");
+    if (f) {
+      const int c = fgetc(f);
+      fclose(f);
+      sDisabled = c == 'N' || c == 'n' || c == '0';
+    }
+  });
+  return sDisabled;
+}
+#  endif
+
 bool FFmpegVideoDecoder<LIBAV_VER>::FFmpegVulkanVideoDecoder::
     SelectVulkanDecoderPhysicalDevice(const StaticMutexAutoLock& aProofOfLock,
                                       const nsCString& aRendererNode) {
@@ -969,6 +987,16 @@ bool FFmpegVideoDecoder<LIBAV_VER>::FFmpegVulkanVideoDecoder::
                   p.deviceName)) {
             continue;
           }
+#  ifdef XP_LINUX
+          if (p.vendorID == 0x10de) {
+            FFMPEGV_LOG("Checking {}: nvidia_drm modeset status", p.deviceName);
+            if (NvidiaDrmModesetDisabled()) {
+              FFMPEGV_LOG("Skipping {}: nvidia_drm modeset is disabled",
+                          p.deviceName);
+              continue;
+            }
+          }
+#  endif
           validDevices.push_back(
               std::make_pair(p, isDecoderMatchesRendererFound));
         }
@@ -1359,7 +1387,8 @@ FFmpegVideoDecoder<LIBAV_VER>::FFmpegVulkanVideoDecoder::InitCopyRingBuffer(
       mDestroyImage(mDevice, mNv12Image[buf], nullptr);
       mNv12Mem[buf] = VK_NULL_HANDLE;
       mNv12Image[buf] = VK_NULL_HANDLE;
-      return MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
+      // MediaFormatReader can drop this decoder and keep playback going.
+      return MediaResult(NS_ERROR_DOM_MEDIA_DECODE_ERR,
                          RESULT_DETAIL("Failed to export NV12 FD"));
     }
 

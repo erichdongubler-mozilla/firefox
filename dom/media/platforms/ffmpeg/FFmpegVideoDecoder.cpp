@@ -370,13 +370,6 @@ static uint32_t VulkanTransferQueueFamily(const AVVulkanDeviceContext* aVkCtx) {
 
 bool FFmpegVideoDecoder<LIBAV_VER>::CreateVulkanDeviceContext(
     const StaticMutexAutoLock& aProofOfLock) {
-  nsAutoCString rendererNode(gfx::gfxVars::DrmRenderDevice());
-  if (!mVulkanDecoder.SelectVulkanDecoderPhysicalDevice(aProofOfLock,
-                                                        rendererNode)) {
-    FFMPEG_LOG("Failed to select Vulkan decoder physical device");
-    return false;
-  }
-
   const char* device_extensions =
       "VK_KHR_timeline_semaphore+"
       "VK_KHR_external_memory_fd+"
@@ -718,6 +711,12 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::InitVulkanDecoder() {
         }
         ReleaseCodecContext();
       });
+
+  nsAutoCString rendererNode(gfx::gfxVars::DrmRenderDevice());
+  if (!mVulkanDecoder.SelectVulkanDecoderPhysicalDevice(mon, rendererNode)) {
+    FFMPEG_LOG("No usable Vulkan decoder physical device");
+    return NS_ERROR_NOT_AVAILABLE;
+  }
 
   if (!CreateVulkanDeviceContext(mon)) {
     FFMPEG_LOG("  Failed to create Vulkan device context");
