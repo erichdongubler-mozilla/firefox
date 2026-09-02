@@ -713,7 +713,7 @@ export class UrlbarInputBaseTestUtils {
     let details = {};
     let result = element.result;
     details.result = result;
-    let { url, postData } = UrlbarUtils.getUrlFromResult(result);
+    let { url, postData } = this.getUrlAndPostData(result);
     details.url = url;
     details.postData = postData;
     details.type = result.type;
@@ -762,6 +762,18 @@ export class UrlbarInputBaseTestUtils {
       details.dynamicType = result.payload.dynamicType;
     }
     return details;
+  }
+
+  /**
+   * The url and post data a result would load, as `getDetailsOfResultAt`
+   * reports them. Resolving a search result's url takes the search service, so
+   * an input in a content process leaves this to its parent-side facade.
+   *
+   * @param {UrlbarResult} result
+   * @returns {{url: ?string, postData: ?nsIInputStream}}
+   */
+  getUrlAndPostData(result) {
+    return UrlbarUtils.getUrlFromResult(result);
   }
 
   /**

@@ -12,6 +12,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   BrowserTestUtils: "resource://testing-common/BrowserTestUtils.sys.mjs",
   TestUtils: "resource://testing-common/TestUtils.sys.mjs",
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
+  UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
 });
 
 const CONTENT_UTILS_URL =
@@ -161,7 +162,8 @@ class NewtabTestUtils {
 
   /**
    * The result at an index, its live nodes dropped and its result rebuilt in
-   * this process.
+   * this process. The url and post data are resolved here too, since a search
+   * result's url comes from the search service.
    *
    * @param {MozBrowser} browser
    * @param {number} index
@@ -173,7 +175,12 @@ class NewtabTestUtils {
     let details = await this.forward(browser, "snapshotDetailsOfResultAt", [
       index,
     ]);
-    return { ...details, result: lazy.UrlbarResult.fromWire(details.result) };
+    let result = lazy.UrlbarResult.fromWire(details.result);
+    return {
+      ...details,
+      result,
+      ...lazy.UrlbarUtils.getUrlFromResult(result),
+    };
   }
 }
 

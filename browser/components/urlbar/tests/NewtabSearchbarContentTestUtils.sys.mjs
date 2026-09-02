@@ -212,6 +212,19 @@ class NewtabContentTestUtils extends UrlbarInputBaseTestUtils {
   }
 
   /**
+   * @see UrlbarInputBaseTestUtils.getUrlAndPostData
+   *
+   * The search service is a parent-process service, and post data is a stream
+   * no structured clone carries, so `NewtabSearchbarTestUtils` resolves both
+   * from the wire-form result on its side.
+   *
+   * @returns {{url: ?string, postData: ?nsIInputStream}}
+   */
+  getUrlAndPostData() {
+    return { url: null, postData: null };
+  }
+
+  /**
    * {@link UrlbarInputBaseTestUtils.getDetailsOfResultAt} in a form that
    * survives a structured clone: the result travels as its wire form, and the
    * live nodes are dropped in favour of what `displayed` says they showed.
