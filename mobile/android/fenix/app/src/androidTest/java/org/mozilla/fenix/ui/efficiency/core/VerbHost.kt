@@ -15,7 +15,7 @@ import org.mozilla.fenix.ui.efficiency.logging.TimedReporter
 interface VerbHost {
     fun reporter(): TimedReporter
 
-    fun locate(selector: Selector, applyPreconditions: Boolean): UiElement?
+    fun locate(selector: Selector, applyPreconditions: Boolean): ElementResolution
 
     /** Null when the selector's strategy cannot match more than one element. */
     fun locateAll(selector: Selector): SemanticsNodeInteractionCollection?
@@ -44,6 +44,9 @@ object Failure {
     /** Resolved and satisfied the check, then the action itself threw. */
     const val ACTION_FAILED = "action_failed"
 
+    /** An optional target was confirmed gone after its action reported a failure. */
+    const val DISAPPEARED_DURING_ACTION = "disappeared_during_action"
+
     /** An absence assertion: it was supposed to go away and did not. */
     const val STILL_PRESENT = "still_present"
 
@@ -67,6 +70,12 @@ object Failure {
 
     /** A selector or page-identity group declared no observable elements. */
     const val EMPTY_SELECTOR_GROUP = "empty_selector_group"
+
+    /** The selector resolver threw instead of answering found or absent. */
+    const val RESOLUTION_ERROR = "resolution_error"
+
+    /** The element resolved, but evaluating the requested state threw. */
+    const val PREDICATE_ERROR = "predicate_error"
 
     /** No registered edge connects where you are to where you asked to go. */
     const val NO_PATH = "no_path"

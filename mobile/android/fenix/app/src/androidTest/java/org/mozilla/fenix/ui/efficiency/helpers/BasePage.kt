@@ -33,6 +33,7 @@ import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.TestAssetHelper
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.packageName
+import org.mozilla.fenix.ui.efficiency.core.ElementResolution
 import org.mozilla.fenix.ui.efficiency.core.ElementState
 import org.mozilla.fenix.ui.efficiency.core.Failure
 import org.mozilla.fenix.ui.efficiency.core.Gestures
@@ -76,8 +77,7 @@ abstract class BasePage(protected val composeRule: AndroidComposeTestRule<HomeAc
 
     override fun reporter() = rep()
 
-    override fun locate(selector: Selector, applyPreconditions: Boolean) =
-        UiElement.wrap(mozGetElement(selector, applyPreconditions))
+    override fun locate(selector: Selector, applyPreconditions: Boolean) = mozGetElement(selector, applyPreconditions)
 
     // Only a Compose tag can name more than one element; the collection verbs report any other
     // strategy as the reason rather than as "not found".
@@ -294,36 +294,49 @@ abstract class BasePage(protected val composeRule: AndroidComposeTestRule<HomeAc
     // --- Resolution: selector -> element -----------------------------------------
 
     /**
-     * Find the element a selector names, or null. Strategies are described as data in [STRATEGY_LOCATORS] and
-     * interpreted by [Resolvers], one per UI toolkit, so adding one is a table row rather than a branch.
+     * Resolve the element a selector names. Strategies are described as data in [STRATEGY_LOCATORS] and interpreted by
+     * [Resolvers], one per UI toolkit, so adding one is a table row rather than a branch.
      */
-    private fun mozGetElement(selector: Selector, applyPreconditions: Boolean = true): Any? {
+    private fun mozGetElement(selector: Selector, applyPreconditions: Boolean = true): ElementResolution {
         if (selector.value.isBlank()) {
             Log.i("mozGetElement", "Empty or blank selector value: ${selector.description}")
-            return null
-        }
-        if (applyPreconditions && requiresScroll(selector.groups)) {
-            ensureReachable(selector) // may call mozSwipeTo with applyPreconditions = false
+            return ElementResolution.Unsupported("selector value is blank")
         }
         val locator = STRATEGY_LOCATORS[selector.strategy]
         if (locator == null) {
             Log.i("mozGetElement", "No locator for strategy ${selector.strategy}")
-            return null
+            return ElementResolution.Unsupported("no locator for ${selector.strategy}")
         }
-        return when (locator.layer) {
-            Layer.COMPOSE ->
-                Resolvers.displayed(composeRule, locator, selector) ?: Resolvers.compose(composeRule, locator, selector)
-            Layer.ESPRESSO -> Resolvers.espresso(locator, selector) { selector.toResourceId() }
-            Layer.UIAUTOMATOR -> Resolvers.uiAutomator(mDevice, packageName, locator, selector)
-            Layer.UIAUTOMATOR2 -> Resolvers.uiAutomator2(mDevice, packageName, locator, selector)
-        }.also { if (it == null) Log.i("mozGetElement", "not found: ${selector.description}") }
+        return try {
+            if (applyPreconditions && requiresScroll(selector.groups)) {
+                ensureReachable(selector)
+            }
+            val raw =
+                when (locator.layer) {
+                    Layer.COMPOSE -> Resolvers.displayed(composeRule, locator, selector)
+                    Layer.ESPRESSO -> Resolvers.espresso(locator, selector) { selector.toResourceId() }
+                    Layer.UIAUTOMATOR -> Resolvers.uiAutomator(mDevice, packageName, locator, selector)
+                    Layer.UIAUTOMATOR2 -> Resolvers.uiAutomator2(mDevice, packageName, locator, selector)
+                }
+            when {
+                raw == null -> ElementResolution.Absent
+                else ->
+                    UiElement.wrap(raw)?.let(ElementResolution::Found)
+                        ?: ElementResolution.Unsupported("resolver returned ${raw::class.java.name}")
+            }.also {
+                if (it == ElementResolution.Absent) Log.i("mozGetElement", "not found: ${selector.description}")
+            }
+        } catch (e: Throwable) {
+            ElementResolution.Error(e)
+        }
     }
 
     private fun mozVerifyElement(selector: Selector, applyPreconditions: Boolean = true): Boolean {
         // MUST NOT throw. The page probes poll this before navigation starts, and an escaped
         // exception reaches navigateToPage() -> failure screenshot -> StrictMode penaltyDeath, which
         // masks the real error. Both halves below degrade to false instead.
-        val element = runCatching { locate(selector, applyPreconditions) }.getOrNull() ?: return false
+        val result = locate(selector, applyPreconditions)
+        val element = (result as? ElementResolution.Found)?.element ?: return false
         return ElementState.probe(element, ElementState.Trait.DISPLAYED)
     }
 

@@ -5,8 +5,12 @@
 package org.mozilla.fenix.ui.efficiency.core
 
 import androidx.compose.ui.test.SemanticsNodeInteractionCollection
+import androidx.test.espresso.Espresso.onView
+import androidx.test.espresso.matcher.ViewMatchers.isRoot
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
 import org.mozilla.fenix.ui.efficiency.logging.StepDescriptor
@@ -16,6 +20,13 @@ import org.mozilla.fenix.ui.efficiency.logging.TestStatus
 import org.mozilla.fenix.ui.efficiency.logging.TimedReporter
 
 class VerbContractTest {
+    private val selector =
+        Selector(
+            strategy = org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy.COMPOSE_BY_TAG,
+            value = "target",
+            description = "target",
+        )
+
     @Test
     fun anEmptySelectorGroupCannotSucceedVacuously() {
         val logger = RecordingStepLogger()
@@ -28,14 +39,84 @@ class VerbContractTest {
         assertEquals(Failure.EMPTY_SELECTOR_GROUP, logger.completed.single().args["failure"])
     }
 
-    private class FakeVerbHost(private val timedReporter: TimedReporter) : VerbHost {
+    @Test
+    fun optionalSkipsOnlyTrueAbsence() {
+        val logger = RecordingStepLogger()
+        val host = FakeVerbHost(TimedReporter(logger), ElementResolution.Absent)
+
+        host.require(verb = "click_if_present", selector = selector, optional = true)
+
+        assertEquals("SKIP", logger.completed.last().args["outcome"])
+        assertEquals(Failure.NOT_FOUND, logger.completed.last().args["failure"])
+    }
+
+    @Test
+    fun optionalDoesNotHideResolutionErrors() {
+        val logger = RecordingStepLogger()
+        val error = IllegalStateException("resolver broke")
+        val host = FakeVerbHost(TimedReporter(logger), ElementResolution.Error(error))
+
+        val thrown = runCatching {
+            host.require(verb = "click_if_present", selector = selector, optional = true)
+        }
+            .exceptionOrNull()
+
+        assertSame(error, thrown)
+        assertEquals(Failure.RESOLUTION_ERROR, logger.completed.last().args["failure"])
+        assertEquals(1, host.locateCalls)
+    }
+
+    @Test
+    fun optionalDoesNotHideActionErrors() {
+        val logger = RecordingStepLogger()
+        val error = IllegalStateException("action broke")
+        val host =
+            FakeVerbHost(
+                TimedReporter(logger),
+                ElementResolution.Found(EspressoUiElement(onView(isRoot()))),
+                ElementResolution.Unsupported("recheck unavailable"),
+            )
+
+        val thrown = runCatching {
+            host.require(verb = "click_if_present", selector = selector, optional = true) { throw error }
+        }
+            .exceptionOrNull()
+
+        assertSame(error, thrown)
+        assertEquals(Failure.ACTION_FAILED, logger.completed.last().args["failure"])
+        assertTrue(logger.completed.any { it.args["resolution"] == "found" })
+    }
+
+    @Test
+    fun optionalSkipsActionFailureOnlyAfterTargetDisappears() {
+        val logger = RecordingStepLogger()
+        val error = IllegalStateException("action raced removal")
+        val host =
+            FakeVerbHost(
+                TimedReporter(logger),
+                ElementResolution.Found(EspressoUiElement(onView(isRoot()))),
+                ElementResolution.Absent,
+            )
+
+        host.require(verb = "click_if_present", selector = selector, optional = true) { throw error }
+
+        assertEquals(2, host.locateCalls)
+        assertEquals("SKIP", logger.completed.last().args["outcome"])
+        assertEquals(Failure.DISAPPEARED_DURING_ACTION, logger.completed.last().args["failure"])
+    }
+
+    private class FakeVerbHost(
+        private val timedReporter: TimedReporter,
+        private val resolution: ElementResolution = ElementResolution.Absent,
+        private val subsequentResolution: ElementResolution = resolution,
+    ) : VerbHost {
         var locateCalls = 0
 
         override fun reporter() = timedReporter
 
-        override fun locate(selector: Selector, applyPreconditions: Boolean): UiElement? {
+        override fun locate(selector: Selector, applyPreconditions: Boolean): ElementResolution {
             locateCalls += 1
-            return null
+            return if (locateCalls == 1) resolution else subsequentResolution
         }
 
         override fun locateAll(selector: Selector): SemanticsNodeInteractionCollection? = null

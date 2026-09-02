@@ -15,7 +15,6 @@ import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
-import androidx.compose.ui.test.onFirst
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.matcher.ViewMatchers.hasSibling
 import androidx.test.espresso.matcher.ViewMatchers.withContentDescription
@@ -36,27 +35,11 @@ import org.mozilla.fenix.ui.efficiency.helpers.Selector
  * lookups with different arguments, and the duplication is what allowed two strategies to disagree about something the
  * caller never chose - which tree to search, or whether to prefix a resource id with the package.
  *
- * All four return null for "not present" and never throw, because every caller treats absence as a value. Espresso is
- * the exception by design: `onView` is a promise, not a lookup, so it returns an interaction that fails later at the
- * point of use.
+ * All four return null only for "not present". Resolver errors propagate so the host can distinguish them from absence.
+ * Espresso is the exception by design: `onView` is a promise, not a lookup, so it returns an interaction that may fail
+ * later at the point of use.
  */
 object Resolvers {
-
-    fun compose(
-        rule: AndroidComposeTestRule<*, *>,
-        locator: Locator,
-        selector: Selector,
-    ): SemanticsNodeInteraction? = runCatching {
-        val unmerged = locator.tree == Tree.UNMERGED
-        val matcher = composeMatcher(locator, selector) ?: return null
-        when {
-            locator.extra == Extra.CHILD_TEXT ->
-                composeCandidates(rule, locator, selector, unmerged)?.onFirst() ?: return null
-            locator.pick == Pick.FIRST_OF_ALL -> rule.onAllNodes(matcher, useUnmergedTree = unmerged).onFirst()
-            else -> rule.onNode(matcher, useUnmergedTree = unmerged)
-        }.also { if (locator.pick == Pick.FIRST_OF_ALL) it.assertExists() }
-    }
-        .getOrNull()
 
     /**
      * Espresso returns an interaction rather than an element, so "not found" cannot be detected here - only an
@@ -67,7 +50,7 @@ object Resolvers {
         val base =
             when (locator.handle) {
                 Handle.ID -> {
-                    val id = runCatching(resourceId).getOrDefault(0)
+                    val id = resourceId()
                     if (id == 0) return null
                     withId(id)
                 }
@@ -182,7 +165,7 @@ object Resolvers {
 
     /** The first *displayed* node in a collection, else the first node, else null. */
     private fun firstDisplayed(collection: SemanticsNodeInteractionCollection): SemanticsNodeInteraction? {
-        val count = runCatching { collection.fetchSemanticsNodes().size }.getOrDefault(0)
+        val count = collection.fetchSemanticsNodes().size
         if (count == 0) return null
         for (i in 0 until count) {
             val node = collection[i]
