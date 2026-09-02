@@ -6,6 +6,8 @@
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
+  JSONL_MIME_TYPE_PATTERN:
+    "resource://devtools/client/shared/jsonl-mime-types.mjs",
   NetUtil: "resource://gre/modules/NetUtil.sys.mjs",
 });
 
@@ -200,7 +202,9 @@ function fixSave(request, isJsonlines) {
     try {
       const header = request.getResponseHeader("Content-Type");
       match = header.match(
-        /^(application\/(?:[^;]+\+)?json|text\/jsonl|application\/(?:jsonl|jsonlines|x-ndjson))(?:;|$)/
+        new RegExp(
+          `^(application\\/(?:[^;]+\\+)?json|${lazy.JSONL_MIME_TYPE_PATTERN})(?:;|$)`
+        )
       );
     } catch (err) {
       // Handled below
@@ -208,7 +212,9 @@ function fixSave(request, isJsonlines) {
   } else {
     const uri = request.QueryInterface(Ci.nsIChannel).URI.spec;
     match = uri.match(
-      /^data:(application\/(?:[^;,]+\+)?json|text\/jsonl|application\/(?:jsonl|jsonlines|x-ndjson))[;,]/
+      new RegExp(
+        `^data:(application\\/(?:[^;,]+\\+)?json|${lazy.JSONL_MIME_TYPE_PATTERN})[;,]`
+      )
     );
   }
   let originalType;
