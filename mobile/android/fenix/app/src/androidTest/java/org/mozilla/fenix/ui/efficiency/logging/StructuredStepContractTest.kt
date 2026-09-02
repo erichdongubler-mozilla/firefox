@@ -27,7 +27,13 @@ class StructuredStepContractTest {
                     ),
                     processId = 42,
                 )
-            val reporter = TimedReporter(CombinedLogger(null, JsonSink(file, envelope)))
+            val reporter =
+                TimedReporter(
+                    CombinedLogger(
+                        null,
+                        JsonSink(file, envelope, ProviderStructuredEventSink.None),
+                    )
+                )
 
             reporter.start(TimedReporter.Type.CMD, "command", "click").ok()
 

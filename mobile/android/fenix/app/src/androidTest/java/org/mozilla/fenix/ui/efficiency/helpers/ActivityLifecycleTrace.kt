@@ -20,7 +20,8 @@ class ActivityLifecycleTrace private constructor(private val testId: String) :
     Application.ActivityLifecycleCallbacks, Closeable {
 
     private val application = appContext.applicationContext as Application
-    // Activity callbacks run under Fenix's main-thread StrictMode policy, so this transport must not write files.
+    // Activity callbacks run under Fenix's main-thread StrictMode policy. JsonSink's provider transport queues its
+    // file writes off-thread; the app-scoped file sink stays disabled here.
     private val logcat = JsonSink(null)
     private var sequence = 0
 

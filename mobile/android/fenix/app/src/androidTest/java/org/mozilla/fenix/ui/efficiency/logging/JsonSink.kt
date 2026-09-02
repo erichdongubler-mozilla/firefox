@@ -26,6 +26,7 @@ import org.json.JSONObject
 class JsonSink(
     private val file: File?,
     private val envelope: EventEnvelope = ProcessEventEnvelope.current,
+    private val providerEvidence: ProviderStructuredEventSink = ProcessProviderEvidence,
 ) {
 
     /**
@@ -56,6 +57,12 @@ class JsonSink(
             file?.appendText(line + "\n")
         } catch (t: Throwable) {
             Log.w(TAG, "Failed to write JSON event: ${t.message}")
+        }
+
+        try {
+            providerEvidence.event(event)
+        } catch (t: Throwable) {
+            Log.w(TAG, "Failed to spool provider evidence: ${t.message}")
         }
     }
 
