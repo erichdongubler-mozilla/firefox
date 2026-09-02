@@ -5083,6 +5083,91 @@ async function destroyTranslationsEngine() {
   await EngineProcess.destroyTranslationsEngine();
 }
 
+/**
+ * A short engine idle timeout suitable for browser tests.
+ *
+ * @type {number}
+ */
+const TRANSLATIONS_ENGINE_CACHE_TIMEOUT_MS = 300;
+
+/** Test utility functions for translations engine lifetime. */
+class TranslationsEngineTestUtils {
+  /**
+   * Waits for the translations engine process to exit after its idle timeout.
+   *
+   * @param {LanguagePair} languagePair
+   * @returns {Promise<void>}
+   */
+  static async waitForIdleTimeout(languagePair) {
+    const engineParent = await EngineProcess.getTranslationsEngineParent();
+    const processShutdown = TestUtils.topicObserved(
+      "ipc:content-shutdown",
+      subject =>
+        subject instanceof Ci.nsIPropertyBag2 &&
+        subject.get("childID") === engineParent.childID
+    );
+
+    await engineParent.waitForEngineIdleTimeoutForTests(
+      languagePair,
+      TRANSLATIONS_ENGINE_CACHE_TIMEOUT_MS
+    );
+    await processShutdown;
+
+    ok(
+      EngineProcess.areAllEnginesTerminated(),
+      "The inference process exits after the translations engine expires."
+    );
+  }
+
+  /**
+   * Waits for a translations engine to expire while the inference process
+   * remains alive.
+   *
+   * @param {TranslationsEngineParent} engineParent
+   * @param {LanguagePair} languagePair
+   * @returns {Promise<void>}
+   */
+  static async waitForIdleTimeoutWithProcessAlive(engineParent, languagePair) {
+    await engineParent.waitForEngineIdleTimeoutForTests(
+      languagePair,
+      TRANSLATIONS_ENGINE_CACHE_TIMEOUT_MS
+    );
+
+    ok(
+      !EngineProcess.areAllEnginesTerminated(),
+      "The inference process remains alive after the translations engine expires."
+    );
+  }
+
+  /**
+   * Keeps the inference process alive independently of the translations engine.
+   *
+   * @returns {Promise<{
+   *   engineParent: TranslationsEngineParent,
+   *   release: () => Promise<void>,
+   * }>}
+   */
+  static async keepInferenceProcessAlive() {
+    const mlEngineParent = await EngineProcess.getMLEngineParent();
+    const engineParent = await EngineProcess.getTranslationsEngineParent();
+
+    ok(
+      !EngineProcess.areAllEnginesTerminated(),
+      "The independent engine actor keeps the inference process alive."
+    );
+    is(
+      engineParent.childID,
+      mlEngineParent.childID,
+      "Both engine actors use the same inference process."
+    );
+
+    return {
+      engineParent,
+      release: () => EngineProcess.destroyMLEngine(),
+    };
+  }
+}
+
 class AboutTranslationsTestUtils {
   /**
    * A collection of custom events that the about:translations document may dispatch.
