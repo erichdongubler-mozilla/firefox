@@ -606,6 +606,16 @@ browsertime-benchmark:
                         macosx1500.*shippable.*:
                             - --page-timeout=900000
                         default: []
+                speedometer3:
+                    by-test-platform:
+                        linux.*shippable.*: [--power-profile=performance]
+                        linux.*nightlyasrelease.*: [--power-profile=performance]
+                        default: []
+                speedometer-experimental:
+                    by-test-platform:
+                        linux.*shippable.*: [--power-profile=performance]
+                        linux.*nightlyasrelease.*: [--power-profile=performance]
+                        default: []
                 default:
                     by-test-platform:
                         macosx1400.*shippable.*:
