@@ -4083,6 +4083,16 @@ pref("extensions.formautofill.useml.twoHead", true);
 // never time out. Controlled by the form-autofill-ml Nimbus feature.
 pref("extensions.formautofill.useml.timeoutMS", 120000);
 
+// Optional AutoFill tokenizer features, as a JSON array of feature keys. Each
+// key adds tokens to every field's exported mlData
+// Default "[]" (none). Each feature changes the mlData contract, so the consuming
+// model must be trained with the same features enabled.
+pref("extensions.formautofill.useml.features", "[]");
+
+// Pin the ML model revision to load (the encoder and head engines share one
+// version). Empty = use the Remote Settings default.
+pref("extensions.formautofill.useml.modelVersion", "");
+
 pref("extensions.formautofill.addresses.enabled", true);
 pref("extensions.formautofill.addresses.capture.enabled", true);
 

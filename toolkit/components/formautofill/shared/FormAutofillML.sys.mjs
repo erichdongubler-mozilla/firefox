@@ -7,6 +7,7 @@ import {
   FEATURES,
 } from "chrome://global/content/ml/EngineProcess.sys.mjs";
 
+import { FormAutofill } from "resource://autofill/FormAutofill.sys.mjs";
 import { FormAutofillUtils } from "resource://gre/modules/shared/FormAutofillUtils.sys.mjs";
 import { MLEngineParent } from "moz-src:///toolkit/components/ml/actors/MLEngineParent.sys.mjs";
 
@@ -27,6 +28,14 @@ const FormFill_Config = {
   modelId: "mozilla/tinybert-address-autofill",
   numThreads: 2,
 };
+
+// Copy an engine config with modelRevision pinned to the override from the
+// extensions.formautofill.useml.modelVersion pref (both engines share one
+// version). Empty = unchanged, so Remote Settings picks the revision.
+function withModelRevision(config) {
+  const revision = (FormAutofill.mlModelVersion || "").trim();
+  return revision ? { ...config, modelRevision: revision } : config;
+}
 
 // Dimension of a single pooled field embedding produced by the encoder.
 const EMBEDDING_DIM = 384;
@@ -136,7 +145,7 @@ export class FormAutofillML {
       // effect without a restart. -1 keeps the engine alive indefinitely.
       const timeoutMS = FormAutofillUtils.mlEngineTimeoutMS;
       const initPromises = configs.map(config =>
-        createEngine({ ...config, timeoutMS })
+        createEngine(withModelRevision({ ...config, timeoutMS }))
       );
 
       // If the ML engines have never been used before, they likely haven't been
@@ -156,6 +165,9 @@ export class FormAutofillML {
       return null;
     }
 
+    // Report the pinned revision when overridden, else the resolved default.
+    const override = (FormAutofill.mlModelVersion || "").trim();
+
     const details = await Promise.all(
       configs.map(config =>
         MLEngineParent.getInferenceOptions(config.featureId, config.taskName)
@@ -163,8 +175,9 @@ export class FormAutofillML {
     );
     // Models are versioned independently, so telemetry reports every revision.
     // A single-model classifier therefore reports just its own revision.
+
     FormAutofillML.#modelVersion = details
-      .map(detail => detail.modelRevision ?? "")
+      .map(detail => override || detail.modelRevision)
       .join("/");
 
     return configs.map(config => this.#engines.get(config.featureId));

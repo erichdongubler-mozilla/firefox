@@ -35,6 +35,21 @@ const WORD_RE = /\s*([\p{L}\p{N}]+)/u;
 const ADJACENT_BEFORE_PREFIX = "bb";
 const ADJACENT_AFTER_PREFIX = "aa";
 
+// Max characters kept from each side of a <select>'s option-value range token
+// (see tokenizeSelectOptionRange).
+const SELECT_OPTION_RANGE_MAX = 16;
+
+// Only emit a "**maxlen<N>" token for explicit small maxlength values (below
+// this cap); larger/unset limits carry little field-type signal and add noise
+// (see tokenizeInputAttributes).
+const INPUT_MAXLENGTH_CAP = 16;
+
+// A "pattern" made only of a digit character class plus quantifiers/anchors is
+// treated as a numeric hint; a bare "{N}" quantifier gives a fixed length. Any
+// other (rarer) pattern is ignored.
+const DIGIT_PATTERN_RE =
+  /^\^?(?:\\d|\[0-9\]|\[\\d\])(?:(\{(\d+)(?:,\d*)?\})|[+*])?\$?$/;
+
 /**
  * Returns the autocomplete information of fields according to heuristics.
  */
@@ -911,6 +926,104 @@ export const FormAutofillHeuristics = {
     if (elementType != "text") {
       words.push("**" + elementType);
     }
+
+    const features = FormAutofill.mlFeatures;
+    if (features.has("select_option")) {
+      this.tokenizeSelectOptionRange(element, words);
+    }
+
+    if (features.has("input_attributes")) {
+      this.tokenizeInputAttributes(element, words);
+    }
+  },
+
+  /**
+   * Append discrete input-attribute tokens that carry field-type signal but are
+   * otherwise lost by word tokenization: a small explicit maxlength and a
+   * non-text inputmode. The most common digit-only "pattern" values are mapped
+   * onto these two signals (numeric inputmode, plus a fixed {N} length when
+   * maxlength is not set); rarer patterns are ignored. Especially useful for the
+   * split telephone subfields (area code=3, prefix=3, suffix=4, country code).
+   *
+   * @param {Element} element The field element being tokenized.
+   * @param {Array<string>} words The token list to append to.
+   */
+  tokenizeInputAttributes(element, words) {
+    // maxLength is -1 when unset (and undefined for elements without it).
+    let maxLength = element.maxLength;
+    // inputMode reflects the inputmode content attribute ("" when unset).
+    let inputMode = (element.inputMode || "").toLowerCase();
+
+    // Map the common digit-only patterns onto inputmode/maxLength; ignore the
+    // rest so we don't emit noisy free-form pattern tokens.
+    const pattern = element.getAttribute?.("pattern")?.trim();
+    if (pattern) {
+      const match = pattern.match(DIGIT_PATTERN_RE);
+      if (match) {
+        if (!inputMode) {
+          inputMode = "numeric";
+        }
+        // A fixed "{N}" length fills in for a missing maxlength attribute.
+        if (match[2] && !(maxLength > 0)) {
+          maxLength = parseInt(match[2], 10);
+        }
+      }
+    }
+
+    if (inputMode && inputMode != "text") {
+      words.push("**inputmode" + inputMode);
+    }
+
+    if (maxLength > 0 && maxLength < INPUT_MAXLENGTH_CAP) {
+      words.push("**maxlen" + maxLength);
+    }
+  },
+
+  /**
+   * For a <select>, append a single token describing its option-value range:
+   * "<first>...<last>", built from each option's visible text (falling back to
+   * its value), lowercased and truncated to SELECT_OPTION_RANGE_MAX chars per
+   * side. This surfaces the field's value domain (e.g. a month dropdown ->
+   * "1...12") in the exported mlData. No-op for non-selects or empty selects.
+   *
+   * @param {Element} element The field element being tokenized.
+   * @param {Array<string>} words The token list to append to.
+   */
+  tokenizeSelectOptionRange(element, words) {
+    if (!HTMLSelectElement.isInstance(element)) {
+      return;
+    }
+    const options = element.options;
+    if (!options?.length) {
+      return;
+    }
+    // Collapse all internal whitespace so the range stays a single token: the
+    // aa/bb neighbor-context system space-joins and re-splits token lists, so a
+    // token containing a space would fragment (and lose its prefix) in
+    // neighbors' context.
+    const label = option =>
+      (option?.text || option?.value || "")
+        .toLowerCase()
+        .replace(/\s+/g, "")
+        .slice(0, SELECT_OPTION_RANGE_MAX);
+    // Skip leading/trailing options that are blank after normalization (both
+    // text and value empty) -- e.g. the placeholder <option value=""></option>
+    // most dropdowns start with, which would otherwise waste half the range
+    // token. Non-blank placeholders ("please select") are kept, since their
+    // text can still carry signal.
+    let lo = 0;
+    let hi = options.length - 1;
+    while (lo < hi && !label(options[lo])) {
+      lo++;
+    }
+    while (hi > lo && !label(options[hi])) {
+      hi--;
+    }
+    const first = label(options[lo]);
+    const last = label(options[hi]);
+    if (first || last) {
+      words.push(`${first}...${last}`);
+    }
   },
 
   tokenizeElements(elements) {
@@ -932,8 +1045,8 @@ export const FormAutofillHeuristics = {
 
     let resultsMap = new Map();
 
-    // The tokens are made up of the list of words in the text
-    // and the prefixed tokens for the previous and next elements.
+    // Each field's tokens plus its immediate neighbors' tokens, prefixed "bb"
+    // (previous) and "aa" (next) so the model can tell own vs adjacent context.
     for (let e = 0; e < elementDataList.length; e++) {
       let words = elementDataList[e].words.copyWithin();
 

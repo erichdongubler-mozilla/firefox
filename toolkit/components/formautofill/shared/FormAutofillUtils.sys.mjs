@@ -1613,3 +1613,30 @@ XPCOMUtils.defineLazyPreferenceGetter(
   AUTOFILL_ML_NATIVE_ONNX_PREF,
   false
 );
+
+// Optional mlData tokenizer features, as a JSON array of feature keys (e.g.
+// ["select_option", "input_attributes"]).
+XPCOMUtils.defineLazyPreferenceGetter(
+  FormAutofill,
+  "mlFeatures",
+  "extensions.formautofill.useml.features",
+  "[]",
+  null,
+  value => {
+    try {
+      const list = JSON.parse(value);
+      return new Set(Array.isArray(list) ? list : []);
+    } catch {
+      return new Set();
+    }
+  }
+);
+
+// Pin the ML model revision to load (the encoder and head engines share one
+// version).
+XPCOMUtils.defineLazyPreferenceGetter(
+  FormAutofill,
+  "mlModelVersion",
+  "extensions.formautofill.useml.modelVersion",
+  ""
+);
