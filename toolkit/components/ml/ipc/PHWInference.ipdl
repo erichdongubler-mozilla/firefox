@@ -3,7 +3,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-include protocol PHWInferenceManager;
+include protocol PSpeechRecognition;
 
 using mozilla::dom::ContentParentId from "mozilla/dom/ipc/IdType.h";
 
@@ -66,9 +66,8 @@ protocol PHWInference
                        nsCString id) returns (GetModelFileResult result);
 
   child:
-    // Allow content processes to create direct connections to utility
-    async NewContentHWInferenceManager(Endpoint<PHWInferenceManagerParent> endpoint,
-                                       ContentParentId contentId);
+    async NewContentSpeechRecognition(Endpoint<PSpeechRecognitionParent> endpoint,
+                                      ContentParentId contentId);
 };
 
 } // namespace hwinference

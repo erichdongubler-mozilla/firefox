@@ -1119,8 +1119,14 @@ class ContentParent final : public PContentParent,
       CreateAudioIPCConnectionResolver&& aResolver);
 
 #ifndef ANDROID
-  mozilla::ipc::IPCResult RecvRequestHWInferenceConnection(
-      Endpoint<PHWInferenceManagerParent>&& aEndpoint);
+  // Points mHWInferenceKeepAlive at the live HWInference process, launching it
+  // if it is gone. Leaves it null once the restart budget is spent.
+  void EnsureHWInferenceConnection();
+
+  mozilla::ipc::IPCResult RecvAcquireHWInferenceProcess();
+
+  mozilla::ipc::IPCResult RecvCreateSpeechRecognition(
+      Endpoint<hwinference::PSpeechRecognitionParent>&& aEndpoint);
 
   mozilla::ipc::IPCResult RecvReleaseHWInferenceConnection();
 #endif  // !ANDROID

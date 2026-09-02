@@ -16,7 +16,10 @@ EXPORTS.mozilla.dom += [
     "SpeechTrackListener.h",
 ]
 
-EXPORTS += []
+EXPORTS.mozilla.hwinference += [
+    "SpeechRecognitionChild.h",
+    "SpeechRecognitionParent.h",
+]
 
 UNIFIED_SOURCES += [
     "SpeechGrammar.cpp",
@@ -24,16 +27,16 @@ UNIFIED_SOURCES += [
     "SpeechRecognition.cpp",
     "SpeechRecognitionAlternative.cpp",
     "SpeechRecognitionBackend.cpp",
+    "SpeechRecognitionChild.cpp",
+    "SpeechRecognitionParent.cpp",
     "SpeechRecognitionPhrase.cpp",
     "SpeechRecognitionResult.cpp",
     "SpeechRecognitionResultList.cpp",
     "SpeechTrackListener.cpp",
 ]
 
-USE_LIBS += []
-
-LOCAL_INCLUDES += [
-    "/dom/base",
+IPDL_SOURCES = [
+    "PSpeechRecognition.ipdl",
 ]
 
 # Bug 1244242 is about enabling on Android

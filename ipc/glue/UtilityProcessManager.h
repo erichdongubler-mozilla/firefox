@@ -8,7 +8,6 @@
 #include "mozilla/ipc/UtilityProcessHost.h"
 #ifndef ANDROID
 #  include "mozilla/hwinference/HWInferenceParent.h"
-#  include "mozilla/hwinference/PHWInferenceManagerChild.h"
 #endif  // !ANDROID
 #include "mozilla/EnumeratedArray.h"
 #include "mozilla/ProcInfo.h"
@@ -117,12 +116,11 @@ class UtilityProcessManager final : public UtilityProcessHost::Listener {
   // Starts (or reuses) the HWInference process.
   RefPtr<HWInferencePromise> StartHWInference();
 
-  // Starts the HWInference process and hands aEndpoint to it. The endpoint
-  // closes itself if that fails, so there is nothing to report back. The
-  // returned keep-alive is the caller's share of that process' lifetime.
-  already_AddRefed<UtilityProcessKeepAlive> StartContentHWInferenceManager(
-      Endpoint<hwinference::PHWInferenceManagerParent>&& aEndpoint,
-      dom::ContentParentId aChildId);
+  // Launches (or reuses) the HWInference process on behalf of a content
+  // process and binds the HWInferenceParent singleton to it. The process lives
+  // for as long as the returned keep-alive. Returns nullptr past
+  // browser.ml.hwinference.max_restarts crashes, rather than looping.
+  already_AddRefed<UtilityProcessKeepAlive> AcquireContentHWInferenceProcess();
 #endif  // !ANDROID
 
   void OnProcessUnexpectedShutdown(UtilityProcessHost* aHost);
@@ -287,6 +285,12 @@ class UtilityProcessManager final : public UtilityProcessHost::Listener {
 #ifdef XP_WIN
   RefPtr<dom::WindowsUtilsParent> mWindowsUtils;
 #endif  // XP_WIN
+
+#ifndef ANDROID
+  // Unexpected HWInference shutdowns since the last clean one. ProcessFields is
+  // dropped on each teardown, so its own crash counter cannot see a loop.
+  uint32_t mHWInferenceRestarts = 0;
+#endif  // !ANDROID
 };
 
 // Holds the utility process it was acquired on, and shuts that process down

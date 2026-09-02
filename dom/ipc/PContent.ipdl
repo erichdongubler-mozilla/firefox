@@ -42,7 +42,7 @@ include protocol PURLClassifierLocalByName;
 include protocol PVRManager;
 include protocol PRemoteMediaManager;
 #ifndef ANDROID
-include protocol PHWInferenceManager;
+include protocol PSpeechRecognition;
 #endif  // !ANDROID
 include protocol PRemoteWorkerDebuggerManager;
 include protocol PRemoteWorkerService;
@@ -1197,9 +1197,10 @@ parent:
     async CreateAudioIPCConnection() returns (FileDescOrError fd);
 
 #ifndef ANDROID
-    async RequestHWInferenceConnection(Endpoint<PHWInferenceManagerParent> endpoint);
+    async AcquireHWInferenceProcess();
+    async CreateSpeechRecognition(Endpoint<PSpeechRecognitionParent> endpoint);
 
-    // One call per RequestHWInferenceConnection. The process is shut down once
+    // One call per AcquireHWInferenceProcess. The process is shut down once
     // nothing holds it anymore.
     async ReleaseHWInferenceConnection();
 #endif  // !ANDROID

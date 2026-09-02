@@ -1839,6 +1839,14 @@
   value: false
   mirror: always
 
+# How many times a crashed HWInference process is restarted before giving up,
+# leaving the features relying on it unavailable. Reset once the process is
+# shut down cleanly, i.e. because its last consumer went away.
+- name: browser.ml.hwinference.max_restarts
+  type: uint32_t
+  value: 3
+  mirror: always
+
 - name: browser.navigation.requireUserInteraction
   type: bool
   value: true

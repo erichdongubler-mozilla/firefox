@@ -152,7 +152,8 @@
 #include "mozilla/glean/PFOGTransport.h"
 #include "mozilla/hal_sandbox/PHalParent.h"
 #ifndef ANDROID
-#  include "mozilla/hwinference/PHWInferenceManagerChild.h"
+#  include "mozilla/hwinference/HWInferenceParent.h"
+#  include "mozilla/hwinference/PSpeechRecognitionChild.h"
 #endif  // !ANDROID
 #include "mozilla/intl/L10nRegistry.h"
 #include "mozilla/intl/LocaleService.h"
@@ -5175,16 +5176,35 @@ mozilla::ipc::IPCResult ContentParent::RecvCreateAudioIPCConnection(
 }
 
 #ifndef ANDROID
-mozilla::ipc::IPCResult ContentParent::RecvRequestHWInferenceConnection(
-    Endpoint<hwinference::PHWInferenceManagerParent>&& aEndpoint) {
-  RefPtr<UtilityProcessKeepAlive> keepAlive =
-      UtilityProcessManager::GetSingleton()->StartContentHWInferenceManager(
-          std::move(aEndpoint), mChildID);
+void ContentParent::EnsureHWInferenceConnection() {
+  // Re-acquiring unconditionally: a no-op when the process and its actor are
+  // up, and what recovers when either went away under us.
+  mHWInferenceKeepAlive =
+      UtilityProcessManager::GetSingleton()->AcquireContentHWInferenceProcess();
+}
 
+mozilla::ipc::IPCResult ContentParent::RecvAcquireHWInferenceProcess() {
   ++mHWInferenceConnections;
-  // Assigning replaces a keep-alive left over from an instance that has since
-  // crashed, which no longer keeps anything alive.
-  mHWInferenceKeepAlive = std::move(keepAlive);
+  EnsureHWInferenceConnection();
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult ContentParent::RecvCreateSpeechRecognition(
+    Endpoint<hwinference::PSpeechRecognitionParent>&& aEndpoint) {
+  if (!mHWInferenceConnections) {
+    return IPC_FAIL(this, "Must be holding a HWInference connection");
+  }
+
+  EnsureHWInferenceConnection();
+
+  // Launch failed: dropping the endpoint tears down the child's session actor,
+  // which reports "service-not-allowed" to the page.
+  if (!mHWInferenceKeepAlive) {
+    return IPC_OK();
+  }
+
+  hwinference::HWInferenceParent::StartContentSpeechRecognition(
+      std::move(aEndpoint), mChildID);
   return IPC_OK();
 }
 
@@ -5192,7 +5212,7 @@ mozilla::ipc::IPCResult ContentParent::RecvReleaseHWInferenceConnection() {
   if (mHWInferenceConnections == 0) {
     return IPC_FAIL(this,
                     "ReleaseHWInferenceConnection without a matching "
-                    "RequestHWInferenceConnection");
+                    "AcquireHWInferenceProcess");
   }
 
   if (--mHWInferenceConnections == 0) {

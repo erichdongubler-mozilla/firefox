@@ -7,7 +7,6 @@
 #include "mozilla/StaticPtr.h"
 #include "nsTHashSet.h"
 #include "HWInferenceParent.h"
-#include "HWInferenceManagerParent.h"
 #include "mozilla/dom/Blob.h"
 #include "mozilla/dom/BlobBinding.h"
 #include "mozilla/ipc/FileDescriptor.h"
@@ -167,18 +166,18 @@ NS_IMPL_ISUPPORTS(ModelDownloadCallbacks, nsIMLModelDownloadProgressCallback,
 RefPtr<HWInferenceParent> HWInferenceParent::GetSingleton() {
   AssertIsOnMainThread();
 
-  // Evict an instance whose process is already gone. Its PHWInference channel
-  // is separate from PUtilityProcess, so it keeps reporting CanSend() until
-  // the peer actually dies and the channel errors, one main-thread dispatch
-  // later. Handing it out in that window would make StartUtility take its
-  // CanSend() fast path and resolve success on a doomed actor rather than
-  // relaunching. Checked here rather than at teardown so it covers an
-  // unexpected process death too, not just CleanShutdown.
-  if (sInstance && sInstance->CanSend()) {
+  // Evict an instance bound to a process that is no longer the current one.
+  // PHWInference is separate from PUtilityProcess, so it keeps reporting
+  // CanSend() for a main-thread dispatch after the peer died, and handing it
+  // out in that window would have StartUtility resolve on a doomed actor.
+  // Comparing the bound process also covers process death, not just
+  // CleanShutdown.
+  if (sInstance && sInstance->mUtilityParent) {
     RefPtr<ipc::UtilityProcessManager> upm =
         ipc::UtilityProcessManager::GetIfExists();
-    if (!upm || !upm->Process(ipc::SandboxingKind::HW_INFERENCE)) {
-      LOGD("{} - evicting stale instance", __func__);
+    if (!upm || upm->GetProcessParent(ipc::SandboxingKind::HW_INFERENCE) !=
+                    sInstance->mUtilityParent) {
+      LOGD("{} - evicting instance bound to a gone process", __func__);
       RefPtr<HWInferenceParent> stale = sInstance;
       sInstance = nullptr;
       // Synchronously runs ActorDestroy, so CanSend() is false on return.
@@ -193,8 +192,30 @@ RefPtr<HWInferenceParent> HWInferenceParent::GetSingleton() {
   return sInstance;
 }
 
+/* static */
+void HWInferenceParent::StartContentSpeechRecognition(
+    Endpoint<PSpeechRecognitionParent>&& aEndpoint,
+    dom::ContentParentId aChildId) {
+  RefPtr<HWInferenceParent> self = GetSingleton();
+  self->WhenReady()->Then(
+      GetMainThreadSerialEventTarget(), __func__,
+      [self, endpoint = std::move(aEndpoint), aChildId]() mutable {
+        if (!self->SendNewContentSpeechRecognition(std::move(endpoint),
+                                                   aChildId)) {
+          LOGD("Failed to send endpoint to utility process");
+        }
+      },
+      []() {
+        LOGD("HWInference never came up: dropping the speech endpoint");
+      });
+}
+
 void HWInferenceParent::ActorDestroy(ActorDestroyReason aReason) {
   LOGD("{}", __func__);
+  // A no-op once bound: let go of anyone waiting on an actor that never made it
+  // to its process.
+  mReadyPromise->Reject(NS_ERROR_NOT_AVAILABLE, __func__);
+  mUtilityParent = nullptr;
   // Only clear ourselves: a late ActorDestroy from a superseded instance must
   // not evict the replacement created after it.
   if (sInstance == this) {
@@ -220,6 +241,8 @@ nsresult HWInferenceParent::BindToUtilityProcess(
 
   LOGD("StartHWInferenceService sent successfully, binding parent endpoint");
   MOZ_ALWAYS_TRUE(parentEnd.Bind(this));
+  mUtilityParent = aUtilityParent;
+  mReadyPromise->Resolve(true, __func__);
   return NS_OK;
 }
 

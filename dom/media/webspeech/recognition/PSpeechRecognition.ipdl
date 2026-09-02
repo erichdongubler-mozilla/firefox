@@ -1,0 +1,36 @@
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+using class mozilla::TimeStamp from "mozilla/TimeStamp.h";
+
+namespace mozilla {
+namespace hwinference {
+
+// This protocol handles speech recognition operations in the HWInference
+// utility process.  Each instance represents a single speech recognition
+// session. As things stand, only a single speech recognition session can be
+// initialized (and performing recognition).
+// PSpeechRecognition can also be instantiated just to call IsModelAvailable,
+// IsModelInstalled or InstallModels, which can happen concurrently to a
+// recognition. Content only asks: it never supplies a progress token nor any
+// "approved" signal. The utility relays install requests to the trusted parent
+// over PHWInference, attaching the requesting content-process id, and the parent
+// decides consent and performs the download (see nsIMLModelResolver).
+//
+// The parent endpoint is sent directly over PContent and bound on the utility
+// process' main thread. The child endpoint is bound on the content process'
+// dedicated "SpeechIPC" thread. Being toplevel, a session ends by the content
+// process closing the channel rather than by a destructor message.
+[ParentProc=Utility, ChildProc=Content]
+async protocol PSpeechRecognition
+{
+parent: // HWInference
+  // Check if speech recognition models are available (cached or downloadable)
+  // for the given languages, used for the "downloadable" Available() result.
+  async IsModelAvailable(nsCString[] languages) returns (bool available);
+};
+
+} // namespace hwinference
+} // namespace mozilla
