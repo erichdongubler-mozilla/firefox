@@ -1724,8 +1724,8 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   bool mAttachingMediaKey = false;
   MozPromiseRequestHolder<SetCDMPromise> mSetCDMRequest;
 
-  // Stores the time at the start of the current 'played' range.
-  double mCurrentPlayRangeStart = 1.0;
+  // Stores the time at the start of the current 'played' range, if any.
+  Maybe<double> mCurrentPlayRangeStart;
 
   // True if loadeddata has been fired.
   bool mLoadedDataFired = false;

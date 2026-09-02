@@ -2664,7 +2664,7 @@ void HTMLMediaElement::AbortExistingLoads() {
 
   bool hadVideo = HasVideo();
   mErrorSink->ResetError();
-  mCurrentPlayRangeStart = -1.0;
+  mCurrentPlayRangeStart = Nothing();
   mPlayed = new TimeRanges(ToSupports(OwnerDoc()));
   mLoadedDataFired = false;
   mCanAutoplayFlag = true;
@@ -3766,12 +3766,12 @@ already_AddRefed<TimeRanges> HTMLMediaElement::Played() {
     ranges->Add(begin, end);
   }
 
-  if (mCurrentPlayRangeStart != -1.0) {
+  if (mCurrentPlayRangeStart) {
     double now = CurrentTime();
-    if (mCurrentPlayRangeStart != now) {
+    if (mCurrentPlayRangeStart.value() != now) {
       // Don't round the left of the interval: it comes from script and needs
       // to be exact.
-      ranges->Add(mCurrentPlayRangeStart, now);
+      ranges->Add(mCurrentPlayRangeStart.value(), now);
     }
   }
 
@@ -5280,8 +5280,8 @@ void HTMLMediaElement::PlayInternal(bool aHandlingUserInput) {
     }
   }
 
-  if (mCurrentPlayRangeStart == -1.0) {
-    mCurrentPlayRangeStart = CurrentTime();
+  if (!mCurrentPlayRangeStart) {
+    mCurrentPlayRangeStart = Some(CurrentTime());
   }
 
   const bool oldPaused = mPaused;
@@ -6491,19 +6491,19 @@ void HTMLMediaElement::UpdateSrcStreamReportPlaybackEnded() {
 void HTMLMediaElement::SeekStarted() { QueueEvent(u"seeking"_ns); }
 
 void HTMLMediaElement::UpdatePlayedRangesBeforeSeek(double aRangeEndTime) {
-  if (mPlayed && mCurrentPlayRangeStart != -1.0) {
+  if (mPlayed && mCurrentPlayRangeStart) {
     LOG(LogLevel::Debug,
         ("{} Adding 'played' a range : [{}, {}]", fmt::ptr(this),
-         mCurrentPlayRangeStart, aRangeEndTime));
+         mCurrentPlayRangeStart.value(), aRangeEndTime));
     // Multiple seek without playing, or seek while playing.
-    if (mCurrentPlayRangeStart != aRangeEndTime) {
+    if (mCurrentPlayRangeStart.value() != aRangeEndTime) {
       // Don't round the left of the interval: it comes from script and needs
       // to be exact.
-      mPlayed->Add(mCurrentPlayRangeStart, aRangeEndTime);
+      mPlayed->Add(mCurrentPlayRangeStart.value(), aRangeEndTime);
     }
     // Reset the current played range start time. We'll re-set it once
     // the seek completes.
-    mCurrentPlayRangeStart = -1.0;
+    mCurrentPlayRangeStart = Nothing();
   }
 }
 
@@ -6521,8 +6521,8 @@ void HTMLMediaElement::SeekCompleted() {
   QueueEvent(u"seeked"_ns);
   // We changed whether we're seeking so we need to AddRemoveSelfReference
   AddRemoveSelfReference();
-  if (mCurrentPlayRangeStart == -1.0) {
-    mCurrentPlayRangeStart = CurrentTime();
+  if (!mCurrentPlayRangeStart) {
+    mCurrentPlayRangeStart = Some(CurrentTime());
   }
 
   if (mSeekDOMPromise) {
@@ -7130,8 +7130,8 @@ void HTMLMediaElement::RunAutoplay() {
 
   if (mDecoder) {
     SetPlayedOrSeeked(true);
-    if (mCurrentPlayRangeStart == -1.0) {
-      mCurrentPlayRangeStart = CurrentTime();
+    if (!mCurrentPlayRangeStart) {
+      mCurrentPlayRangeStart = Some(CurrentTime());
     }
     MOZ_ASSERT(!mSuspendedByInactiveDocOrDocshell);
     mDecoder->Play();

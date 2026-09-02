@@ -608,10 +608,10 @@ double HTMLVideoElement::TotalPlayTime() const {
       total += end - begin;
     }
 
-    if (mCurrentPlayRangeStart != -1.0) {
+    if (mCurrentPlayRangeStart) {
       double now = CurrentTime();
-      if (mCurrentPlayRangeStart != now) {
-        total += now - mCurrentPlayRangeStart;
+      if (mCurrentPlayRangeStart.value() != now) {
+        total += now - mCurrentPlayRangeStart.value();
       }
     }
   }
