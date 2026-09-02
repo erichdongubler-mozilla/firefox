@@ -162,21 +162,6 @@
     &[uidensity="compact"] {
       --tab-inner-inline-margin: 7px;
     }
-
-    /* Hold the collapsed strip at 50px in normal and compact density, so the
-     * scrollbar has room next to the tab backgrounds instead of being drawn
-     * over them. Touch density keeps its natural, wider strip. */
-    @media -moz-pref("browser.nova.enabled") {
-      /* 32px tab background + 2 * 9px. */
-      &:not([uidensity="touch"]) {
-        --tab-inner-inline-margin: 9px;
-      }
-
-      /* 28px tab background + 2 * 11px. */
-      &[uidensity="compact"] {
-        --tab-inner-inline-margin: 11px;
-      }
-    }
   }
 }
 
