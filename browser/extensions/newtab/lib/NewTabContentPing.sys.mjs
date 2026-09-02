@@ -82,7 +82,7 @@ export class NewTabContentPing {
    *   The extra data being recorded with the event.
    */
   recordEvent(name, data) {
-    this.#eventBuffer.push([name, this.sanitizeEventData(data)]);
+    this.#eventBuffer.push([name, this.sanitizeEventData(name, data)]);
   }
 
   /**
@@ -265,12 +265,14 @@ export class NewTabContentPing {
    * ensure we don't accidentally send these if copying information between
    * the newtab ping and the newtab-content ping.
    *
+   * @param {string} eventName
+   *   The name of the event being recorded.
    * @param {object} eventDataDict
    *   The Glean event data that would be passed to a `record` method.
    * @returns {object}
    *   The sanitized event data.
    */
-  sanitizeEventData(eventDataDict) {
+  sanitizeEventData(eventName, eventDataDict) {
     const {
       // eslint-disable-next-line no-unused-vars
       tile_id,
@@ -292,6 +294,12 @@ export class NewTabContentPing {
     // Glean error, so drop it below 157.
     if (Services.vc.compare(AppConstants.MOZ_APP_VERSION, "157.0a1") < 0) {
       delete result.layout_name;
+    }
+    // Bug 2067937: section_position can't be kept consistent for randomized
+    // (DP-noised) content, so it is not collected on the impression and click
+    // events of the newtab_content ping.
+    if (eventName === "impression" || eventName === "click") {
+      delete result.section_position;
     }
     return result;
   }
