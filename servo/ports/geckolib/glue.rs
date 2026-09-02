@@ -756,15 +756,11 @@ pub extern "C" fn Servo_AnimationValue_Dump(value: &AnimationValue, result: &mut
 #[unsafe(no_mangle)]
 pub extern "C" fn Servo_AnimationValue_GetColor(
     value: &AnimationValue,
-    foreground_color: structs::nscolor,
-) -> structs::nscolor {
-    use style::values::computed::color::Color as ComputedColor;
-    match *value {
-        AnimationValue::BackgroundColor(ref color) => {
-            let computed: ComputedColor = color.clone();
-            let foreground_color = AbsoluteColor::from_nscolor(foreground_color);
-            computed.resolve_to_absolute(&foreground_color).to_nscolor()
-        },
+    fg: &AbsoluteColor,
+    result: &mut AbsoluteColor,
+) {
+    *result = match *value {
+        AnimationValue::BackgroundColor(ref color) => color.resolve_to_absolute(fg),
         _ => panic!("Other color properties are not supported yet"),
     }
 }
@@ -9602,40 +9598,23 @@ unsafe fn compute_color(
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Servo_ComputeColor(
     raw_data: Option<&PerDocumentStyleData>,
-    current_color: structs::nscolor,
     value: &nsACString,
-    result_color: &mut structs::nscolor,
+    result_color: &mut AbsoluteColor,
     was_current_color: *mut bool,
     loader: *mut Loader,
 ) -> bool {
-    let current_color = AbsoluteColor::from_nscolor(current_color);
-    let Ok(result) = (unsafe { compute_color(raw_data, &current_color, value, loader) }) else {
-        return false;
+    let result = match unsafe { compute_color(raw_data, &AbsoluteColor::BLACK, value, loader) } {
+        Ok(result) => result,
+        Err(..) => return false,
     };
 
-    *result_color = result.result_color.to_nscolor();
+    *result_color = result.result_color;
     if !was_current_color.is_null() {
         unsafe {
             *was_current_color = result.was_current_color;
         }
     }
     true
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Servo_ComputeAbsoluteColor(
-    raw_data: Option<&PerDocumentStyleData>,
-    value: &nsACString,
-    result_color: &mut AbsoluteColor,
-) -> bool {
-    if let Ok(color) =
-        unsafe { compute_color(raw_data, &AbsoluteColor::BLACK, value, ptr::null_mut()) }
-    {
-        *result_color = color.result_color;
-        true
-    } else {
-        false
-    }
 }
 
 #[unsafe(no_mangle)]
@@ -10618,10 +10597,10 @@ pub extern "C" fn Servo_SlowRgbToNearestColorName(
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn Servo_ColorNameToRgb(name: &nsACString, out: &mut structs::nscolor) -> bool {
+pub extern "C" fn Servo_ColorNameToRgb(name: &nsACString, out: &mut AbsoluteColor) -> bool {
     match cssparser::color::parse_named_color(unsafe { name.as_str_unchecked() }) {
         Ok((r, g, b)) => {
-            *out = AbsoluteColor::new(ColorSpace::Srgb, r, g, b, 1.0).to_nscolor();
+            *out = AbsoluteColor::new(ColorSpace::Srgb, r, g, b, 1.0);
             true
         },
         _ => false,

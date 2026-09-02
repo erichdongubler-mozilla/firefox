@@ -1327,9 +1327,8 @@ already_AddRefed<mozilla::dom::Promise> WindowGlobalParent::DrawSnapshot(
   }
 
   nscolor color;
-  if (NS_WARN_IF(!ServoCSSParser::ComputeColor(nullptr, NS_RGB(0, 0, 0),
-                                               aBackgroundColor, &color,
-                                               nullptr, nullptr))) {
+  if (NS_WARN_IF(
+          !ServoCSSParser::ComputeColor(nullptr, aBackgroundColor, &color))) {
     aRv = NS_ERROR_FAILURE;
     return nullptr;
   }
