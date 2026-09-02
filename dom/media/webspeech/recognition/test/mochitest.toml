@@ -24,6 +24,16 @@ support-files = [
 ["test_ai_controls_gate.html"]
 scheme = "https"
 
+["test_concurrent_session.html"]
+subsuite = "speech-recognition"
+tags = "mtg parakeet-asr"
+# Audio capture doesn't produce real signal under Wayland in CI, so
+# recognition always returns an empty transcript there.
+skip-if = [
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 2053116
+  "verify", # skip under test-verify: it runs outside the subsuite, so serve_model.py (the model hub) is never started
+]
+
 ["test_install_overlap.html"]
 
 ["test_model_available_after_install.html"]
