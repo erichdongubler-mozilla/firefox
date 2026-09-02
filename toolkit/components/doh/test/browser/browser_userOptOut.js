@@ -6,10 +6,9 @@
 
 add_task(setup);
 
-add_task(async function testDoorhangerUserReject() {
+add_task(async function testUserOptOut() {
   // Set up a passing environment and enable DoH.
   setPassingHeuristics();
-  let promise = waitForDoorhanger();
   let prefPromise = TestUtils.waitForPrefChange(prefs.BREADCRUMB_PREF);
   Services.prefs.setBoolPref(prefs.ENABLED_PREF, true);
 
@@ -27,7 +26,6 @@ add_task(async function testDoorhangerUserReject() {
   await checkTRRSelectionTelemetry();
 
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, EXAMPLE_URL);
-  let panel = await promise;
 
   await ensureTRRMode(2);
   await checkHeuristicsTelemetry("enable_doh", "startup");
@@ -43,18 +41,14 @@ add_task(async function testDoorhangerUserReject() {
     prefs.DOORHANGER_USER_DECISION_PREF
   );
 
-  // Click the doorhanger's "reject" button.
-  let button = panel.querySelector(".popup-notification-secondary-button");
-  promise = BrowserTestUtils.waitForEvent(panel, "popuphidden");
-  EventUtils.synthesizeMouseAtCenter(button, {});
-  await promise;
+  simulateUserDecision(false);
 
   await prefPromise;
 
   is(
     Services.prefs.getStringPref(prefs.DOORHANGER_USER_DECISION_PREF),
     "UIDisabled",
-    "Doorhanger decision saved."
+    "User decision recorded."
   );
 
   BrowserTestUtils.removeTab(tab);
