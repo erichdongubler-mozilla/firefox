@@ -231,6 +231,13 @@
   background-color: var(--red-70);
 }
 
+/* A JSON Lines entry which isn't valid JSON */
+
+.network-monitor .jsonl-line-error {
+  color: var(--theme-error-color);
+  background-color: var(--theme-error-background);
+}
+
 /* Response tabpanel */
 
 .network-monitor .response-image-box {
