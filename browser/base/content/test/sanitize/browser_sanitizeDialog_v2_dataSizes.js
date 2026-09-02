@@ -198,6 +198,8 @@ add_task(async function testUIWithDataSizesLoading() {
     SiteDataManager.getQuotaUsageForTimeRanges.bind(SiteDataManager);
   let resolveStubFn;
   let resolverAssigned = false;
+  // Created once, so calls after the first resolve right away.
+  let dataSizesReadyToLoadPromise;
 
   let dh = new ClearHistoryDialogHelper();
   // Create a sandbox for isolated stubbing within the test
@@ -207,7 +209,7 @@ add_task(async function testUIWithDataSizesLoading() {
     .callsFake(async (...args) => {
       info("stub called");
 
-      let dataSizesReadyToLoadPromise = new Promise(resolve => {
+      dataSizesReadyToLoadPromise ??= new Promise(resolve => {
         resolveStubFn = resolve;
         info("Sending message to notify dialog that the resolver is assigned");
         window.postMessage("resolver-assigned", "*");
@@ -242,7 +244,7 @@ add_task(async function testUIWithDataSizesLoading() {
 
     await this.win.gSanitizePromptDialog.dataSizesFinishedUpdatingPromise;
 
-    validateDataSizes(this);
+    await validateDataSizes(this);
     this.cancelDialog();
   };
   dh.open();
