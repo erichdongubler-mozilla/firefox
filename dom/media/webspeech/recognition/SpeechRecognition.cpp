@@ -29,7 +29,7 @@
 #include "mozilla/dom/PromiseNativeHandler.h"
 #include "mozilla/dom/RootedDictionary.h"
 #include "mozilla/dom/SpeechGrammar.h"
-#include "mozilla/dom/SpeechRecognitionError.h"
+#include "mozilla/dom/SpeechRecognitionErrorEvent.h"
 #include "mozilla/dom/SpeechRecognitionEvent.h"
 #include "mozilla/dom/SpeechRecognitionPhrase.h"
 #include "mozilla/intl/Locale.h"
@@ -803,8 +803,8 @@ void SpeechRecognition::DispatchError(SpeechRecognitionErrorCode aErrorCode,
                                       const nsACString& aMessage) {
   MOZ_ASSERT(NS_IsMainThread(), "DispatchError must be on main thread");
 
-  RefPtr<SpeechRecognitionError> srError =
-      new SpeechRecognitionError(nullptr, nullptr, nullptr);
+  RefPtr<SpeechRecognitionErrorEvent> srError =
+      new SpeechRecognitionErrorEvent(nullptr, nullptr, nullptr);
 
   srError->InitSpeechRecognitionError(u"error"_ns, true, false, aErrorCode,
                                       aMessage);

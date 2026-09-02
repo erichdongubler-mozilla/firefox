@@ -2,24 +2,25 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "SpeechRecognitionError.h"
+#include "SpeechRecognitionErrorEvent.h"
 
 namespace mozilla::dom {
 
-SpeechRecognitionError::SpeechRecognitionError(
+SpeechRecognitionErrorEvent::SpeechRecognitionErrorEvent(
     mozilla::dom::EventTarget* aOwner, nsPresContext* aPresContext,
     WidgetEvent* aEvent)
     : Event(aOwner, aPresContext, aEvent), mError() {}
 
-SpeechRecognitionError::~SpeechRecognitionError() = default;
+SpeechRecognitionErrorEvent::~SpeechRecognitionErrorEvent() = default;
 
-already_AddRefed<SpeechRecognitionError> SpeechRecognitionError::Constructor(
+already_AddRefed<SpeechRecognitionErrorEvent>
+SpeechRecognitionErrorEvent::Constructor(
     const GlobalObject& aGlobal, const nsAString& aType,
-    const SpeechRecognitionErrorInit& aParam) {
+    const SpeechRecognitionErrorEventInit& aParam) {
   nsCOMPtr<mozilla::dom::EventTarget> t =
       do_QueryInterface(aGlobal.GetAsSupports());
-  RefPtr<SpeechRecognitionError> e =
-      new SpeechRecognitionError(t, nullptr, nullptr);
+  RefPtr<SpeechRecognitionErrorEvent> e =
+      new SpeechRecognitionErrorEvent(t, nullptr, nullptr);
   bool trusted = e->Init(t);
   e->InitSpeechRecognitionError(aType, aParam.mBubbles, aParam.mCancelable,
                                 aParam.mError,
@@ -29,11 +30,11 @@ already_AddRefed<SpeechRecognitionError> SpeechRecognitionError::Constructor(
   return e.forget();
 }
 
-void SpeechRecognitionError::GetMessage(nsAString& aString) {
+void SpeechRecognitionErrorEvent::GetMessage(nsAString& aString) {
   CopyUTF8toUTF16(mMessage, aString);
 }
 
-void SpeechRecognitionError::InitSpeechRecognitionError(
+void SpeechRecognitionErrorEvent::InitSpeechRecognitionError(
     const nsAString& aType, bool aCanBubble, bool aCancelable,
     SpeechRecognitionErrorCode aError, const nsACString& aMessage) {
   Event::InitEvent(aType, aCanBubble, aCancelable);

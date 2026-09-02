@@ -1,6 +1,9 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * The origin of this IDL file is
+ * https://webaudio.github.io/web-speech-api/#speechrecognitionerrorevent
  */
 
 enum SpeechRecognitionErrorCode {
@@ -18,17 +21,17 @@ enum SpeechRecognitionErrorCode {
 [SecureContext,
  Pref="media.webspeech.recognition.enable",
  Exposed=Window]
-interface SpeechRecognitionError : Event
+interface SpeechRecognitionErrorEvent : Event
 {
   constructor(DOMString type,
-              optional SpeechRecognitionErrorInit eventInitDict = {});
+              SpeechRecognitionErrorEventInit eventInitDict);
 
   readonly attribute SpeechRecognitionErrorCode error;
-  readonly attribute DOMString? message;
+  readonly attribute DOMString message;
 };
 
-dictionary SpeechRecognitionErrorInit : EventInit
+dictionary SpeechRecognitionErrorEventInit : EventInit
 {
-  SpeechRecognitionErrorCode error = "no-speech";
+  required SpeechRecognitionErrorCode error;
   DOMString message = "";
 };

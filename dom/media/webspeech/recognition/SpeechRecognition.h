@@ -13,7 +13,7 @@
 #include "mozilla/WeakPtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/SpeechRecognitionBinding.h"
-#include "mozilla/dom/SpeechRecognitionErrorBinding.h"
+#include "mozilla/dom/SpeechRecognitionErrorEventBinding.h"
 #include "nsCOMPtr.h"
 #include "nsProxyRelease.h"
 #include "nsString.h"
