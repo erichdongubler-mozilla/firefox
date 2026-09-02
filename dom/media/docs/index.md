@@ -6,4 +6,5 @@
 MediaFormatReader
 review/index
 AudioSinkWrapper
+SpeechRecognition
 ```
