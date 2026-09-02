@@ -255,7 +255,6 @@ export class MLModelHubService {
           progressCallback: progressWrapper,
           featureId: "ml-model-hub-service",
           sessionId,
-          telemetryData: { component: "MLModelHubService" },
         });
 
         downloadInfo.downloadedFiles.set(file, { localPath, headers });

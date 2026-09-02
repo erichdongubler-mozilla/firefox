@@ -30,6 +30,8 @@ parent: // HWInference
   // Check if speech recognition models are available (cached or downloadable)
   // for the given languages, used for the "downloadable" Available() result.
   async IsModelAvailable(nsCString[] languages) returns (bool available);
+  // Install speech recognition models for the given languages
+  async InstallModels(nsCString[] languages) returns (bool success);
 };
 
 } // namespace hwinference
