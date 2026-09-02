@@ -911,6 +911,58 @@ menupopup::part(drop-indicator) {
   margin: var(--space-xxsmall) var(--space-xsmall);
 }
 
+/* Once the download is over there is nothing left to accept or cancel: the
+ * relabeled secondary button is the only action left. */
+#speech-recognition-model-download-progress-notification:is([model-download-succeeded], [model-download-failed]) {
+  .popup-notification-primary-button {
+    display: none;
+  }
+}
+
+/* Sits above the body text and reads as its heading, so it needs the body's
+ * inline padding and no gap between the two. */
+#speech-recognition-model-download-header {
+  padding-inline: var(--panel-padding);
+  padding-block-start: var(--panel-padding);
+  /* The body container brings its own top padding, which would otherwise leave
+   * the heading floating well above the text it introduces. */
+  margin-block-end: calc(var(--space-small) - var(--panel-padding));
+}
+
+#speech-recognition-model-download-header-text {
+  font-weight: var(--font-weight-heading);
+}
+
+#speech-recognition-model-download-progress-content {
+  margin-block-start: var(--space-small);
+}
+
+/* Same track as the download progress meter, see
+ * browser/themes/shared/downloads/progressmeter.css. */
+.speech-recognition-model-download-progress {
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: var(--size-item-xsmall);
+  border: none;
+  border-radius: var(--border-radius-xsmall);
+  background-color: color-mix(in srgb, currentColor 15%, transparent);
+}
+
+.speech-recognition-model-download-progress::-moz-progress-bar {
+  appearance: none;
+  background-color: var(--color-accent-primary);
+  border-radius: var(--border-radius-xsmall);
+}
+
+/* Reserve the line for the remaining-time estimate: it is empty before the
+ * first estimate is available and again once the download is over, and the
+ * panel should not resize each time. */
+#speech-recognition-model-download-progress-status {
+  margin-block-start: var(--space-small);
+  min-height: var(--size-item-small);
+}
+
 #invalid-form-popup {
   white-space: pre-wrap;
   word-break: break-word;

@@ -503,6 +503,7 @@ already_AddRefed<Promise> SpeechRecognition::Install(
   // gesture buys at most one download prompt. The spec has no such
   // requirement, but the WPT for this method asserts that install() without a
   // user gesture rejects with a NotAllowedError.
+  // https://github.com/WebAudio/web-speech-api/issues/202
   if (!doc->ConsumeTransientUserGestureActivation()) {
     aRv.ThrowNotAllowedError("install() requires transient user activation");
     return nullptr;

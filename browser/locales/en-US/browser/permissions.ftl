@@ -13,3 +13,16 @@ speech-recognition-model-download-allow =
 speech-recognition-model-download-not-now =
     .label = Not Now
     .accesskey = N
+speech-recognition-model-download-progress-message = Downloading speech recognition model
+# Accessible name of the progress bar shown while the model downloads. The
+# percentage and time remaining are rendered next to it, as text.
+speech-recognition-model-download-progressbar =
+    .aria-label = Speech recognition model download progress
+speech-recognition-model-download-cancel =
+    .label = Cancel
+    .accesskey = C
+speech-recognition-model-download-complete-message = Speech recognition model downloaded.
+speech-recognition-model-download-failed-message = Speech recognition model download failed.
+speech-recognition-model-download-ok =
+    .label = OK
+    .accesskey = O
