@@ -24,6 +24,7 @@ import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.IdlingResourceHelper.unregisterAllIdlingResources
 import org.mozilla.fenix.helpers.TestHelper.appContext
 import org.mozilla.fenix.helpers.TestHelper.exitMenu
+import org.mozilla.fenix.ui.efficiency.logging.AttemptFinalization
 import org.mozilla.fenix.ui.efficiency.logging.TestLogging
 import org.mozilla.fenix.ui.efficiency.logging.TestStatus
 import org.mozilla.fenix.ui.efficiency.logging.TimedReporter
@@ -42,9 +43,10 @@ import org.mozilla.fenix.ui.efficiency.navigation.PageCatalog
  *
  * A LOWER `order` is applied further out, so this is also the order they run in.
  *
- * -1 [sampleOnArrival] records what the device arrived carrying, before anything clears it 0 FenixTestRule (legacy)
- * GrantPermissionRule -> TestSetupRule -> MockWebServerRule 1 [composeRuleWithCleanup] the per-test clear, then the
- * activity, then the failure dump 2 [recordTestBoundaries] test start/end and the state samples around them
+ * -2 [finalizeAttempt] emits the terminal attempt record after every other rule -1 [sampleOnArrival] records what the
+ * device arrived carrying, before anything clears it 0 FenixTestRule (legacy) GrantPermissionRule -> TestSetupRule ->
+ * MockWebServerRule 1 [composeRuleWithCleanup] the per-test clear, then the activity, then the failure dump 2
+ * [recordTestBoundaries] test start/end and the state samples around them
  *
  * ## What is cleared, and by which of them
  *
@@ -122,6 +124,32 @@ abstract class BaseTest(private val defaultLaunchConfig: LaunchConfig = LaunchCo
     // once, so it could not be reused across tests even if the flags were fixed.
     private var _composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule, *>? = null
     private var _pageContext: PageContext? = null
+    private val attemptFinalization = AttemptFinalization()
+
+    @get:Rule(order = -2)
+    val finalizeAttempt: TestRule = TestRule { base, description ->
+        object : Statement() {
+            override fun evaluate() {
+                val reporter = installedReporter()
+                reporter.reset()
+                attemptFinalization.reset()
+                var finalFailure: Throwable? = null
+                try {
+                    base.evaluate()
+                } catch (t: Throwable) {
+                    finalFailure = t
+                } finally {
+                    runCatching {
+                        reporter.record(
+                            "attemptEnd",
+                            attemptFinalization.terminalFields(description.displayName, finalFailure),
+                        )
+                    }
+                }
+                finalFailure?.let { throw it }
+            }
+        }
+    }
 
     /**
      * The Compose rule for the test currently running.
@@ -138,9 +166,9 @@ abstract class BaseTest(private val defaultLaunchConfig: LaunchConfig = LaunchCo
         get() =
             checkNotNull(_composeRule) {
                 "composeRule read before the activity rule built it. Rules run outermost-first by " +
-                    "ascending order: -1 samples arrival, 0 is FenixTestRule, 1 builds this, 2 " +
-                    "records boundaries. Anything at a lower order than 1, or outside a test body, " +
-                    "runs before this exists."
+                    "ascending order: -2 finalizes the attempt, -1 samples arrival, 0 is " +
+                    "FenixTestRule, 1 builds this, and 2 records boundaries. Anything at a lower " +
+                    "order than 1, or outside a test body, runs before this exists."
             }
 
     // There is deliberately no retry here. Firebase re-runs a failing test once
@@ -159,7 +187,6 @@ abstract class BaseTest(private val defaultLaunchConfig: LaunchConfig = LaunchCo
     val composeRuleWithCleanup: TestRule = TestRule { base, description ->
         object : Statement() {
             override fun evaluate() {
-                installedReporter().reset()
                 val lifecycleTrace = ActivityLifecycleTrace.start(description.displayName)
                 try {
                     val cfg = launchConfig()
@@ -208,27 +235,37 @@ abstract class BaseTest(private val defaultLaunchConfig: LaunchConfig = LaunchCo
                                             }
                                     }
 
+                                    attemptFinalization.beginCleanup()
                                     val cleanupFailures = mutableListOf<Throwable>()
                                     runCatching {
-                                            RuntimeStateCleaner.restore("after", description.displayName)
-                                            composeRule.waitForIdle()
-                                        }
+                                        RuntimeStateCleaner.restore("after", description.displayName)
+                                        composeRule.waitForIdle()
+                                    }
                                         .exceptionOrNull()
-                                        ?.let(cleanupFailures::add)
+                                        ?.let {
+                                            attemptFinalization.recordCleanupFailure("runtimeState")
+                                            cleanupFailures += it
+                                        }
                                     runCatching {
-                                            InputStateCleaner.restore(
-                                                "after",
-                                                description.displayName,
-                                                composeRule.activity,
-                                            )
-                                        }
+                                        InputStateCleaner.restore(
+                                            "after",
+                                            description.displayName,
+                                            composeRule.activity,
+                                        )
+                                    }
                                         .exceptionOrNull()
-                                        ?.let(cleanupFailures::add)
+                                        ?.let {
+                                            attemptFinalization.recordCleanupFailure("inputState")
+                                            cleanupFailures += it
+                                        }
                                     runCatching {
-                                            ActivityStateCleaner.restore(composeRule.activity, description.displayName)
-                                        }
+                                        ActivityStateCleaner.restore(composeRule.activity, description.displayName)
+                                    }
                                         .exceptionOrNull()
-                                        ?.let(cleanupFailures::add)
+                                        ?.let {
+                                            attemptFinalization.recordCleanupFailure("activityState")
+                                            cleanupFailures += it
+                                        }
                                     cleanupFailures.firstOrNull()?.let { primaryFailure ->
                                         cleanupFailures.drop(1).forEach(primaryFailure::addSuppressed)
                                         testFailure?.addSuppressed(primaryFailure)
@@ -245,11 +282,25 @@ abstract class BaseTest(private val defaultLaunchConfig: LaunchConfig = LaunchCo
                         } catch (t: Throwable) {
                             executionFailure = t
                         }
-                        val appCleanupFailure = runCatching {
-                            requireAppDataCleanup("after", description.displayName)
-                            StateProbe.assertIsolated("afterCleanup", description.displayName)
-                        }
+                        attemptFinalization.beginCleanup()
+                        val appCleanupFailures = mutableListOf<Throwable>()
+                        runCatching { requireAppDataCleanup("after", description.displayName) }
                             .exceptionOrNull()
+                            ?.let {
+                                attemptFinalization.recordCleanupFailure("appData")
+                                appCleanupFailures += it
+                            }
+                        runCatching { StateProbe.assertIsolated("afterCleanup", description.displayName) }
+                            .exceptionOrNull()
+                            ?.let {
+                                attemptFinalization.recordCleanupFailure("stateIsolation")
+                                appCleanupFailures += it
+                            }
+                        attemptFinalization.finishCleanup()
+                        appCleanupFailures.firstOrNull()?.let { primaryFailure ->
+                            appCleanupFailures.drop(1).forEach(primaryFailure::addSuppressed)
+                        }
+                        val appCleanupFailure = appCleanupFailures.firstOrNull()
                         executionFailure?.let { failure ->
                             appCleanupFailure?.let(failure::addSuppressed)
                             throw failure
@@ -261,7 +312,8 @@ abstract class BaseTest(private val defaultLaunchConfig: LaunchConfig = LaunchCo
                         throw t
                     }
                 } finally {
-                    lifecycleTrace.close()
+                    runCatching { lifecycleTrace.close() }
+                        .onFailure { Log.i("BaseTest", "BaseTest: lifecycle trace close failed: ${it.message}") }
                 }
             }
         }
@@ -302,6 +354,7 @@ abstract class BaseTest(private val defaultLaunchConfig: LaunchConfig = LaunchCo
 
             override fun succeeded(description: Description) {
                 StateProbe.record("end", description.displayName)
+                attemptFinalization.recordBody(TestStatus.PASS)
                 installedReporter().testEnd(description.displayName, TestStatus.PASS)
             }
 
@@ -309,10 +362,12 @@ abstract class BaseTest(private val defaultLaunchConfig: LaunchConfig = LaunchCo
                 // Especially on failure: "the store has three history entries and the screen shows
                 // none" is a different bug report from "the store is empty too".
                 StateProbe.record("end", description.displayName)
+                attemptFinalization.recordBody(TestStatus.FAIL)
                 installedReporter().testEnd(description.displayName, TestStatus.FAIL)
             }
 
             override fun skipped(e: org.junit.AssumptionViolatedException, description: Description) {
+                attemptFinalization.recordBody(TestStatus.SKIP)
                 installedReporter().testEnd(description.displayName, TestStatus.SKIP)
             }
         }
