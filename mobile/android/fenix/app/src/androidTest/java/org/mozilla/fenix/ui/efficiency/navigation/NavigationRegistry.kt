@@ -11,9 +11,20 @@ object NavigationRegistry {
     private const val TAG = "NavigationRegistry"
 
     private val graph = mutableMapOf<String, MutableList<NavigationEdge>>()
+    private val duplicateRegistrations = mutableListOf<NavigationEdge>()
+
+    fun reset() {
+        graph.clear()
+        duplicateRegistrations.clear()
+    }
 
     fun register(from: String, to: String, steps: List<NavigationStep>, launch: LaunchConfig? = null) {
         val edge = NavigationEdge(from, to, steps, launch)
+        if (edge in graph[from].orEmpty()) {
+            duplicateRegistrations += edge
+            Log.w(TAG, "Ignored duplicate navigation: $from -> $to")
+            return
+        }
         graph.getOrPut(from) { mutableListOf() }.add(edge)
 
         Log.i(TAG, "📌 Registered navigation: $from -> $to with ${steps.size} step(s)")
@@ -67,6 +78,13 @@ object NavigationRegistry {
             }
         }
     }
+
+    fun diagnostics(): NavigationGraphDiagnostics =
+        NavigationGraphDiagnostics(
+            pages = getAllPages(),
+            edges = graph.values.flatten().toList(),
+            duplicateRegistrations = duplicateRegistrations.toList(),
+        )
 
     /**
      * Finds all distinct simple paths from [from] to [to].
@@ -255,4 +273,13 @@ data class NavigationPath(
 ) {
     val totalSteps: Int
         get() = edges.sumOf { it.steps.size }
+}
+
+data class NavigationGraphDiagnostics(
+    val pages: Set<String>,
+    val edges: List<NavigationEdge>,
+    val duplicateRegistrations: List<NavigationEdge>,
+) {
+    val zeroStepEdges: List<NavigationEdge>
+        get() = edges.filter { it.steps.isEmpty() }
 }

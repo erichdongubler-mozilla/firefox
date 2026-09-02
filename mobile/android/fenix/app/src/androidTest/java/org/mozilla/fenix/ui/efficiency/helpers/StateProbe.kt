@@ -6,6 +6,7 @@ package org.mozilla.fenix.ui.efficiency.helpers
 
 import android.content.ComponentName
 import android.content.pm.PackageManager
+import android.os.Process
 import android.util.Log
 import kotlinx.coroutines.runBlocking
 import mozilla.appservices.places.BookmarkRoot
@@ -19,18 +20,17 @@ import org.mozilla.fenix.ui.efficiency.logging.TestLogging
  *
  * Two questions this answers that a screenshot cannot.
  *
- * **Did this test start dirty?** The per-test reset on the fleet is `pm clear`, which wipes /data/data and runtime
- * permissions and nothing else. Anything a previous test changed outside that --- the launcher icon was the first one
- * found --- is still there. A non-zero count at test START is state somebody else left behind, and it is otherwise
- * invisible until a much later test fails for a reason that has nothing to do with it.
+ * **Did this test arrive dirty, and did cleanup establish the contract?** Arrival is sampled before cleanup as
+ * evidence. The enforced before-cleanup and after-cleanup samples answer whether the harness actually established and
+ * restored its declared state boundary.
  *
  * **Is a UI failure actually a UI failure?** If history has three entries and the history screen shows none, that is a
  * specific and reportable bug in the path from the store to the UI. If the store is empty too, the test never created
  * the data and the UI is innocent. Today both look identical: "element not found".
  *
  * Sampling is deliberately cheap and count-based. Reading every row of every store on both sides of every test would
- * cost more than the information is worth, and counts plus a diff answer both questions above. Anything that throws is
- * recorded as absent rather than failing the test --- a probe that can break a passing run is worse than no probe.
+ * cost more than the information is worth, and counts plus a diff answer both questions above. An unreadable value is
+ * retained as evidence and fails an enforced isolation boundary because silence would make that boundary unverifiable.
  */
 object StateProbe {
 
@@ -64,6 +64,14 @@ object StateProbe {
             runBlocking { appContext.components.core.pinnedSiteStorage.getPinnedSites().size }
         }
         probe(out, "downloads") { appContext.components.core.store.state.downloads.size }
+        probe(out, "processId") { Process.myPid() }
+        probe(out, "searchActive") { appContext.components.appStore.state.searchState.isSearchActive }
+        probe(out, "voiceInputRequested") {
+            appContext.components.appStore.state.voiceSearchState.isRequestingVoiceInput
+        }
+        probe(out, "voiceInputResult") {
+            appContext.components.appStore.state.voiceSearchState.voiceInputResult != null
+        }
         // Not app data, so `pm clear` never resets it. This is the one that actually leaked.
         probe(out, "launcherIcon") { launcherIconAlias() }
 
@@ -73,18 +81,49 @@ object StateProbe {
     /**
      * Emit a sample on the structured stream.
      *
-     * `phase` is "start" or "end". Consumers pair them by testId and diff, rather than the harness computing a diff it
-     * would then have to keep in sync with two samples.
+     * Consumers pair lifecycle phases by testId and compute their own transitions so the emitted facts remain stable.
      */
-    fun record(phase: String, testId: String) {
+    fun record(phase: String, testId: String): Map<String, Any?> {
+        val state = sample()
         runCatching {
             TestLogging.installed()
                 .record(
                     "state",
-                    mapOf("phase" to phase, "testId" to testId) + sample(),
+                    mapOf("phase" to phase, "testId" to testId) + state,
                 )
         }
             .onFailure { Log.i(TAG, "state probe failed at $phase: ${it.message}") }
+        return state
+    }
+
+    fun assertIsolated(phase: String, testId: String) {
+        val state = record(phase, testId)
+        val violations = buildList {
+            ZERO_COUNTS.forEach { key ->
+                if (state[key] != 0) add("$key=${state[key]}")
+            }
+            FALSE_FLAGS.forEach { key ->
+                if (state[key] != false) add("$key=${state[key]}")
+            }
+            if (state["launcherIcon"] != "default") {
+                add("launcherIcon=${state["launcherIcon"]}")
+            }
+        }
+        runCatching {
+            TestLogging.installed()
+                .record(
+                    "isolation",
+                    mapOf(
+                        "phase" to phase,
+                        "testId" to testId,
+                        "verified" to violations.isEmpty(),
+                        "violations" to violations.joinToString(","),
+                    ),
+                )
+        }
+        check(violations.isEmpty()) {
+            "Harness state was not isolated at $phase for $testId: ${violations.joinToString()}"
+        }
     }
 
     /** Which launcher alias is enabled, by name, or "default" when none has been overridden. */
@@ -114,4 +153,7 @@ object StateProbe {
     }
 
     private const val TAG = "StateProbe"
+    private val ZERO_COUNTS =
+        listOf("tabs", "tabsPrivate", "history", "bookmarks", "logins", "addresses", "creditCards", "downloads")
+    private val FALSE_FLAGS = listOf("searchActive", "voiceInputRequested", "voiceInputResult")
 }

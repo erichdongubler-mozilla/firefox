@@ -9,6 +9,8 @@ import android.content.pm.PackageManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import mozilla.components.browser.state.action.DownloadAction
+import mozilla.components.browser.storage.sync.PlacesHistoryStorage
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.helpers.AppAndSystemHelper.deleteBookmarksStorage
 import org.mozilla.fenix.helpers.AppAndSystemHelper.deletePinnedSitesStorage
@@ -26,14 +28,11 @@ import org.mozilla.fenix.ui.efficiency.logging.TestLogging
  *
  * **A failed clear has to be distinguishable from a leak.** Every clear was wrapped in runCatching with a log line, so
  * a clear that errored and a genuine state leak produced identical symptoms: a later test starting with state it did
- * not create. [clear] returns what failed and puts it on the structured stream, so the ledger can say "clean, but the
- * clear that would have made it clean errored" --- a different and far more actionable fact than either "clean" or
- * "dirty".
+ * not create. [clear] returns what failed and puts it on the structured stream; BaseTest then fails the boundary while
+ * preserving any earlier test failure as the primary error.
  *
- * Note what is NOT here. `FenixTestRule` at rule order 0 wraps `TestSetupRule`, which separately clears history,
- * bookmarks, site permissions, the downloads folder and notifications before any of this runs. The effective per-test
- * cleanup is the union of the two, which is exactly the confusion this class exists to start unpicking: reading either
- * one alone tells you the wrong answer about what leaks.
+ * `FenixTestRule` still performs overlapping legacy cleanup outside this rule. This list deliberately repeats the app
+ * resources the efficiency harness promises so its contract does not depend on that implementation detail.
  */
 object AppDataCleaner {
 
@@ -44,6 +43,14 @@ object AppDataCleaner {
         listOf(
             Step("bookmarks") { deleteBookmarksStorage() },
             Step("pinnedSites") { deletePinnedSitesStorage() },
+            Step("history") {
+                withContext(Dispatchers.IO) {
+                    PlacesHistoryStorage(appContext.applicationContext).deleteEverything()
+                }
+            },
+            Step("permissions") {
+                appContext.components.core.permissionStorage.deleteAllSitePermissions()
+            },
             Step("sessions") {
                 withContext(Dispatchers.IO) { appContext.components.core.sessionStorage.clear() }
             },
@@ -63,14 +70,17 @@ object AppDataCleaner {
                 withContext(Dispatchers.IO) { appContext.components.core.passwordsStorage.wipeLocal() }
             },
             Step("tabs") { appContext.components.useCases.tabsUseCases.removeAllTabs() },
+            Step("downloads") {
+                appContext.components.core.store.dispatch(DownloadAction.RemoveAllDownloadsAction)
+            },
             Step("launcherIcon") { resetLauncherIconAliases() },
         )
 
     /**
      * Run every clear. Returns the names of the ones that failed.
      *
-     * Never throws. A cleanup that fails the test it was preparing is worse than a cleanup that did not happen --- but
-     * it must not be silent either, which is what the return value and the record are for.
+     * This function attempts every step and returns all failures instead of stopping at the first. BaseTest enforces
+     * the returned result after the complete cleanup attempt has been recorded.
      *
      * `phase` is "before" or "after", so a consumer can tell a test that started dirty from one that failed to tidy up
      * after itself.
