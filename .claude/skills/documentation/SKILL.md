@@ -159,11 +159,36 @@ The path is rooted at the documentation tree (leading `/`), and the extension
 must match the actual source file (`.md` or `.rst`). To link to a section, append
 the anchor: `/mots/index.md#desktop-theme`.
 
-An API reference generated from source comments renders their descriptions as
-reStructuredText, where the `[text](/path/index.md)` form above comes out
-literally, with only the bare URL autolinked. Write the link as a role instead:
+## API references from source comments
 
-    :doc:`Places </browser/places/index>`
+A directory listed in `js_source_paths` has its JSDoc rendered as an API
+reference (`js:autoclass`, `js:autofunction`), which sphinx-js generates by
+running jsdoc over the source. The comment then has more than one reader, and
+they do not agree:
+
+-   **Descriptions render as reStructuredText.** The `[text](/path/index.md)`
+    form used elsewhere comes out literally, with only the bare URL autolinked.
+    Write the link as a role instead:
+
+        :doc:`Places </browser/places/index>`
+
+-   **jsdoc rejects type expressions that TypeScript accepts, and does it
+    quietly.** A type predicate (`{element is MozTabbrowserTab}`), a tuple,
+    indexed access, and a postfix `[]` on a parenthesised union (`{(A|B)[]}`)
+    each log a build ERROR while the member still renders -- without the row for
+    the parameter or return value being documented. Write `{Array<A|B>}` for the
+    last of those, and put a predicate's meaning in the summary line.
+-   **A documented default value renders**, so `[options.animate=true]` is a
+    claim about the code. Write one only where the signature supplies that
+    default, and describe a computed default in the prose instead, where it can
+    be kept accurate.
+-   **A destructured parameter's documented name is printed in front of every
+    property under it**, so the name a comment invents for an options bag is
+    part of the rendered API rather than a local choice.
+-   **`@throws` renders** as a `throws` field carrying its type. On a class,
+    though, `js:autoclass` takes parameters, return values and exceptions from
+    the constructor only, so those tags render nowhere from the class's own
+    comment.
 
 ## Best Practices
 
