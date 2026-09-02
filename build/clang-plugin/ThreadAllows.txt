@@ -25,6 +25,10 @@ UpdateProcessor
 BkgrndClipboard
 # Blocking thread calling into the parakeet.cpp library.
 Parakeet
+# Used by `SpeechRecognitionBackend` to send audio chunks and other commands to
+# the HWInference process. Needs to be a dedicated thread because some
+# scheduling guarantees are necessary.
+SpeechIPC
 
 ######
 # Thunderbird-only thread names
