@@ -376,6 +376,7 @@ export let StartupTelemetry = {
       "browser.ai.control.linkPreviewKeyPoints": "linkPreviewKeyPoints",
       "browser.ai.control.sidebarChatbot": "sidebarChatbot",
       "browser.ai.control.smartWindow": "smartWindow",
+      "browser.ai.control.speechRecognition": "speechRecognition",
     };
     const _checkAiControlPrefs = async () => {
       const globalIsBlocked =

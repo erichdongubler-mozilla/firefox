@@ -255,6 +255,13 @@ export const FEATURES = {
   aitab: {
     engineId: "aitab-engine",
   },
+  // see dom/media/webspeech/recognition/SpeechRecognition.cpp
+  "speech-recognition": {
+    engineId: "parakeet-gguf",
+    fluentId: "mlmodel-speech-recognition",
+    fileDisplayInfoModule:
+      "resource://gre/modules/SpeechRecognitionModelDisplayInfo.sys.mjs",
+  },
 };
 
 /**

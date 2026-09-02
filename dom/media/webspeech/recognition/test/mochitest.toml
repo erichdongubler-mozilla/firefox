@@ -21,6 +21,9 @@ support-files = [
 
 ["test_abort_end_async.html"]
 
+["test_ai_controls_gate.html"]
+scheme = "https"
+
 ["test_install_overlap.html"]
 
 ["test_parakeet_e2e.html"]

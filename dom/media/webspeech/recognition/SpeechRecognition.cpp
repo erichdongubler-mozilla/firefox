@@ -20,12 +20,14 @@
 #include "mozilla/AbstractThread.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/MediaManager.h"
+#include "mozilla/Preferences.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/dom/AudioStreamTrack.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Event.h"
+#include "mozilla/dom/FeaturePolicyUtils.h"
 #include "mozilla/dom/MediaStreamBinding.h"
 #include "mozilla/dom/MediaStreamError.h"
 #include "mozilla/dom/MediaStreamTrackBinding.h"
@@ -406,6 +408,19 @@ void SpeechRecognition::OnDeletePhrases(SpeechRecognitionPhrase& aPhrase,
 // Runs the availability algorithm:
 // https://webaudio.github.io/web-speech-api/#availability-algorithm
 /* static */
+// Returns true when on-device speech recognition is blocked by the user's AI
+// Controls setting (Settings > Firefox AI). The state pref may be "default",
+// in which case the global browser.ai.control.default applies. These prefs are
+// mirrored to content processes, so this content-side API reads them directly.
+static bool IsBlockedByAIControls() {
+  nsAutoCString state;
+  Preferences::GetCString("browser.ai.control.speechRecognition", state);
+  if (state.IsEmpty() || state.EqualsLiteral("default")) {
+    Preferences::GetCString("browser.ai.control.default", state);
+  }
+  return state.EqualsLiteral("blocked");
+}
+
 already_AddRefed<Promise> SpeechRecognition::Available(
     const GlobalObject& aGlobal, const SpeechRecognitionOptions& aOptions,
     ErrorResult& aRv) {
@@ -440,6 +455,19 @@ already_AddRefed<Promise> SpeechRecognition::Available(
   // Step 4: If processLocally is false, Gecko doesn't support remote
   // recognition.
   if (!aOptions.mProcessLocally) {
+    promise->MaybeResolve(AvailabilityStatus::Unavailable);
+    return promise.forget();
+  }
+
+  Document* doc = window->GetExtantDoc();
+  if (!doc || !FeaturePolicyUtils::IsFeatureAllowed(
+                  doc, u"on-device-speech-recognition"_ns)) {
+    promise->MaybeResolve(AvailabilityStatus::Unavailable);
+    return promise.forget();
+  }
+
+  // The user can turn on-device speech recognition off via AI Controls.
+  if (IsBlockedByAIControls()) {
     promise->MaybeResolve(AvailabilityStatus::Unavailable);
     return promise.forget();
   }
@@ -495,6 +523,23 @@ already_AddRefed<Promise> SpeechRecognition::Install(
   nsCOMPtr<Document> doc = window ? window->GetExtantDoc() : nullptr;
   if (!window || !window->IsFullyActive() || !doc) {
     aRv.ThrowInvalidStateError("The document is not fully active.");
+    return nullptr;
+  }
+
+  // Not conditioned on processLocally: there is no remote backend to install
+  // for, so every install() ends up fetching an on-device model and has to
+  // clear these gates.
+  if (!FeaturePolicyUtils::IsFeatureAllowed(
+          doc, u"on-device-speech-recognition"_ns)) {
+    aRv.ThrowNotAllowedError(
+        "on-device speech recognition is not allowed in this cross-origin "
+        "iframe");
+    return nullptr;
+  }
+
+  if (IsBlockedByAIControls()) {
+    aRv.ThrowNotAllowedError(
+        "on-device speech recognition is blocked by the user's AI settings");
     return nullptr;
   }
 
@@ -590,6 +635,13 @@ void SpeechRecognition::StartImpl(MediaStreamTrack* aAudioTrack,
   nsPIDOMWindowInner* win = GetOwnerWindow();
   if (!win || !win->IsFullyActive()) {
     aRv.ThrowInvalidStateError("The document is not fully active.");
+    return;
+  }
+
+  // The user can turn on-device speech recognition off via AI Controls.
+  if (IsBlockedByAIControls()) {
+    aRv.ThrowNotAllowedError(
+        "on-device speech recognition is blocked by the user's AI settings");
     return;
   }
 
