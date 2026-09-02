@@ -523,22 +523,29 @@ sidebar-main,
     }
 
     /* Only the edge facing the content area survives once the launcher is
-     * gone: the other one then meets the window. */
-    #sidebar-container[hidden] ~ &:not([sidebar-positionend]) {
+     * gone: the other one then meets the window. Fullscreen collapses the
+     * launcher along with the rest of the chrome, so it counts as gone there
+     * too. */
+    #sidebar-container[hidden] ~ &:not([sidebar-positionend]),
+    :root[fullscreenNavToolboxHidden] &:not([sidebar-positionend]) {
       --sidebar-box-start-start-radius: 0;
       border-inline-start: none;
     }
 
-    #sidebar-container[hidden] ~ &[sidebar-positionend] {
+    #sidebar-container[hidden] ~ &[sidebar-positionend],
+    :root[fullscreenNavToolboxHidden] &[sidebar-positionend] {
       --sidebar-box-start-end-radius: 0;
       border-inline-end: none;
     }
 
-    /* Nothing to separate from once the content covers the window. */
-    :root:is([inDOMFullscreen], [inFullscreen]) & {
+    /* Fullscreen slides the toolbox off-screen (and DOM fullscreen hides the
+     * chrome outright), so the block-start edge then meets the screen and the
+     * corners on it have nothing left to round away from. The edge facing the
+     * content area stays: the panel itself remains visible in fullscreen. */
+    :root:is([inDOMFullscreen], [fullscreenNavToolboxHidden]) & {
       --sidebar-box-start-start-radius: 0;
       --sidebar-box-start-end-radius: 0;
-      border: none;
+      border-block-start: none;
     }
   }
 
