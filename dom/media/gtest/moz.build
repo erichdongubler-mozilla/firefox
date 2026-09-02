@@ -41,6 +41,7 @@ UNIFIED_SOURCES += [
     "TestAudioSampleFormat.cpp",
     "TestAudioSegment.cpp",
     "TestAudioSinkWrapper.cpp",
+    "TestAudioStream.cpp",
     "TestAudioTrackEncoder.cpp",
     "TestAudioTrackGraph.cpp",
     "TestBitWriter.cpp",
