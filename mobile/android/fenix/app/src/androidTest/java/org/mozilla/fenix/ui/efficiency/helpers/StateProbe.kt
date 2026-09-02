@@ -50,6 +50,15 @@ object StateProbe {
                         "recentlyClosedStoreTabs",
                     ),
                 captureCost = StateCaptureCost.IN_MEMORY,
+                boundaryBaseline =
+                    mapOf(
+                        "tabs" to 0,
+                        "tabsPrivate" to 0,
+                        "downloads" to 0,
+                        "pendingUndoTabs" to 0,
+                        "recentlyClosedStoreTabs" to 0,
+                    ),
+                controlDrivers = setOf("tabs", "downloads", "recentlyClosedTabs"),
             ) {
                 mapOf(
                     "tabs" to observe { appContext.components.core.store.state.tabs.size },
@@ -73,6 +82,8 @@ object StateProbe {
                 fields = setOf("history", "bookmarks", "topSites"),
                 captureCost = StateCaptureCost.STORAGE_IO,
                 sensitivity = StateSensitivity.AGGREGATE_ONLY,
+                boundaryBaseline = mapOf("history" to 0, "bookmarks" to 0),
+                controlDrivers = setOf("history", "bookmarks", "pinnedSites"),
             ) {
                 mapOf(
                     "history" to
@@ -100,6 +111,8 @@ object StateProbe {
                 fields = setOf("logins", "addresses", "creditCards"),
                 captureCost = StateCaptureCost.STORAGE_IO,
                 sensitivity = StateSensitivity.AGGREGATE_ONLY,
+                boundaryBaseline = mapOf("logins" to 0, "addresses" to 0, "creditCards" to 0),
+                controlDrivers = setOf("logins", "autofill"),
             ) {
                 mapOf(
                     "logins" to
@@ -121,6 +134,8 @@ object StateProbe {
                 fields = setOf("sitePermissions", "savedSessions"),
                 captureCost = StateCaptureCost.STORAGE_IO,
                 sensitivity = StateSensitivity.AGGREGATE_ONLY,
+                boundaryBaseline = mapOf("sitePermissions" to 0, "savedSessions" to 0),
+                controlDrivers = setOf("permissions", "sessions"),
             ) {
                 mapOf(
                     "sitePermissions" to
@@ -140,6 +155,14 @@ object StateProbe {
                 fields = setOf("collections", "tabGroups", "tabGroupAssignments", "recentlyClosedTabs"),
                 captureCost = StateCaptureCost.STORAGE_IO,
                 sensitivity = StateSensitivity.AGGREGATE_ONLY,
+                boundaryBaseline =
+                    mapOf(
+                        "collections" to 0,
+                        "tabGroups" to 0,
+                        "tabGroupAssignments" to 0,
+                        "recentlyClosedTabs" to 0,
+                    ),
+                controlDrivers = setOf("collections", "tabGroups", "recentlyClosedTabs"),
             ) {
                 mapOf(
                     "collections" to
@@ -173,6 +196,13 @@ object StateProbe {
                 name = "appRuntime",
                 fields = setOf("searchActive", "voiceInputRequested", "voiceInputResult"),
                 captureCost = StateCaptureCost.IN_MEMORY,
+                boundaryBaseline =
+                    mapOf(
+                        "searchActive" to false,
+                        "voiceInputRequested" to false,
+                        "voiceInputResult" to false,
+                    ),
+                controlDrivers = setOf("runtimeCleanup"),
             ) {
                 mapOf(
                     "searchActive" to observe { appContext.components.appStore.state.searchState.isSearchActive },
@@ -190,6 +220,9 @@ object StateProbe {
                 name = "preferences",
                 fields = setOf("preferenceOverrideCount", "preferenceOverrideIds"),
                 captureCost = StateCaptureCost.IN_MEMORY,
+                boundaryBaseline =
+                    mapOf("preferenceOverrideCount" to 0, "preferenceOverrideIds" to emptyList<String>()),
+                controlDrivers = setOf("preferences"),
             ) {
                 val overrides = HarnessPreferenceState.overrideIds()
                 mapOf(
@@ -232,6 +265,8 @@ object StateProbe {
                 name = "launcher",
                 fields = setOf("launcherIcon"),
                 captureCost = StateCaptureCost.PACKAGE_MANAGER,
+                boundaryBaseline = mapOf("launcherIcon" to "default"),
+                controlDrivers = setOf("launcherIcon"),
             ) {
                 mapOf("launcherIcon" to observe(::launcherIconAlias))
             },
@@ -265,6 +300,8 @@ object StateProbe {
                 captureCost = contributor.captureCost,
                 sensitivity = contributor.sensitivity,
                 includeInCompatibilityState = contributor.includeInCompatibilityState,
+                boundaryBaseline = contributor.boundaryBaseline,
+                controlDrivers = contributor.controlDrivers,
                 values = values,
             )
         }
@@ -310,17 +347,11 @@ object StateProbe {
 
     fun assertIsolated(phase: String, testId: String) {
         val state = record(phase, testId)
-        val violations = buildList {
-            ZERO_COUNTS.forEach { key ->
-                if (state[key] != 0) add("$key=${state[key]}")
-            }
-            FALSE_FLAGS.forEach { key ->
-                if (state[key] != false) add("$key=${state[key]}")
-            }
-            if (state["launcherIcon"] != "default") {
-                add("launcherIcon=${state["launcherIcon"]}")
-            }
-        }
+        val violations =
+            contributors
+                .flatMap { contributor -> contributor.boundaryBaseline.entries }
+                .filter { (field, expected) -> state[field] != expected }
+                .map { (field, _) -> "$field=${state[field]}" }
         runCatching {
             TestLogging.installed()
                 .record(
@@ -365,6 +396,8 @@ object StateProbe {
         captureCost: StateCaptureCost,
         sensitivity: StateSensitivity = StateSensitivity.NONE,
         includeInCompatibilityState: Boolean = true,
+        boundaryBaseline: Map<String, Any?> = emptyMap(),
+        controlDrivers: Set<String> = emptySet(),
         capture: () -> Map<String, Any?>,
     ): StateContributor =
         object : StateContributor {
@@ -374,6 +407,8 @@ object StateProbe {
             override val captureCost = captureCost
             override val sensitivity = sensitivity
             override val includeInCompatibilityState = includeInCompatibilityState
+            override val boundaryBaseline = boundaryBaseline
+            override val controlDrivers = controlDrivers
 
             override fun capture(): Map<String, Any?> = capture()
         }
@@ -382,26 +417,5 @@ object StateProbe {
         runCatching(read).getOrElse { "unreadable: ${it::class.simpleName}" }
 
     private const val TAG = "StateProbe"
-    private const val SNAPSHOT_SCHEMA_VERSION = 1
-    private val ZERO_COUNTS =
-        listOf(
-            "tabs",
-            "tabsPrivate",
-            "pendingUndoTabs",
-            "recentlyClosedStoreTabs",
-            "history",
-            "bookmarks",
-            "logins",
-            "addresses",
-            "creditCards",
-            "sitePermissions",
-            "savedSessions",
-            "collections",
-            "tabGroups",
-            "tabGroupAssignments",
-            "recentlyClosedTabs",
-            "downloads",
-            "preferenceOverrideCount",
-        )
-    private val FALSE_FLAGS = listOf("searchActive", "voiceInputRequested", "voiceInputResult")
+    private const val SNAPSHOT_SCHEMA_VERSION = 2
 }

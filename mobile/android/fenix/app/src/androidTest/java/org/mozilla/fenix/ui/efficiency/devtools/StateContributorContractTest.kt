@@ -23,6 +23,9 @@ class StateContributorContractTest : BaseTest() {
         assertEquals(descriptors.size, descriptors.map { it.name }.toSet().size)
         assertEquals(fields.size, fields.toSet().size)
         assertTrue(descriptors.all { it.schemaVersion > 0 && it.fields.isNotEmpty() })
+        assertTrue(descriptors.all { it.boundaryBaseline.keys.all(it.fields::contains) })
+        assertTrue(descriptors.filter { it.boundaryBaseline.isNotEmpty() }.all { it.controlDrivers.isNotEmpty() })
+        assertTrue(descriptors.flatMap { it.controlDrivers }.all(String::isNotBlank))
     }
 
     @Test
@@ -41,6 +44,8 @@ class StateContributorContractTest : BaseTest() {
             assertEquals(descriptor.captureCost, contribution.captureCost)
             assertEquals(descriptor.sensitivity, contribution.sensitivity)
             assertEquals(descriptor.includeInCompatibilityState, contribution.includeInCompatibilityState)
+            assertEquals(descriptor.boundaryBaseline, contribution.boundaryBaseline)
+            assertEquals(descriptor.controlDrivers, contribution.controlDrivers)
         }
     }
 

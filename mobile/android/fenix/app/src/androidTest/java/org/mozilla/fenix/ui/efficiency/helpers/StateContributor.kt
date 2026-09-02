@@ -22,6 +22,8 @@ interface StateContributor {
     val captureCost: StateCaptureCost
     val sensitivity: StateSensitivity
     val includeInCompatibilityState: Boolean
+    val boundaryBaseline: Map<String, Any?>
+    val controlDrivers: Set<String>
 
     fun capture(): Map<String, Any?>
 }
@@ -32,6 +34,8 @@ data class StateContribution(
     val captureCost: StateCaptureCost,
     val sensitivity: StateSensitivity,
     val includeInCompatibilityState: Boolean,
+    val boundaryBaseline: Map<String, Any?>,
+    val controlDrivers: Set<String>,
     val values: Map<String, Any?>,
 ) {
     fun asRecord(): Map<String, Any?> =
@@ -41,6 +45,9 @@ data class StateContribution(
             "captureCost" to captureCost.name,
             "sensitivity" to sensitivity.name,
             "includeInCompatibilityState" to includeInCompatibilityState,
+            "boundaryPolicy" to if (boundaryBaseline.isEmpty()) "OBSERVE" else "ENFORCE",
+            "boundaryBaseline" to boundaryBaseline,
+            "controlDrivers" to controlDrivers.sorted(),
             "complete" to values.values.none { it is String && it.startsWith("unreadable:") },
             "values" to values,
         )
