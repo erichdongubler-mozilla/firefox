@@ -46,6 +46,7 @@ class ShellScriptData:
             "shouldAlert": data.get("shouldAlert", True),
             "unit": data.get("unit", "ms"),
             "lowerIsBetter": data.get("lowerIsBetter", True),
+            "alertSeverity": data.get("alertSeverity"),
         }
 
     def transform(self, data):

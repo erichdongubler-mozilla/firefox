@@ -41,6 +41,7 @@ BACKGROUND_TABS = [
     "https://www.espn.com/nfl/game/_/gameId/401671793/chiefs-falcons",
 ]
 SUPPORTED_DEVICES = {"SM-A556E": "a55", "Pixel 6": "p6", "SM-S921B": "s24"}
+CRITICAL_METRICS = {("newssite_applink_startup", "SM-A55")}
 VALID_IMAGES_DIR = "testing/performance/mobile-startup/expected_startup_screenshots"
 ERROR_THRESHOLD = 8  # This is the lower bound for the high pass filter to remove noise
 MAX_STARTUP_TIME = 25000  # 25000ms = 25 seconds
@@ -355,6 +356,15 @@ class ImageAnalzer:
             self.cpu_data["org.mozilla.fenix:tab"]["time"] += [tab_processes_time]
         self.cpu_data["total"]["time"] += [total_time_seconds]
 
+    def alert_severity(self):
+        """Severity of the alerts produced by this test's main metric."""
+        if self.browser != PROD_FENIX:
+            return "normal"
+        for metric, model in CRITICAL_METRICS:
+            if metric == self.metric_name and model in self.device_model:
+                return "critical"
+        return "normal"
+
     def perfmetrics_cpu_data_ingesting(self):
         for process in self.cpu_data.keys():
             print(
@@ -444,7 +454,9 @@ if __name__ == "__main__":
         + str(start_video_timestamp)
         + ', "name": "'
         + PERFHERDER_NAMES[test]
-        + '", "shouldAlert": true}'
+        + '", "shouldAlert": true, "alertSeverity": "'
+        + ImageObject.alert_severity()
+        + '"}'
     )
 
     print(

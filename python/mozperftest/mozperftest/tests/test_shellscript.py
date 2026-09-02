@@ -9,7 +9,11 @@ import mozunit
 import pytest
 
 from mozperftest.environment import TEST
-from mozperftest.test.shellscript import ShellScriptRunner, UnknownScriptError
+from mozperftest.test.shellscript import (
+    ShellScriptData,
+    ShellScriptRunner,
+    UnknownScriptError,
+)
 from mozperftest.tests.support import EXAMPLE_SHELL_TEST, get_running_env
 from mozperftest.utils import temp_dir
 
@@ -40,6 +44,20 @@ def test_shell_script_metric_parsing():
     assert parsed_metrics[0]["name"] == "metric1"
     assert parsed_metrics[1]["name"] == "metric2"
     assert len(parsed_metrics[1]["values"]) == 1
+
+
+def test_shell_script_alert_severity_passthrough():
+    data = ShellScriptData()
+
+    without_severity = data.open_data({"name": "metric1", "values": [1]})
+    assert without_severity["alertSeverity"] is None
+
+    with_severity = data.open_data({
+        "name": "metric2",
+        "values": [1],
+        "alertSeverity": "critical",
+    })
+    assert with_severity["alertSeverity"] == "critical"
 
 
 @pytest.mark.parametrize(
