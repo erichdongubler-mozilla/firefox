@@ -171,8 +171,8 @@ class SpeechRecognitionBackend {
   void StartSpeechRecognitionSession(
       const nsACString& aLanguage, hwinference::SpeechRecognitionChild* aChild)
       MOZ_REQUIRES(sIPCCapability);
-  void HandleRecognitionResult(const nsACString& aTranscript, bool aIsFinal)
-      MOZ_REQUIRES(sIPCCapability);
+  void HandleRecognitionResult(const nsACString& aTranscript, bool aIsFinal,
+                               float aConfidence) MOZ_REQUIRES(sIPCCapability);
   void HandleRecognitionError(const nsACString& aError)
       MOZ_REQUIRES(sIPCCapability);
 

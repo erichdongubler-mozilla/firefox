@@ -652,7 +652,8 @@ void SpeechRecognitionParent::ProcessAudioStreaming() {
     }
   };
 
-  auto emit = [self = RefPtr{this}](const nsCString& aText, bool aFinal) {
+  auto emit = [self = RefPtr{this}](const nsCString& aText, bool aFinal,
+                                    float aConfidence) {
     // An empty transcript is not a result; a session that only ever produces
     // these is reported as a nomatch when RecvStop() resolves.
     if (aText.IsEmpty()) {
@@ -663,45 +664,46 @@ void SpeechRecognitionParent::ProcessAudioStreaming() {
     }
     NS_DispatchToMainThread(NS_NewRunnableFunction(
         "SpeechRecognitionParent::StreamResult",
-        [self, payload = nsCString(aText), aFinal]() {
-          LOGV("Sending streaming result: '{}' (final={})", payload.get(),
-               aFinal);
+        [self, payload = nsCString(aText), aFinal, aConfidence]() {
+          LOGV("Sending streaming result: '{}' (final={}, conf={})",
+               payload.get(), aFinal, aConfidence);
           if (self->CanSend()) {
-            (void)self->SendOnRecognitionResult(payload, aFinal);
+            (void)self->SendOnRecognitionResult(payload, aFinal, aConfidence);
           }
         }));
   };
 
-  // The model emits committed text token-by-token (sentencepiece sub-words,
-  // word starts marked by a leading space). A committed result can end
-  // mid-word, so we buffer committed text and emit only up to the last word
-  // boundary as a final result, holding the trailing partial word until more
-  // text is committed. aForce (the end-of-stream flush) emits whatever remains.
-  nsCString pending;
-  auto consume = [&](char* aText, bool aForce) {
-    if (aText) {
-      nsCString delta(aText);
-      lib->parakeet_capi_free_string(aText);
-      stripTags(delta);
-      pending.Append(delta);
+  // Drain the words the model finalized this step. They are already grouped at
+  // word boundaries and carry per-word timing + confidence. Emit them as a
+  // single final result with the mean confidence; the per-word timestamps are
+  // logged (kept engine-internal — the Web Speech result has no per-word timing
+  // field).
+  auto emitFinalizedWords = [&]() {
+    parakeet_stream_word* words = nullptr;
+    int n = lib->parakeet_capi_stream_drain_words(mCapiStream, &words);
+    if (n > 0) {
+      nsCString text;
+      float confSum = 0.0f;
+      int counted = 0;
+      for (int i = 0; i < n; ++i) {
+        nsCString w(words[i].text ? words[i].text : "");
+        stripTags(w);  // drop any inline <lang> markers
+        w.Trim(" \t\n\r");
+        if (w.IsEmpty()) {
+          continue;
+        }
+        if (!text.IsEmpty()) {
+          text.Append(' ');
+        }
+        text.Append(w);
+        confSum += words[i].conf;
+        ++counted;
+        LOGV("  word '{}' [{:.2f}-{:.2f}] conf={:.2f}", w.get(), words[i].start,
+             words[i].end, words[i].conf);
+      }
+      emit(text, /* isFinal */ true, counted ? confSum / counted : 1.0f);
     }
-    if (aForce) {
-      nsCString out(pending);
-      out.Trim(" \t\n\r");
-      pending.Truncate();
-      emit(out, /* isFinal */ true);
-      return;
-    }
-    int32_t lastSpace = pending.RFindChar(' ');
-    if (lastSpace == kNotFound) {
-      return;  // no complete word boundary yet
-    }
-    nsCString out(Substring(pending, 0, lastSpace));
-    out.Trim(" \t\n\r");
-    if (!out.IsEmpty()) {
-      emit(out, /* isFinal */ true);
-    }
-    pending.Cut(0, lastSpace + 1);  // keep the trailing partial word
+    lib->parakeet_capi_free_words(words, n > 0 ? n : 0);
   };
 
   nsTArray<float> chunk;
@@ -728,18 +730,25 @@ void SpeechRecognitionParent::ProcessAudioStreaming() {
     TimeStamp feedStart = TimeStamp::Now();
     char* fed = lib->parakeet_capi_stream_feed(mCapiStream, chunk.Elements(),
                                                AssertedCast<int>(got), &eou);
+    if (fed) {
+      lib->parakeet_capi_free_string(fed);  // text comes from drain_words
+    }
     PROFILER_MARKER_TEXT(
         "Parakeet stream_feed", MEDIA_PLAYBACK,
         MarkerOptions(MarkerTiming::IntervalUntilNowFrom(feedStart)),
         nsFmtCString("fed={:.0f}ms queued={:.0f}ms",
                      1000.0 * got / PARAKEET_SAMPLE_RATE,
                      1000.0 * available / PARAKEET_SAMPLE_RATE));
-    consume(fed, /* aForce */ false);
+    emitFinalizedWords();
     (void)eou;
   }
 
-  // Flush the end-of-stream tail.
-  consume(lib->parakeet_capi_stream_finalize(mCapiStream), /* aForce */ true);
+  // Flush the end-of-stream tail, then emit its finalized words.
+  char* tail = lib->parakeet_capi_stream_finalize(mCapiStream);
+  if (tail) {
+    lib->parakeet_capi_free_string(tail);
+  }
+  emitFinalizedWords();
   LOGD("Streaming loop exiting");
 
   // Freed here, on the thread that alone uses them, rather than from

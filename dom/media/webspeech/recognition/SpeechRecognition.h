@@ -169,7 +169,7 @@ class SpeechRecognition final : public DOMEventTargetHelper,
                                          TimeStamp aTimeStamp);
   // Backend methods
   void HandleRecognitionResultFromBackend(const nsCString& aTranscript,
-                                          bool aIsFinal);
+                                          bool aIsFinal, float aConfidence);
   void HandleRecognitionErrorFromBackend(const nsCString& aError);
   // Called once the backend's session is fully over: for stop(), only after
   // the engine's end-of-stream flush and the results it produced. Fires

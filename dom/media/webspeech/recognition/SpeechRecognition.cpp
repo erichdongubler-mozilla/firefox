@@ -5,6 +5,7 @@
 #include "SpeechRecognition.h"
 
 #include <algorithm>
+#include <cmath>
 
 #include "AudioSegment.h"
 #include "CubebUtils.h"
@@ -846,10 +847,10 @@ void SpeechRecognition::DispatchTrustedEventWithTimestamp(
 }
 
 void SpeechRecognition::HandleRecognitionResultFromBackend(
-    const nsCString& aTranscript, bool aIsFinal) {
+    const nsCString& aTranscript, bool aIsFinal, float aConfidence) {
   MOZ_ASSERT(NS_IsMainThread(), "Must be called on main thread");
-  LOG("HandleRecognitionResultFromBackend: {} (final={})", aTranscript.get(),
-      aIsFinal);
+  LOG("HandleRecognitionResultFromBackend: {} (final={}, conf={})",
+      aTranscript.get(), aIsFinal, aConfidence);
 
   // Check if still active
   if (!mBackend) {
@@ -874,11 +875,11 @@ void SpeechRecognition::HandleRecognitionResultFromBackend(
       new SpeechRecognitionAlternative(this);
 
   alternative->mTranscript = NS_ConvertUTF8toUTF16(aTranscript);
-  // The confidence is for now always 1.0. We have per token confidence score,
-  // and we need the spec to define how to compute this number in an
-  // engine-independant way, and for text segment and not per token (e.g.
-  // average, median, take lowest for a conservative estimate, etc.).
-  alternative->mConfidence = 1.0f;
+  // Per-result confidence, aggregated by the backend from the model's per-word
+  // confidences (mean). The spec leaves the exact aggregation engine-defined;
+  // the legacy backend, which has no per-word scores, reports 1.0.
+  alternative->mConfidence =
+      std::isfinite(aConfidence) ? std::clamp(aConfidence, 0.0f, 1.0f) : 0.0f;
 
   result->mItems.AppendElement(alternative);
 

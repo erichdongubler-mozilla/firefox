@@ -602,11 +602,13 @@ void SpeechRecognitionBackend::StartSpeechRecognitionSession(
   // - from the IPC side in SpeechRecognitionChild::ActorDestroy
   // - from the main thread here in ::Shutdown()
   aChild->SetResultCallback(
-      [self = RefPtr{this}](const nsCString& aTranscript, bool aIsFinal) {
+      [self = RefPtr{this}](const nsCString& aTranscript, bool aIsFinal,
+                            float aConfidence) {
         AssertOnIPCThread();
-        LOG("Received recognition result: {} (final={})", aTranscript.get(),
-            aIsFinal);
-        self->HandleRecognitionResult(aTranscript, aIsFinal);
+        LOG("Received recognition result: {} (final={}, confidence={})",
+            aTranscript.get(), aIsFinal, aConfidence);
+
+        self->HandleRecognitionResult(aTranscript, aIsFinal, aConfidence);
       });
 
   aChild->SetErrorCallback([self = RefPtr{this}](const nsCString& aError) {
@@ -684,16 +686,16 @@ void SpeechRecognitionBackend::StartSpeechRecognitionSession(
 }
 
 void SpeechRecognitionBackend::HandleRecognitionResult(
-    const nsACString& aTranscript, bool aIsFinal) {
+    const nsACString& aTranscript, bool aIsFinal, float aConfidence) {
   AssertOnIPCThread();
-  LOG("HandleRecognitionResult: {} (final={})", nsCString(aTranscript).get(),
-      aIsFinal);
+  LOG("HandleRecognitionResult: {} (final={}, conf={})",
+      nsCString(aTranscript).get(), aIsFinal, aConfidence);
 
   DispatchToParentIfAlive("SpeechRecognitionBackend::HandleRecognitionResult",
-                          [transcript = nsCString(aTranscript),
-                           aIsFinal](SpeechRecognition* aParent) {
+                          [transcript = nsCString(aTranscript), aIsFinal,
+                           aConfidence](SpeechRecognition* aParent) {
                             aParent->HandleRecognitionResultFromBackend(
-                                transcript, aIsFinal);
+                                transcript, aIsFinal, aConfidence);
                           });
 }
 

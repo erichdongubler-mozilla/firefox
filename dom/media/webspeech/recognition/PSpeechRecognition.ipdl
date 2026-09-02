@@ -55,7 +55,7 @@ parent: // HWInference
 
 child: // Content process
   // Speech recognition results
-  async OnRecognitionResult(nsCString transcript, bool isFinal);
+  async OnRecognitionResult(nsCString transcript, bool isFinal, float confidence);
   async OnRecognitionError(nsCString error);
   // Speech detection events (true = speech started, false = speech ended)
   async OnSpeechChange(bool speechDetected);

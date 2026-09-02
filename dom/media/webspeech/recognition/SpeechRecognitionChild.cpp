@@ -76,13 +76,14 @@ void SpeechRecognitionChild::SetDestroyedCallback(
 }
 
 mozilla::ipc::IPCResult SpeechRecognitionChild::RecvOnRecognitionResult(
-    const nsCString& aTranscript, const bool& aIsFinal) {
-  LOG(LogLevel::Info, "RecvOnRecognitionResult: '{}' (final={})",
-      aTranscript.get(), aIsFinal ? "true" : "false");
+    const nsCString& aTranscript, const bool& aIsFinal,
+    const float& aConfidence) {
+  LOG(LogLevel::Info, "RecvOnRecognitionResult: '{}' (final={}, conf={})",
+      aTranscript.get(), aIsFinal ? "true" : "false", aConfidence);
 
   if (mResultCallback) {
     LOG(LogLevel::Debug, "Invoking result callback");
-    mResultCallback(aTranscript, aIsFinal);
+    mResultCallback(aTranscript, aIsFinal, aConfidence);
   } else {
     LOG(LogLevel::Warning, "Received result but no callback set");
   }
