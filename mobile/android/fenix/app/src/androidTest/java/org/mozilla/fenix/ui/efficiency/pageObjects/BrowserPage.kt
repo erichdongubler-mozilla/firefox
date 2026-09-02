@@ -39,7 +39,6 @@ import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationStep
 import org.mozilla.fenix.ui.efficiency.selectors.BrowserPageSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.DownloadsSelectors
-import org.mozilla.fenix.ui.efficiency.selectors.HomeSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.MainMenuSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.SearchBarSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.ToolbarSelectors
@@ -84,13 +83,6 @@ class BrowserPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule
         // Use UIAutomator selector to avoid Compose sync hanging when GeckoView is active.
         NavigationRegistry.register(
             from = pageName,
-            to = "MainMenuPage",
-            steps = listOf(NavigationStep.Click(HomeSelectors.MAIN_MENU_BUTTON_UIAUTOMATOR)),
-        )
-
-        // Use UIAutomator selector to avoid Compose sync hanging when GeckoView is active.
-        NavigationRegistry.register(
-            from = pageName,
             to = "HomePage",
             steps =
                 listOf(
@@ -108,16 +100,6 @@ class BrowserPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule
                     NavigationStep.Click(MainMenuSelectors.MORE_BUTTON),
                     NavigationStep.Click(MainMenuSelectors.ADD_TO_HOMESCREEN_BUTTON),
                 ),
-        )
-
-        // UIAutomator (Compose sync can hang while GeckoView is active) AND the content-description
-        // variant rather than the testTag: with shouldUseExpandedToolbar the counter moves to the bottom
-        // navigation bar, where it carries no tag. NOTE: TabDrawerPage registers this same edge — keep the
-        // two in step until the duplicate is removed.
-        NavigationRegistry.register(
-            from = pageName,
-            to = "TabDrawerPage",
-            steps = listOf(NavigationStep.Click(ToolbarSelectors.TAB_COUNTER_ANY_LAYOUT)),
         )
     }
 

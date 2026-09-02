@@ -27,18 +27,6 @@ class HomePage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule, *
         )
 
         NavigationRegistry.register(
-            from = pageName,
-            to = "MainMenuPage",
-            steps = listOf(NavigationStep.Click(HomeSelectors.MAIN_MENU_BUTTON)),
-        )
-
-        NavigationRegistry.register(
-            from = "MainMenuPage",
-            to = "BookmarksPage",
-            steps = listOf(NavigationStep.Click(MainMenuSelectors.BOOKMARKS_BUTTON)),
-        )
-
-        NavigationRegistry.register(
             from = "MainMenuPage",
             to = "SettingsPage",
             steps =
@@ -50,26 +38,14 @@ class HomePage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule, *
 
         NavigationRegistry.register(
             from = "MainMenuPage",
-            to = "HistoryPage",
-            steps = listOf(NavigationStep.Click(MainMenuSelectors.HISTORY_BUTTON)),
-        )
-
-        NavigationRegistry.register(
-            from = "MainMenuPage",
             to = "DownloadsPage",
             steps = listOf(NavigationStep.Click(MainMenuSelectors.DOWNLOADS_BUTTON)),
         )
 
         NavigationRegistry.register(
             from = "MainMenuPage",
-            to = "PasswordsPage",
+            to = "SettingsSavedPasswordsPage",
             steps = listOf(NavigationStep.Click(MainMenuSelectors.PASSWORDS_BUTTON)),
-        )
-
-        NavigationRegistry.register(
-            from = "MainMenuPage",
-            to = pageName,
-            steps = listOf(NavigationStep.PressBack),
         )
     }
 

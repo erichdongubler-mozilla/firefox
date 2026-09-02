@@ -32,17 +32,6 @@ class SettingsAddonsManagerPage(composeRule: AndroidComposeTestRule<HomeActivity
         )
 
         NavigationRegistry.register(
-            from = "HomePage",
-            to = pageName,
-            steps =
-                listOf(
-                    NavigationStep.Click(HomeSelectors.MAIN_MENU_BUTTON),
-                    NavigationStep.Click(MainMenuSelectors.EXTENSIONS_BUTTON),
-                    // Click the add-on to be able to open the details
-                ),
-        )
-
-        NavigationRegistry.register(
             from = pageName,
             to = "HomePage",
             steps = listOf(NavigationStep.Click(SettingsAddonsManagerSelectors.NAVIGATE_BACK_TOOLBAR_BUTTON)),

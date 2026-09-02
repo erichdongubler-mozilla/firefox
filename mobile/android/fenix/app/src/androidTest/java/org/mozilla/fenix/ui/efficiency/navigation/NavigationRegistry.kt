@@ -22,12 +22,11 @@ object NavigationRegistry {
         val edge = NavigationEdge(from, to, steps, launch)
         if (edge in graph[from].orEmpty()) {
             duplicateRegistrations += edge
-            Log.w(TAG, "Ignored duplicate navigation: $from -> $to")
-            return
+            error("Duplicate navigation registration: $from -> $to ($steps, launch=$launch)")
         }
         graph.getOrPut(from) { mutableListOf() }.add(edge)
 
-        Log.i(TAG, "📌 Registered navigation: $from -> $to with ${steps.size} step(s)")
+        Log.i(TAG, "Registered navigation: $from -> $to with ${steps.size} step(s)")
         steps.forEachIndexed { index, step ->
             Log.i(TAG, "   Step ${index + 1}: $step")
         }
@@ -160,7 +159,7 @@ object NavigationRegistry {
     fun logAllPaths(from: String, to: String) {
         val paths = findAllPaths(from, to)
 
-        Log.i(TAG, "🧭 Distinct navigation paths from '$from' to '$to': ${paths.size}")
+        Log.i(TAG, "Distinct navigation paths from '$from' to '$to': ${paths.size}")
 
         if (paths.isEmpty()) {
             Log.i(TAG, "   No distinct paths found.")
@@ -196,7 +195,7 @@ object NavigationRegistry {
         var totalPaths = 0
         var pairCountWithPaths = 0
 
-        Log.i(TAG, "📊 Navigation path summary")
+        Log.i(TAG, "Navigation path summary")
         Log.i(TAG, "   Registered pages: ${pages.size}")
         Log.i(TAG, "   Registered edges: ${graph.values.sumOf { it.size }}")
 
@@ -222,7 +221,7 @@ object NavigationRegistry {
     }
 
     fun logGraph() {
-        Log.i(TAG, "🧭 Current navigation graph:")
+        Log.i(TAG, "Current navigation graph:")
         for ((from, edges) in graph) {
             for (edge in edges) {
                 Log.i(TAG, " - $from -> ${edge.to} [${edge.steps.size} step(s)]")
