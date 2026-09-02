@@ -136,6 +136,14 @@ media::EncodeSupportSet RemoteEncoderModule::Supports(
     }
   }
 
+  // Some hardware encoders have poor record/quality performance, as measured by
+  // the total time spent encoding. If the config is not record, or hardware is
+  // required, hardware is allowed. See bug 2067634.
+  if (aConfig.mCodec == CodecType::H264 && aConfig.mUsage == Usage::Record &&
+      aConfig.mHardwarePreference == HardwarePreference::None) {
+    hwPref = HardwarePreference::RequireSoftware;
+  }
+
   // Some hardware encoders have poor realtime performance, as measured by
   // the latency between frames. If the config is realtime, and hardware
   // is required, hardware is allowed, but otherwise not. See bug 2049606.
