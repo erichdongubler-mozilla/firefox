@@ -49,6 +49,14 @@ object ToolbarSelectors {
             groups = listOf(),
         )
 
+    val TOOLBAR_URL_BOX_UIAUTOMATOR2 =
+        Selector(
+            strategy = SelectorStrategy.UIAUTOMATOR2_BY_RAW_RES,
+            value = ADDRESSBAR_URL_BOX,
+            description = "URL box",
+            groups = listOf(),
+        )
+
     val TAB_COUNTER_UIAUTOMATOR =
         Selector(
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_COMPOSE_TAG,
@@ -294,6 +302,7 @@ object ToolbarSelectors {
             TAB_COUNTER_ANY_LAYOUT,
             TOOLBAR_URL_BOX,
             TOOLBAR_URL_BOX_UIAUTOMATOR,
+            TOOLBAR_URL_BOX_UIAUTOMATOR2,
             NEW_TAB_BUTTON,
             NEW_PRIVATE_TAB_BUTTON,
             EXPANDED_TOOLBAR_ADD_BOOKMARK_BUTTON,

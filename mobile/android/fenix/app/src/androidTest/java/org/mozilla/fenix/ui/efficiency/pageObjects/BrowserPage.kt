@@ -64,7 +64,7 @@ class BrowserPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule
             to = pageName,
             steps =
                 listOf(
-                    NavigationStep.Click(ToolbarSelectors.TOOLBAR_URL_BOX_UIAUTOMATOR),
+                    NavigationStep.Click(ToolbarSelectors.TOOLBAR_URL_BOX_UIAUTOMATOR2),
                     NavigationStep.EnterText(SearchBarSelectors.TOOLBAR_IN_EDIT_MODE),
                     NavigationStep.PressEnter(SearchBarSelectors.TOOLBAR_IN_EDIT_MODE),
                 ),

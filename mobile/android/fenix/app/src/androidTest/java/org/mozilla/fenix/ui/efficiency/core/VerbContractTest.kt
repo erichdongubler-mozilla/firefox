@@ -67,6 +67,25 @@ class VerbContractTest {
     }
 
     @Test
+    fun transientComposeResolutionErrorsRecoverAfterDismissingAnOverlay() {
+        val logger = RecordingStepLogger()
+        val transient = IllegalStateException("No compose hierarchies found in the app")
+        val host =
+            FakeVerbHost(
+                TimedReporter(logger),
+                ElementResolution.Error(transient),
+                ElementResolution.Found(EspressoUiElement(onView(isRoot()))),
+                dismissesOverlay = true,
+            )
+
+        host.require(verb = "verify", selector = selector)
+
+        assertEquals(2, host.locateCalls)
+        assertEquals(1, host.dismissOverlayCalls)
+        assertEquals("OK", logger.completed.last().args["outcome"])
+    }
+
+    @Test
     fun optionalDoesNotHideActionErrors() {
         val logger = RecordingStepLogger()
         val error = IllegalStateException("action broke")
@@ -109,8 +128,10 @@ class VerbContractTest {
         private val timedReporter: TimedReporter,
         private val resolution: ElementResolution = ElementResolution.Absent,
         private val subsequentResolution: ElementResolution = resolution,
+        private val dismissesOverlay: Boolean = false,
     ) : VerbHost {
         var locateCalls = 0
+        var dismissOverlayCalls = 0
 
         override fun reporter() = timedReporter
 
@@ -121,7 +142,10 @@ class VerbContractTest {
 
         override fun locateAll(selector: Selector): SemanticsNodeInteractionCollection? = null
 
-        override fun dismissOverlays() = false
+        override fun dismissOverlays(): Boolean {
+            dismissOverlayCalls += 1
+            return dismissesOverlay
+        }
 
         override fun dumpFailure(label: String) = Unit
 

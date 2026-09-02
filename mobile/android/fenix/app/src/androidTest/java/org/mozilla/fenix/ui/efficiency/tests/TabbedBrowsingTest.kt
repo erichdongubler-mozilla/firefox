@@ -93,7 +93,7 @@ class TabbedBrowsingTest : BaseTest() {
             .deleteTabGroupFromTabGroupPage()
             .mozVerifyElementsByGroup("deleteTabGroupDialog")
             .mozClick(DELETE_TAB_GROUP_DIALOG_DELETE_GROUP_BUTTON)
-            .mozVerifyElementsByGroup("emptyTabGroupsView")
+            .mozVerifyElementsByGroup("emptyTabGroupsTabDrawerView")
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/4034505

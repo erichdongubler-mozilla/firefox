@@ -41,7 +41,7 @@ class SearchBarComponent(composeRule: AndroidComposeTestRule<HomeActivityIntentT
         NavigationRegistry.register(
             from = "BrowserPage",
             to = pageName,
-            steps = listOf(NavigationStep.Click(ToolbarSelectors.TOOLBAR_URL_BOX_UIAUTOMATOR)),
+            steps = listOf(NavigationStep.Click(ToolbarSelectors.TOOLBAR_URL_BOX_UIAUTOMATOR2)),
         )
 
         // Dismiss the search bar (edit mode) back to Home. Without an outbound edge the graph can enter

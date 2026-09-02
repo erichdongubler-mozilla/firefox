@@ -74,4 +74,39 @@ class NavigationGraphContractTest : BaseTest() {
 
         assertEquals("direct-main-menu", path?.edges?.single()?.variant)
     }
+
+    @Test
+    fun navigationSelectsTheLeastDestructiveEquallyDirectPath() {
+        on
+        val path = NavigationRegistry.findPath("BrowserPage", "HistoryPage")
+
+        assertEquals(
+            listOf("BrowserPage->MainMenuPage", "MainMenuPage->HistoryPage"),
+            path?.edges?.map { it.id },
+        )
+        assertEquals(2, path?.totalSteps)
+    }
+
+    @Test
+    fun browserPageIsOnlyUsedAsTransitWhenNoBrowserFreePathExists() {
+        on
+        NavigationRegistry.register("TransitSource", "BrowserPage", emptyList())
+        NavigationRegistry.register("BrowserPage", "TransitTarget", emptyList())
+        NavigationRegistry.register("TransitSource", "SafeMiddle", emptyList())
+        NavigationRegistry.register("SafeMiddle", "TransitTarget", emptyList())
+        NavigationRegistry.register("BrowserPage", "BrowserOnlyTarget", emptyList())
+
+        assertEquals(
+            listOf("TransitSource", "SafeMiddle", "TransitTarget"),
+            NavigationRegistry.findPath("TransitSource", "TransitTarget")?.pages,
+        )
+        assertEquals(
+            listOf("TransitSource", "BrowserPage"),
+            NavigationRegistry.findPath("TransitSource", "BrowserPage")?.pages,
+        )
+        assertEquals(
+            listOf("TransitSource", "BrowserPage", "BrowserOnlyTarget"),
+            NavigationRegistry.findPath("TransitSource", "BrowserOnlyTarget")?.pages,
+        )
+    }
 }

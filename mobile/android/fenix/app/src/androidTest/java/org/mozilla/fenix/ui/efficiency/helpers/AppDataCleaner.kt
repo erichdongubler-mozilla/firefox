@@ -8,6 +8,7 @@ import android.content.ComponentName
 import android.content.pm.PackageManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
@@ -139,9 +140,11 @@ object AppDataCleaner {
     private suspend fun clearTabsAndPendingUndo() {
         val components = appContext.components
         val store = components.core.store
+        val hadPendingUndo = store.state.undoHistory.tabs.any { !it.state.private }
         if (store.state.undoHistory.tabs.isNotEmpty()) {
             store.dispatch(UndoAction.ClearRecoverableTabs(store.state.undoHistory.tag))
         }
+        val expectedRecentlyClosedIds = if (hadPendingUndo) store.state.closedTabs.map { it.id }.toSet() else emptySet()
         components.useCases.tabsUseCases.removeAllTabs(recoverable = false)
         if (store.state.undoHistory.tabs.isNotEmpty()) {
             store.dispatch(UndoAction.ClearRecoverableTabs(store.state.undoHistory.tag))
@@ -149,6 +152,14 @@ object AppDataCleaner {
         withTimeout(TAB_CLEAR_TIMEOUT_MS) {
             while (store.state.tabs.isNotEmpty() || store.state.undoHistory.tabs.isNotEmpty()) {
                 delay(10)
+            }
+        }
+        if (expectedRecentlyClosedIds.isNotEmpty()) {
+            withTimeout(RECENTLY_CLOSED_SYNC_TIMEOUT_MS) {
+                val storage = components.core.recentlyClosedTabsStorage.value
+                while (!storage.getTabs().first().map { it.id }.toSet().containsAll(expectedRecentlyClosedIds)) {
+                    delay(10)
+                }
             }
         }
     }
@@ -189,4 +200,5 @@ object AppDataCleaner {
     }
 
     private const val TAB_CLEAR_TIMEOUT_MS = 2_000L
+    private const val RECENTLY_CLOSED_SYNC_TIMEOUT_MS = 5_000L
 }

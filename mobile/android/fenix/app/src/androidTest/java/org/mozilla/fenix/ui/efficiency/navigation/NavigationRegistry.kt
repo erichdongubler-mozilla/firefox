@@ -6,6 +6,7 @@ package org.mozilla.fenix.ui.efficiency.navigation
 
 import android.util.Log
 import java.io.File
+import java.util.PriorityQueue
 
 object NavigationRegistry {
     private const val TAG = "NavigationRegistry"
@@ -60,29 +61,25 @@ object NavigationRegistry {
             )
         }
 
-        val queue = ArrayDeque<Pair<String, List<NavigationEdge>>>()
+        val queue = PriorityQueue(pathOrder(to))
         val visited = mutableSetOf<String>()
 
-        queue.add(Pair(from, emptyList()))
-        visited.add(from)
+        queue.add(PathCandidate(from, emptyList()))
 
         while (queue.isNotEmpty()) {
-            val (current, path) = queue.removeFirst()
+            val (current, path) = queue.remove()
+            if (!visited.add(current)) continue
+
+            if (current == to) {
+                return NavigationPath(
+                    pages = buildPageSequence(path, current),
+                    edges = path,
+                )
+            }
 
             for (edge in graph[current].orEmpty().sortedWith(routeOrder)) {
                 if (edge.to in visited) continue
-
-                val newPath = path + edge
-
-                if (edge.to == to) {
-                    return NavigationPath(
-                        pages = buildPageSequence(newPath, edge.to),
-                        edges = newPath,
-                    )
-                }
-
-                visited.add(edge.to)
-                queue.add(Pair(edge.to, newPath))
+                queue.add(PathCandidate(edge.to, path + edge))
             }
         }
 
@@ -283,7 +280,24 @@ object NavigationRegistry {
     }
 
     private val routeOrder = compareBy<NavigationEdge>({ it.purpose }, { it.id })
+
+    private fun pathOrder(target: String) =
+        compareBy<PathCandidate>(
+            { candidate -> candidate.edges.count { it.purpose == NavigationRoutePurpose.COVERAGE } },
+            { candidate -> candidate.edges.count { it.to == BROWSER_PAGE && it.to != target } },
+            { candidate -> candidate.edges.size },
+            { candidate -> candidate.edges.sumOf { it.steps.size } },
+            { candidate -> candidate.edges.joinToString(">") { it.id } },
+        )
+
     private val routeVariantPattern = Regex("[a-z][a-z0-9-]*")
+
+    private data class PathCandidate(
+        val page: String,
+        val edges: List<NavigationEdge>,
+    )
+
+    private const val BROWSER_PAGE = "BrowserPage"
 }
 
 /** Represents one distinct navigation path through the graph. */

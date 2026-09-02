@@ -376,27 +376,48 @@ fun VerbHost.groupPresent(
         return false
     }
 
-    fun allPresent(): Boolean = selectors.all { sel ->
-        val observation =
-            observe(
-                sel,
-                applyPreconditions,
-                "_in_$label",
-                predicate = { ElementState.probe(it, ElementState.Trait.DISPLAYED) },
-            )
-        observation.problem(sel)?.let { failLookup(cmd, verb, sel, "present", dumpOnFailure = false, it) }
-        val present = observation.matched != null
-        present
+    var lastRetryableProblem: Pair<Selector, LookupProblem>? = null
+    fun allPresent(): Boolean {
+        lastRetryableProblem = null
+        return selectors.all { sel ->
+            val observation =
+                observe(
+                    sel,
+                    applyPreconditions,
+                    "_in_$label",
+                    predicate = { ElementState.probe(it, ElementState.Trait.DISPLAYED) },
+                )
+            observation.problem(sel)?.let { problem ->
+                if (!problem.retryable) {
+                    failLookup(cmd, verb, sel, "present", dumpOnFailure = false, problem)
+                }
+                lastRetryableProblem = sel to problem
+            }
+            observation.matched != null
+        }
     }
 
     val timeout = (policy as? WaitPolicy.Poll)?.timeout ?: 0
     val deadline = SystemClock.uptimeMillis() + timeout
     var wait = policy.firstGap()
     var here = allPresent()
+    if (!here && lastRetryableProblem != null && dismissOverlays()) {
+        here = allPresent()
+    }
     while (!here && SystemClock.uptimeMillis() < deadline) {
         SystemClock.sleep(wait)
         wait = (policy as WaitPolicy.Poll).next(wait)
         here = allPresent()
+    }
+
+    if (!here && dismissOverlays()) {
+        here = allPresent()
+    }
+
+    if (!here && policy is WaitPolicy.Poll) {
+        lastRetryableProblem?.let { (selector, problem) ->
+            failLookup(cmd, verb, selector, "present", dumpOnFailure = false, problem)
+        }
     }
 
     cmd.done(
@@ -435,6 +456,7 @@ private data class LookupProblem(
     val message: String,
     val cause: Throwable? = null,
     val phase: String,
+    val retryable: Boolean = false,
 )
 
 /**
@@ -457,12 +479,19 @@ private fun VerbHost.seek(
     }
 
     var observation = once()
-    if (observation.matched == null && observation.problem(selector) == null && policy is WaitPolicy.Poll) {
+    if (observation.matched == null && observation.problem(selector)?.retryable == true && dismissOverlays()) {
+        observation = once()
+    }
+    if (
+        observation.matched == null &&
+            observation.problem(selector)?.let { !it.retryable } != true &&
+            policy is WaitPolicy.Poll
+    ) {
         val deadline = SystemClock.uptimeMillis() + policy.timeout
         var wait = policy.firstGap()
         while (
             observation.matched == null &&
-                observation.problem(selector) == null &&
+                observation.problem(selector)?.let { !it.retryable } != true &&
                 SystemClock.uptimeMillis() < deadline
         ) {
             SystemClock.sleep(wait)
@@ -471,7 +500,9 @@ private fun VerbHost.seek(
         }
     }
     // A known blocking overlay may have been covering the target the whole time.
-    if (observation.matched == null && observation.problem(selector) == null && dismissOverlays()) {
+    if (
+        observation.matched == null && observation.problem(selector)?.let { !it.retryable } != true && dismissOverlays()
+    ) {
         observation = once()
     }
     return Probe(seen, observation.matched, observation)
@@ -550,17 +581,27 @@ private fun VerbHost.observe(
             Observation(resolution)
         }
         is ElementResolution.Error -> {
-            loc.fail(
-                "'${selector.description}' resolution failed: ${resolution.cause.message ?: "exception"}",
-                cause = resolution.cause,
-                facts =
-                    facts(
-                        "locate",
-                        selector,
-                        Failure.RESOLUTION_ERROR,
-                        extra = mapOf("resolution" to "error", "failurePhase" to "resolve"),
-                    ),
-            )
+            val details =
+                facts(
+                    "locate",
+                    selector,
+                    Failure.RESOLUTION_ERROR,
+                    extra =
+                        mapOf(
+                            "resolution" to if (resolution.retryable) "transient_error" else "error",
+                            "failurePhase" to "resolve",
+                            "retryable" to resolution.retryable,
+                        ),
+                )
+            if (resolution.retryable) {
+                loc.found(selector.description, false, details)
+            } else {
+                loc.fail(
+                    "'${selector.description}' resolution failed: ${resolution.cause.message ?: "exception"}",
+                    cause = resolution.cause,
+                    facts = details,
+                )
+            }
             Observation(resolution)
         }
     }
@@ -580,6 +621,7 @@ private fun Observation.problem(selector: Selector): LookupProblem? =
                 "'${selector.description}' $phase failed: ${result.cause.message ?: "exception"}",
                 result.cause,
                 phase,
+                result.retryable,
             )
         else -> null
     }

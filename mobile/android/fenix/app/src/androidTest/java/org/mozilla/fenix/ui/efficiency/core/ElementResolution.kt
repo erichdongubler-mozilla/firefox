@@ -12,5 +12,14 @@ sealed interface ElementResolution {
 
     data class Unsupported(val reason: String) : ElementResolution
 
-    data class Error(val cause: Throwable) : ElementResolution
+    data class Error(
+        val cause: Throwable,
+        val retryable: Boolean = cause.isTransientResolutionFailure(),
+    ) : ElementResolution
 }
+
+private fun Throwable.isTransientResolutionFailure(): Boolean =
+    generateSequence(this) { it.cause }
+        .any {
+            it is IllegalStateException && it.message.orEmpty().contains("No compose hierarchies found in the app")
+        }

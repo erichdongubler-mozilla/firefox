@@ -241,12 +241,7 @@ class SearchTest : BaseTest(LaunchConfig(isPocketEnabled = false)) {
             .mozPressEnter(SearchBarSelectors.TOOLBAR_IN_EDIT_MODE)
             .mozWaitUntilAbsent(SearchBarSelectors.TOOLBAR_IN_EDIT_MODE)
 
-        // Re-enter the search bar by clicking the toolbar directly instead of taking the registered
-        // BrowserPage -> SearchBarComponent edge. That edge clicks the same element, but through mozClick,
-        // which throws when UiObject.click() returns false — and it does return false here because the node
-        // goes stale as the toolbar swaps into edit mode. The click itself lands, so mozClickIfPresent, which
-        // ignores the return value, is the faithful equivalent.
-        on.browserPage.navigateToPage().mozClickIfPresent(ToolbarSelectors.TOOLBAR_URL_BOX_UIAUTOMATOR)
+        on.browserPage.navigateToPage().mozClick(ToolbarSelectors.TOOLBAR_URL_BOX_UIAUTOMATOR2)
 
         on.searchBar
             // mozEnterText's own locate reports success on a Compose node that does not exist, so assert
