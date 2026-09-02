@@ -889,13 +889,12 @@ already_AddRefed<Promise> SpeechRecognitionBackend::Available(
                        return SendAvailabilityPromise::CreateAndResolve(
                            AvailabilityStatus::Available, __func__);
                      }
-                     return child->SendIsModelAvailable(languages)
-                         ->Map(GetCurrentSerialEventTarget(), __func__,
-                               [](bool aAvailable) {
-                                 return aAvailable
-                                            ? AvailabilityStatus::Downloadable
-                                            : AvailabilityStatus::Unavailable;
-                               });
+                     return child->SendIsModelAvailable(languages)->Map(
+                         GetCurrentSerialEventTarget(), __func__,
+                         [](bool aAvailable) {
+                           return aAvailable ? AvailabilityStatus::Downloadable
+                                             : AvailabilityStatus::Unavailable;
+                         });
                    });
       })
       ->Then(GetMainThreadSerialEventTarget(), __func__,
