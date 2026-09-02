@@ -100,9 +100,10 @@ class FeaturePolicy final : public nsISupports, public nsWrapperCache {
 
   // Parses and sets a policy from an iframe `allow` attribute. Attribute
   // policies use a different syntax from Permissions-Policy response headers.
-  void SetDeclaredPolicy(mozilla::dom::Document* aDocument,
-                         const nsAString& aPolicyString,
-                         nsIPrincipal* aSelfOrigin, nsIPrincipal* aSrcOrigin);
+  void SetDeclaredAttributePolicy(mozilla::dom::Document* aDocument,
+                                  const nsAString& aPolicyString,
+                                  nsIPrincipal* aSelfOrigin,
+                                  nsIPrincipal* aSrcOrigin);
 
   // Parses and sets a Permissions-Policy response header using Structured
   // Fields.
