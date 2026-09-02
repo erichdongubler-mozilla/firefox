@@ -538,9 +538,7 @@ impl NeqoHttp3Conn {
             return Err(NS_ERROR_INVALID_ARG);
         };
 
-        let mut additional_shares = usize::from(static_prefs::pref!(
-            "security.tls.client_hello.send_p256_keyshare"
-        ));
+        let mut additional_shares = 1;
         if static_prefs::pref!("security.tls.enable_kyber")
             && static_prefs::pref!("network.http.http3.enable_kyber")
         {
@@ -556,8 +554,7 @@ impl NeqoHttp3Conn {
             additional_shares += 1;
         }
         // If additional_shares == 2, send mlkem768x25519, x25519, and p256.
-        // If additional_shares == 1, send {mlkem768x25519, x25519} or {x25519, p256}.
-        // If additional_shares == 0, send x25519.
+        // If additional_shares == 1, send x25519 and p256.
         conn.send_additional_key_shares(additional_shares)
             .map_err(|_| NS_ERROR_UNEXPECTED)?;
 

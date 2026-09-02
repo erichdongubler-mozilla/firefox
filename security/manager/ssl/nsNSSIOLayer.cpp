@@ -1578,8 +1578,7 @@ static nsresult nsSSLIOLayerSetOptions(PRFileDesc* fd, bool forSTARTTLS,
   // Include a modest set of named groups in supported_groups and determine how
   // many key shares to send. Please change getKeaGroupName in
   // nsNSSCallbacks.cpp when changing the lists here.
-  unsigned int additional_shares =
-      StaticPrefs::security_tls_client_hello_send_p256_keyshare();
+  unsigned int additional_shares = 1;
   bool tls13 = range.max >= SSL_LIBRARY_VERSION_TLS_1_3;
 
   AutoTArray<SSLNamedGroup, 8> namedGroups;
@@ -1610,8 +1609,7 @@ static nsresult nsSSLIOLayerSetOptions(PRFileDesc* fd, bool forSTARTTLS,
   }
 
   // If additional_shares == 2, send mlkem768x25519, x25519, and p256.
-  // If additional_shares == 1, send {mlkem768x25519, x25519} or {x25519, p256}.
-  // If additional_shares == 0, send x25519.
+  // If additional_shares == 1, send x25519 and p256.
   if (SECSuccess != SSL_SendAdditionalKeyShares(fd, additional_shares)) {
     return NS_ERROR_FAILURE;
   }

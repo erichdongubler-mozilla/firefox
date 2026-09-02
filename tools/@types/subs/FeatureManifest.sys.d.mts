@@ -5385,14 +5385,6 @@ export const FeatureManifest: {
                 };
                 description: string;
             };
-            sendP256: {
-                type: string;
-                setPref: {
-                    branch: string;
-                    pref: string;
-                };
-                description: string;
-            };
             dtlsWebRTCEnableMlkem: {
                 type: string;
                 setPref: {
