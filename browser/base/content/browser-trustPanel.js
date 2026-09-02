@@ -359,7 +359,8 @@ class TrustPanel {
   async showPopup(opts = {}) {
     // Avoid flicker between the mouseup and panel shown by manually
     // setting open attribute.
-    this.#anchor()?.setAttribute("open", "true");
+    let anchor = this.#anchor();
+    anchor?.setAttribute("open", "true");
 
     this.#initializePopup();
 
@@ -384,7 +385,7 @@ class TrustPanel {
 
     this.#openingReason = opts.reason;
 
-    PanelMultiView.openPopup(this.#popup, this.#anchor(), {
+    PanelMultiView.openPopup(this.#popup, anchor, {
       position: "bottomleft topleft",
       triggerEvent: opts.event,
     });
@@ -609,7 +610,9 @@ class TrustPanel {
       document.getElementById("trust-icon-container"),
       document.getElementById("identity-icon-box"),
     ];
-    return anchors.find(element => element.checkVisibility());
+    return anchors.find(element =>
+      element.checkVisibility(PopupNotifications.CHECK_VISIBILITY_OPTIONS)
+    );
   }
 
   #updateUrlbarIcon() {
