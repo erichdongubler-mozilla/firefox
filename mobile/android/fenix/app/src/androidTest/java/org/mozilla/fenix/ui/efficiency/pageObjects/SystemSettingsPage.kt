@@ -19,6 +19,7 @@ import org.mozilla.fenix.helpers.TestHelper.appContext
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.ui.efficiency.helpers.BasePage
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
+import org.mozilla.fenix.ui.efficiency.helpers.SwipeDirection
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationStep
 import org.mozilla.fenix.ui.efficiency.selectors.HomeSelectors
@@ -73,8 +74,9 @@ class SystemSettingsPage(composeRule: AndroidComposeTestRule<HomeActivityIntentT
 
     /** Grant [permissionName] from the app-permissions list. */
     fun allowAppPermission(permissionName: String): SystemSettingsPage {
-        mozVerify(SystemSettingsSelectors.APP_PERMISSION_ROW(permissionName), timeout = waitingTime)
-        mozClick(SystemSettingsSelectors.APP_PERMISSION_ROW(permissionName))
+        val permissionRow = SystemSettingsSelectors.APP_PERMISSION_ROW(permissionName)
+        mozSwipeTo(permissionRow, direction = SwipeDirection.UP)
+        mozClick(permissionRow)
         mozVerify(SystemSettingsSelectors.APP_PERMISSION_ALLOW_OPTION, timeout = waitingTime)
         mozClick(SystemSettingsSelectors.APP_PERMISSION_ALLOW_OPTION)
         return this
