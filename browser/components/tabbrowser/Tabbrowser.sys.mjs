@@ -328,14 +328,17 @@ export class Tabbrowser {
     ALL_DUPLICATES: 7,
   };
 
+  /** @type {WeakMap<MozTabbrowserTab, MozTabbrowserTab>} */
   #lastRelatedTabMap = new WeakMap();
 
   #progressListeners = [];
 
   #tabsProgressListeners = [];
 
+  /** @type {Map<MozTabbrowserTab, TabProgressListener>} */
   #tabListeners = new Map();
 
+  /** @type {Map<MozTabbrowserTab, BrowserStatusFilter>} */
   #tabFilters = new Map();
 
   _isBusy = false;
@@ -810,9 +813,11 @@ export class Tabbrowser {
 
     // Hook the browser up with a progress listener.
     let tabListener = new TabProgressListener(tab, browser, true, false);
-    let filter = Cc[
-      "@mozilla.org/appshell/component/browser-status-filter;1"
-    ].createInstance(Ci.nsIWebProgress);
+    let filter = /** @type {BrowserStatusFilter} */ (
+      Cc[
+        "@mozilla.org/appshell/component/browser-status-filter;1"
+      ].createInstance(Ci.nsIWebProgress)
+    );
     filter.addProgressListener(tabListener, Ci.nsIWebProgress.NOTIFY_ALL);
     this.#tabListeners.set(tab, tabListener);
     this.#tabFilters.set(tab, filter);
@@ -2858,9 +2863,11 @@ export class Tabbrowser {
     listener = new TabProgressListener(tab, aBrowser, true, false);
     this.#tabListeners.set(tab, listener);
     if (!filter) {
-      filter = Cc[
-        "@mozilla.org/appshell/component/browser-status-filter;1"
-      ].createInstance(Ci.nsIWebProgress);
+      filter = /** @type {BrowserStatusFilter} */ (
+        Cc[
+          "@mozilla.org/appshell/component/browser-status-filter;1"
+        ].createInstance(Ci.nsIWebProgress)
+      );
       this.#tabFilters.set(tab, filter);
     }
     filter.addProgressListener(listener, Ci.nsIWebProgress.NOTIFY_ALL);
@@ -3233,9 +3240,11 @@ export class Tabbrowser {
       uriIsAboutBlank,
       usingPreloadedContent
     );
-    const filter = Cc[
-      "@mozilla.org/appshell/component/browser-status-filter;1"
-    ].createInstance(Ci.nsIWebProgress);
+    const filter = /** @type {BrowserStatusFilter} */ (
+      Cc[
+        "@mozilla.org/appshell/component/browser-status-filter;1"
+      ].createInstance(Ci.nsIWebProgress)
+    );
     filter.addProgressListener(tabListener, Ci.nsIWebProgress.NOTIFY_ALL);
     browser.webProgress.addProgressListener(
       filter,

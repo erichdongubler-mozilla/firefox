@@ -20,3 +20,6 @@ type nsILoadInfo_SchemelessInputType = nsILoadInfo["schemelessInput"];
 
 // Sessionstore names TabStateData in its JSDoc without defining it anywhere.
 type TabStateData = any;
+
+// nsBrowserStatusFilter has no interface of its own to create it through.
+type BrowserStatusFilter = nsIWebProgress & nsIWebProgressListener;
