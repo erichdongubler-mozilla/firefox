@@ -197,9 +197,11 @@ class nsWaylandDisplay {
   MonitorConfig* GetMonitorConfig(int x, int y);
   bool RemoveMonitorConfig(int aId);
 
-  bool IsTFSupported(int aTF);
+  bool IsTFSupported(uint32_t aTF);
   bool IsSetMDCVSupported();
   bool IsSetLuminancesSupported();
+  bool IsPrimariesSupported(uint32_t aPrimaries);
+  bool IsParametricSupported();
 
   ~nsWaylandDisplay();
 
