@@ -58,6 +58,10 @@ LOCAL_INCLUDES += [
     "/toolkit/components/jsoncpp/include",
 ]
 
+# Bug 1244242 is about enabling on Android
+if CONFIG["MOZ_WIDGET_TOOLKIT"] != "android":
+    DIRS += ["/third_party/parakeet.cpp"]
+
 include("/ipc/chromium/chromium-config.mozbuild")
 
 FINAL_LIBRARY = "xul"
