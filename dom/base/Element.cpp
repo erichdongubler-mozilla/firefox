@@ -4212,11 +4212,6 @@ bool Element::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
     return true;
   }
 
-  if (aAttribute == nsGkAtoms::form || aAttribute == nsGkAtoms::_for) {
-    aResult.ParseAtom(aValue);
-    return true;
-  }
-
   if (aNamespaceID == kNameSpaceID_None) {
     if (NS_IS_ATOM_ARRAY_ATTRIBUTE(aAttribute)) {
       aResult.ParseAtomArray(aValue);
@@ -4228,15 +4223,16 @@ bool Element::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
       return true;
     }
 
-    if (aAttribute == nsGkAtoms::aria_activedescendant) {
-      // String in aria-activedescendant is an id, so store as an atom.
+    if (aAttribute == nsGkAtoms::form || aAttribute == nsGkAtoms::_for ||
+        aAttribute == nsGkAtoms::aria_activedescendant) {
+      // Strings here are ids, so parse as an atom.
       aResult.ParseAtom(aValue);
       return true;
     }
 
     if (aAttribute == nsGkAtoms::id) {
       // Store id as an atom.  id="" means that the element has no id,
-      // not that it has an emptystring as the id.
+      // not that it has an empty string as the id.
       if (aValue.IsEmpty()) {
         return false;
       }
