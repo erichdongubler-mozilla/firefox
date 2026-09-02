@@ -25,6 +25,7 @@ import org.mozilla.fenix.helpers.IdlingResourceHelper.unregisterAllIdlingResourc
 import org.mozilla.fenix.helpers.TestHelper.appContext
 import org.mozilla.fenix.helpers.TestHelper.exitMenu
 import org.mozilla.fenix.ui.efficiency.logging.AttemptFinalization
+import org.mozilla.fenix.ui.efficiency.logging.DiagnosticFaultInjection
 import org.mozilla.fenix.ui.efficiency.logging.TestLogging
 import org.mozilla.fenix.ui.efficiency.logging.TestStatus
 import org.mozilla.fenix.ui.efficiency.logging.TimedReporter
@@ -356,6 +357,7 @@ abstract class BaseTest(private val defaultLaunchConfig: LaunchConfig = LaunchCo
                 StateProbe.record("end", description.displayName)
                 attemptFinalization.recordBody(TestStatus.PASS)
                 installedReporter().testEnd(description.displayName, TestStatus.PASS)
+                DiagnosticFaultInjection.afterPassingBody(description.displayName)
             }
 
             override fun failed(e: Throwable, description: Description) {
