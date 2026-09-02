@@ -32,6 +32,7 @@ def action(fh, script, target_dir, *args):
     except Exception:
         relative = os.path.relpath(__file__, topsrcdir)
         print(
-            f"{relative}:action caught exception. params={json.dumps([script, target_dir] + args, indent=2)}\n"
+            "%s:action caught exception. params=%s\n"
+            % (relative, json.dumps([script, target_dir] + args, indent=2))
         )
         raise

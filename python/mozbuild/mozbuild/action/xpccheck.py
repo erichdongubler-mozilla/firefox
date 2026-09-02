@@ -42,7 +42,14 @@ def verifyDirectory(initests, directory):
 
         if not found:
             print(
-                f"TEST-UNEXPECTED-FAIL | xpccheck | test {name} is missing from test manifest {os.path.join(directory, 'xpcshell.toml')}!",
+                (
+                    "TEST-UNEXPECTED-FAIL | xpccheck | test "
+                    "%s is missing from test manifest %s!"
+                )
+                % (
+                    name,
+                    os.path.join(directory, "xpcshell.toml"),
+                ),
                 file=sys.stderr,
             )
             sys.exit(1)
@@ -65,7 +72,14 @@ def verifyIniFile(initests, directory):
 
         if not found:
             print(
-                f"TEST-UNEXPECTED-FAIL | xpccheck | found {name} in xpcshell.toml and not in directory '{directory}'",
+                (
+                    "TEST-UNEXPECTED-FAIL | xpccheck | found "
+                    "%s in xpcshell.toml and not in directory '%s'"
+                )
+                % (
+                    name,
+                    directory,
+                ),
                 file=sys.stderr,
             )
             sys.exit(1)

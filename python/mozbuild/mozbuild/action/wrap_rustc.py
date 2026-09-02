@@ -36,7 +36,8 @@ def parse_outputs(crate_output, dep_outputs, pass_l_flag):
                         args += ["-L", val]
                     else:
                         raise Exception(
-                            f'Unknown flag passed through "cargo:rustc-flags": "{flag}"'
+                            "Unknown flag passed through "
+                            '"cargo:rustc-flags": "%s"' % flag
                         )
             elif key == "rustc-link-lib" and f == crate_output:
                 args += ["-l", value]
