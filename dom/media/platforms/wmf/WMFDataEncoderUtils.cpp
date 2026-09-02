@@ -36,14 +36,6 @@ bool IsFrameSizeSupportedForNV12Input(const gfx::IntSize& aSize) {
   return aSize.width % 2 == 0;
 }
 
-static bool IsNotRecordOrHwRequired(const EncoderConfig& aConfig) {
-  // Some hardware encoders have poor record/quality performance, as measured by
-  // the total time spent encoding. If the config is not record, or hardware is
-  // required, hardware is allowed. See bug 2067634.
-  return aConfig.mUsage != Usage::Record ||
-         aConfig.mHardwarePreference == HardwarePreference::RequireHardware;
-}
-
 static bool IsNotRealtimeOrHwRequired(const EncoderConfig& aConfig) {
   // Some hardware encoders have poor realtime performance, as measured by the
   // latency between frames. If the config is not realtime, or hardware is
@@ -79,8 +71,7 @@ bool CanUseWMFHwEncoder(const EncoderConfig& aConfig) {
 
   switch (aConfig.mCodec) {
     case CodecType::H264:
-      return IsNotRecordOrHwRequired(aConfig) &&
-             gfx::gfxVars::UseH264HwEncode();
+      return gfx::gfxVars::UseH264HwEncode();
     case CodecType::VP8:
       return IsNotRealtimeOrHwRequired(aConfig) &&
              gfx::gfxVars::UseVP8HwEncode();
