@@ -7,9 +7,60 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   AdsClient: "resource://newtab/lib/AdsClient.sys.mjs",
   _AdsClient: "resource://newtab/lib/AdsClient.sys.mjs",
+  TestUtils: "resource://testing-common/TestUtils.sys.mjs",
+  sinon: "resource://testing-common/Sinon.sys.mjs",
+  BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
 });
 
 const PREF_UNIFIED_ADS_ADSCLIENT_ENABLED = "unifiedAds.adsClient.enabled";
+
+// These consts are copied from the update timer manager test. See
+// `initUpdateTimerManager()`.
+const PREF_APP_UPDATE_TIMERMINIMUMDELAY = "app.update.timerMinimumDelay";
+const PREF_APP_UPDATE_TIMERFIRSTINTERVAL = "app.update.timerFirstInterval";
+const MAIN_TIMER_INTERVAL = 1000; // milliseconds
+const CATEGORY_UPDATE_TIMER = "update-timer";
+
+/**
+ * Sets up the update timer manager for testing: makes it fire more often,
+ * removes all existing timers, and initializes it for testing. The body of this
+ * function is copied from:
+ * https://searchfox.org/firefox-main/source/toolkit/components/timermanager/tests/unit/consumerNotifications.js
+ */
+function initUpdateTimerManager() {
+  // Set the timer to fire every second
+  Services.prefs.setIntPref(
+    PREF_APP_UPDATE_TIMERMINIMUMDELAY,
+    MAIN_TIMER_INTERVAL / 1000
+  );
+  Services.prefs.setIntPref(
+    PREF_APP_UPDATE_TIMERFIRSTINTERVAL,
+    MAIN_TIMER_INTERVAL
+  );
+
+  // Remove existing update timers to prevent them from being notified
+  for (let { data: entry } of Services.catMan.enumerateCategory(
+    CATEGORY_UPDATE_TIMER
+  )) {
+    Services.catMan.deleteCategoryEntry(CATEGORY_UPDATE_TIMER, entry, false);
+  }
+
+  Cc["@mozilla.org/updates/timer-manager;1"]
+    .getService(Ci.nsIUpdateTimerManager)
+    .QueryInterface(Ci.nsIObserver)
+    .observe(null, "utm-test-init", "");
+}
+
+let gSandbox;
+add_setup(() => {
+  gSandbox = lazy.sinon.createSandbox();
+  initUpdateTimerManager();
+  Services.prefs.setBoolPref(PREF_UNIFIED_ADS_ADSCLIENT_ENABLED, true);
+  registerCleanupFunction(() => {
+    Services.prefs.clearUserPref(PREF_UNIFIED_ADS_ADSCLIENT_ENABLED);
+    gSandbox.restore();
+  });
+});
 
 add_setup(function test_setup_fog() {
   do_get_profile();
@@ -182,4 +233,82 @@ add_task(function test_buildTelemetry_resolvesMetricsLate() {
     "recorded once available",
     "the late-registered category is used without rebuilding the client"
   );
+});
+
+add_task(async function test_shutdown_blocker() {
+  Services.prefs.setBoolPref(PREF_UNIFIED_ADS_ADSCLIENT_ENABLED, true);
+
+  const adsClient = new lazy._AdsClient();
+  Assert.ok(
+    !adsClient.uninitialized,
+    "adsClient should not be uninitialized yet"
+  );
+
+  const client = adsClient.getClient();
+  Assert.ok(client, "getClient builds and returns a MozAdsClient");
+
+  await lazy.TestUtils.waitForTick();
+  gSandbox.spy(lazy.AdsClient, "uninit");
+
+  // Simulate shutdown.
+  await lazy.BrowserUtils.callModulesFromCategory(
+    { categoryName: "browser-quit-application-granted" },
+    null
+  );
+  await lazy.TestUtils.waitForCondition(
+    () => lazy.AdsClient.uninit.calledOnce,
+    "The `uninit` function should be called on shutdown"
+  );
+  Assert.ok(adsClient.uninitialized, "adsClient should now be uninitialized");
+
+  Services.prefs.clearUserPref(PREF_UNIFIED_ADS_ADSCLIENT_ENABLED);
+  adsClient._reset_shutdown_happened();
+  gSandbox.restore();
+});
+
+add_task(async function test_dont_register_blocker_if_in_shutdown() {
+  // Test a corner case: the AdsClient is initialized during shutdown.
+  //
+  // In this case it shouldn't register a shutdown blocker, because it's too late to do that.
+  // Instead, it should just immediately uninitialize itself.
+  //
+  // See adjacent bug for ContextRelevancyManager https://bugzilla.mozilla.org/show_bug.cgi?id=1990569
+  Services.prefs.setBoolPref(PREF_UNIFIED_ADS_ADSCLIENT_ENABLED, true);
+  await lazy.TestUtils.waitForTick();
+
+  // Create static version of adsClient.
+  const adsClient = new lazy._AdsClient();
+  Assert.ok(
+    !adsClient.uninitialized,
+    "adsClient should not be uninitialized yet"
+  );
+
+  // Fire event and ensure method runs before creating an adsClient instance. `uninit` method will be called on the static `AdsClient`
+  gSandbox.spy(lazy.AdsClient, "uninit");
+  await lazy.BrowserUtils.callModulesFromCategory(
+    { categoryName: "browser-quit-application-granted" },
+    null
+  );
+  await lazy.TestUtils.waitForCondition(
+    () => lazy.AdsClient.uninit.calledOnce,
+    "The `uninit` function should be called statically"
+  );
+  Assert.ok(
+    adsClient.uninitialized,
+    "adsClient should have uninitialized itself"
+  );
+
+  // Now create instance and ensure uninitialization is not reset.
+  // `uninit` function will get called again, but this time on instance `adsClient` (because it is called within #build)
+  gSandbox.spy(adsClient, "uninit");
+  adsClient.getClient();
+  await lazy.TestUtils.waitForCondition(
+    () => adsClient.uninit.calledOnce,
+    "The `uninit` function should be called immediately on startup if already uninitialized"
+  );
+  Assert.ok(adsClient.uninitialized, "adsClient should remain uninitialized");
+
+  Services.prefs.clearUserPref(PREF_UNIFIED_ADS_ADSCLIENT_ENABLED);
+  adsClient._reset_shutdown_happened();
+  gSandbox.restore();
 });
