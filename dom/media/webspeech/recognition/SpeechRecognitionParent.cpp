@@ -10,6 +10,7 @@
 #include <chrono>
 #include <thread>
 
+#include "SpeechRecognitionModelMapping.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/Preferences.h"
@@ -44,28 +45,8 @@ static LazyLogModule gSpeechRecognitionParentLog("SpeechRecognitionParent");
 #define LOGE(fmt, ...) \
   MOZ_LOG_FMT(gSpeechRecognitionParentLog, LogLevel::Error, fmt, ##__VA_ARGS__)
 
-// Task name the model hub files speech recognition models under.
-static constexpr auto kSpeechRecognitionTask = "speech-recognition"_ns;
-
 // Sample rate the Parakeet models operate at.
 static constexpr int32_t PARAKEET_SAMPLE_RATE = 16000;
-
-SpeechRecognitionParent::ModelIdentifier
-SpeechRecognitionParent::LanguagesToModelIdentifier(
-    const nsTArray<nsCString>&) {
-  // For now this ignores the requested languages and always returns a single
-  // hardcoded model. Per-language selection and generalization to more models
-  // land in a later patch in this stack.
-  // mudler/parakeet.cpp cache-aware streaming GGUF, hosted on the Mozilla
-  // model hub under asr-test/parakeet.
-  return {"asr-test/parakeet"_ns, "realtime_eou_120m-v1-q5_k.gguf"_ns,
-          "main"_ns};
-}
-
-nsCString SpeechRecognitionParent::ModelIdentifier::ToString() const {
-  return nsFmtCString("{}/{}/{}", mModelName.get(), mFileName.get(),
-                      mRevision.get());
-}
 
 void SpeechRecognitionParent::ResolveOrRejectInitOnIPCThread(
     InitResolver&& aResolver, bool aSuccess) {
@@ -133,14 +114,14 @@ mozilla::ipc::IPCResult SpeechRecognitionParent::RecvIsModelAvailable(
                     "RecvIsModelAvailable requires at least one language");
   }
 
-  nsCString modelId = LanguagesToModelIdentifier(aLanguages).ToString();
+  nsCString modelId = dom::LanguagesToSpeechModelId(aLanguages);
   LOGD("{} languages: {} mapped to id={}", __func__,
        fmt::join(aLanguages, ", "), modelId.get());
 
   return RunHWInferenceBoolQuery(
       __func__,
       [modelId](hwinference::HWInferenceChild* aChild) {
-        return aChild->SendIsModelAvailable(nsCString(kSpeechRecognitionTask),
+        return aChild->SendIsModelAvailable(dom::kSpeechRecognitionTask,
                                             modelId);
       },
       std::move(aResolver), mIsModelAvailableRequest);
@@ -152,7 +133,7 @@ mozilla::ipc::IPCResult SpeechRecognitionParent::RecvInstallModels(
     return IPC_FAIL(this, "RecvInstallModels requires at least one language");
   }
 
-  nsCString modelId = LanguagesToModelIdentifier(aLanguages).ToString();
+  nsCString modelId = dom::LanguagesToSpeechModelId(aLanguages);
   LOGD("{} languages: {} mapped to id={}", __func__,
        fmt::join(aLanguages, ", "), modelId.get());
 
@@ -162,7 +143,7 @@ mozilla::ipc::IPCResult SpeechRecognitionParent::RecvInstallModels(
   return RunHWInferenceBoolQuery(
       __func__,
       [modelId, contentId](hwinference::HWInferenceChild* aChild) {
-        return aChild->SendInstallModel(kSpeechRecognitionTask, modelId, 0,
+        return aChild->SendInstallModel(dom::kSpeechRecognitionTask, modelId, 0,
                                         contentId);
       },
       std::move(aResolver), mInstallModelRequest);
@@ -211,7 +192,7 @@ void SpeechRecognitionParent::RetrieveModel(InitResolver&& aResolver) {
   nsCString modelId;
   {
     MutexAutoLock lock(mLock);
-    modelId = LanguagesToModelIdentifier(nsTArray{mLanguage}).ToString();
+    modelId = dom::LanguagesToSpeechModelId(nsTArray{mLanguage});
   }
 
   LOGD("{} Checking model is installed: id={}", __func__, modelId.get());
@@ -220,8 +201,7 @@ void SpeechRecognitionParent::RetrieveModel(InitResolver&& aResolver) {
   // permission doorhanger. start() requires the model to already be
   // installed, so check that before FetchModelFile() rather than letting
   // GetModelFile download it on demand.
-  hwInferenceChild
-      ->SendIsModelInstalled(nsCString(kSpeechRecognitionTask), modelId)
+  hwInferenceChild->SendIsModelInstalled(dom::kSpeechRecognitionTask, modelId)
       ->Then(GetCurrentSerialEventTarget(), __func__,
              [self = RefPtr{this}, aResolver = std::move(aResolver),
               modelId](hwinference::PHWInferenceChild::IsModelInstalledPromise::
@@ -256,8 +236,7 @@ void SpeechRecognitionParent::FetchModelFile(const nsCString& aModelId,
 
   LOGD("{} Requesting model: id={}", __func__, aModelId.get());
 
-  hwInferenceChild
-      ->SendGetModelFile(nsCString(kSpeechRecognitionTask), aModelId)
+  hwInferenceChild->SendGetModelFile(dom::kSpeechRecognitionTask, aModelId)
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
           [self = RefPtr{this}, aResolver = std::move(aResolver)](

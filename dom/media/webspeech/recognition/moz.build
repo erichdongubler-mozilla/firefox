@@ -4,12 +4,27 @@
 
 MOCHITEST_MANIFESTS += ["test/mochitest.toml"]
 
+GENERATED_FILES += [
+    "SpeechRecognitionModelDisplayInfo.sys.mjs",
+    "SpeechRecognitionModels.h",
+]
+speech_models = GENERATED_FILES["SpeechRecognitionModels.h"]
+speech_models.script = "gen_speech_models.py:gen_models_header"
+speech_models.inputs = ["models.yaml"]
+
+speech_models_display_info = GENERATED_FILES[
+    "SpeechRecognitionModelDisplayInfo.sys.mjs"
+]
+speech_models_display_info.script = "gen_speech_models.py:gen_models_display_info"
+speech_models_display_info.inputs = ["models.yaml"]
+
 EXPORTS.mozilla.dom += [
     "SpeechGrammar.h",
     "SpeechGrammarList.h",
     "SpeechRecognition.h",
     "SpeechRecognitionAlternative.h",
     "SpeechRecognitionBackend.h",
+    "SpeechRecognitionModelMapping.h",
     "SpeechRecognitionPhrase.h",
     "SpeechRecognitionResult.h",
     "SpeechRecognitionResultList.h",
@@ -28,6 +43,7 @@ UNIFIED_SOURCES += [
     "SpeechRecognitionAlternative.cpp",
     "SpeechRecognitionBackend.cpp",
     "SpeechRecognitionChild.cpp",
+    "SpeechRecognitionModelMapping.cpp",
     "SpeechRecognitionParent.cpp",
     "SpeechRecognitionPhrase.cpp",
     "SpeechRecognitionResult.cpp",

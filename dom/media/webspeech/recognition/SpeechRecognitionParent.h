@@ -60,16 +60,6 @@ class SpeechRecognitionParent final : public PSpeechRecognitionParent {
 
   void ActorDestroy(ActorDestroyReason aReason) override;
 
-  struct ModelIdentifier {
-    nsCString mModelName;
-    nsCString mFileName;
-    nsCString mRevision = "main"_ns;
-    nsCString ToString() const;
-  };
-
-  ModelIdentifier LanguagesToModelIdentifier(
-      const nsTArray<nsCString>& aLanguages);
-
   void ResolveOrRejectInitOnIPCThread(InitResolver&& aResolver, bool aSuccess)
       MOZ_EXCLUDES(mLock);
 
