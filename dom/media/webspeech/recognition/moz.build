@@ -67,6 +67,7 @@ XPCOM_MANIFESTS += [
 ]
 
 EXTRA_JS_MODULES += [
+    "!SpeechRecognitionModelDisplayInfo.sys.mjs",
     "SpeechRecognitionFeature.sys.mjs",
 ]
 
