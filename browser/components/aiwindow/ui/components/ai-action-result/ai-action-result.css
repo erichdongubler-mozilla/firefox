@@ -12,6 +12,10 @@
   --ai-action-loading-gradient-mid: var(--color-violet-40);
   --ai-action-loading-gradient-accent: var(--color-pink-40);
   --ai-action-loading-gradient-highlight: var(--color-pink-30);
+
+  @media (forced-colors) {
+    --ai-action-text-color: var(--text-color);
+  }
 }
 
 .action-result-wrapper {
