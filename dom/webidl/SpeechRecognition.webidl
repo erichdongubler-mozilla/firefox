@@ -35,6 +35,7 @@ interface SpeechRecognition : EventTarget {
     [Throws]
     attribute boolean continuous;
     attribute boolean interimResults;
+    attribute boolean unspokenPunctuation;
     attribute unsigned long maxAlternatives;
 
     attribute boolean processLocally;

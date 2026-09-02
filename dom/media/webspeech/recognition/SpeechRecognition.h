@@ -63,6 +63,8 @@ class SpeechRecognitionInstallTransaction final {
   nsTArray<RefPtr<Promise>> mPromises;
 };
 
+// This implements the SpeechRecognition object in the content process, from the
+// Web Speech API: https://webaudio.github.io/web-speech-api/#speechrecognition
 class SpeechRecognition final : public DOMEventTargetHelper,
                                 public SupportsWeakPtr {
  public:
@@ -110,6 +112,9 @@ class SpeechRecognition final : public DOMEventTargetHelper,
   // New attributes from current spec
   bool ProcessLocally() const;
   void SetProcessLocally(bool aProcessLocally);
+
+  bool UnspokenPunctuation() const;
+  void SetUnspokenPunctuation(bool aUnspokenPunctuation);
 
   // ObservableArray callbacks for phrases
   void OnSetPhrases(SpeechRecognitionPhrase& aPhrase, uint32_t aIndex,
@@ -265,6 +270,10 @@ class SpeechRecognition final : public DOMEventTargetHelper,
   bool mInterimResults;
   uint32_t mMaxAlternatives;
   bool mProcessLocally = false;
+  // Per spec, defaults to false. The value is stored for round-tripping but
+  // does not change recognition behaviour: Gecko's recognizer is LLM-based
+  // and only ever infers punctuation that was not spoken.
+  bool mUnspokenPunctuation = false;
   // The backend gets these at Start() time; spec is unclear on dynamic updates
   // Probably better as a SimpleMap or something so it's sparse
   // https://github.com/WebAudio/web-speech-api/issues/172

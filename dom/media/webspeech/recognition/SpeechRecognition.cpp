@@ -388,6 +388,14 @@ void SpeechRecognition::SetProcessLocally(bool aProcessLocally) {
   mProcessLocally = aProcessLocally;
 }
 
+bool SpeechRecognition::UnspokenPunctuation() const {
+  return mUnspokenPunctuation;
+}
+
+void SpeechRecognition::SetUnspokenPunctuation(bool aUnspokenPunctuation) {
+  mUnspokenPunctuation = aUnspokenPunctuation;
+}
+
 void SpeechRecognition::OnSetPhrases(SpeechRecognitionPhrase& aPhrase,
                                      uint32_t aIndex, ErrorResult& aRv) {
   // Note: The spec is unclear on whether dynamic updates during recognition
