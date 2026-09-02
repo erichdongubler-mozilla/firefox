@@ -139,16 +139,18 @@ object AppDataCleaner {
     private suspend fun clearTabsAndPendingUndo() {
         val components = appContext.components
         val store = components.core.store
-        val pendingTabIds = store.state.undoHistory.tabs.map { it.state.id }.toSet()
-        if (pendingTabIds.isNotEmpty()) {
-            store.dispatch(UndoAction.RestoreRecoverableTabs)
-            withTimeout(TAB_RESTORE_TIMEOUT_MS) {
-                while (pendingTabIds.any { pendingId -> store.state.tabs.none { it.id == pendingId } }) {
-                    delay(10)
-                }
-            }
+        if (store.state.undoHistory.tabs.isNotEmpty()) {
+            store.dispatch(UndoAction.ClearRecoverableTabs(store.state.undoHistory.tag))
         }
         components.useCases.tabsUseCases.removeAllTabs(recoverable = false)
+        if (store.state.undoHistory.tabs.isNotEmpty()) {
+            store.dispatch(UndoAction.ClearRecoverableTabs(store.state.undoHistory.tag))
+        }
+        withTimeout(TAB_CLEAR_TIMEOUT_MS) {
+            while (store.state.tabs.isNotEmpty() || store.state.undoHistory.tabs.isNotEmpty()) {
+                delay(10)
+            }
+        }
     }
 
     /**
@@ -186,5 +188,5 @@ object AppDataCleaner {
             }
     }
 
-    private const val TAB_RESTORE_TIMEOUT_MS = 2_000L
+    private const val TAB_CLEAR_TIMEOUT_MS = 2_000L
 }

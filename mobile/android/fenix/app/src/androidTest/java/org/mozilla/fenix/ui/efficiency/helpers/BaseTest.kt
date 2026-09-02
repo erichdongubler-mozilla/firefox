@@ -469,11 +469,6 @@ abstract class BaseTest(private val defaultLaunchConfig: LaunchConfig = LaunchCo
      * - STEP/CMD/LOC totals sum only the instrumented scopes.
      */
     @After
-    fun tearDown() {
-        appContext.components.useCases.tabsUseCases.removeAllTabs()
-    }
-
-    @After
     fun tearDownLogging() {
         try {
             TestLogging.reporter.printSummary()
@@ -486,7 +481,7 @@ abstract class BaseTest(private val defaultLaunchConfig: LaunchConfig = LaunchCo
 private fun cleanup(removeTabs: Boolean = false) {
     unregisterAllIdlingResources()
     if (removeTabs) {
-        appContext.components.useCases.tabsUseCases.removeAllTabs()
+        appContext.components.useCases.tabsUseCases.removeAllTabs(recoverable = false)
     }
     exitMenu()
 }
