@@ -156,10 +156,6 @@
         background-image: url('chrome://global/skin/icons/shaft-arrow-down.svg');
       }
     }
-
-    .weather-info-description {
-      display: none;
-    }
   }
 
   // Weather condition background colors
@@ -251,7 +247,6 @@
     // display: none to keep it in the accessibility tree.
     .weather-info-description {
       clip-path: inset(50%);
-      display: block;
       height: 1px;
       overflow: hidden;
       position: absolute;
@@ -302,7 +297,6 @@
     }
 
     .weather-info-description {
-      display: block;
       font-size: var(--font-size-small);
       color: var(--text-color-deemphasized);
     }
@@ -354,7 +348,6 @@
     }
 
     .weather-info-description {
-      display: block;
       font-size: var(--font-size-small);
       color: var(--text-color-deemphasized);
     }
