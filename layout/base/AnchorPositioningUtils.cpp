@@ -789,10 +789,14 @@ nsPoint AnchorPositioningUtils::GetScrollOffsetFor(
   nsPoint offset;
   const bool trackHorizontal = aAxes.contains(PhysicalAxis::Horizontal);
   const bool trackVertical = aAxes.contains(PhysicalAxis::Vertical);
-  // TODO(dshin, bug 1991489): Traverse properly, in case anchor and positioned
-  // elements are in different continuation frames of the absolute containing
-  // block.
-  const auto* absoluteContainingBlock = aPositioned->GetParent();
+
+  // The anchor and aPositioned may be under different continuations or IB-split
+  // siblings of the absolute containing block. Compare the first continuation
+  // on each side so that the walk below stops correctly instead of running past
+  // the containing block and accumulating scroll containers above it.
+  const auto* absoluteContainingBlock =
+      nsLayoutUtils::FirstContinuationOrIBSplitSibling(
+          aPositioned->GetParent());
   if (GetNearestScrollFrame(aPositioned).mScrollContainer ==
       aDefaultAnchorCache.mScrollContainer) {
     // Would scroll together anyway, skip.
@@ -801,7 +805,9 @@ nsPoint AnchorPositioningUtils::GetScrollOffsetFor(
   // Grab the accumulated offset up to, but not including, the abspos
   // container.
   for (const auto* f = aDefaultAnchorCache.mScrollContainer;
-       f && f != absoluteContainingBlock; f = f->GetParent()) {
+       f && nsLayoutUtils::FirstContinuationOrIBSplitSibling(f) !=
+                absoluteContainingBlock;
+       f = f->GetParent()) {
     if (const ScrollContainerFrame* scrollFrame = do_QueryFrame(f)) {
       const auto o = scrollFrame->GetScrollPosition();
       if (trackHorizontal) {
