@@ -17,9 +17,11 @@
 #include "SpeechRecognition.h"
 #include "SpeechTrackListener.h"
 #include "mozilla/AbstractThread.h"
+#include "mozilla/AppShutdown.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/PodOperations.h"
+#include "mozilla/StaticPrefs_media.h"
 #include "mozilla/dom/AudioStreamTrack.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/Promise.h"
@@ -39,6 +41,7 @@ using namespace mozilla::ipc;
 StaticAutoPtr<mozilla::EventTargetCapability<nsISerialEventTarget>>
     SpeechRecognitionBackend::sIPCCapability;
 int32_t SpeechRecognitionBackend::sIPCActorUsers = 0;
+StaticRefPtr<nsITimer> SpeechRecognitionBackend::sIdleCloseTimer;
 
 static LazyLogModule gSpeechRecognitionBackendLog("SpeechRecognitionBackend");
 
@@ -56,8 +59,86 @@ static LazyLogModule gSpeechRecognitionBackendLog("SpeechRecognitionBackend");
 // released. The serial event target itself lives for the process lifetime.
 static constexpr uint32_t IPC_THREAD_IDLE_TIMEOUT_MS = 5000;
 
-SpeechRecognitionBackend::SpeechRecognitionIPCActorUserGuard::
-    ~SpeechRecognitionIPCActorUserGuard() {
+/* static */
+void SpeechRecognitionBackend::CancelIdleCloseTimer() {
+  if (sIdleCloseTimer) {
+    sIdleCloseTimer->Cancel();
+    sIdleCloseTimer = nullptr;
+  }
+}
+
+/* static */
+void SpeechRecognitionBackend::AcquireIPCActorUser() {
+  AssertIsOnMainThread();
+  bool connectionHeld = sIdleCloseTimer;
+  // A new user within the grace period means the connection is wanted again,
+  // so the idle close must not fire.
+  CancelIdleCloseTimer();
+  if (sIPCActorUsers++ || connectionHeld) {
+    return;
+  }
+
+  ContentChild::GetSingleton()->SendAcquireHWInferenceProcess();
+}
+
+/* static */
+void SpeechRecognitionBackend::ReleaseIPCActorUser() {
+  AssertIsOnMainThread();
+  MOZ_ASSERT(sIPCActorUsers > 0);
+  if (--sIPCActorUsers) {
+    return;
+  }
+
+  uint32_t graceMs =
+      StaticPrefs::media_webspeech_recognition_idle_shutdown_grace_ms();
+  // Past shutdown there is nothing left to keep the connection open for, and
+  // no shutdown hook left to cancel a timer armed now: close immediately.
+  if (!graceMs ||
+      AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
+    ContentChild::GetSingleton()->SendReleaseHWInferenceConnection();
+    return;
+  }
+
+  // The idle timer must not outlive XPCOM: a still-armed timer released from a
+  // static destructor crashes in nsTimerImpl::CancelImpl, once the timer
+  // thread is gone. Registered here rather than alongside the IPC thread
+  // because a keepalive can be acquired and dropped - arming the timer -
+  // without any session ever creating that thread.
+  static bool sRegisteredShutdownBlocker = false;
+  if (!sRegisteredShutdownBlocker) {
+    sRegisteredShutdownBlocker = true;
+    RunOnShutdown([]() {
+      AssertIsOnMainThread();
+      CancelIdleCloseTimer();
+    });
+  }
+
+  LOG("Last HWInference user gone, closing the connection in {}ms", graceMs);
+  nsCOMPtr<nsITimer> timer;
+  nsresult rv = NS_NewTimerWithCallback(
+      getter_AddRefs(timer),
+      [](nsITimer*) {
+        AssertIsOnMainThread();
+        // Only still armed if nothing acquired in the meantime, since
+        // AcquireIPCActorUser() cancels the timer.
+        sIdleCloseTimer = nullptr;
+        ContentChild::GetSingleton()->SendReleaseHWInferenceConnection();
+      },
+      graceMs, nsITimer::TYPE_ONE_SHOT,
+      "SpeechRecognitionBackend::IdleClose"_ns);
+
+  if (NS_FAILED(rv)) {
+    ContentChild::GetSingleton()->SendReleaseHWInferenceConnection();
+    return;
+  }
+  sIdleCloseTimer = timer.forget();
+}
+
+SpeechRecognitionIPCActorUserGuard::SpeechRecognitionIPCActorUserGuard() {
+  SpeechRecognitionBackend::AcquireIPCActorUser();
+}
+
+SpeechRecognitionIPCActorUserGuard::~SpeechRecognitionIPCActorUserGuard() {
   if (NS_IsMainThread()) {
     SpeechRecognitionBackend::ReleaseIPCActorUser();
   } else {
@@ -67,30 +148,6 @@ SpeechRecognitionBackend::SpeechRecognitionIPCActorUserGuard::
           SpeechRecognitionBackend::ReleaseIPCActorUser();
         }));
   }
-}
-
-/* static */
-void SpeechRecognitionBackend::AcquireIPCActorUser() {
-  AssertIsOnMainThread();
-  ++sIPCActorUsers;
-}
-
-/* static */
-void SpeechRecognitionBackend::ReleaseIPCActorUser() {
-  AssertIsOnMainThread();
-  MOZ_ASSERT(sIPCActorUsers > 0);
-  if (--sIPCActorUsers || !sIPCCapability) {
-    return;
-  }
-
-  // Close the HWInference connection once no session needs it, so the utility
-  // process isn't kept alive by an idle connection. The serial event target is
-  // kept (its backing OS thread is released on idle by the LazyIdleThread);
-  // the next EnsureIPC() reopens the connection on that same target.
-  nsCOMPtr<nsIRunnable> close = NS_NewRunnableFunction(
-      "SpeechRecognitionBackend::CloseHWInferenceChildIfAny",
-      [] { CloseHWInferenceChildIfAny(); });
-  sIPCCapability->Dispatch(close.forget());
 }
 
 static constexpr double IPC_BLOCK_SIZE_S = 0.5;

@@ -189,6 +189,7 @@ class SpeechRecognitionBackend {
 
   static void AcquireIPCActorUser() MOZ_REQUIRES(sMainThreadCapability);
   static void ReleaseIPCActorUser() MOZ_REQUIRES(sMainThreadCapability);
+  static void CancelIdleCloseTimer() MOZ_REQUIRES(sMainThreadCapability);
 
   // Opens a transient session on the IPC thread and calls aSendFunc(session)
   // there. aSendFunc must return a RefPtr<MozPromise>; the returned promise
@@ -215,6 +216,11 @@ class SpeechRecognitionBackend {
   // need the HWInference process: a live SpeechRecognition object, a session,
   // or a static call in flight.
   static int32_t sIPCActorUsers MOZ_GUARDED_BY(sMainThreadCapability);
+  // Armed when sIPCActorUsers hits zero, cancelled by the next acquisition, so
+  // the connection survives a brief gap between users. See
+  // media.webspeech.recognition.idle_shutdown_grace_ms.
+  static StaticRefPtr<nsITimer> sIdleCloseTimer
+      MOZ_GUARDED_BY(sMainThreadCapability);
   // Upgraded to a RefPtr on the main thread only; see DispatchToParentIfAlive.
   WeakPtr<SpeechRecognition> mParent MOZ_GUARDED_BY(sMainThreadCapability);
 

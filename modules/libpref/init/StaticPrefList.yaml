@@ -13242,6 +13242,16 @@
   value: false
   mirror: always
 
+# How long the HWInference connection (and with it the utility process, when
+# nothing else holds it) is kept alive after the last recognition session ends
+# and the last availability/install call settles. Absorbs stop()/start()
+# cycles and bursts of static calls, which would otherwise pay for a process
+# relaunch each time. 0 tears it down immediately, which is what tests want.
+- name: media.webspeech.recognition.idle_shutdown_grace_ms
+  type: uint32_t
+  value: 5000
+  mirror: always
+
 # Delays the recognition thread, right before it acquires the parent actor's
 # lock during session init, by this many milliseconds. Used by tests to
 # deterministically land actor teardown in that window instead of relying on
