@@ -8,6 +8,7 @@ import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.ui.efficiency.helpers.BasePage
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationOptions
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationStep
 import org.mozilla.fenix.ui.efficiency.selectors.BrowserPageSelectors
@@ -36,8 +37,16 @@ class WebCompatReporterPage(composeRule: AndroidComposeTestRule<HomeActivityInte
     }
 
     // Reporting a broken site needs a site, so an empty url still has to load one.
-    override fun navigateToPage(url: String, forceNavigation: Boolean): WebCompatReporterPage {
-        super.navigateToPage(url = url.ifBlank { "example.com" }, forceNavigation = forceNavigation)
+    override fun navigateToPage(
+        url: String,
+        forceNavigation: Boolean,
+        navigationOptions: NavigationOptions,
+    ): WebCompatReporterPage {
+        super.navigateToPage(
+            url = url.ifBlank { "example.com" },
+            forceNavigation = forceNavigation,
+            navigationOptions = navigationOptions,
+        )
         return this
     }
 

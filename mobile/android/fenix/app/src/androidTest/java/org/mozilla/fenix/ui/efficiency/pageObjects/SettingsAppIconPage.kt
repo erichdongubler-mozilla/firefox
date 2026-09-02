@@ -10,6 +10,7 @@ import org.mozilla.fenix.helpers.TestHelper
 import org.mozilla.fenix.ui.efficiency.helpers.BasePage
 import org.mozilla.fenix.ui.efficiency.helpers.PageStateTracker
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationOptions
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationStep
 import org.mozilla.fenix.ui.efficiency.selectors.SettingsAppIconSelectors
@@ -32,8 +33,12 @@ class SettingsAppIconPage(composeRule: AndroidComposeTestRule<HomeActivityIntent
         )
     }
 
-    override fun navigateToPage(url: String, forceNavigation: Boolean): SettingsAppIconPage {
-        super.navigateToPage(url, forceNavigation)
+    override fun navigateToPage(
+        url: String,
+        forceNavigation: Boolean,
+        navigationOptions: NavigationOptions,
+    ): SettingsAppIconPage {
+        super.navigateToPage(url, forceNavigation, navigationOptions)
         return this
     }
 

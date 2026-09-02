@@ -14,6 +14,7 @@ import org.mozilla.fenix.helpers.TestHelper.appName
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.ui.efficiency.helpers.BasePage
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationOptions
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationStep
 import org.mozilla.fenix.ui.efficiency.selectors.NotificationSelectors
@@ -31,8 +32,12 @@ class NotificationPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTes
 
     // Narrowed return type so the helpers below stay reachable when chained off navigateToPage(), which
     // otherwise hands back a BasePage. Same pattern as SettingsAutofillPage and TabHistoryPage.
-    override fun navigateToPage(url: String, forceNavigation: Boolean): NotificationPage {
-        super.navigateToPage(url = url, forceNavigation = forceNavigation)
+    override fun navigateToPage(
+        url: String,
+        forceNavigation: Boolean,
+        navigationOptions: NavigationOptions,
+    ): NotificationPage {
+        super.navigateToPage(url = url, forceNavigation = forceNavigation, navigationOptions = navigationOptions)
         return this
     }
 

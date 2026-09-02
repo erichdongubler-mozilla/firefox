@@ -10,6 +10,7 @@ import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeLong
 import org.mozilla.fenix.ui.efficiency.helpers.BasePage
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationFacts
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationStep
 import org.mozilla.fenix.ui.efficiency.selectors.BrowserPageSelectors
@@ -38,12 +39,14 @@ class MainMenuPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRul
             from = pageName,
             to = "BrowserPage",
             steps = listOf(),
+            requires = setOf(NavigationFacts.RETURN_SURFACE_BROWSER),
         )
 
         NavigationRegistry.register(
             from = pageName,
             to = "HomePage",
             steps = listOf(NavigationStep.PressBack),
+            requires = setOf(NavigationFacts.RETURN_SURFACE_HOME),
         )
 
         NavigationRegistry.register(

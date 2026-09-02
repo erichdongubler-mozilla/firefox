@@ -10,6 +10,7 @@ import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.ui.efficiency.helpers.BasePage
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationOptions
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationStep
 import org.mozilla.fenix.ui.efficiency.selectors.SettingsSearchManageShortcutsSelectors
@@ -40,8 +41,12 @@ class SettingsSearchManageShortcutsPage(composeRule: AndroidComposeTestRule<Home
 
     // Covariant override so the page's own helpers (selectSearchShortcut) can be chained directly off
     // navigateToPage() - BasePage.navigateToPage returns BasePage, which would hide them.
-    override fun navigateToPage(url: String, forceNavigation: Boolean): SettingsSearchManageShortcutsPage {
-        super.navigateToPage(url, forceNavigation = forceNavigation)
+    override fun navigateToPage(
+        url: String,
+        forceNavigation: Boolean,
+        navigationOptions: NavigationOptions,
+    ): SettingsSearchManageShortcutsPage {
+        super.navigateToPage(url, forceNavigation = forceNavigation, navigationOptions = navigationOptions)
         return this
     }
 

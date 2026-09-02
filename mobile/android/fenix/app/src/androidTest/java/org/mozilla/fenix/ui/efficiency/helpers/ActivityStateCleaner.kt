@@ -11,7 +11,7 @@ import androidx.test.uiautomator.UiDevice
 import org.mozilla.fenix.ui.efficiency.logging.TestLogging
 
 object ActivityStateCleaner {
-    private const val REMOVAL_TIMEOUT_MS = 2_000L
+    private const val REMOVAL_TIMEOUT_MS = 5_000L
     private const val POLL_INTERVAL_MS = 50L
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()

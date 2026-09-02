@@ -35,6 +35,7 @@ import org.mozilla.fenix.helpers.TestHelper.packageName
 import org.mozilla.fenix.helpers.ext.waitNotNull
 import org.mozilla.fenix.ui.efficiency.helpers.BasePage
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationOptions
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationStep
 import org.mozilla.fenix.ui.efficiency.selectors.BrowserPageSelectors
@@ -103,8 +104,16 @@ class BrowserPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule
         )
     }
 
-    override fun navigateToPage(url: String, forceNavigation: Boolean): BrowserPage {
-        super.navigateToPage(url = url.ifBlank { "example.com" }, forceNavigation = forceNavigation)
+    override fun navigateToPage(
+        url: String,
+        forceNavigation: Boolean,
+        navigationOptions: NavigationOptions,
+    ): BrowserPage {
+        super.navigateToPage(
+            url = url.ifBlank { "example.com" },
+            forceNavigation = forceNavigation,
+            navigationOptions = navigationOptions,
+        )
         return this
     }
 

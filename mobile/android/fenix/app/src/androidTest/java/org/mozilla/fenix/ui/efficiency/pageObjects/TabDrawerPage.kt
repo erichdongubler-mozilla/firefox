@@ -17,6 +17,8 @@ import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.ui.efficiency.helpers.BasePage
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
 import org.mozilla.fenix.ui.efficiency.helpers.SwipeDirection
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationFacts
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationOptions
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationStep
 import org.mozilla.fenix.ui.efficiency.selectors.TabDrawerSelectors
@@ -46,12 +48,14 @@ class TabDrawerPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRu
             from = pageName,
             to = "HomePage",
             steps = listOf(NavigationStep.PressBack),
+            requires = setOf(NavigationFacts.RETURN_SURFACE_HOME),
         )
 
         NavigationRegistry.register(
             from = pageName,
             to = "BrowserPage",
             steps = listOf(NavigationStep.PressBack),
+            requires = setOf(NavigationFacts.RETURN_SURFACE_BROWSER),
         )
     }
 
@@ -59,8 +63,12 @@ class TabDrawerPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRu
         return TabDrawerSelectors.all.filter { it.groups.contains(group) }
     }
 
-    override fun navigateToPage(url: String, forceNavigation: Boolean): TabDrawerPage {
-        super.navigateToPage(url, forceNavigation)
+    override fun navigateToPage(
+        url: String,
+        forceNavigation: Boolean,
+        navigationOptions: NavigationOptions,
+    ): TabDrawerPage {
+        super.navigateToPage(url, forceNavigation, navigationOptions)
         return this
     }
 

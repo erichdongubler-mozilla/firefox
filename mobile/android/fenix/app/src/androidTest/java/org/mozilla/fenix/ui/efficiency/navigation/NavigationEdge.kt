@@ -11,9 +11,31 @@ data class NavigationEdge(
     val launch: LaunchConfig? = null,
     val variant: String? = null,
     val purpose: NavigationRoutePurpose = NavigationRoutePurpose.SETUP,
+    val requires: Set<NavigationFact> = emptySet(),
+    val forbids: Set<NavigationFact> = emptySet(),
+    val provides: Set<NavigationFact> = emptySet(),
+    val invalidates: Set<NavigationFact> = emptySet(),
+    val traits: Set<NavigationRouteTrait> = emptySet(),
 ) {
     val id: String
         get() = listOfNotNull("$from->$to", variant).joinToString("#")
+
+    fun canTraverse(facts: Set<NavigationFact>): Boolean = requires.all { it in facts } && forbids.none { it in facts }
+
+    fun traverse(state: NavigationState): NavigationState {
+        require(state.page == from) {
+            "Cannot traverse '$id' from '${state.page}'"
+        }
+        require(canTraverse(state.facts)) {
+            "Navigation state ${state.facts} does not satisfy '$id'"
+        }
+
+        return NavigationState(
+                page = to,
+                facts = (state.facts - invalidates) + provides,
+            )
+            .normalized()
+    }
 }
 
 enum class NavigationRoutePurpose {

@@ -8,6 +8,7 @@ import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.ui.efficiency.helpers.BasePage
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationOptions
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationStep
 import org.mozilla.fenix.ui.efficiency.selectors.HomeSelectors
@@ -46,8 +47,12 @@ class SettingsSiteSettingsPermissionsPage(composeRule: AndroidComposeTestRule<Ho
     }
 
     // Typed override so a test can chain the verbs below straight off navigateToPage(), as the other page objects do.
-    override fun navigateToPage(url: String, forceNavigation: Boolean): SettingsSiteSettingsPermissionsPage {
-        super.navigateToPage(url = url, forceNavigation = forceNavigation)
+    override fun navigateToPage(
+        url: String,
+        forceNavigation: Boolean,
+        navigationOptions: NavigationOptions,
+    ): SettingsSiteSettingsPermissionsPage {
+        super.navigateToPage(url = url, forceNavigation = forceNavigation, navigationOptions = navigationOptions)
         return this
     }
 

@@ -24,6 +24,7 @@ import org.mozilla.fenix.ui.efficiency.data.AddressDetails
 import org.mozilla.fenix.ui.efficiency.data.CreditCardDetails
 import org.mozilla.fenix.ui.efficiency.helpers.BasePage
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationOptions
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationStep
 import org.mozilla.fenix.ui.efficiency.selectors.SettingsAutofillSelectors
@@ -46,8 +47,12 @@ class SettingsAutofillPage(composeRule: AndroidComposeTestRule<HomeActivityInten
 
     // Narrow the return type to this page so callers can fluently chain page-specific helpers
     // (e.g. fillAndSaveAddress) directly off navigateToPage().
-    override fun navigateToPage(url: String, forceNavigation: Boolean): SettingsAutofillPage {
-        super.navigateToPage(url = url, forceNavigation = forceNavigation)
+    override fun navigateToPage(
+        url: String,
+        forceNavigation: Boolean,
+        navigationOptions: NavigationOptions,
+    ): SettingsAutofillPage {
+        super.navigateToPage(url = url, forceNavigation = forceNavigation, navigationOptions = navigationOptions)
         return this
     }
 

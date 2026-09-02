@@ -27,19 +27,6 @@ class SettingsPrivateBrowsingPage(composeRule: AndroidComposeTestRule<HomeActivi
             to = "SettingsPage",
             steps = listOf(NavigationStep.Click(SettingsSelectors.GO_BACK_BUTTON)),
         )
-
-        // Return edge for when this page was reached from the browser (menu -> Settings -> Private browsing):
-        // backing out twice lands on the browser the flow came from, not Home. Settings back-navigation is
-        // entry-dependent, so this models the browser-entry return used by the screenshots test.
-        NavigationRegistry.register(
-            from = pageName,
-            to = "BrowserPage",
-            steps =
-                listOf(
-                    NavigationStep.Click(SettingsSelectors.GO_BACK_BUTTON),
-                    NavigationStep.Click(SettingsSelectors.GO_BACK_BUTTON),
-                ),
-        )
     }
 
     override fun mozGetSelectorsByGroup(group: String): List<Selector> {

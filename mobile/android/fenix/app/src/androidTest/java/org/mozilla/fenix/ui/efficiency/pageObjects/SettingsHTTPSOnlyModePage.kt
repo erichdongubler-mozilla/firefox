@@ -10,6 +10,7 @@ import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.TestHelper.appContext
 import org.mozilla.fenix.ui.efficiency.helpers.BasePage
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationOptions
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationStep
 import org.mozilla.fenix.ui.efficiency.selectors.HomeSelectors
@@ -45,8 +46,12 @@ class SettingsHTTPSOnlyModePage(composeRule: AndroidComposeTestRule<HomeActivity
         return SettingsHTTPSOnlyModeSelectors.all.filter { it.groups.contains(group) }
     }
 
-    override fun navigateToPage(url: String, forceNavigation: Boolean): SettingsHTTPSOnlyModePage {
-        super.navigateToPage(url, forceNavigation)
+    override fun navigateToPage(
+        url: String,
+        forceNavigation: Boolean,
+        navigationOptions: NavigationOptions,
+    ): SettingsHTTPSOnlyModePage {
+        super.navigateToPage(url, forceNavigation, navigationOptions)
         return this
     }
 

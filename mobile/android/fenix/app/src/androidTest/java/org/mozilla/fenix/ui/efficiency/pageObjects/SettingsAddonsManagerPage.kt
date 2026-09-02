@@ -9,6 +9,7 @@ import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeLong
 import org.mozilla.fenix.ui.efficiency.helpers.BasePage
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationOptions
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationStep
 import org.mozilla.fenix.ui.efficiency.selectors.BrowserPageSelectors
@@ -38,8 +39,12 @@ class SettingsAddonsManagerPage(composeRule: AndroidComposeTestRule<HomeActivity
         )
     }
 
-    override fun navigateToPage(url: String, forceNavigation: Boolean): SettingsAddonsManagerPage {
-        super.navigateToPage(url, forceNavigation)
+    override fun navigateToPage(
+        url: String,
+        forceNavigation: Boolean,
+        navigationOptions: NavigationOptions,
+    ): SettingsAddonsManagerPage {
+        super.navigateToPage(url, forceNavigation, navigationOptions)
         return this
     }
 

@@ -56,6 +56,7 @@ import org.mozilla.fenix.ui.efficiency.core.requireState
 import org.mozilla.fenix.ui.efficiency.logging.TestLogging
 import org.mozilla.fenix.ui.efficiency.logging.TimedReporter
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationEdge
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationOptions
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationPath
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationStep
@@ -128,7 +129,11 @@ abstract class BasePage(protected val composeRule: AndroidComposeTestRule<HomeAc
 
     // --- Navigation (STEP) -------------------------------------------------------
 
-    open fun navigateToPage(url: String = "", forceNavigation: Boolean = false): BasePage {
+    open fun navigateToPage(
+        url: String = "",
+        forceNavigation: Boolean = false,
+        navigationOptions: NavigationOptions = NavigationOptions(),
+    ): BasePage {
         val step = rep().start(TimedReporter.Type.STEP, "nav_$pageName", "Attempting to Navigate to $pageName")
         var fromPage = PageStateTracker.currentPageName
         var path: NavigationPath? = null
@@ -138,14 +143,24 @@ abstract class BasePage(protected val composeRule: AndroidComposeTestRule<HomeAc
         try {
             if (!forceNavigation && mozIsOnPageNow()) {
                 PageStateTracker.currentPageName = pageName
-                step.ok("'$pageName' already loaded", facts("navigate", extra = mapOf("page" to pageName)))
-                return this
+                val currentState = PageStateTracker.snapshot()
+                val waypointIndex = navigationOptions.advanceWaypoint(0, pageName)
+                if (navigationOptions.goalSatisfied(currentState, pageName, waypointIndex, emptySet())) {
+                    step.ok("'$pageName' already loaded", facts("navigate", extra = mapOf("page" to pageName)))
+                    return this
+                }
             }
 
             fromPage = PageStateTracker.currentPageName
             Log.i("PageNavigation", "Trying to find path from '$fromPage' to '$pageName'")
 
-            path = NavigationRegistry.findPath(fromPage, pageName)
+            path =
+                NavigationRegistry.findPath(
+                    from = fromPage,
+                    to = pageName,
+                    options = navigationOptions,
+                    initialFacts = PageStateTracker.currentFacts,
+                )
             val selectedPath =
                 path
                     ?: run {
@@ -156,7 +171,13 @@ abstract class BasePage(protected val composeRule: AndroidComposeTestRule<HomeAc
                                 facts(
                                     "navigate",
                                     failure = Failure.NO_PATH,
-                                    extra = mapOf("page" to pageName, "from" to fromPage),
+                                    extra =
+                                        mapOf(
+                                            "page" to pageName,
+                                            "from" to fromPage,
+                                            "navigationOptions" to navigationOptions,
+                                            "navigationFacts" to PageStateTracker.currentFacts.map { it.name }.sorted(),
+                                        ),
                                 ),
                         )
                         assertionFailure("No navigation path found from '$fromPage' to '$pageName'")
@@ -169,7 +190,11 @@ abstract class BasePage(protected val composeRule: AndroidComposeTestRule<HomeAc
                 }
             }
 
-            selectedPath.edges.forEach { edge ->
+            if (0 in selectedPath.waypointPageIndices && !NavigationRegistry.verifyCheckpoint(fromPage)) {
+                assertionFailure("Failed to verify navigation waypoint $fromPage")
+            }
+
+            selectedPath.edges.forEachIndexed { edgeIndex, edge ->
                 activeEdge = edge
                 edge.steps.forEachIndexed { index, navigationStep ->
                     activeStepIndex = index
@@ -192,6 +217,19 @@ abstract class BasePage(protected val composeRule: AndroidComposeTestRule<HomeAc
                             mozPressBackUntilGone(navigationStep.selector, navigationStep.maxPresses)
                     }
                 }
+
+                val pageIndex = edgeIndex + 1
+                val isDestination = pageIndex == selectedPath.pages.lastIndex
+                if (
+                    pageIndex in selectedPath.waypointPageIndices &&
+                        !isDestination &&
+                        !NavigationRegistry.verifyCheckpoint(edge.to)
+                ) {
+                    assertionFailure("Failed to verify navigation waypoint ${edge.to}")
+                }
+                if (!isDestination) {
+                    PageStateTracker.arrive(selectedPath.states[pageIndex])
+                }
             }
 
             if (!mozWaitForPageToLoad()) {
@@ -202,7 +240,7 @@ abstract class BasePage(protected val composeRule: AndroidComposeTestRule<HomeAc
                 assertionFailure("Failed to navigate to $pageName")
             }
 
-            PageStateTracker.currentPageName = pageName
+            PageStateTracker.arrive(selectedPath.states.last())
             step.ok(
                 "Navigation to '$pageName' completed",
                 facts(
@@ -212,6 +250,7 @@ abstract class BasePage(protected val composeRule: AndroidComposeTestRule<HomeAc
                             "page" to pageName,
                             "from" to fromPage,
                             "path" to selectedPath.edges.map { it.id },
+                            "navigationFacts" to PageStateTracker.currentFacts.map { it.name }.sorted(),
                         ),
                 ),
             )
@@ -272,6 +311,8 @@ abstract class BasePage(protected val composeRule: AndroidComposeTestRule<HomeAc
             policy = WaitPolicy.Poll(timeout, interval),
         )
     }
+
+    internal fun waitForNavigationCheckpoint(): Boolean = mozWaitForPageToLoad()
 
     fun mozVerifyElementsByGroup(group: String = "requiredForPage"): BasePage {
         val present =

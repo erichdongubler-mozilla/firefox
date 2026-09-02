@@ -9,6 +9,7 @@ import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.MockBrowserDataHelper.createBookmarkItem
 import org.mozilla.fenix.ui.efficiency.helpers.BasePage
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationOptions
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationStep
 import org.mozilla.fenix.ui.efficiency.selectors.BookmarksSelectors
@@ -49,8 +50,12 @@ class BookmarksPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRu
         )
     }
 
-    override fun navigateToPage(url: String, forceNavigation: Boolean): BookmarksPage {
-        super.navigateToPage(url, forceNavigation)
+    override fun navigateToPage(
+        url: String,
+        forceNavigation: Boolean,
+        navigationOptions: NavigationOptions,
+    ): BookmarksPage {
+        super.navigateToPage(url, forceNavigation, navigationOptions)
         return this
     }
 

@@ -26,10 +26,9 @@ class CreditCardAutofillTest : BaseTest() {
         on.settingsAutofill
             .navigateToPage()
             .fillAndSaveCreditCard(card)
-            // Opening Manage cards surfaces the "secure your cards" prompt; declining it here means it
-            // won't interrupt the autofill selection once we're on the web form.
+            // Decline the optional "secure your cards" prompt when the device surfaces it.
             .mozClick(SettingsAutofillSelectors.MANAGE_SAVED_CREDIT_CARDS_BUTTON)
-            .mozClick(SettingsAutofillSelectors.SECURED_CREDIT_CARDS_LATER_BUTTON)
+            .mozClickIfPresent(SettingsAutofillSelectors.SECURED_CREDIT_CARDS_LATER_BUTTON)
             // The two clicks above descended into Manage cards, one level below the Autofill screen the
             // navigation graph thinks we're on. Return to the Autofill screen so the back-edge count to
             // reach the browser is correct (otherwise it stops one level short, on the Settings list).

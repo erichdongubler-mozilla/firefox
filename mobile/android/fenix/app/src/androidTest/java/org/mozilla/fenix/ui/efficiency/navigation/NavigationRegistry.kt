@@ -13,10 +13,12 @@ object NavigationRegistry {
 
     private val graph = mutableMapOf<String, MutableList<NavigationEdge>>()
     private val duplicateRegistrations = mutableListOf<NavigationEdge>()
+    private val checkpointVerifiers = mutableMapOf<String, () -> Boolean>()
 
     fun reset() {
         graph.clear()
         duplicateRegistrations.clear()
+        checkpointVerifiers.clear()
     }
 
     fun register(
@@ -26,11 +28,35 @@ object NavigationRegistry {
         launch: LaunchConfig? = null,
         variant: String? = null,
         purpose: NavigationRoutePurpose = NavigationRoutePurpose.SETUP,
+        requires: Set<NavigationFact> = emptySet(),
+        forbids: Set<NavigationFact> = emptySet(),
+        provides: Set<NavigationFact> = emptySet(),
+        invalidates: Set<NavigationFact> = emptySet(),
+        traits: Set<NavigationRouteTrait> = emptySet(),
     ) {
         require(variant == null || routeVariantPattern.matches(variant)) {
             "Navigation route variant must match ${routeVariantPattern.pattern}: '$variant'"
         }
-        val edge = NavigationEdge(from, to, steps, launch, variant, purpose)
+        require((requires intersect forbids).isEmpty()) {
+            "Navigation route '$from->$to' cannot require and forbid the same fact"
+        }
+        require((provides intersect invalidates).isEmpty()) {
+            "Navigation route '$from->$to' cannot provide and invalidate the same fact"
+        }
+        val edge =
+            NavigationEdge(
+                from = from,
+                to = to,
+                steps = steps,
+                launch = launch,
+                variant = variant,
+                purpose = purpose,
+                requires = requires,
+                forbids = forbids,
+                provides = provides,
+                invalidates = invalidates,
+                traits = traits,
+            )
         if (graph.values.flatten().any { it.id == edge.id }) {
             duplicateRegistrations += edge
             error("Duplicate navigation route '${edge.id}' ($steps, launch=$launch)")
@@ -47,44 +73,114 @@ object NavigationRegistry {
         }
     }
 
+    fun registerCheckpointVerifier(page: String, verifier: () -> Boolean) {
+        check(checkpointVerifiers.putIfAbsent(page, verifier) == null) {
+            "Duplicate navigation checkpoint verifier for '$page'"
+        }
+    }
+
+    fun verifyCheckpoint(page: String): Boolean {
+        val verifier =
+            requireNotNull(checkpointVerifiers[page]) {
+                "No navigation checkpoint verifier registered for '$page'"
+            }
+        return verifier()
+    }
+
     /** The LaunchConfig declared on any edge leading INTO [page], if any. */
     fun launchConfigFor(page: String): LaunchConfig? =
         graph.values.flatten().sortedWith(routeOrder).firstOrNull { it.to == page && it.launch != null }?.launch
 
-    fun findPath(from: String, to: String): NavigationPath? {
-        if (from == to) {
-            val selfLoopEdge = graph[from].orEmpty().filter { it.to == to }.minWithOrNull(routeOrder)
+    fun findPath(
+        from: String,
+        to: String,
+        options: NavigationOptions = NavigationOptions(),
+        initialFacts: Set<NavigationFact> = emptySet(),
+    ): NavigationPath? {
+        options.validateDestination(to)
 
-            return NavigationPath(
-                pages = if (selfLoopEdge == null) listOf(from) else listOf(from, to),
-                edges = listOfNotNull(selfLoopEdge),
+        val initialState = NavigationState(from, initialFacts).normalized()
+        val initialWaypointIndex = options.advanceWaypoint(0, from)
+        val initialWaypointPageIndices = if (initialWaypointIndex == 1) setOf(0) else emptySet()
+        val eligibleSelfLoopExists =
+            from == to &&
+                graph[from].orEmpty().any { edge -> edge.to == to && edgeAllowed(edge, options, initialState) }
+
+        val queue = PriorityQueue(pathOrder(to, options))
+        val visited = mutableSetOf<SearchState>()
+
+        queue.add(
+            PathCandidate(
+                state = initialState,
+                states = listOf(initialState),
+                edges = emptyList(),
+                waypointIndex = initialWaypointIndex,
+                waypointPageIndices = initialWaypointPageIndices,
+                traversedRequiredRoutes = emptySet(),
             )
-        }
-
-        val queue = PriorityQueue(pathOrder(to))
-        val visited = mutableSetOf<String>()
-
-        queue.add(PathCandidate(from, emptyList()))
+        )
 
         while (queue.isNotEmpty()) {
-            val (current, path) = queue.remove()
-            if (!visited.add(current)) continue
+            val candidate = queue.remove()
+            if (!visited.add(candidate.searchState())) continue
 
-            if (current == to) {
+            if (
+                options.goalSatisfied(
+                    state = candidate.state,
+                    destination = to,
+                    waypointIndex = candidate.waypointIndex,
+                    traversedRequiredRoutes = candidate.traversedRequiredRoutes,
+                ) && (!eligibleSelfLoopExists || candidate.edges.isNotEmpty())
+            ) {
                 return NavigationPath(
-                    pages = buildPageSequence(path, current),
-                    edges = path,
+                    pages = candidate.states.map { it.page },
+                    edges = candidate.edges,
+                    states = candidate.states,
+                    waypointPageIndices = candidate.waypointPageIndices,
                 )
             }
 
-            for (edge in graph[current].orEmpty().sortedWith(routeOrder)) {
-                if (edge.to in visited) continue
-                queue.add(PathCandidate(edge.to, path + edge))
+            for (edge in graph[candidate.state.page].orEmpty().sortedWith(routeOrder)) {
+                if (!edgeAllowed(edge, options, candidate.state)) continue
+
+                val nextState = edge.traverse(candidate.state)
+                val nextWaypointIndex = options.advanceWaypoint(candidate.waypointIndex, nextState.page)
+                val pageIndex = candidate.states.size
+                val waypointPageIndices =
+                    if (nextWaypointIndex > candidate.waypointIndex) {
+                        candidate.waypointPageIndices + pageIndex
+                    } else {
+                        candidate.waypointPageIndices
+                    }
+                val traversedRequiredRoutes =
+                    if (edge.id in options.requiredRoutes) {
+                        candidate.traversedRequiredRoutes + edge.id
+                    } else {
+                        candidate.traversedRequiredRoutes
+                    }
+
+                queue.add(
+                    PathCandidate(
+                        state = nextState,
+                        states = candidate.states + nextState,
+                        edges = candidate.edges + edge,
+                        waypointIndex = nextWaypointIndex,
+                        waypointPageIndices = waypointPageIndices,
+                        traversedRequiredRoutes = traversedRequiredRoutes,
+                    )
+                )
             }
         }
 
         return null
     }
+
+    private fun edgeAllowed(
+        edge: NavigationEdge,
+        options: NavigationOptions,
+        state: NavigationState,
+    ): Boolean =
+        edge.to !in options.excludedPages && edge.id !in options.excludedRoutes && edge.canTraverse(state.facts)
 
     /** Returns all registered page names found in the graph. */
     fun getAllPages(): Set<String> {
@@ -107,7 +203,8 @@ object NavigationRegistry {
     /**
      * Finds all distinct simple paths from [from] to [to].
      *
-     * "Simple" means a page cannot appear twice in the same path. This prevents infinite loops in cyclic graphs.
+     * "Simple" means a page cannot appear twice in the same path. This structural view intentionally ignores route fact
+     * guards; use [findPath] to select an executable path for a navigation state.
      */
     fun findAllPaths(from: String, to: String): List<NavigationPath> {
         val results = mutableListOf<NavigationPath>()
@@ -281,10 +378,11 @@ object NavigationRegistry {
 
     private val routeOrder = compareBy<NavigationEdge>({ it.purpose }, { it.id })
 
-    private fun pathOrder(target: String) =
+    private fun pathOrder(target: String, options: NavigationOptions) =
         compareBy<PathCandidate>(
             { candidate -> candidate.edges.count { it.purpose == NavigationRoutePurpose.COVERAGE } },
-            { candidate -> candidate.edges.count { it.to == BROWSER_PAGE && it.to != target } },
+            { candidate -> candidate.edges.count { it.to in options.avoidPages && it.to != target } },
+            { candidate -> candidate.edges.count { edge -> edge.traits.any { it in options.avoidTraits } } },
             { candidate -> candidate.edges.size },
             { candidate -> candidate.edges.sumOf { it.steps.size } },
             { candidate -> candidate.edges.joinToString(">") { it.id } },
@@ -293,17 +391,36 @@ object NavigationRegistry {
     private val routeVariantPattern = Regex("[a-z][a-z0-9-]*")
 
     private data class PathCandidate(
-        val page: String,
+        val state: NavigationState,
+        val states: List<NavigationState>,
         val edges: List<NavigationEdge>,
-    )
+        val waypointIndex: Int,
+        val waypointPageIndices: Set<Int>,
+        val traversedRequiredRoutes: Set<String>,
+    ) {
+        fun searchState() =
+            SearchState(
+                navigationState = state,
+                waypointIndex = waypointIndex,
+                traversedRequiredRoutes = traversedRequiredRoutes,
+                hasMoved = edges.isNotEmpty(),
+            )
+    }
 
-    private const val BROWSER_PAGE = "BrowserPage"
+    private data class SearchState(
+        val navigationState: NavigationState,
+        val waypointIndex: Int,
+        val traversedRequiredRoutes: Set<String>,
+        val hasMoved: Boolean,
+    )
 }
 
 /** Represents one distinct navigation path through the graph. */
 data class NavigationPath(
     val pages: List<String>,
     val edges: List<NavigationEdge>,
+    val states: List<NavigationState> = emptyList(),
+    val waypointPageIndices: Set<Int> = emptySet(),
 ) {
     val totalSteps: Int
         get() = edges.sumOf { it.steps.size }

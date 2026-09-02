@@ -19,6 +19,7 @@ import org.mozilla.fenix.helpers.TestHelper.packageName
 import org.mozilla.fenix.ui.efficiency.helpers.BasePage
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
 import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationOptions
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationStep
 import org.mozilla.fenix.ui.efficiency.selectors.BrowserPageSelectors
@@ -57,8 +58,12 @@ class SearchBarComponent(composeRule: AndroidComposeTestRule<HomeActivityIntentT
         return SearchBarSelectors.all.filter { it.groups.contains(group) }
     }
 
-    override fun navigateToPage(url: String, forceNavigation: Boolean): SearchBarComponent {
-        super.navigateToPage(url, forceNavigation = forceNavigation)
+    override fun navigateToPage(
+        url: String,
+        forceNavigation: Boolean,
+        navigationOptions: NavigationOptions,
+    ): SearchBarComponent {
+        super.navigateToPage(url, forceNavigation = forceNavigation, navigationOptions = navigationOptions)
         return this
     }
 

@@ -27,6 +27,8 @@ import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeShort
 import org.mozilla.fenix.helpers.TestHelper.hasCousin
 import org.mozilla.fenix.ui.efficiency.helpers.BasePage
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationFacts
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationOptions
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationStep
 import org.mozilla.fenix.ui.efficiency.selectors.SettingsSelectors
@@ -39,6 +41,13 @@ class SettingsPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRul
             from = pageName,
             to = "HomePage",
             steps = listOf(NavigationStep.Click(SettingsSelectors.GO_BACK_BUTTON)),
+            requires = setOf(NavigationFacts.RETURN_SURFACE_HOME),
+        )
+        NavigationRegistry.register(
+            from = pageName,
+            to = "BrowserPage",
+            steps = listOf(NavigationStep.Click(SettingsSelectors.GO_BACK_BUTTON)),
+            requires = setOf(NavigationFacts.RETURN_SURFACE_BROWSER),
         )
         NavigationRegistry.register(
             from = pageName,
@@ -52,7 +61,11 @@ class SettingsPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRul
         NavigationRegistry.register(
             from = pageName,
             to = "SettingsAutofillPage",
-            steps = listOf(NavigationStep.Click(SettingsSelectors.AUTOFILL_BUTTON)),
+            steps =
+                listOf(
+                    NavigationStep.Action { mozVerify(SettingsSelectors.SYNC_DEBUG_BUTTON) },
+                    NavigationStep.Click(SettingsSelectors.AUTOFILL_BUTTON),
+                ),
         )
         NavigationRegistry.register(
             from = pageName,
@@ -123,8 +136,12 @@ class SettingsPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRul
         return SettingsSelectors.all.filter { it.groups.contains(group) }
     }
 
-    override fun navigateToPage(url: String, forceNavigation: Boolean): SettingsPage {
-        super.navigateToPage(url, forceNavigation)
+    override fun navigateToPage(
+        url: String,
+        forceNavigation: Boolean,
+        navigationOptions: NavigationOptions,
+    ): SettingsPage {
+        super.navigateToPage(url, forceNavigation, navigationOptions)
         return this
     }
 

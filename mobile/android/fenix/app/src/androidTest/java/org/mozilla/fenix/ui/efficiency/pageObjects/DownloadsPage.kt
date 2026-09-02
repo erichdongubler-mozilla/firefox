@@ -9,6 +9,7 @@ import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
 import org.mozilla.fenix.ui.efficiency.helpers.BasePage
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationOptions
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationStep
 import org.mozilla.fenix.ui.efficiency.selectors.BrowserPageSelectors
@@ -55,8 +56,12 @@ class DownloadsPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRu
 
     // Narrow the return type to this page so callers can chain page-specific helpers off
     // navigateToPage() (see SettingsAutofillPage for the same pattern).
-    override fun navigateToPage(url: String, forceNavigation: Boolean): DownloadsPage {
-        super.navigateToPage(url = url, forceNavigation = forceNavigation)
+    override fun navigateToPage(
+        url: String,
+        forceNavigation: Boolean,
+        navigationOptions: NavigationOptions,
+    ): DownloadsPage {
+        super.navigateToPage(url = url, forceNavigation = forceNavigation, navigationOptions = navigationOptions)
         return this
     }
 

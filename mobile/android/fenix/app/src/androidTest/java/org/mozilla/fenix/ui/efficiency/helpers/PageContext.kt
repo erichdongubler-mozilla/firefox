@@ -7,6 +7,8 @@ package org.mozilla.fenix.ui.efficiency.helpers
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
+import org.mozilla.fenix.ui.efficiency.navigation.PageCatalog
 import org.mozilla.fenix.ui.efficiency.pageObjects.AddToHomeScreenComponent
 import org.mozilla.fenix.ui.efficiency.pageObjects.BookmarkSearchPage
 import org.mozilla.fenix.ui.efficiency.pageObjects.BookmarksPage
@@ -125,6 +127,13 @@ class PageContext(val composeRule: AndroidComposeTestRule<HomeActivityIntentTest
     val toolbar = ToolbarComponent(composeRule)
     val unifiedTrustPanel = UnifiedTrustPanelPage(composeRule)
     val webCompatReporter = WebCompatReporterPage(composeRule)
+
+    init {
+        PageCatalog.discoverPages().forEach { pageRef ->
+            val page = pageRef.getter(this)
+            NavigationRegistry.registerCheckpointVerifier(page.pageName, page::waitForNavigationCheckpoint)
+        }
+    }
 
     fun initTestRule(
         skipOnboarding: Boolean = true,

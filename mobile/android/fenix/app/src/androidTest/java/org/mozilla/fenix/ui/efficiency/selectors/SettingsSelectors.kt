@@ -65,6 +65,14 @@ object SettingsSelectors {
             groups = listOf("requiredForPage"),
         )
 
+    val SYNC_DEBUG_BUTTON =
+        Selector(
+            strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
+            value = getStringResource(R.string.preferences_sync_debug),
+            description = "the Sync Debug button",
+            groups = listOf(),
+        )
+
     val SEARCH_BUTTON =
         Selector(
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
@@ -357,6 +365,7 @@ object SettingsSelectors {
             PRIVACY_AND_SECURITY_HEADING,
             EXTENSIONS_BUTTON,
             SETTINGS_TITLE,
+            SYNC_DEBUG_BUTTON,
             SEARCH_BUTTON,
             SEARCH_SETTING_ROW,
             TABS_BUTTON,
