@@ -26,6 +26,7 @@
 #include "mozilla/ipc/UtilityProcessChild.h"
 #include "mozilla/llama/LlamaRuntimeLinker.h"
 #include "nsDebug.h"
+#include "nsIDUtils.h"
 #include "nsReadableUtils.h"
 #include "nsString.h"
 #include "nsThreadUtils.h"
@@ -169,7 +170,8 @@ mozilla::ipc::IPCResult SpeechRecognitionParent::RecvIsModelInstalled(
 }
 
 mozilla::ipc::IPCResult SpeechRecognitionParent::RecvInstallModels(
-    const nsTArray<nsCString>& aLanguages, InstallModelsResolver&& aResolver) {
+    const nsTArray<nsCString>& aLanguages, uint64_t aInnerWindowId,
+    InstallModelsResolver&& aResolver) {
   if (aLanguages.IsEmpty()) {
     return IPC_FAIL(this, "RecvInstallModels requires at least one language");
   }
@@ -178,16 +180,32 @@ mozilla::ipc::IPCResult SpeechRecognitionParent::RecvInstallModels(
   LOGD("{} languages: {} mapped to id={}", __func__,
        fmt::join(aLanguages, ", "), modelId.get());
 
-  const dom::ContentParentId contentId =
-      mozilla::ipc::ActorCast<HWInferenceManagerParent>(Manager())->ContentId();
+  RefPtr<mozilla::ipc::UtilityProcessChild> utilityChild =
+      mozilla::ipc::UtilityProcessChild::GetSingleton();
+  HWInferenceChild* hwInferenceChild =
+      utilityChild ? utilityChild->GetHWInferenceChild() : nullptr;
+  if (!hwInferenceChild) {
+    LOGE("{} No HWInferenceChild available", __func__);
+    aResolver(false);
+    return IPC_OK();
+  }
 
-  return RunHWInferenceBoolQuery(
-      __func__,
-      [modelId, contentId](hwinference::HWInferenceChild* aChild) {
-        return aChild->SendInstallModel(dom::kSpeechRecognitionTask, modelId, 0,
-                                        contentId);
-      },
-      std::move(aResolver), mInstallModelRequest);
+  // mContentId is the trusted id of the content process that owns this
+  // connection, so the parent can verify the requesting window really belongs
+  // to the requester.
+  hwInferenceChild
+      ->SendInstallModel(dom::kSpeechRecognitionTask, modelId, aInnerWindowId,
+                         mContentId)
+      ->Then(GetCurrentSerialEventTarget(), __func__,
+             [self = RefPtr{this}, aResolver = std::move(aResolver)](
+                 PHWInferenceChild::InstallModelPromise::ResolveOrRejectValue&&
+                     aValue) mutable {
+               self->mInstallModelRequest.Complete();
+               aResolver(aValue.IsResolve() && aValue.ResolveValue());
+             })
+      ->Track(mInstallModelRequest);
+
+  return IPC_OK();
 }
 
 SpeechRecognitionParent::SpeechRecognitionParent(

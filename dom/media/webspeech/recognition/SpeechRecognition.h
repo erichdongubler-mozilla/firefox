@@ -14,15 +14,16 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/dom/Promise.h"
 #include "mozilla/dom/SpeechRecognitionBinding.h"
 #include "mozilla/dom/SpeechRecognitionErrorEventBinding.h"
 #include "nsCOMPtr.h"
 #include "nsProxyRelease.h"
 #include "nsString.h"
 #include "nsTArray.h"
-#include "nsTHashMap.h"
-#include "nsTHashSet.h"
 #include "nsWrapperCache.h"
+
+class nsPIDOMWindowInner;
 
 namespace mozilla {
 
@@ -41,7 +42,26 @@ class AudioStreamTrack;
 class MediaStreamTrack;
 class SpeechTrackListener;
 
-enum class DownloadOutcome { Failed, Succeeded };
+class SpeechRecognitionInstallTransaction final {
+ public:
+  NS_INLINE_DECL_REFCOUNTING(SpeechRecognitionInstallTransaction)
+
+  static already_AddRefed<SpeechRecognitionInstallTransaction> GetOrCreate(
+      nsPIDOMWindowInner* aWindow, const nsTArray<nsCString>& aLanguages,
+      Promise* aPromise, bool* aCreated) MOZ_REQUIRES(sMainThreadCapability);
+
+  void Resolve(bool aSuccess);
+  const nsTArray<nsCString>& Languages() const { return mLanguages; }
+
+ private:
+  SpeechRecognitionInstallTransaction(nsCString&& aKey,
+                                      const nsTArray<nsCString>& aLanguages);
+  ~SpeechRecognitionInstallTransaction() = default;
+
+  nsCString mKey;
+  nsTArray<nsCString> mLanguages;
+  nsTArray<RefPtr<Promise>> mPromises;
+};
 
 class SpeechRecognition final : public DOMEventTargetHelper,
                                 public SupportsWeakPtr {
@@ -104,11 +124,6 @@ class SpeechRecognition final : public DOMEventTargetHelper,
   static already_AddRefed<Promise> Install(
       const GlobalObject& aGlobal, const SpeechRecognitionOptions& aOptions,
       ErrorResult& aRv);
-
-  static void RemoveDownloadingLanguage(const nsCString& aLanguage,
-                                        DownloadOutcome aOutcome);
-  static already_AddRefed<GenericNonExclusivePromise>
-  GetDownloadCompletionPromise(const nsCString& aLanguage);
 
   // https://webaudio.github.io/web-speech-api/#dom-speechrecognition-start
   // Two overloads per spec: start() (microphone) and start(MediaStreamTrack).

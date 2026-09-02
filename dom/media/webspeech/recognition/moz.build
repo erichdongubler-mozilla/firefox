@@ -43,6 +43,7 @@ EXPORTS.mozilla.hwinference += [
 UNIFIED_SOURCES += [
     "SpeechGrammar.cpp",
     "SpeechGrammarList.cpp",
+    "SpeechModelDownloadPermissionRequest.cpp",
     "SpeechModelResolver.cpp",
     "SpeechRecognition.cpp",
     "SpeechRecognitionAlternative.cpp",

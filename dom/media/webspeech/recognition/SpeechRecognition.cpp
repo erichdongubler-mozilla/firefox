@@ -20,6 +20,7 @@
 #include "mozilla/AbstractThread.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/MediaManager.h"
+#include "mozilla/StaticPtr.h"
 #include "mozilla/dom/AudioStreamTrack.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/Document.h"
@@ -34,6 +35,7 @@
 #include "mozilla/dom/SpeechRecognitionErrorEvent.h"
 #include "mozilla/dom/SpeechRecognitionEvent.h"
 #include "mozilla/dom/SpeechRecognitionPhrase.h"
+#include "mozilla/hwinference/PSpeechRecognitionChild.h"
 #include "mozilla/intl/Locale.h"
 #include "nsCOMPtr.h"
 #include "nsComponentManagerUtils.h"
@@ -48,6 +50,8 @@
 #include "nsQueryObject.h"
 #include "nsServiceManagerUtils.h"
 #include "nsString.h"
+#include "nsTHashMap.h"
+#include "nsUnicharUtils.h"
 
 // Undo the windows.h damage
 #if defined(XP_WIN) && defined(GetMessage)
@@ -59,6 +63,7 @@ class Promise;
 };
 
 namespace mozilla::dom {
+
 static LazyLogModule gSpeechRecognitionLog("SpeechRecognition");
 
 #define LOG(...) \
@@ -67,6 +72,74 @@ static LazyLogModule gSpeechRecognitionLog("SpeechRecognition");
   MOZ_LOG_FMT(gSpeechRecognitionLog, LogLevel::Verbose, __VA_ARGS__)
 #define LOGE(...) \
   MOZ_LOG_FMT(gSpeechRecognitionLog, LogLevel::Error, __VA_ARGS__)
+
+static StaticAutoPtr<
+    nsTHashMap<nsCStringHashKey, RefPtr<SpeechRecognitionInstallTransaction>>>
+    sInstallTransactions;
+
+static nsCString MakeInstallTransactionKey(
+    nsPIDOMWindowInner* aWindow, const nsTArray<nsCString>& aLanguages) {
+  nsCString key;
+  key.AppendInt(aWindow->WindowID());
+  key.Append('|');
+  for (const nsCString& lang : aLanguages) {
+    key.AppendInt(static_cast<uint32_t>(lang.Length()));
+    key.Append(':');
+    key.Append(lang);
+    key.Append(';');
+  }
+  return key;
+}
+
+SpeechRecognitionInstallTransaction::SpeechRecognitionInstallTransaction(
+    nsCString&& aKey, const nsTArray<nsCString>& aLanguages)
+    : mKey(std::move(aKey)), mLanguages(aLanguages.Clone()) {}
+
+/* static */
+already_AddRefed<SpeechRecognitionInstallTransaction>
+SpeechRecognitionInstallTransaction::GetOrCreate(
+    nsPIDOMWindowInner* aWindow, const nsTArray<nsCString>& aLanguages,
+    Promise* aPromise, bool* aCreated) {
+  AssertIsOnMainThread();
+  MOZ_ASSERT(aWindow);
+  MOZ_ASSERT(aPromise);
+  MOZ_ASSERT(aCreated);
+
+  if (!sInstallTransactions) {
+    sInstallTransactions =
+        new nsTHashMap<nsCStringHashKey,
+                       RefPtr<SpeechRecognitionInstallTransaction>>();
+    ClearOnShutdown(&sInstallTransactions);
+  }
+
+  nsCString key = MakeInstallTransactionKey(aWindow, aLanguages);
+  if (auto entry = sInstallTransactions->Lookup(key)) {
+    RefPtr<SpeechRecognitionInstallTransaction> transaction = entry.Data();
+    transaction->mPromises.AppendElement(aPromise);
+    *aCreated = false;
+    return transaction.forget();
+  }
+
+  RefPtr<SpeechRecognitionInstallTransaction> transaction =
+      new SpeechRecognitionInstallTransaction(std::move(key), aLanguages);
+  transaction->mPromises.AppendElement(aPromise);
+  sInstallTransactions->InsertOrUpdate(transaction->mKey, transaction);
+  *aCreated = true;
+  return transaction.forget();
+}
+
+void SpeechRecognitionInstallTransaction::Resolve(bool aSuccess) {
+  AssertIsOnMainThread();
+
+  nsTArray<RefPtr<Promise>> promises = std::move(mPromises);
+  if (sInstallTransactions) {
+    sInstallTransactions->Remove(mKey);
+  }
+
+  for (RefPtr<Promise>& promise : promises) {
+    promise->MaybeResolve(aSuccess);
+  }
+}
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(SpeechRecognition)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(SpeechRecognition,
@@ -80,10 +153,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(SpeechRecognition,
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mTrack, mSpeechGrammarList, mListener,
                                     mPhrases, mRecognitionResults)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
-
-nsTHashSet<nsCString> SpeechRecognition::sDownloadingLanguages;
-nsTHashMap<nsCStringHashKey, RefPtr<GenericNonExclusivePromise::Private>>
-    SpeechRecognition::sLanguageDownloadPromises;
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(SpeechRecognition)
 NS_INTERFACE_MAP_END_INHERITING(DOMEventTargetHelper)
@@ -333,6 +402,9 @@ void SpeechRecognition::OnDeletePhrases(SpeechRecognitionPhrase& aPhrase,
   mPhrases.RemoveElementAt(aIndex);
 }
 
+// https://webaudio.github.io/web-speech-api/#dom-speechrecognition-available
+// Runs the availability algorithm:
+// https://webaudio.github.io/web-speech-api/#availability-algorithm
 /* static */
 already_AddRefed<Promise> SpeechRecognition::Available(
     const GlobalObject& aGlobal, const SpeechRecognitionOptions& aOptions,
@@ -379,94 +451,69 @@ already_AddRefed<Promise> SpeechRecognition::Available(
     return promise.forget();
   }
 
-  // Check if any requested language is currently being downloaded.
-  // https://bugzilla.mozilla.org/show_bug.cgi?id=2006385
-  // The spec requires per-language status checking with a
-  // "worst status" algorithm. This is best implemented in the backend.
-  for (const nsCString& lang : aOptions.mLangs) {
-    if (sDownloadingLanguages.Contains(lang)) {
-      promise->MaybeResolve(AvailabilityStatus::Downloading);
-      return promise.forget();
-    }
-  }
-
   return SpeechRecognitionBackend::Available(global, aOptions.mLangs);
 }
 
-class InstallCompletionHandler final : public PromiseNativeHandler {
+// Bridges the parent-driven install result (consent prompt + download, handled
+// in the parent process) back to the shared install() transaction, and thus to
+// every SpeechRecognition.install() promise waiting on it.
+class SpeechRecognitionInstallHandler final : public PromiseNativeHandler {
  public:
   NS_DECL_ISUPPORTS
 
-  explicit InstallCompletionHandler(nsTArray<nsCString>&& aLanguages)
-      : mLanguages(std::move(aLanguages)) {}
+  explicit SpeechRecognitionInstallHandler(
+      SpeechRecognitionInstallTransaction* aTransaction)
+      : mTransaction(aTransaction) {}
 
   void ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue,
                         ErrorResult& aRv) override {
-    for (const nsCString& lang : mLanguages) {
-      SpeechRecognition::RemoveDownloadingLanguage(lang,
-                                                   DownloadOutcome::Succeeded);
-    }
+    mTransaction->Resolve(aValue.isBoolean() && aValue.toBoolean());
   }
 
   void RejectedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue,
                         ErrorResult& aRv) override {
-    for (const nsCString& lang : mLanguages) {
-      SpeechRecognition::RemoveDownloadingLanguage(lang,
-                                                   DownloadOutcome::Failed);
-    }
+    mTransaction->Resolve(false);
   }
 
  private:
-  ~InstallCompletionHandler() = default;
+  ~SpeechRecognitionInstallHandler() = default;
 
-  nsTArray<nsCString> mLanguages;
+  RefPtr<SpeechRecognitionInstallTransaction> mTransaction;
 };
 
-NS_IMPL_ISUPPORTS0(InstallCompletionHandler)
+NS_IMPL_ISUPPORTS0(SpeechRecognitionInstallHandler)
 
-/* static */
-void SpeechRecognition::RemoveDownloadingLanguage(const nsCString& aLanguage,
-                                                  DownloadOutcome aOutcome) {
-  AssertIsOnMainThread();
-  sDownloadingLanguages.Remove(aLanguage);
-  if (auto entry = sLanguageDownloadPromises.Lookup(aLanguage)) {
-    entry.Data()->Resolve(aOutcome == DownloadOutcome::Succeeded, __func__);
-    entry.Remove();
-  }
-}
-
-/* static */
-already_AddRefed<GenericNonExclusivePromise>
-SpeechRecognition::GetDownloadCompletionPromise(const nsCString& aLanguage) {
-  AssertIsOnMainThread();
-  auto entry = sLanguageDownloadPromises.Lookup(aLanguage);
-  MOZ_ASSERT(entry, "Only call this for a language in sDownloadingLanguages");
-  RefPtr<GenericNonExclusivePromise> promise = entry.Data();
-  return promise.forget();
-}
-
+// https://webaudio.github.io/web-speech-api/#dom-speechrecognition-install
 /* static */
 already_AddRefed<Promise> SpeechRecognition::Install(
     const GlobalObject& aGlobal, const SpeechRecognitionOptions& aOptions,
     ErrorResult& aRv) {
   AssertIsOnMainThread();
+  // Step 1: the document must be fully active.
   nsCOMPtr<nsPIDOMWindowInner> window =
       do_QueryInterface(aGlobal.GetAsSupports());
-  if (!window) {
-    aRv.ThrowAbortError("No global object for SpeechRecognition::Install");
+  nsCOMPtr<Document> doc = window ? window->GetExtantDoc() : nullptr;
+  if (!window || !window->IsFullyActive() || !doc) {
+    aRv.ThrowInvalidStateError("The document is not fully active.");
     return nullptr;
   }
 
-  nsCOMPtr<Document> doc = window->GetExtantDoc();
-  if (!doc) {
-    aRv.ThrowAbortError("No document for SpeechRecognition::Install");
+  // install() initiates a potentially large download and a permission prompt,
+  // so it requires transient user activation, and consumes it: one user
+  // gesture buys at most one download prompt. The spec has no such
+  // requirement, but the WPT for this method asserts that install() without a
+  // user gesture rejects with a NotAllowedError.
+  if (!doc->ConsumeTransientUserGestureActivation()) {
+    aRv.ThrowNotAllowedError("install() requires transient user activation");
     return nullptr;
   }
 
-  if (!doc->IsCurrentActiveDocument()) {
-    aRv.ThrowInvalidStateError(
-        "Document not active for SpeechRecognition::Install");
-    return nullptr;
+  // Step 3: a language tag that is not valid BCP47 is a SyntaxError, as in
+  // available().
+  for (const nsCString& lang : aOptions.mLangs) {
+    if (!ValidateBCP47Language(lang, aRv)) {
+      return nullptr;
+    }
   }
 
   nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aGlobal.GetAsSupports());
@@ -475,53 +522,49 @@ already_AddRefed<Promise> SpeechRecognition::Install(
     return nullptr;
   }
 
-  // Not specced yet:
-  // https://github.com/WebAudio/web-speech-api/issues/174
-  if (aOptions.mLangs.IsEmpty()) {
-    aRv.ThrowRangeError("empty lang");
+  RefPtr<Promise> promise = Promise::Create(global, aRv);
+  if (aRv.Failed()) {
     return nullptr;
   }
 
-  // Validate all language tags according to spec
-  for (const nsCString& lang : aOptions.mLangs) {
-    if (!ValidateBCP47Language(lang, aRv)) {
-      return nullptr;
-    }
-    if (aRv.Failed()) {
-      return nullptr;
-    }
+  // Step 4, resolving false for an unsupported on-device language pack, cannot
+  // trigger: LanguagesToSpeechModelId maps every valid tag to a model, falling
+  // back to the multilingual pack, so every valid language is supported.
+  //
+  // The spec says nothing about an empty langs here; mirror available(), which
+  // reports unavailable, and resolve false: there is nothing to install.
+  if (aOptions.mLangs.IsEmpty()) {
+    promise->MaybeResolve(false);
+    return promise.forget();
   }
 
-  // If a language's download is already in flight, don't produce a second
-  // request for it: just create and stash a promise, to be resolved when
-  // that download ends (success or failure), and wait on it here instead.
-  nsTArray<nsCString> languagesUtf8 =
-      ToTArray<nsTArray<nsCString>>(aOptions.mLangs);
+  bool transactionCreated = false;
+  RefPtr<SpeechRecognitionInstallTransaction> transaction =
+      SpeechRecognitionInstallTransaction::GetOrCreate(
+          window, aOptions.mLangs, promise, &transactionCreated);
 
-  // Check if any language is already downloading
-  for (const nsCString& lang : languagesUtf8) {
-    if (sDownloadingLanguages.Contains(lang)) {
-      LOG("Install: language {} already downloading", lang.get());
-      RefPtr<Promise> promise = Promise::Create(global, aRv);
-      if (aRv.Failed()) {
-        return nullptr;
-      }
-      promise->MaybeResolve(false);
-      return promise.forget();
-    }
+  if (!transactionCreated) {
+    // An install() for these languages is already in flight in this window; it
+    // will settle this promise too.
+    return promise.forget();
   }
 
-  // Mark languages as downloading
-  for (const nsCString& lang : languagesUtf8) {
-    sDownloadingLanguages.Insert(lang);
+  // The user's consent to download, and the download itself, are obtained and
+  // enforced in the parent process (see nsIMLModelResolver and its speech
+  // implementation SpeechModelResolver, which skips the prompt entirely when
+  // the model is already in the local cache). Content only asks, passing its
+  // inner window id so the parent can verify ownership, identify the
+  // requesting tab/principal, and anchor the permission prompt there.
+  RefPtr<Promise> installPromise = SpeechRecognitionBackend::Install(
+      global, transaction->Languages(), window->WindowID());
+  if (!installPromise) {
+    transaction->Resolve(false);
+    return promise.forget();
   }
 
-  RefPtr<Promise> promise =
-      SpeechRecognitionBackend::Install(global, aOptions.mLangs);
-
-  RefPtr<InstallCompletionHandler> handler =
-      new InstallCompletionHandler(std::move(languagesUtf8));
-  promise->AppendNativeHandler(handler);
+  RefPtr<SpeechRecognitionInstallHandler> handler =
+      MakeRefPtr<SpeechRecognitionInstallHandler>(transaction);
+  installPromise->AppendNativeHandler(handler);
 
   return promise.forget();
 }

@@ -21,6 +21,8 @@ support-files = [
 
 ["test_abort_end_async.html"]
 
+["test_install_overlap.html"]
+
 ["test_parakeet_e2e.html"]
 subsuite = "speech-recognition"
 tags = "mtg parakeet-asr"

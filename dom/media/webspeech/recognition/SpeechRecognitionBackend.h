@@ -133,8 +133,14 @@ class SpeechRecognitionBackend {
 
   static already_AddRefed<Promise> Available(
       nsIGlobalObject* aGlobal, const nsTArray<nsCString>& aLanguages);
+  // Requests installation of the on-device model(s) for aLanguages. The
+  // request is relayed by the utility to the trusted parent, which obtains the
+  // user's consent and performs the download (see nsIMLModelResolver);
+  // aInnerWindowId is the requesting document's inner window id, forwarded
+  // so the parent can verify ownership and anchor the prompt on that tab.
   static already_AddRefed<Promise> Install(
-      nsIGlobalObject* aGlobal, const nsTArray<nsCString>& aLanguages);
+      nsIGlobalObject* aGlobal, const nsTArray<nsCString>& aLanguages,
+      uint64_t aInnerWindowId);
   static RefPtr<hwinference::PSpeechRecognitionChild::IsModelInstalledPromise>
   IsModelInstalledNative(hwinference::SpeechRecognitionChild* aChild,
                          const nsTArray<nsCString>& aLanguages);

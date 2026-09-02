@@ -33,8 +33,12 @@ parent: // HWInference
   // Whether the models are already downloaded to the local cache, used for the
   // "available" Available() result.
   async IsModelInstalled(nsCString[] languages) returns (bool installed);
-  // Install speech recognition models for the given languages
-  async InstallModels(nsCString[] languages) returns (bool success);
+  // Ask the parent to install the models for the given languages.
+  // innerWindowId is the id of the requesting document's window, forwarded
+  // (with the trusted content id the utility attaches) so the parent can look
+  // it up, verify ownership, and prompt on that tab. Resolves true once the
+  // models are installed, false on denial/failure.
+  async InstallModels(nsCString[] languages, uint64_t innerWindowId) returns (bool success);
   // Initialize the speech recognition session with a language and a list of
   // biasing phrases. Resolves with an empty string on success, otherwise with
   // the Web Speech error token describing the failure (e.g.

@@ -115,7 +115,10 @@ ChromeUtils.defineLazyGetter(lazy, "gBrowserBundle", function () {
 });
 
 ChromeUtils.defineLazyGetter(lazy, "gFluentStrings", function () {
-  return new Localization(["browser/permissions.ftl"], true /* aSync */);
+  return new Localization(
+    ["branding/brand.ftl", "browser/permissions.ftl"],
+    true /* aSync */
+  );
 });
 
 import { SITEPERMS_ADDON_PROVIDER_PREF } from "resource://gre/modules/addons/siteperms-addon-utils.sys.mjs";
@@ -2431,6 +2434,95 @@ class StorageAccessPermissionPrompt extends PermissionPromptForRequest {
   }
 }
 
+class SpeechRecognitionModelDownloadPermissionPrompt extends PermissionPromptForRequest {
+  #sizeMB;
+  #requestSettled = false;
+
+  constructor(request) {
+    super();
+    this.request = request;
+    let types = request.types.QueryInterface(Ci.nsIArray);
+    let perm = types.queryElementAt(0, Ci.nsIContentPermissionType);
+    this.#sizeMB = perm.options.length
+      ? perm.options.queryElementAt(0, Ci.nsISupportsString).data
+      : null;
+  }
+
+  get type() {
+    return "speech-recognition-model-download";
+  }
+
+  get popupOptions() {
+    return {
+      displayURI: false,
+      checkbox: { show: false },
+    };
+  }
+
+  get notificationID() {
+    return "speech-recognition-model-download";
+  }
+
+  get anchorID() {
+    return "default-notification-icon";
+  }
+
+  get message() {
+    return lazy.gFluentStrings.formatValueSync(
+      "speech-recognition-model-download-message",
+      { sizeMB: this.#sizeMB }
+    );
+  }
+
+  get promptActions() {
+    let [allowMessage, notNowMessage] = lazy.gFluentStrings
+      .formatMessagesSync([
+        { id: "speech-recognition-model-download-allow" },
+        { id: "speech-recognition-model-download-not-now" },
+      ])
+      .map(msg =>
+        msg.attributes.reduce(
+          (acc, { name, value }) => ({ ...acc, [name]: value }),
+          {}
+        )
+      );
+
+    return [
+      {
+        label: allowMessage.label,
+        accessKey: allowMessage.accesskey,
+        action: lazy.SitePermissions.ALLOW,
+        callback: () => {
+          this.allow();
+        },
+      },
+      {
+        label: notNowMessage.label,
+        accessKey: notNowMessage.accesskey,
+        action: lazy.SitePermissions.BLOCK,
+        dismiss: true,
+        callback: () => this.cancel(),
+      },
+    ];
+  }
+
+  allow(choices) {
+    if (this.#requestSettled) {
+      return;
+    }
+    this.#requestSettled = true;
+    super.allow(choices);
+  }
+
+  cancel() {
+    if (this.#requestSettled) {
+      return;
+    }
+    this.#requestSettled = true;
+    super.cancel();
+  }
+}
+
 export const PermissionUI = {
   PermissionPromptForRequest,
   GeolocationPermissionPrompt,
@@ -2442,4 +2534,5 @@ export const PermissionUI = {
   StorageAccessPermissionPrompt,
   LoopbackNetworkPermissionPrompt,
   LocalNetworkPermissionPrompt,
+  SpeechRecognitionModelDownloadPermissionPrompt,
 };
