@@ -1040,6 +1040,32 @@ tasks:
                 linux.*64-tsan/opt: xlarge-noscratch  # runs out of memory using 8GB of memory
                 default: default
 
+    mochitest-speech-recognition:
+        description: "Mochitest speech recognition (parakeet) run"
+        suite:
+            name: mochitest-speech-recognition
+        treeherder-symbol: M(sr)
+        schedules-component: mochitest-plain
+        loopback-video: true
+        run-on-projects:
+            by-test-platform:
+                # ASR is impractical on debug and instrumented builds; opt only.
+                android.*: []
+                .*-asan.*: []
+                .*-tsan.*: []
+                .*-ccov.*: []
+                .*/debug: []
+                default: built-projects
+        tier: default
+        max-run-time: 1800
+        instance-size: default
+        allow-software-gl-layers: false
+        virtualization: virtual
+        fetches:
+            fetch:
+                - parakeet-eou-120m
+                - parakeet-nemotron-0.6b
+
     mochitest-media:
         description: "Mochitest media run"
         treeherder-symbol: M(mda)
