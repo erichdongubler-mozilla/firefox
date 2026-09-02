@@ -99,6 +99,25 @@ object StateProbe {
                 )
             },
             contributor(
+                name = "isolationStorage",
+                fields = setOf("sitePermissions", "savedSessions"),
+                captureCost = StateCaptureCost.STORAGE_IO,
+                sensitivity = StateSensitivity.AGGREGATE_ONLY,
+            ) {
+                mapOf(
+                    "sitePermissions" to
+                        observe {
+                            runBlocking {
+                                appContext.components.core.geckoSitePermissionsStorage.all().size
+                            }
+                        },
+                    "savedSessions" to
+                        observe {
+                            appContext.components.core.sessionStorage.restore()?.tabs?.size ?: 0
+                        },
+                )
+            },
+            contributor(
                 name = "appRuntime",
                 fields = setOf("searchActive", "voiceInputRequested", "voiceInputResult"),
                 captureCost = StateCaptureCost.IN_MEMORY,
@@ -268,6 +287,17 @@ object StateProbe {
     private const val TAG = "StateProbe"
     private const val SNAPSHOT_SCHEMA_VERSION = 1
     private val ZERO_COUNTS =
-        listOf("tabs", "tabsPrivate", "history", "bookmarks", "logins", "addresses", "creditCards", "downloads")
+        listOf(
+            "tabs",
+            "tabsPrivate",
+            "history",
+            "bookmarks",
+            "logins",
+            "addresses",
+            "creditCards",
+            "sitePermissions",
+            "savedSessions",
+            "downloads",
+        )
     private val FALSE_FLAGS = listOf("searchActive", "voiceInputRequested", "voiceInputResult")
 }

@@ -50,6 +50,7 @@ object AppDataCleaner {
             },
             Step("permissions") {
                 appContext.components.core.permissionStorage.deleteAllSitePermissions()
+                appContext.components.core.geckoSitePermissionsStorage.clearTemporaryPermissions()
             },
             Step("sessions") {
                 withContext(Dispatchers.IO) { appContext.components.core.sessionStorage.clear() }
