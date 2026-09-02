@@ -6,7 +6,6 @@ package org.mozilla.fenix.ui.efficiency.tests
 
 import android.Manifest
 import android.content.Context
-import android.content.pm.PackageManager
 import android.hardware.camera2.CameraManager
 import mozilla.components.feature.contextmenu.R as contextMenuR
 import org.junit.Assume
@@ -23,6 +22,7 @@ import org.mozilla.fenix.helpers.SearchMockServerRule
 import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
 import org.mozilla.fenix.helpers.TestHelper.appContext
 import org.mozilla.fenix.ui.efficiency.helpers.BaseTest
+import org.mozilla.fenix.ui.efficiency.helpers.RequiresDeniedRuntimePermission
 import org.mozilla.fenix.ui.efficiency.navigation.LaunchConfig
 import org.mozilla.fenix.ui.efficiency.pageObjects.HistorySearchGroupPage
 import org.mozilla.fenix.ui.efficiency.pageObjects.SystemSettingsPage
@@ -419,15 +419,13 @@ class SearchTest : BaseTest(LaunchConfig(isPocketEnabled = false)) {
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1059459
     @SmokeTest
+    @RequiresDeniedRuntimePermission(Manifest.permission.CAMERA)
     @Test
     fun verifyQRScanningCameraAccessDialogTest() {
         // Same guard as legacy: with no camera the flow cannot be exercised, so skip rather than fail.
         val cameraManager = appContext.getSystemService(Context.CAMERA_SERVICE) as CameraManager
         Assume.assumeTrue(cameraManager.cameraIdList.isNotEmpty())
 
-        check(appContext.checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_DENIED) {
-            "Camera permission must be reset before instrumentation starts"
-        }
         appContext.components.settings.setCameraPermissionNeededState = true
 
         on.searchBar

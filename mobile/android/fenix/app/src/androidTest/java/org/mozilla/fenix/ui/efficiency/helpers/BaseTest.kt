@@ -196,6 +196,7 @@ abstract class BaseTest(private val defaultLaunchConfig: LaunchConfig = LaunchCo
                     requireAppDataCleanup("before", description.displayName)
                     RuntimeStateCleaner.restore("before", description.displayName)
                     StateProbe.assertIsolated("afterSetup", description.displayName)
+                    RuntimePermissionRequirements.assertSatisfied(description)
                     _composeRule =
                         AndroidComposeTestRuleV2(
                             HomeActivityIntentTestRule(
