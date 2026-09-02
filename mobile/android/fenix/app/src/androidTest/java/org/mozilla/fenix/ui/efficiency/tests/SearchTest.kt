@@ -4,7 +4,9 @@
 
 package org.mozilla.fenix.ui.efficiency.tests
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
 import android.hardware.camera2.CameraManager
 import mozilla.components.feature.contextmenu.R as contextMenuR
 import org.junit.Assume
@@ -20,7 +22,6 @@ import org.mozilla.fenix.helpers.MockBrowserDataHelper
 import org.mozilla.fenix.helpers.SearchMockServerRule
 import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
 import org.mozilla.fenix.helpers.TestHelper.appContext
-import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.ui.efficiency.helpers.BaseTest
 import org.mozilla.fenix.ui.efficiency.navigation.LaunchConfig
 import org.mozilla.fenix.ui.efficiency.pageObjects.HistorySearchGroupPage
@@ -424,20 +425,9 @@ class SearchTest : BaseTest(LaunchConfig(isPocketEnabled = false)) {
         val cameraManager = appContext.getSystemService(Context.CAMERA_SERVICE) as CameraManager
         Assume.assumeTrue(cameraManager.cameraIdList.isNotEmpty())
 
-        // This test ends with camera permission granted and pref_key_camera_permissions_needed flipped to
-        // false, and nothing in the harness restores either. Legacy gets away with it because the orchestrator
-        // wipes package data per test method; BaseTest's retry re-runs in the same process, where a second
-        // attempt would take a completely different path through TurnOnSyncFragment. So reset both up front.
-        // Clearing the flags matters as much as the revoke: the flow ends with "Deny and don't ask again",
-        // which sets FLAG_PERMISSION_USER_FIXED, and a plain revoke leaves it set — a second attempt is then
-        // auto-denied with no dialog at all and fails looking for a Deny button that never appears. Scoped to
-        // this app and this permission on purpose; the device-wide `pm reset-permissions` also strips
-        // permissions the instrumentation itself relies on and crashes the test process.
-        val cameraPermission = "android.permission.CAMERA"
-        mDevice.executeShellCommand(
-            "pm clear-permission-flags ${appContext.packageName} $cameraPermission user-fixed user-set"
-        )
-        mDevice.executeShellCommand("pm revoke ${appContext.packageName} $cameraPermission")
+        check(appContext.checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_DENIED) {
+            "Camera permission must be reset before instrumentation starts"
+        }
         appContext.components.settings.setCameraPermissionNeededState = true
 
         on.searchBar
