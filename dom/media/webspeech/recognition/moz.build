@@ -43,6 +43,7 @@ EXPORTS.mozilla.hwinference += [
 UNIFIED_SOURCES += [
     "SpeechGrammar.cpp",
     "SpeechGrammarList.cpp",
+    "SpeechModelResolver.cpp",
     "SpeechRecognition.cpp",
     "SpeechRecognitionAlternative.cpp",
     "SpeechRecognitionBackend.cpp",
@@ -57,6 +58,10 @@ UNIFIED_SOURCES += [
 
 IPDL_SOURCES = [
     "PSpeechRecognition.ipdl",
+]
+
+XPCOM_MANIFESTS += [
+    "components.conf",
 ]
 
 # Bug 1244242 is about enabling on Android
