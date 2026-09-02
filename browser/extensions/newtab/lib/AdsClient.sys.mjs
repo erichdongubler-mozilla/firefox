@@ -52,16 +52,7 @@ ChromeUtils.defineLazyGetter(lazy, "logConsole", function () {
  * `AdsClient`.
  */
 export class _AdsClient {
-  // Poison flag that gets set by `uninit` function.
-  // If `quit-application-granted` fires before the ads client is built, `BrowserComponents.manifest` will ensure that
-  // `uninit` still gets called, and this flag is set. This avoids a timing bug with similar components without using AsyncShutdown.
-  static #hasShutdown = false;
-
   #client;
-
-  get uninitialized() {
-    return _AdsClient.#hasShutdown;
-  }
 
   /**
    * @param {object} prefValues The New Tab store's Prefs.values.
@@ -211,48 +202,16 @@ export class _AdsClient {
   }
 
   #build() {
-    const builtAdsClient = lazy.MozAdsClientBuilder.init()
-      .environment(lazy.MozAdsEnvironment.PROD)
-      .cacheConfig(this.cacheConfig)
-      .telemetry(this.buildTelemetry())
-      .build();
-
-    // `hasShutdown` will be set if `quit-application-granted` fires before building.
     try {
-      if (_AdsClient.#hasShutdown) {
-        // Corner case, where we're already in the shutdown phase while being constructed.  In this
-        // case, uninitialize immediately to deregister callback handlers
-        // (https://bugzilla.mozilla.org/show_bug.cgi?id=1990569#c11)
-        this.uninit(builtAdsClient);
-      }
-      return builtAdsClient;
+      return lazy.MozAdsClientBuilder.init()
+        .environment(lazy.MozAdsEnvironment.PROD)
+        .cacheConfig(this.cacheConfig)
+        .telemetry(this.buildTelemetry())
+        .build();
     } catch (error) {
       console.error("MozAdsClient failed to initialize", error);
       return null;
     }
-  }
-
-  /**
-   * Uninitialize the ads-client and allow it to release any necessary resources.
-   * The call for this in BrowserComponents.manifest triggers this on `browser-quit-application-granted`.
-   *
-   * @param {string} [client] Optional client passed to shutdown, defaulting to `this.#client` (eg: if `this.#client` is not set yet).
-   */
-  uninit(client) {
-    lazy.logConsole.info(`Uninitializing ads-client`);
-    if (client) {
-      client.shutdown();
-    } else if (this.#client) {
-      this.#client.shutdown();
-    }
-    _AdsClient.#hasShutdown = true;
-  }
-
-  /**
-   * For testing purposes only, reset the static hasShutdown
-   */
-  _reset_shutdown_happened() {
-    _AdsClient.#hasShutdown = false;
   }
 }
 
