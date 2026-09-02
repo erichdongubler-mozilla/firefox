@@ -22,6 +22,11 @@ run-if = [
   "nightly_build", # Bug 1890946
 ]
 
+["browser_pdfjs_brotli_large_window.js"]
+support-files = [
+  "file_pdfjs_brotli_large_window.pdf",
+]
+
 ["browser_pdfjs_caret_browsing_mode.js"]
 
 ["browser_pdfjs_chrome_events.js"]
