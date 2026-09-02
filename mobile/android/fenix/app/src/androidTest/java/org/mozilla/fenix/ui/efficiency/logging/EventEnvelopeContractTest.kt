@@ -4,7 +4,12 @@
 
 package org.mozilla.fenix.ui.efficiency.logging
 
+import java.util.Collections
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -20,6 +25,39 @@ class EventEnvelopeContractTest {
             isolation = "app_data",
             source = "dispatcher",
         )
+
+    @Test
+    fun sequenceAssignmentAndDeliveryRemainOrderedAcrossLoggers() {
+        val envelope = EventEnvelope(identity, processId = 42)
+        val firstEntered = CountDownLatch(1)
+        val releaseFirst = CountDownLatch(1)
+        val secondReady = CountDownLatch(1)
+        val delivered = Collections.synchronizedList(mutableListOf<Long>())
+        val executor = Executors.newFixedThreadPool(2)
+
+        val first = executor.submit {
+            envelope.withEnrichedEvent(mapOf("type" to "first", "testId" to "testMethod")) { event ->
+                firstEntered.countDown()
+                assertTrue(releaseFirst.await(5, TimeUnit.SECONDS))
+                delivered += event.sequence()
+            }
+        }
+        assertTrue(firstEntered.await(5, TimeUnit.SECONDS))
+        val second = executor.submit {
+            secondReady.countDown()
+            envelope.withEnrichedEvent(mapOf("type" to "second", "testId" to "testMethod")) { event ->
+                delivered += event.sequence()
+            }
+        }
+        assertTrue(secondReady.await(5, TimeUnit.SECONDS))
+        assertFalse(second.isDone)
+        releaseFirst.countDown()
+        first.get(5, TimeUnit.SECONDS)
+        second.get(5, TimeUnit.SECONDS)
+        executor.shutdownNow()
+
+        assertEquals(listOf(1L, 2L), delivered)
+    }
 
     @Test
     fun everyRecordCarriesOneVersionedExecutionIdentity() {
@@ -89,4 +127,7 @@ class EventEnvelopeContractTest {
         val typed = event["eventEnvelope"] as Map<*, *>
         assertTrue(typed["attemptId"].toString().isNotBlank())
     }
+
+    private fun Map<String, Any?>.sequence(): Long =
+        ((getValue("eventEnvelope") as Map<*, *>)["sequence"] as Number).toLong()
 }

@@ -73,6 +73,10 @@ class EventEnvelope(
     private val occurrences = mutableMapOf<String, Int>()
 
     @Synchronized
+    internal fun <T> withEnrichedEvent(fields: Map<String, Any?>, action: (Map<String, Any?>) -> T): T =
+        action(enrich(fields))
+
+    @Synchronized
     fun enrich(fields: Map<String, Any?>): Map<String, Any?> {
         val eventType = fields["type"]?.toString() ?: "unknown"
         val explicitTestId = fields["testId"]?.toString()?.takeIf { it.isNotBlank() }

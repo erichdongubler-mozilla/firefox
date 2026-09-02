@@ -34,35 +34,35 @@ class JsonSink(
      *
      * Exceptions are caught and logged: logging must never interrupt a test.
      */
-    @Synchronized
     fun event(map: Map<String, Any?>) {
-        val event = envelope.enrich(map)
-        val line =
+        envelope.withEnrichedEvent(map) { event ->
+            val line =
+                try {
+                    JSONObject(event.filterValues { it != null }).toString()
+                } catch (t: Throwable) {
+                    Log.w(TAG, "Failed to serialize event: ${t.message}")
+                    return@withEnrichedEvent
+                }
+
+            // Logcat drops a message over roughly 4k, and a stack trace is the field that gets there.
+            // Better a truncated record than a silently missing one.
             try {
-                JSONObject(event.filterValues { it != null }).toString()
-            } catch (t: Throwable) {
-                Log.w(TAG, "Failed to serialize event: ${t.message}")
-                return
+                Log.i(TAG, if (line.length <= MAX_LINE) line else truncated(event, line.length))
+            } catch (_: Throwable) {
+                // Rare logcat failures (buffer full) are not worth failing a test over.
             }
 
-        // Logcat drops a message over roughly 4k, and a stack trace is the field that gets there.
-        // Better a truncated record than a silently missing one.
-        try {
-            Log.i(TAG, if (line.length <= MAX_LINE) line else truncated(event, line.length))
-        } catch (_: Throwable) {
-            // Rare logcat failures (buffer full) are not worth failing a test over.
-        }
+            try {
+                file?.appendText(line + "\n")
+            } catch (t: Throwable) {
+                Log.w(TAG, "Failed to write JSON event: ${t.message}")
+            }
 
-        try {
-            file?.appendText(line + "\n")
-        } catch (t: Throwable) {
-            Log.w(TAG, "Failed to write JSON event: ${t.message}")
-        }
-
-        try {
-            providerEvidence.event(event)
-        } catch (t: Throwable) {
-            Log.w(TAG, "Failed to spool provider evidence: ${t.message}")
+            try {
+                providerEvidence.event(event)
+            } catch (t: Throwable) {
+                Log.w(TAG, "Failed to spool provider evidence: ${t.message}")
+            }
         }
     }
 
