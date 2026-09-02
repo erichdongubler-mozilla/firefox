@@ -24,6 +24,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.browser.state.state.CustomTabSessionState
 import mozilla.components.browser.state.state.SessionState
 import mozilla.components.browser.state.state.TabSessionState
@@ -36,6 +37,7 @@ import mozilla.components.feature.app.links.AppLinksUseCases
 import mozilla.components.feature.contextmenu.ContextMenuCandidate
 import mozilla.components.feature.contextmenu.ContextMenuCandidate.Companion.createOpenInExternalAppCandidate
 import mozilla.components.feature.contextmenu.R as contextMenuR
+import mozilla.components.feature.listentopage.ListenAction
 import mozilla.components.feature.readerview.ReaderViewFeature
 import mozilla.components.feature.tab.collections.TabCollection
 import mozilla.components.feature.tabs.WindowFeature
@@ -281,6 +283,13 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler, SystemIns
                         controlsView = binding.readerViewControlsBar,
                         onReaderViewStatusChange = { available, active ->
                             browserScreenStore.dispatch(ReaderModeStatusUpdated(ReaderModeStatus(available, active)))
+                        },
+                        onListenClicked = {
+                            context.components.core.store.state.selectedTab?.let { tab ->
+                                context.components.listenStore.dispatch(
+                                    ListenAction.Session.ListenRequested(tabId = tab.id, url = tab.content.url)
+                                )
+                            }
                         },
                     )
                 },

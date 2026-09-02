@@ -13,6 +13,7 @@ import androidx.core.app.NotificationManagerCompat
 import com.google.android.play.core.review.ReviewManagerFactory
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineScope
+import mozilla.components.browser.state.selector.findTab
 import mozilla.components.concept.ai.controls.AIFeatureBlock
 import mozilla.components.concept.ai.controls.AIFeatureRegistry
 import mozilla.components.feature.addons.AddonManager
@@ -20,8 +21,10 @@ import mozilla.components.feature.addons.amo.AMOAddonsProvider
 import mozilla.components.feature.addons.migration.DefaultSupportedAddonsChecker
 import mozilla.components.feature.addons.update.DefaultAddonUpdater
 import mozilla.components.feature.autofill.AutofillConfiguration
+import mozilla.components.feature.listentopage.ListenMiddleware
 import mozilla.components.feature.listentopage.ListenState
 import mozilla.components.feature.listentopage.ListenStore
+import mozilla.components.feature.listentopage.content.ContentProvider
 import mozilla.components.feature.listentopage.listenReducer
 import mozilla.components.feature.summarize.PageSummaryFeature
 import mozilla.components.feature.summarize.settings.SummarizationSettings
@@ -475,7 +478,25 @@ class Components(
     }
 
     val listenStore: ListenStore by lazyMonitored {
-        ListenStore(initialState = ListenState(), reducer = ::listenReducer)
+        val pageExtractor = FenixListenPageExtractor { tabId ->
+            core.store.state.findTab(tabId)?.engineState?.engineSession
+        }
+
+        ListenStore(
+            initialState = ListenState(),
+            reducer = ::listenReducer,
+            middleware =
+                listOf(
+                    ListenMiddleware(
+                        contentProvider =
+                            ContentProvider.fromPage(
+                                pageContentExtractor = pageExtractor,
+                                pageMetadataExtractor = pageExtractor,
+                            ),
+                        scope = applicationScope,
+                    )
+                ),
+        )
     }
 
     val aiFeatureRegistry by lazyMonitored {
