@@ -3546,11 +3546,6 @@ nsresult CanonicalBrowsingContext::ClearBfcacheByPrincipal(
   NS_ENSURE_ARG_POINTER(aPrincipal);
   MOZ_DIAGNOSTIC_ASSERT(XRE_IsParentProcess());
 
-  // Allow disabling the feature if unexpected regressions occur
-  if (!StaticPrefs::privacy_clearSiteDataHeader_cache_bfcache_enabled()) {
-    return NS_OK;
-  }
-
   // Iter through all open tabs by going through all top-level browsing
   // contexts.
   AutoTArray<RefPtr<BrowsingContextGroup>, 32> groups;

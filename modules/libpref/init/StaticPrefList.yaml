@@ -17671,12 +17671,6 @@
   value: true
   mirror: always
 
-# Also enable the clearing the bfcache for "Clear-Site-Data"-Header
-- name: privacy.clearSiteDataHeader.cache.bfcache.enabled
-  type: bool
-  value: true
-  mirror: always
-
 # Retarget a top-level navigation to a site bound to a container into a new tab
 # in that container. Disabled by default.
 - name: privacy.containers.switchDuringNavigation.enabled
