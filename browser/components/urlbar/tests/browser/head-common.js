@@ -454,6 +454,10 @@ function assertBounceTelemetry(expectedExtraList) {
  * here; where the recording is in-process the events are already there, so the
  * wait resolves immediately.
  *
+ * An empty `expectedExtraList` has nothing to wait for, so it asserts that no
+ * event has been recorded *yet*. The caller has to have awaited the point at
+ * which the event would have been recorded for that to mean anything.
+ *
  * @param {string} telemetryName The Glean metric name.
  * @param {object[]} expectedExtraList The expected events' extra keys.
  */

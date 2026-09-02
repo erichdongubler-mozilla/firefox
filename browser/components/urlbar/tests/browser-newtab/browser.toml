@@ -13,6 +13,14 @@ skip-if = ["debug"]
 
 ["browser_blur.js"]
 
+["browser_bounceTelemetry.js"]
+
+["browser_disableTelemetry.js"]
+
+["browser_engagementTelemetry.js"]
+
+["browser_engagementTelemetryGroups.js"]
+
 ["browser_engineIcon.js"]
 
 ["browser_escape.js"]
