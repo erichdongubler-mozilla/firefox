@@ -21,7 +21,7 @@ if (lazy) {
 /**
  * @import {UrlbarChild} from "moz-src:///browser/components/urlbar/actors/UrlbarChild.sys.mjs"
  * @import {UrlbarInput} from "chrome://browser/content/urlbar/UrlbarInput.mjs"
- * @import {UrlbarParentController} from "moz-src:///browser/components/urlbar/UrlbarParentController.sys.mjs"
+ * @import {UrlbarParentController, TelemetryEvent} from "moz-src:///browser/components/urlbar/UrlbarParentController.sys.mjs"
  * @import {UrlbarView} from "chrome://browser/content/urlbar/UrlbarView.mjs"
  * @import {SmartbarInput} from "moz-src:///browser/components/urlbar/content/SmartbarInput.mjs"
  */
@@ -62,6 +62,7 @@ export class UrlbarChildController {
     return UrlbarChildController.#logger;
   }
 
+  /** @type {UrlbarParentController | UrlbarParentControllerProxy} */
   #parentController;
 
   #input;
@@ -121,15 +122,13 @@ export class UrlbarChildController {
     // actor messages with the parent-side controller; the direct path builds
     // the real controller in place.
     let usesMessagePath = !inChromeRealm || actor.usesMessagePath;
-    this.#parentController = /** @type {UrlbarParentController} */ (
-      usesMessagePath
-        ? new UrlbarParentControllerProxy(
-            actor,
-            actor.registerMessagePathInput(options.input),
-            { sapName, isPrivate }
-          )
-        : new lazy.UrlbarParentController({ sapName, isPrivate, actor })
-    );
+    this.#parentController = usesMessagePath
+      ? new UrlbarParentControllerProxy(
+          actor,
+          actor.registerMessagePathInput(options.input),
+          { sapName, isPrivate }
+        )
+      : new lazy.UrlbarParentController({ sapName, isPrivate, actor });
     this.#parentController.setChild(this);
 
     this.engineStore = new SearchEngineStore(this);
@@ -157,20 +156,22 @@ export class UrlbarChildController {
   /**
    * The paired parent controller -- the real `UrlbarParentController` on the
    * direct path, or the `UrlbarParentControllerProxy` on the message path.
-   *
-   * @type {UrlbarParentController}
    */
   get parentController() {
     return this.#parentController;
   }
+
+  /**
+   * Direct path: the real parent controller's recorder. Message path: the
+   * parent stand-in has none, so use a content-side collector that ships
+   * engagements to the parent recorder.
+   *
+   * @type {UrlbarChildTelemetry|TelemetryEvent}
+   */
   get engagementEvent() {
-    // Direct path: the real parent controller's recorder. Message path: the
-    // parent stand-in has none, so use a content-side collector that ships
-    // engagements to the parent recorder.
-    return (
-      this.#parentController.engagementEvent ??
-      (this.#childTelemetry ??= new UrlbarChildTelemetry(this))
-    );
+    return this.#parentController instanceof UrlbarParentControllerProxy
+      ? (this.#childTelemetry ??= new UrlbarChildTelemetry(this))
+      : this.#parentController.engagementEvent;
   }
   /**
    * The selection behavior that the user has used to select a result. The
@@ -420,6 +421,7 @@ export class UrlbarChildController {
     this.notify(UrlbarShared.NOTIFICATIONS.QUERY_CANCELLED, queryContext);
   }
   receiveResults(queryContext) {
+    //@ts-expect-error only used in unit tests (which always are direct path).
     return this.#parentController.receiveResults(queryContext);
   }
   removeResult(result, options) {
@@ -958,18 +960,16 @@ export class UrlbarChildController {
     );
   }
 
-  /** @type {typeof UrlbarParentController.prototype.initEngineStore} */
   initEngineStore() {
-    return this.#parentController.initEngineStore();
+    this.#parentController.initEngineStore();
   }
 
-  /** @type {typeof UrlbarParentController.prototype.maybeInitEngineStore} */
   maybeInitEngineStore() {
-    if (this.#parentController.maybeInitEngineStore) {
-      return this.#parentController.maybeInitEngineStore();
+    if (this.#parentController instanceof UrlbarParentControllerProxy) {
+      // Synchronous initialization isn't supported in the message path.
+      return false;
     }
-    // Synchronous initialization isn't supported in the message path.
-    return false;
+    return this.#parentController.maybeInitEngineStore();
   }
 
   /** @type {typeof UrlbarParentController.prototype.openSERP} */
