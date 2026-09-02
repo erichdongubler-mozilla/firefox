@@ -977,7 +977,7 @@ void Animation::Play(ErrorResult& aRv, LimitBehavior aLimitBehavior) {
   PostUpdate();
 }
 
-// https://drafts.csswg.org/web-animations/#reverse-an-animation
+// https://drafts.csswg.org/web-animations-1/#reverse-an-animation
 void Animation::Reverse(ErrorResult& aRv) {
   if (!mTimeline) {
     return aRv.ThrowInvalidStateError(
@@ -988,15 +988,17 @@ void Animation::Reverse(ErrorResult& aRv) {
         "Can't reverse an animation associated with an inactive timeline");
   }
 
-  double effectivePlaybackRate = mPendingPlaybackRate.valueOr(mPlaybackRate);
-
-  if (effectivePlaybackRate == 0.0) {
-    return;
-  }
+  const double effectivePlaybackRate = CurrentOrPendingPlaybackRate();
 
   Maybe<double> originalPendingPlaybackRate = mPendingPlaybackRate;
 
-  mPendingPlaybackRate = Some(-effectivePlaybackRate);
+  // We still call Play() even if the playback rate is 0 to make sure we update
+  // the animation synchronously (e.g. start time / hold time).
+  // Also, per spec, we do have to call Play() even if the playback rate is 0.
+  // Note: If playback rate is 0, we have to preserve it, i.e. we don't set the
+  // playback rate to -0.
+  mPendingPlaybackRate =
+      Some(effectivePlaybackRate == 0 ? 0 : -effectivePlaybackRate);
 
   Play(aRv, LimitBehavior::AutoRewind);
 
