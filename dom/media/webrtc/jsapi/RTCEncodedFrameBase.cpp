@@ -69,8 +69,8 @@ RTCEncodedFrameBase::RTCEncodedFrameBase(
     return;
   }
 
-  UniquePtr<void, JS::FreePolicy> jsdata(js_pod_arena_malloc<uint8_t>(
-      js::ArrayBufferContentsArena, data.size()));
+  UniquePtr<void, JS::FreePolicy> jsdata(
+      js_pod_arena_malloc<uint8_t>(js::ArrayBufferContentsArena, data.size()));
   if (NS_WARN_IF(!jsdata)) {
     return;
   }

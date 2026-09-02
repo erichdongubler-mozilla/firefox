@@ -32,7 +32,6 @@ RTCEncodedVideoFrame::RTCEncodedVideoFrame(
     uint64_t aCounter, RTCRtpScriptTransformer* aOwner,
     const Maybe<RTCStatsTimestampMaker>& aTimestampMaker)
     : RTCEncodedFrameBase(aGlobal, std::move(aFrame), aCounter, aOwner) {
-
   const DebugOnly<bool> isReceived =
       mFrame->GetDirection() ==
       webrtc::TransformableFrameInterface::Direction::kReceiver;
