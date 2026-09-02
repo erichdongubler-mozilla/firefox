@@ -34,49 +34,137 @@ import org.mozilla.fenix.ui.efficiency.logging.TestLogging
  */
 object StateProbe {
 
+    private val contributors: List<StateContributor> =
+        listOf(
+            contributor(
+                name = "browserStore",
+                fields = setOf("tabs", "tabsPrivate", "downloads"),
+                captureCost = StateCaptureCost.IN_MEMORY,
+            ) {
+                mapOf(
+                    "tabs" to observe { appContext.components.core.store.state.tabs.size },
+                    "tabsPrivate" to
+                        observe {
+                            appContext.components.core.store.state.tabs.count { it.content.private }
+                        },
+                    "downloads" to observe { appContext.components.core.store.state.downloads.size },
+                )
+            },
+            contributor(
+                name = "places",
+                fields = setOf("history", "bookmarks", "topSites"),
+                captureCost = StateCaptureCost.STORAGE_IO,
+                sensitivity = StateSensitivity.AGGREGATE_ONLY,
+            ) {
+                mapOf(
+                    "history" to
+                        observe {
+                            runBlocking { PlacesHistoryStorage(appContext.applicationContext).getVisited().size }
+                        },
+                    "bookmarks" to
+                        observe {
+                            runBlocking {
+                                appContext.components.core.bookmarksStorage
+                                    .getTree(BookmarkRoot.Mobile.id)
+                                    .getOrNull()
+                                    ?.children
+                                    ?.size ?: 0
+                            }
+                        },
+                    "topSites" to
+                        observe {
+                            runBlocking { appContext.components.core.pinnedSiteStorage.getPinnedSites().size }
+                        },
+                )
+            },
+            contributor(
+                name = "savedUserData",
+                fields = setOf("logins", "addresses", "creditCards"),
+                captureCost = StateCaptureCost.STORAGE_IO,
+                sensitivity = StateSensitivity.AGGREGATE_ONLY,
+            ) {
+                mapOf(
+                    "logins" to
+                        observe {
+                            runBlocking { appContext.components.core.passwordsStorage.list().size }
+                        },
+                    "addresses" to
+                        observe {
+                            runBlocking { appContext.components.core.autofillStorage.getAllAddresses().size }
+                        },
+                    "creditCards" to
+                        observe {
+                            runBlocking { appContext.components.core.autofillStorage.getAllCreditCards().size }
+                        },
+                )
+            },
+            contributor(
+                name = "appRuntime",
+                fields = setOf("searchActive", "voiceInputRequested", "voiceInputResult"),
+                captureCost = StateCaptureCost.IN_MEMORY,
+            ) {
+                mapOf(
+                    "searchActive" to observe { appContext.components.appStore.state.searchState.isSearchActive },
+                    "voiceInputRequested" to
+                        observe {
+                            appContext.components.appStore.state.voiceSearchState.isRequestingVoiceInput
+                        },
+                    "voiceInputResult" to
+                        observe {
+                            appContext.components.appStore.state.voiceSearchState.voiceInputResult != null
+                        },
+                )
+            },
+            contributor(
+                name = "launcher",
+                fields = setOf("launcherIcon"),
+                captureCost = StateCaptureCost.PACKAGE_MANAGER,
+            ) {
+                mapOf("launcherIcon" to observe(::launcherIconAlias))
+            },
+            contributor(
+                name = "executionIdentity",
+                fields = setOf("processId"),
+                captureCost = StateCaptureCost.IN_MEMORY,
+            ) {
+                mapOf("processId" to observe(Process::myPid))
+            },
+        )
+
     /** One sample of everything worth watching. Ordered so the diff reads consistently. */
-    fun sample(): Map<String, Any?> {
-        val out = linkedMapOf<String, Any?>()
+    fun sample(): Map<String, Any?> = snapshot().values
 
-        probe(out, "tabs") { appContext.components.core.store.state.tabs.size }
-        probe(out, "tabsPrivate") {
-            appContext.components.core.store.state.tabs.count { it.content.private }
+    fun snapshot(): StateSnapshot {
+        val contributions = contributors.map { contributor ->
+            val captured =
+                runCatching(contributor::capture).getOrElse { failure ->
+                    contributor.fields.associateWith {
+                        "unreadable: ${failure::class.simpleName}"
+                    }
+                }
+            val values =
+                contributor.fields.associateWith { field ->
+                    if (field in captured) captured[field] else "unreadable: MissingValue"
+                }
+            StateContribution(
+                name = contributor.name,
+                schemaVersion = contributor.schemaVersion,
+                captureCost = contributor.captureCost,
+                sensitivity = contributor.sensitivity,
+                values = values,
+            )
         }
-        probe(out, "history") {
-            runBlocking { PlacesHistoryStorage(appContext.applicationContext).getVisited().size }
+        val values = contributions.flatMap { it.values.entries }
+        check(values.size == values.map { it.key }.toSet().size) {
+            "State contributors declare duplicate field ownership"
         }
-        probe(out, "bookmarks") {
-            runBlocking {
-                appContext.components.core.bookmarksStorage.getTree(BookmarkRoot.Mobile.id).getOrNull()?.children?.size
-                    ?: 0
-            }
-        }
-        probe(out, "logins") {
-            runBlocking { appContext.components.core.passwordsStorage.list().size }
-        }
-        probe(out, "addresses") {
-            runBlocking { appContext.components.core.autofillStorage.getAllAddresses().size }
-        }
-        probe(out, "creditCards") {
-            runBlocking { appContext.components.core.autofillStorage.getAllCreditCards().size }
-        }
-        probe(out, "topSites") {
-            runBlocking { appContext.components.core.pinnedSiteStorage.getPinnedSites().size }
-        }
-        probe(out, "downloads") { appContext.components.core.store.state.downloads.size }
-        probe(out, "processId") { Process.myPid() }
-        probe(out, "searchActive") { appContext.components.appStore.state.searchState.isSearchActive }
-        probe(out, "voiceInputRequested") {
-            appContext.components.appStore.state.voiceSearchState.isRequestingVoiceInput
-        }
-        probe(out, "voiceInputResult") {
-            appContext.components.appStore.state.voiceSearchState.voiceInputResult != null
-        }
-        // Not app data, so `pm clear` never resets it. This is the one that actually leaked.
-        probe(out, "launcherIcon") { launcherIconAlias() }
-
-        return out
+        return StateSnapshot(
+            values = values.associate { it.toPair() },
+            contributions = contributions,
+        )
     }
+
+    fun descriptors(): List<StateContributor> = contributors.toList()
 
     /**
      * Emit a sample on the structured stream.
@@ -84,13 +172,23 @@ object StateProbe {
      * Consumers pair lifecycle phases by testId and compute their own transitions so the emitted facts remain stable.
      */
     fun record(phase: String, testId: String): Map<String, Any?> {
-        val state = sample()
+        val snapshot = snapshot()
+        val state = snapshot.values
         runCatching {
-            TestLogging.installed()
-                .record(
-                    "state",
-                    mapOf("phase" to phase, "testId" to testId) + state,
-                )
+            val reporter = TestLogging.installed()
+            reporter.record(
+                "state",
+                mapOf("phase" to phase, "testId" to testId) + state,
+            )
+            reporter.record(
+                "stateSnapshot",
+                mapOf(
+                    "schemaVersion" to SNAPSHOT_SCHEMA_VERSION,
+                    "phase" to phase,
+                    "testId" to testId,
+                    "contributors" to snapshot.contributions.map(StateContribution::asRecord),
+                ),
+            )
         }
             .onFailure { Log.i(TAG, "state probe failed at $phase: ${it.message}") }
         return state
@@ -147,12 +245,28 @@ object StateProbe {
         return enabled.firstOrNull()?.removePrefix("$pkg.") ?: "default"
     }
 
-    /** Record a value, or the reason it could not be read. Never throws. */
-    private inline fun probe(into: MutableMap<String, Any?>, key: String, read: () -> Any?) {
-        into[key] = runCatching(read).getOrElse { "unreadable: ${it::class.simpleName}" }
-    }
+    private fun contributor(
+        name: String,
+        fields: Set<String>,
+        captureCost: StateCaptureCost,
+        sensitivity: StateSensitivity = StateSensitivity.NONE,
+        capture: () -> Map<String, Any?>,
+    ): StateContributor =
+        object : StateContributor {
+            override val name = name
+            override val schemaVersion = 1
+            override val fields = fields
+            override val captureCost = captureCost
+            override val sensitivity = sensitivity
+
+            override fun capture(): Map<String, Any?> = capture()
+        }
+
+    private inline fun observe(read: () -> Any?): Any? =
+        runCatching(read).getOrElse { "unreadable: ${it::class.simpleName}" }
 
     private const val TAG = "StateProbe"
+    private const val SNAPSHOT_SCHEMA_VERSION = 1
     private val ZERO_COUNTS =
         listOf("tabs", "tabsPrivate", "history", "bookmarks", "logins", "addresses", "creditCards", "downloads")
     private val FALSE_FLAGS = listOf("searchActive", "voiceInputRequested", "voiceInputResult")
