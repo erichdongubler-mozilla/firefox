@@ -35,6 +35,17 @@ parent: // HWInference
   // Initialize the speech recognition session with a language and a list of
   // biasing phrases
   async Init(nsCString engineId, nsCString language, nsString[] phrases) returns (bool success);
+  // Send audio data for speech recognition (always 16kHz mono f32 samples)
+  async ProcessAudioData(float[] audioData);
+  // Stop the speech recognition session
+  async Stop();
+
+child: // Content process
+  // Speech recognition results
+  async OnRecognitionResult(nsCString transcript, bool isFinal);
+  async OnRecognitionError(nsCString error);
+  // Speech detection events (true = speech started, false = speech ended)
+  async OnSpeechChange(bool speechDetected);
 };
 
 } // namespace hwinference

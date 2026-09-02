@@ -7,12 +7,12 @@
 #ifndef DOM_MEDIA_WEBSPEECH_RECOGNITION_SPEECHRECOGNITIONPARENT_H_
 #define DOM_MEDIA_WEBSPEECH_RECOGNITION_SPEECHRECOGNITIONPARENT_H_
 
-#include <atomic>
 #include <functional>
 
 #include "WavDumper.h"
 #include "mozilla/FileUtils.h"
 #include "mozilla/MozPromise.h"
+#include "mozilla/SPSCQueue.h"
 #include "mozilla/ThreadSafety.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/Promise.h"
@@ -74,6 +74,9 @@ class SpeechRecognitionParent final : public PSpeechRecognitionParent {
       MOZ_EXCLUDES(mLock);
 
  private:
+  // Session lifecycle. Stopping and Destroyed are terminal.
+  enum class State { Idle, Initializing, Running, Stopping, Destroyed };
+
   ~SpeechRecognitionParent();
   void LoadPreferences();
 
@@ -93,13 +96,19 @@ class SpeechRecognitionParent final : public PSpeechRecognitionParent {
       std::function<void(const bool&)> aResolver,
       MozPromiseRequestHolder<BoolPromise>& aRequestHolder);
 
+  // Runs on mRecognitionThread. Takes ownership of mModelFile, loads it, and
+  // enters ProcessAudioStreaming() unless the session was torn down meanwhile.
   void InitializeParakeetContext(InitResolver&& aResolver);
   void RetrieveModel(InitResolver&& aResolver);
   // Fetches an already-installed model's file. Only called by RetrieveModel()
   // after confirming the model is installed.
   void FetchModelFile(const nsCString& aModelId, InitResolver&& aResolver);
   // Cache-aware streaming path (mudler/parakeet.cpp streaming C-API).
+  // Runs on mRecognitionThread, and returns once mState leaves Running.
   void ProcessAudioStreaming();
+  bool IsRunning() MOZ_EXCLUDES(mLock);
+  // Runs on mRecognitionThread, which alone owns mCapiCtx and mCapiStream.
+  void DestroyParakeetContext(mozilla::llama::LlamaLibWrapper* aLib);
   void SignalError(const nsCString& aErrorMessage);
 
   // Static tracking of the single active recognition session
@@ -108,20 +117,25 @@ class SpeechRecognitionParent final : public PSpeechRecognitionParent {
       MOZ_GUARDED_BY(sSessionMutex);
 
   Mutex mLock;
+  State mState MOZ_GUARDED_BY(mLock) = State::Idle;
   // Recognition language
   // Set during RecvInit, then constant
   nsCString mLanguage MOZ_GUARDED_BY(mLock);
   // Contextual biasing phrases
   // Set during RecvInit, then constant
   nsTArray<nsString> mPhrases MOZ_GUARDED_BY(mLock);
-  // Model file handle - automatically closed on destruction
-  // ScopedCloseFile is UniquePtr<FILE, FCloseDeleter>
+  // Model file handle, handed to InitializeParakeetContext() on the recognition
+  // thread, which owns and closes it from then on.
   mozilla::UniquePtr<FILE, mozilla::FCloseDeleter> mModelFile
       MOZ_GUARDED_BY(mLock);
-  // Streaming backend handles (mudler/parakeet.cpp). Created on the
-  // recognition thread, freed in ActorDestroy.
+  // Streaming backend handles (mudler/parakeet.cpp), owned by the recognition
+  // thread.
   parakeet_ctx* mCapiCtx = nullptr;
   parakeet_stream* mCapiStream = nullptr;
+
+  // Lock-free queue to convey audio from the IPC thread to the processing
+  // thread. Producer is the IPC thread, consumer is the processing thread.
+  mozilla::SPSCQueue<float> mAudioQueue;
 
   // Started in RecvInit, then stopped and join on actor destroyed, recognitions
   // stopped, etc.
@@ -132,17 +146,9 @@ class SpeechRecognitionParent final : public PSpeechRecognitionParent {
   // MOZ_DISABLE_UTILITY_SANDBOX=1 MOZ_DUMP_AUDIO=1 to activate
   WavDumper mRecognitionAudioDumper;
 
-  // Flag to signal the recognition thread to stop processing. Set to true when
-  // starting, false when we want to stop. Checked periodically by the
-  // recognition thread during audio processing.
-  std::atomic<bool> mShouldContinueProcessing;
-
-  // Set once ActorDestroy() has run. InitializeParakeetContext() can still be
-  // mid-flight on the recognition thread when that happens (e.g. delayed
-  // behind a model fetch); this tells it to discard its work instead of
-  // resurrecting mShouldContinueProcessing and starting a streaming loop
-  // nobody will ever stop.
-  std::atomic<bool> mActorDestroyed{false};
+  // Position in the audio stream that has been processed in samples
+  // This provides a rather crude timing estimate, but will be improved.
+  size_t mProcessedAudioPos;
 
   // Outstanding requests to the utility process, disconnected in
   // ActorDestroy() so their callbacks never run (and resolve a dead IPDL

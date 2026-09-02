@@ -43,6 +43,12 @@ void SpeechRecognitionChild::ActorDestroy(ActorDestroyReason aReason) {
   mResultCallback = nullptr;
   mErrorCallback = nullptr;
   mSpeechChangeCallback = nullptr;
+
+  if (mDestroyedCallback) {
+    DestroyedCallback callback = std::move(mDestroyedCallback);
+    mDestroyedCallback = nullptr;
+    callback(this);
+  }
 }
 
 void SpeechRecognitionChild::SetResultCallback(
@@ -61,6 +67,53 @@ void SpeechRecognitionChild::SetSpeechChangeCallback(
     SpeechChangeCallback&& aCallback) {
   LOG(LogLevel::Debug, "SetSpeechChangeCallback called");
   mSpeechChangeCallback = std::move(aCallback);
+}
+
+void SpeechRecognitionChild::SetDestroyedCallback(
+    DestroyedCallback&& aCallback) {
+  LOG(LogLevel::Debug, "SetDestroyedCallback called");
+  mDestroyedCallback = std::move(aCallback);
+}
+
+mozilla::ipc::IPCResult SpeechRecognitionChild::RecvOnRecognitionResult(
+    const nsCString& aTranscript, const bool& aIsFinal) {
+  LOG(LogLevel::Info, "RecvOnRecognitionResult: '{}' (final={})",
+      aTranscript.get(), aIsFinal ? "true" : "false");
+
+  if (mResultCallback) {
+    LOG(LogLevel::Debug, "Invoking result callback");
+    mResultCallback(aTranscript, aIsFinal);
+  } else {
+    LOG(LogLevel::Warning, "Received result but no callback set");
+  }
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult SpeechRecognitionChild::RecvOnRecognitionError(
+    const nsCString& aError) {
+  LOG(LogLevel::Warning, "RecvOnRecognitionError: '{}'", aError.get());
+
+  if (mErrorCallback) {
+    LOG(LogLevel::Debug, "Invoking error callback");
+    mErrorCallback(aError);
+  } else {
+    LOG(LogLevel::Warning, "Received error but no callback set");
+  }
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult SpeechRecognitionChild::RecvOnSpeechChange(
+    const bool& aSpeechDetected) {
+  LOG(LogLevel::Info, "RecvOnSpeechChange: speechDetected={}",
+      aSpeechDetected ? "true" : "false");
+
+  if (mSpeechChangeCallback) {
+    LOG(LogLevel::Debug, "Invoking speech change callback");
+    mSpeechChangeCallback(aSpeechDetected);
+  } else {
+    LOG(LogLevel::Warning, "Received speech change but no callback set");
+  }
+  return IPC_OK();
 }
 
 }  // namespace mozilla::hwinference
