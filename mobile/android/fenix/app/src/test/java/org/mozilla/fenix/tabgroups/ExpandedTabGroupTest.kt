@@ -39,6 +39,7 @@ class ExpandedTabGroupTest {
             override val ungroupTabGroupEnabled: Boolean = true
             override val tabGroupsOnboardingEnabled: Boolean = false
             override val tabGroupsLiveReorderEnabled: Boolean = false
+            override val tabGroupsStripEnabled: Boolean = false
         }
 
     @Test

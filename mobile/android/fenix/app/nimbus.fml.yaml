@@ -967,6 +967,14 @@ features:
           Whether or not to enable ungrouping tab groups.
         type: Boolean
         default: true
+  tab-groups-strip:
+    description: Control whether the tab groups strip is shown.
+    variables:
+      enabled:
+        description: >
+          Whether or not to enable the tab groups strip.
+        type: Boolean
+        default: false
 
   marketing-onboarding-card:
     description: A temporary feature to control the marketing onboarding card shown during the onboarding flow.

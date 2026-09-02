@@ -3256,6 +3256,13 @@ class Settings(
             default = { DefaultTabManagementFeatureHelper.tabGroupsOnboardingEnabled },
         )
 
+    /** Whether the Tab Groups strip is shown while the active tab is in a group. */
+    var tabGroupsStripEnabled by
+        booleanPreference(
+            key = appContext.getPreferenceKey(R.string.pref_key_tab_groups_strip),
+            default = { DefaultTabManagementFeatureHelper.tabGroupsStripEnabled },
+        )
+
     /** Whether the Native Share Sheet feature is enabled. */
     var nativeShareSheetEnabled by
         booleanPreference(
