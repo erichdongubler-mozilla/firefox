@@ -9,6 +9,7 @@
 
 #include "AudioSegment.h"
 #include "MainThreadUtils.h"
+#include "SpeechRecognitionChild.h"
 #include "mozilla/AudioCaptureTiming.h"
 #include "mozilla/DataMutex.h"
 #include "mozilla/EventTargetCapability.h"
@@ -20,16 +21,11 @@
 #include "mozilla/ThreadSafety.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/WeakPtr.h"
-#include "mozilla/hwinference/PSpeechRecognitionChild.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "nsIThread.h"
 #include "nsITimer.h"
 #include "nsString.h"
 #include "nsTArray.h"
-
-namespace mozilla::hwinference {
-class SpeechRecognitionChild;
-}  // namespace mozilla::hwinference
 
 namespace mozilla {
 class AudibilityMonitor;
