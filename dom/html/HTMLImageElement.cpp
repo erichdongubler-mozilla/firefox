@@ -85,7 +85,7 @@ HTMLImageElement::~HTMLImageElement() {
 }
 
 NS_IMPL_CYCLE_COLLECTION_INHERITED(HTMLImageElement, nsGenericHTMLElement,
-                                   mResponsiveSelector)
+                                   mResponsiveSelector, mForm)
 
 NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED(HTMLImageElement,
                                              nsGenericHTMLElement,
