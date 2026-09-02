@@ -6,7 +6,6 @@ package org.mozilla.fenix.ui.efficiency.logging
 
 import android.util.Log
 import java.io.File
-import java.util.Date
 import org.json.JSONObject
 
 /**
@@ -24,7 +23,10 @@ import org.json.JSONObject
  * That indirection exists because triage over prose breaks silently: a reworded message leaves every test passing and
  * the rules quietly matching nothing.
  */
-class JsonSink(private val file: File?) {
+class JsonSink(
+    private val file: File?,
+    private val envelope: EventEnvelope = ProcessEventEnvelope.current,
+) {
 
     /**
      * Serializes [map], injects `ts`, and appends a line to both transports.
@@ -33,9 +35,10 @@ class JsonSink(private val file: File?) {
      */
     @Synchronized
     fun event(map: Map<String, Any?>) {
+        val event = envelope.enrich(map)
         val line =
             try {
-                JSONObject(map.filterValues { it != null } + mapOf("ts" to Date().time)).toString()
+                JSONObject(event.filterValues { it != null }).toString()
             } catch (t: Throwable) {
                 Log.w(TAG, "Failed to serialize event: ${t.message}")
                 return
@@ -44,7 +47,7 @@ class JsonSink(private val file: File?) {
         // Logcat drops a message over roughly 4k, and a stack trace is the field that gets there.
         // Better a truncated record than a silently missing one.
         try {
-            Log.i(TAG, if (line.length <= MAX_LINE) line else truncated(map, line.length))
+            Log.i(TAG, if (line.length <= MAX_LINE) line else truncated(event, line.length))
         } catch (_: Throwable) {
             // Rare logcat failures (buffer full) are not worth failing a test over.
         }
@@ -61,7 +64,6 @@ class JsonSink(private val file: File?) {
         JSONObject(
                 map.filterValues { it != null } - "cause" +
                     mapOf(
-                        "ts" to Date().time,
                         "causeTruncated" to true,
                         "originalLength" to was,
                         "cause" to (map["cause"] as? String)?.take(CAUSE_BUDGET),

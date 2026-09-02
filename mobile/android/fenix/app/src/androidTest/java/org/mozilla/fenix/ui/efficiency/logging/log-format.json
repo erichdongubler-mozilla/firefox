@@ -17,7 +17,7 @@
     "pass."
   ],
 
-  "version": 1,
+  "version": 2,
 
   "console": {
     "_comment": "The human stream, on logcat tag 'Eff'. effpretty parses `^(\\s*)\\[([A-Z]+)\\](.*)$`, so the tag, the glyph and four-space-per-level indentation are all load-bearing.",
@@ -37,6 +37,30 @@
 
   "structured": {
     "_comment": "The machine stream, one JSON object per line on logcat tag 'EffJson'. Demuxed by `effpretty --events` into run-events.jsonl.",
+    "event_envelope": {
+      "_comment": "Every record carries one eventEnvelope object containing these fields. Existing top-level type, ts, testId, and payload fields remain for version-1 consumers; eventType and wallTimeMs are their typed envelope equivalents. unassigned/fallback is explicit compatibility evidence, not a generated run identity.",
+      "container_field": "eventEnvelope",
+      "version_field": "eventSchemaVersion",
+      "version": 1,
+      "required": [
+        "eventSchemaVersion",
+        "runId",
+        "shardId",
+        "testId",
+        "attemptId",
+        "dispatchAttemptId",
+        "providerAttemptOrdinal",
+        "sequence",
+        "wallTimeMs",
+        "monotonicTimeNs",
+        "eventType",
+        "executionPath",
+        "isolation",
+        "identitySource",
+        "processId"
+      ],
+      "identity_sources": ["dispatcher", "fallback"]
+    },
     "tag": "EffJson",
     "record_types": {
       "testStart": ["testId"],
