@@ -17,7 +17,7 @@
     "pass."
   ],
 
-  "version": 2,
+  "version": 3,
 
   "console": {
     "_comment": "The human stream, on logcat tag 'Eff'. effpretty parses `^(\\s*)\\[([A-Z]+)\\](.*)$`, so the tag, the glyph and four-space-per-level indentation are all load-bearing.",
@@ -75,7 +75,7 @@
         "failureOrigins",
         "failedCleanupStages"
       ],
-      "stepEnd": ["type", "outcome", "elapsedMs"],
+      "stepEnd": ["scopeType", "outcome", "elapsedMs"],
       "dump": ["dump", "layer"],
       "dumpNode": ["dump", "layer"],
       "state": ["phase", "testId"],
@@ -105,6 +105,7 @@
     "_cleanup_comment": "cleanup: emitted by AppDataCleaner once per phase. `phase` is before|after, `failed` is a comma-separated list of the clears that errored, and `failureDetails` maps those stable step names to exception type and message. A failed clear and a genuine state leak otherwise look identical --- both present as a later test starting with state it did not create --- so this is what distinguishes them.",
     "_attempt_end_comment": "attemptEnd is the only atomic terminal record. It is emitted by the outermost BaseTest rule after the body, efficiency cleanup, isolation verification, and legacy rule teardown return or throw. testEnd remains the compatibility body-result event and is not evidence that cleanup completed. A host collector synthesizes an incomplete or crash outcome when this record is absent.",
     "_activity_lifecycle_comment": "activityLifecycle: a monotonic per-test trace from Application.ActivityLifecycleCallbacks. created records whether Android supplied saved instance state; every activity record carries process, activity-instance, task, intent-flag, lifecycle, and process-global search/voice state. This distinguishes an expected same-task restore from a fresh task inheriting stale process state.",
+    "_scope_type_comment": "Step records use scopeType for STEP/CMD/LOC. The top-level type remains the domain record identity stepEnd; using type for both fields caused the scope to overwrite the record identity before version 3.",
     "scope_types": ["STEP", "CMD", "LOC"],
     "outcomes": ["OK", "FAIL", "SKIP"],
     "test_statuses": ["PASS", "FAIL", "SKIP"],

@@ -114,7 +114,7 @@ class TimedReporter(
             val args =
                 facts +
                     mapOf(
-                        "type" to type.name,
+                        "scopeType" to type.name,
                         "outcome" to outcome.name,
                         "elapsedMs" to elapsedMs,
                     )
@@ -137,7 +137,7 @@ class TimedReporter(
     fun start(type: Type, id: String, name: String, level: Int = type.defaultLevel): Scope {
         if (enabled) {
             type.announce(level, name)
-            forwarder?.stepStart(StepDescriptor(id, name, mapOf("type" to type.name)))
+            forwarder?.stepStart(StepDescriptor(id, name, mapOf("scopeType" to type.name)))
             starts[type] = (starts[type] ?: 0) + 1
         }
         return Scope(id, name, type, level, System.nanoTime())
