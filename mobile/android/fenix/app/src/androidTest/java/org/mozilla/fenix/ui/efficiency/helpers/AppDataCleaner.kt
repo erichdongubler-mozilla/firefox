@@ -46,6 +46,7 @@ object AppDataCleaner {
 
     private val steps =
         listOf(
+            Step("searchConfiguration") { HarnessSearchState.clear() },
             Step("preferences") { HarnessPreferenceState.clear() },
             Step("bookmarks") { deleteBookmarksStorage() },
             Step("pinnedSites") { deletePinnedSitesStorage() },

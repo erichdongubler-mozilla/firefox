@@ -8,6 +8,7 @@ import android.content.ComponentName
 import android.content.pm.PackageManager
 import android.os.Process
 import android.util.Log
+import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import mozilla.appservices.places.BookmarkRoot
@@ -236,29 +237,74 @@ object StateProbe {
                     setOf(
                         "complete",
                         "defaultEngineId",
+                        "regionDefaultEngineId",
                         "privateDefaultEngineId",
+                        "userSelectedEngineOverride",
+                        "userSelectedPrivateEngineOverride",
+                        "defaultMatchesRegion",
+                        "privateMatchesDefault",
                         "customEngineCount",
                         "hiddenEngineCount",
                         "disabledShortcutCount",
+                        "disabledShortcutsAtDefault",
                         "additionalEngineCount",
                         "temporaryEngineId",
+                        "persistedMetadataOverrideCount",
+                        "persistedCustomEngineCount",
                     ),
-                captureCost = StateCaptureCost.IN_MEMORY,
+                captureCost = StateCaptureCost.STORAGE_IO,
+                sensitivity = StateSensitivity.AGGREGATE_ONLY,
                 includeInCompatibilityState = false,
+                boundaryBaseline =
+                    mapOf(
+                        "complete" to true,
+                        "userSelectedEngineOverride" to false,
+                        "userSelectedPrivateEngineOverride" to false,
+                        "defaultMatchesRegion" to true,
+                        "privateMatchesDefault" to true,
+                        "customEngineCount" to 0,
+                        "hiddenEngineCount" to 0,
+                        "disabledShortcutsAtDefault" to true,
+                        "additionalEngineCount" to 0,
+                        "temporaryEngineId" to null,
+                        "persistedMetadataOverrideCount" to 0,
+                        "persistedCustomEngineCount" to 0,
+                    ),
+                controlDrivers = setOf("searchConfiguration", "runtimeCleanup"),
             ) {
                 val browserSearch = appContext.components.core.store.state.search
+                val defaultEngineId = browserSearch.selectedOrDefaultSearchEngine?.id
                 mapOf(
                     "complete" to observe { browserSearch.complete },
-                    "defaultEngineId" to observe { browserSearch.selectedOrDefaultSearchEngine?.id },
+                    "defaultEngineId" to observe { defaultEngineId },
+                    "regionDefaultEngineId" to observe { browserSearch.regionDefaultSearchEngineId },
                     "privateDefaultEngineId" to observe { browserSearch.selectedOrDefaultPrivateSearchEngine?.id },
+                    "userSelectedEngineOverride" to
+                        observe {
+                            browserSearch.userSelectedSearchEngineId != null ||
+                                browserSearch.userSelectedSearchEngineName != null
+                        },
+                    "userSelectedPrivateEngineOverride" to
+                        observe {
+                            browserSearch.userSelectedPrivateSearchEngineId != null ||
+                                browserSearch.userSelectedPrivateSearchEngineName != null
+                        },
+                    "defaultMatchesRegion" to observe { defaultEngineId == browserSearch.regionDefaultSearchEngineId },
+                    "privateMatchesDefault" to
+                        observe { browserSearch.selectedOrDefaultPrivateSearchEngine?.id == defaultEngineId },
                     "customEngineCount" to observe { browserSearch.customSearchEngines.size },
                     "hiddenEngineCount" to observe { browserSearch.hiddenSearchEngines.size },
                     "disabledShortcutCount" to observe { browserSearch.disabledSearchEngineIds.size },
+                    "disabledShortcutsAtDefault" to
+                        observe { HarnessSearchState.hasDefaultDisabledShortcuts(browserSearch) },
                     "additionalEngineCount" to observe { browserSearch.additionalSearchEngines.size },
                     "temporaryEngineId" to
                         observe {
                             appContext.components.appStore.state.searchState.selectedSearchEngine?.searchEngine?.id
                         },
+                    "persistedMetadataOverrideCount" to
+                        observe { HarnessSearchState.persistentMetadataOverrideCount() },
+                    "persistedCustomEngineCount" to observe { HarnessSearchState.persistentCustomEngineCount() },
                 )
             },
             contributor(
@@ -305,10 +351,11 @@ object StateProbe {
                 values = values,
             )
         }
-        val values = contributions.filter(StateContribution::includeInCompatibilityState).flatMap { it.values.entries }
-        check(values.size == values.map { it.key }.toSet().size) {
+        val allValues = contributions.flatMap { it.values.entries }
+        check(allValues.size == allValues.map { it.key }.toSet().size) {
             "State contributors declare duplicate field ownership"
         }
+        val values = contributions.filter(StateContribution::includeInCompatibilityState).flatMap { it.values.entries }
         return StateSnapshot(
             values = values.associate { it.toPair() },
             contributions = contributions,
@@ -322,7 +369,7 @@ object StateProbe {
      *
      * Consumers pair lifecycle phases by testId and compute their own transitions so the emitted facts remain stable.
      */
-    fun record(phase: String, testId: String): Map<String, Any?> {
+    fun record(phase: String, testId: String): StateSnapshot {
         val snapshot = snapshot()
         val state = snapshot.values
         runCatching {
@@ -331,22 +378,29 @@ object StateProbe {
                 "state",
                 mapOf("phase" to phase, "testId" to testId) + state,
             )
-            reporter.record(
-                "stateSnapshot",
-                mapOf(
-                    "schemaVersion" to SNAPSHOT_SCHEMA_VERSION,
-                    "phase" to phase,
-                    "testId" to testId,
-                    "contributors" to snapshot.contributions.map(StateContribution::asRecord),
-                ),
-            )
+            val snapshotId = "${Process.myPid()}:${snapshotSequence.incrementAndGet()}"
+            snapshot.contributions.forEachIndexed { index, contribution ->
+                reporter.record(
+                    "stateSnapshot",
+                    mapOf(
+                        "schemaVersion" to SNAPSHOT_SCHEMA_VERSION,
+                        "snapshotId" to snapshotId,
+                        "chunkIndex" to index,
+                        "chunkCount" to snapshot.contributions.size,
+                        "phase" to phase,
+                        "testId" to testId,
+                        "contributors" to listOf(contribution.asRecord()),
+                    ),
+                )
+            }
         }
             .onFailure { Log.i(TAG, "state probe failed at $phase: ${it.message}") }
-        return state
+        return snapshot
     }
 
     fun assertIsolated(phase: String, testId: String) {
-        val state = record(phase, testId)
+        val snapshot = record(phase, testId)
+        val state = snapshot.contributions.flatMap { it.values.entries }.associate { it.toPair() }
         val violations =
             contributors
                 .flatMap { contributor -> contributor.boundaryBaseline.entries }
@@ -416,6 +470,7 @@ object StateProbe {
     private inline fun observe(read: () -> Any?): Any? =
         runCatching(read).getOrElse { "unreadable: ${it::class.simpleName}" }
 
+    private val snapshotSequence = AtomicLong()
     private const val TAG = "StateProbe"
-    private const val SNAPSHOT_SCHEMA_VERSION = 2
+    private const val SNAPSHOT_SCHEMA_VERSION = 3
 }

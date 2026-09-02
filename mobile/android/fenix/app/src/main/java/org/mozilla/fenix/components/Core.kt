@@ -151,6 +151,8 @@ import org.mozilla.fenix.utils.Settings.DeleteDownloadBehavior
 import org.mozilla.fenix.utils.getUndoDelay
 import org.mozilla.geckoview.GeckoRuntime
 
+internal val ADDITIONAL_BUNDLED_SEARCH_ENGINE_IDS = listOf("reddit", "youtube")
+
 /** Component group for all core browser functionality. */
 @Suppress("LargeClass")
 class Core(
@@ -365,7 +367,7 @@ class Core(
                 RegionMiddleware(context, locationService, applicationScope = applicationScope),
                 SearchMiddleware(
                     context = context,
-                    additionalBundledSearchEngineIds = listOf("reddit", "youtube"),
+                    additionalBundledSearchEngineIds = ADDITIONAL_BUNDLED_SEARCH_ENGINE_IDS,
                     migration = SearchMigration(context),
                     searchExtraParams = searchExtraParams,
                     searchEngineSelectorConfig = getSearchEngineSelectorConfig(),
