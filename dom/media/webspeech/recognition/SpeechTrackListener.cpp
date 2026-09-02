@@ -42,7 +42,7 @@ void SpeechTrackListener::NotifyQueuedChanges(
   TrackTime offsetForChunk = aTrackOffset;
   AudioSegment::ConstChunkIterator chunk(*audio);
   while (!chunk.IsEnded()) {
-    mBackend->DataCallback(offsetForChunk + chunk->mDuration, *chunk);
+    mBackend->DataCallback(aGraph, offsetForChunk + chunk->mDuration, *chunk);
     chunk.Next();
   }
 }

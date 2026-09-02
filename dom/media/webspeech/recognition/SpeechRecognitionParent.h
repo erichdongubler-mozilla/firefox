@@ -58,7 +58,7 @@ class SpeechRecognitionParent final : public PSpeechRecognitionParent {
                                    const nsTArray<nsString>& aPhrases,
                                    InitResolver&& aResolver);
   mozilla::ipc::IPCResult RecvProcessAudioData(nsTArray<float>&& aAudioData);
-  mozilla::ipc::IPCResult RecvStop();
+  mozilla::ipc::IPCResult RecvStop(StopResolver&& aResolver);
 
   void ActorDestroy(ActorDestroyReason aReason) override;
 
@@ -138,6 +138,12 @@ class SpeechRecognitionParent final : public PSpeechRecognitionParent {
   // 10s of audio, representing the audio sent for inference.
   // MOZ_DISABLE_UTILITY_SANDBOX=1 MOZ_DUMP_AUDIO=1 to activate
   WavDumper mRecognitionAudioDumper;
+
+  // Whether the streaming loop ever emitted a final result. Answers RecvStop(),
+  // letting content fire nomatch when the recognizer finalized nothing.
+  // https://webaudio.github.io/web-speech-api/#eventdef-speechrecognition-nomatch
+  // mRecognitionThread only, and only meaningful if there is such a thread.
+  bool mEmittedFinalResult = false;
 
   // Position in the audio stream that has been processed in samples
   // This provides a rather crude timing estimate, but will be improved.

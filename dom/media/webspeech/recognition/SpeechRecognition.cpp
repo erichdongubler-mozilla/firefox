@@ -18,7 +18,6 @@
 #include "VideoUtils.h"
 #include "mozilla/AbstractThread.h"
 #include "mozilla/ClearOnShutdown.h"
-#include "mozilla/ErrorNames.h"
 #include "mozilla/MediaManager.h"
 #include "mozilla/dom/AudioStreamTrack.h"
 #include "mozilla/dom/BindingUtils.h"
@@ -138,7 +137,7 @@ SpeechRecognition::~SpeechRecognition() {
 
   // Ensure backend is properly cleaned up
   if (mBackend) {
-    mBackend->Abort();
+    mBackend->Abort(TrailingEvents::Skip);
     mBackend = nullptr;
   }
 }
@@ -151,7 +150,7 @@ JSObject* SpeechRecognition::WrapObject(JSContext* aCx,
 void SpeechRecognition::DisconnectFromOwner() {
   AssertIsOnMainThread();
   if (mBackend) {
-    mBackend->Abort();
+    mBackend->Abort(TrailingEvents::Skip);
     mBackend = nullptr;
   }
   Reset();
@@ -178,6 +177,8 @@ void SpeechRecognition::Reset() {
     }
   }
   mStarted = false;
+  mStopping = false;
+  mAborting = false;
   mBackendListening = false;
   mStartDispatched = false;
   // A track obtained via our own getUserMedia() call (the microphone path)
@@ -188,7 +189,6 @@ void SpeechRecognition::Reset() {
   }
   mTrack = nullptr;
   mTrackIsOwned = false;
-  mStopRecordingPromise = nullptr;
   // The microphone path (Start() with no explicit track) registers mListener
   // on mStream; it must be unregistered before being cleared (see
   // DOMMediaStream::TrackListener). Without this, mListener/mStream survive a
@@ -211,7 +211,16 @@ void SpeechRecognition::PostResetAndEnd() {
   RefPtr<SpeechRecognition> self = this;
   NS_DispatchToMainThread(NS_NewRunnableFunction(
       "SpeechRecognition::PostResetAndEnd", [self = std::move(self)]() {
+        // Don't end a session that started since this was queued: an "end"
+        // handler can call start().
         if (self->mBackend) {
+          return;
+        }
+        // Reset() cleared [[started]], so this session has already ended. A
+        // newer session that both started and finished in between gets its
+        // "end" from here, and its own runnable then no-ops - exactly one
+        // "end" either way.
+        if (!self->mStarted) {
           return;
         }
         self->ResetAndEnd();
@@ -247,30 +256,6 @@ SpeechRecognition::StartRecording(RefPtr<AudioStreamTrack>& aTrack) {
   MaybeDispatchStart();
 
   return NS_OK;
-}
-
-RefPtr<GenericNonExclusivePromise> SpeechRecognition::StopRecording() {
-  AssertIsOnMainThread();
-  if (!mTrack) {
-    // Recording wasn't started, or has already been stopped.
-    return GenericNonExclusivePromise::CreateAndResolve(true, __func__);
-  }
-
-  if (mStopRecordingPromise) {
-    return mStopRecordingPromise;
-  }
-
-  if (mBackend) {
-    mBackend->DetachFromTrack();
-  }
-
-  if (mTrackIsOwned) {
-    mTrack->Stop();
-  }
-
-  DispatchTrustedEvent(u"audioend"_ns);
-
-  return nullptr;
 }
 
 already_AddRefed<SpeechGrammarList> SpeechRecognition::Grammars() const {
@@ -626,17 +611,15 @@ void SpeechRecognition::StartImpl(MediaStreamTrack* aAudioTrack,
   // Step 4: processLocally is always true here (on-device recognition). If the
   // backend cannot start (local recognition unavailable for this lang), fire a
   // service-not-allowed error and abort. DispatchErrorAndEnd queues the event.
-  mBackend = new SpeechRecognitionBackend(this, graphRate, effectiveLang,
-                                          phrasesForBackend);
-  nsresult rv = mBackend->Start();
-  if (NS_FAILED(rv)) {
-    LOGE("Failed to start backend: {} ({:x})", GetStaticErrorName(rv),
-         static_cast<uint32_t>(rv));
-    mBackend = nullptr;
+  mBackend = SpeechRecognitionBackend::Create(this, graphRate, effectiveLang,
+                                              phrasesForBackend);
+  if (!mBackend) {
+    LOGE("Failed to create the backend");
     DispatchErrorAndEnd(SpeechRecognitionErrorCode::Service_not_allowed,
                         "Local speech recognition is not available"_ns);
     return;
   }
+  mBackend->Start();
 
   // Step 5: set [[started]] to true.
   mStarted = true;
@@ -717,37 +700,67 @@ void SpeechRecognition::StartImpl(MediaStreamTrack* aAudioTrack,
 
 void SpeechRecognition::Stop() {
   AssertIsOnMainThread();
-  // If not started, ignore, per spec
-  if (!mStarted) {
+  // https://webaudio.github.io/web-speech-api/#dom-speechrecognition-stop
+  // "If the stop method is called on an object which is already stopped or
+  // being stopped [...] the user agent must ignore the call."
+  if (!mStarted || mStopping || !mBackend) {
     return;
   }
+  mStopping = true;
 
-  if (mBackend) {
-    // Stop the backend/session. This will dispatch soundend (if needed) and
-    // audioend via main thread runnables.
-    mBackend->Stop();
-    // We are conforming to spec semantics for stop(): finalize recognition and
-    // fire 'end'. Clear the backend to avoid late results after end.
-    mBackend = nullptr;
+  // Same section: "The speech service must attempt to return a recognition
+  // result (or a nomatch) based on the audio that it has already collected."
+  // So mBackend stays live - late results are wanted here, unlike on the
+  // abort path - and "end" waits for OnSessionFinished(). Dispatches soundend
+  // (if needed) and audioend via main thread runnables in the meantime.
+  mBackend->Stop();
+}
 
-    // Ensure 'end' fires after the already-posted 'audioend' runnable from the
-    // backend. PostResetAndEnd() calls ResetAndEnd() on the next turn. mBackend
-    // was just cleared above and is only set again by a subsequent start();
-    // if that happened by the time this runs, this stale continuation must
-    // not reset the new session's state out from under it.
-    PostResetAndEnd();
+void SpeechRecognition::OnSessionFinished(bool aProducedResult) {
+  AssertIsOnMainThread();
+  LOG("OnSessionFinished: producedResult={}", aProducedResult);
+  mBackend = nullptr;
+
+  if (!aProducedResult) {
+    DispatchNoMatch();
   }
+  PostResetAndEnd();
+}
+
+void SpeechRecognition::DispatchNoMatch() {
+  AssertIsOnMainThread();
+  // https://webaudio.github.io/web-speech-api/#eventdef-speechrecognition-nomatch
+  // The event's results "may contain speech recognition results that are below
+  // the confidence threshold or may be null"; the engine hands us nothing at
+  // all in this case, so the list is empty.
+  RootedDictionary<SpeechRecognitionEventInit> init(RootingCx());
+  init.mBubbles = true;
+  init.mCancelable = false;
+  init.mResultIndex = 0;
+  init.mResults = new SpeechRecognitionResultList(this);
+  init.mInterpretation = JS::NullValue();
+
+  RefPtr<SpeechRecognitionEvent> domEvent =
+      SpeechRecognitionEvent::Constructor(this, u"nomatch"_ns, init);
+  domEvent->SetTrusted(true);
+  DispatchEvent(*domEvent);
 }
 
 void SpeechRecognition::Abort() {
   AssertIsOnMainThread();
-  // If not started, ignore per spec
-  if (!mStarted) {
+  // https://webaudio.github.io/web-speech-api/#dom-speechrecognition-abort
+  // "If the abort method is called on an object which is already stopped or
+  // aborting (that is, start was never called on it, the end or error event
+  // has fired on it, or abort was previously called on it), the user agent
+  // must ignore the call." Without this, a second abort() would queue a second
+  // reset-and-end, firing "end" twice.
+  if (!mStarted || mAborting) {
     return;
   }
+  mAborting = true;
 
   if (mBackend) {
-    mBackend->Abort();
+    mBackend->Abort(TrailingEvents::Fire);
     // Clear backend after abort since no more results are expected
     mBackend = nullptr;
   }
@@ -814,7 +827,7 @@ void SpeechRecognition::DispatchErrorAndEnd(
     return;
   }
   if (mBackend) {
-    mBackend->Abort();
+    mBackend->Abort(TrailingEvents::Skip);
     mBackend = nullptr;
   }
   PostResetAndEnd();

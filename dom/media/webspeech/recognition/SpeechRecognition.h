@@ -171,16 +171,29 @@ class SpeechRecognition final : public DOMEventTargetHelper,
   void HandleRecognitionResultFromBackend(const nsCString& aTranscript,
                                           bool aIsFinal);
   void HandleRecognitionErrorFromBackend(const nsCString& aError);
+  // Called once the backend's session is fully over: for stop(), only after
+  // the engine's end-of-stream flush and the results it produced. Fires
+  // nomatch when the engine finalized nothing, then "end".
+  void OnSessionFinished(bool aProducedResult);
   // Called once the backend's session is initialized and ready to receive
   // audio; combined with a track being attached (mTrack), this determines
   // when "start" fires (see MaybeDispatchStart()).
   void NotifyBackendListening();
 
+  // A backend's callbacks are bound to that specific instance and can still
+  // be in flight when it's superseded by a newer one (e.g. stop() followed
+  // immediately by start()). DispatchToParentIfAlive uses this to drop
+  // notifications from a backend that is no longer the current one, rather
+  // than misattributing them to whatever session happens to be active by the
+  // time the callback reaches the main thread.
+  bool IsCurrentBackend(const SpeechRecognitionBackend* aBackend) const {
+    return mBackend == aBackend;
+  }
+
  private:
   virtual ~SpeechRecognition();
 
   NS_IMETHOD StartRecording(RefPtr<AudioStreamTrack>& aDOMStream);
-  RefPtr<GenericNonExclusivePromise> StopRecording();
 
   void Reset();
   void ResetAndEnd();
@@ -191,7 +204,14 @@ class SpeechRecognition final : public DOMEventTargetHelper,
   // expected to already be cleared by the caller; if a subsequent start()
   // set it again by the time this runs, this stale continuation must not
   // reset the new session's state out from under it.
+  //
+  // Two of these can be queued for one session: DispatchErrorAndEnd() fires
+  // "error" synchronously, so a listener can call abort() - which posts one -
+  // before DispatchErrorAndEnd() gets to post its own. The task therefore also
+  // checks mStarted, which Reset() clears, so only the first one to run ends
+  // the session and "end" fires exactly once.
   void PostResetAndEnd();
+  void DispatchNoMatch();
   // Shared body of the two start() overloads. aAudioTrack is null for the
   // microphone start() and the passed track for start(MediaStreamTrack).
   void StartImpl(MediaStreamTrack* aAudioTrack, CallerType aCallerType,
@@ -203,11 +223,16 @@ class SpeechRecognition final : public DOMEventTargetHelper,
   RefPtr<DOMMediaStream> mStream;
   RefPtr<AudioStreamTrack> mTrack;
   bool mTrackIsOwned = false;
-  RefPtr<GenericNonExclusivePromise> mStopRecordingPromise;
   RefPtr<SpeechTrackListener> mSpeechListener;
 
   // Tracks if recognition has been started (spec's [[started]] internal slot)
   bool mStarted;
+  // Set by stop() until the backend reports the session finished, so a second
+  // stop() in that window is ignored per spec.
+  bool mStopping = false;
+  // Set by abort() until "end" has fired, so a second abort() in that window is
+  // ignored per spec.
+  bool mAborting = false;
   // Whether the backend has reported its session as initialized. See
   // MaybeDispatchStart().
   bool mBackendListening = false;
