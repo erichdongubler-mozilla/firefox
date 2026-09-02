@@ -1720,7 +1720,7 @@ export let FormAutofillPrompter = {
     } else {
       changedGUID = await storage.add(newRecord);
     }
-    storage.notifyUsed(changedGUID);
+    await storage.notifyUsed(changedGUID);
 
     showConfirmation(
       browser,

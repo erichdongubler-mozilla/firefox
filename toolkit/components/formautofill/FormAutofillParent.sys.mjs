@@ -401,8 +401,14 @@ export class FormAutofillParent extends JSWindowActorParent {
         break;
       }
       case "FormAutofill:RemoveAddresses": {
-        data.guids.forEach(guid =>
-          lazy.gFormAutofillStorage.addresses.remove(guid)
+        // Not removeMany(): that one is the migration's silent bulk delete,
+        // while the test helpers wait for one formautofill-storage-changed per
+        // guid. The Rust store removes asynchronously, so forEach would drop
+        // the promises and return before any record was deleted.
+        await Promise.all(
+          data.guids.map(guid =>
+            lazy.gFormAutofillStorage.addresses.remove(guid)
+          )
         );
         break;
       }
@@ -891,7 +897,7 @@ export class FormAutofillParent extends JSWindowActorParent {
         lazy.log.debug(
           "A duplicated address record is found, do not show the prompt"
         );
-        storage.notifyUsed(record.guid);
+        await storage.notifyUsed(record.guid);
         return false;
       }
 
@@ -1543,8 +1549,11 @@ export class FormAutofillParent extends JSWindowActorParent {
   }
 
   #getTemporaryRecordForTab(collectionName) {
-    // The temporary record is stored in the top-level actor.
-    const topBC = this.browsingContext.top;
+    // The temporary record is stored in the top-level actor. Reached through
+    // manager, which is null once the window has gone away, where
+    // browsingContext throws instead: getRecords() awaits before calling this,
+    // so the tab can close in between.
+    const topBC = this.manager?.browsingContext.top;
     const actor = FormAutofillParent.getActor(topBC);
     return actor?.temporaryRecords?.[collectionName] ?? [];
   }

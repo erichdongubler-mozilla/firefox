@@ -4097,6 +4097,25 @@ pref("extensions.formautofill.addresses.capture.enabled", true);
 pref("extensions.formautofill.addresses.ignoreAutocompleteOff", true);
 // Supported countries need to follow ISO 3166-1 to align with "browser.search.region"
 pref("extensions.formautofill.addresses.supportedCountries", "US,CA,GB,FR,DE,BR,ES,JP,AT,IN,IT,PL,AU,NL");
+
+// Move desktop addresses to the Application Services autofill store. Read at
+// startup and watched afterwards: the addresses are copied over to the store
+// this asks for, which then serves them once that copy is verified complete.
+pref("extensions.formautofill.addresses.storage.rust.enabled", false);
+// Which store is in fact serving addresses. Managed by Firefox, not a knob:
+// the pref above only asks, and a profile whose copy has not completed keeps
+// reading from where its addresses are.
+pref("extensions.formautofill.addresses.storage.rust.active", false);
+// Run the migration purely to measure it, while the pref above is still off.
+// The copy is reported through migrate_to_rust and then wiped.
+pref("extensions.formautofill.addresses.storage.rust.runMigrationTest", false);
+// Which generation of the dry run above this profile has done, so a build that
+// fixes a migration bug can bump it and measure the same profiles again.
+pref("extensions.formautofill.addresses.storage.rust.migrationTestVersion", 0);
+// How many launches have already tried and failed to migrate. Managed by
+// Firefox, which gives up after a budget.
+pref("extensions.formautofill.addresses.storage.rust.migrationAttempts", 0);
+
 pref("extensions.formautofill.creditCards.supported", "on");
 pref("extensions.formautofill.creditCards.enabled", true);
 pref("extensions.formautofill.creditCards.ignoreAutocompleteOff", true);

@@ -70,7 +70,7 @@ const storedFields = new Set([
 ]);
 
 /**
- * Whether this store holds a field of this name, as opposed to deriving it on
+ * Whether this store keeps a column for a field, as opposed to deriving it on
  * read or not recognising it at all.
  *
  * Used when comparing a record here against the same record in the JSON store,
@@ -89,13 +89,13 @@ const storedFields = new Set([
  * refused the migration and, because the generation had still been recorded,
  * refused it permanently.
  *
- * Differences on derived fields are still reported per field, and still counted
- * -- under divergedUnknown, with the fields this store has no column for.
+ * A migration does not compare them at all, for the same reason: the copy never
+ * carried them.
  *
  * @param {string} field
  * @returns {boolean}
  */
-export function isKnownAddressField(field) {
+export function isStoredAddressField(field) {
   return storedFields.has(field);
 }
 
@@ -412,6 +412,58 @@ export class RustAutofillAddressesAdapter {
         ? { error: result.message }
         : { guid: result.guid }
     );
+  }
+
+  /**
+   * Bulk-replace stored records with the ones handed in, one at a time. Same
+   * per-record result shape as addManyWithMeta, and silent in the same way: no
+   * notification and no count refresh.
+   *
+   * The metadata is replaced rather than merged: timestamps, use count and
+   * sync change counter all come from the record handed in, where update()
+   * leaves all of them to the store.
+   *
+   * A guid this store does not hold reports an error rather than being
+   * inserted.
+   *
+   * @param {Array<object>} records
+   * @returns {Promise<Array<{guid: string}|{error: string}>>}
+   */
+  async updateManyWithMeta(records) {
+    const store = await this.#store();
+    const results = [];
+    for (const record of records) {
+      try {
+        await store.updateAddressWithMeta(
+          this.#updatableFieldsWithMeta(record)
+        );
+        results.push({ guid: record.guid });
+      } catch (e) {
+        results.push({ error: String(e?.message ?? e) });
+      }
+    }
+    return results;
+  }
+
+  /**
+   * Delete records by guid, one at a time, without announcing them. Leaves a
+   * tombstone for each guid the server knows about, as remove() does.
+   *
+   * @param {Array<string>} guids
+   * @returns {Promise<Array<{guid: string}|{error: string}>>}
+   */
+  async removeMany(guids) {
+    const store = await this.#store();
+    const results = [];
+    for (const guid of guids) {
+      try {
+        await store.deleteAddress(guid);
+        results.push({ guid });
+      } catch (e) {
+        results.push({ error: String(e?.message ?? e) });
+      }
+    }
+    return results;
   }
 
   // For the migration only. The metadata is taken from the record as given
