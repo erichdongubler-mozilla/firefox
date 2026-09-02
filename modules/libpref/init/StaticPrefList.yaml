@@ -19098,6 +19098,7 @@
   type: RelaxedAtomicBool
   value: false
   mirror: always
+  rust: true
 
 - name: security.tls.enable_mldsa
   type: RelaxedAtomicBool

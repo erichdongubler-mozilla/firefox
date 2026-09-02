@@ -539,20 +539,27 @@ impl NeqoHttp3Conn {
         };
 
         let mut additional_shares = 1;
+        let mut named_groups = Vec::with_capacity(6);
         if static_prefs::pref!("security.tls.enable_kyber")
             && static_prefs::pref!("network.http.http3.enable_kyber")
         {
-            // These operations are infallible when conn.state == State::Init.
-            conn.set_groups(&[
-                nss_rs::TLS_GRP_KEM_MLKEM768X25519,
-                nss_rs::TLS_GRP_EC_X25519,
-                nss_rs::TLS_GRP_EC_SECP256R1,
-                nss_rs::TLS_GRP_EC_SECP384R1,
-                nss_rs::TLS_GRP_EC_SECP521R1,
-            ])
-            .map_err(|_| NS_ERROR_UNEXPECTED)?;
+            named_groups.push(nss_rs::TLS_GRP_KEM_MLKEM768X25519);
             additional_shares += 1;
         }
+        named_groups.extend_from_slice(&[
+            nss_rs::TLS_GRP_EC_X25519,
+            nss_rs::TLS_GRP_EC_SECP256R1,
+            nss_rs::TLS_GRP_EC_SECP384R1,
+            nss_rs::TLS_GRP_EC_SECP521R1,
+        ]);
+        // ML-KEM-1024 goes last so that it is never offered as a key share, but can
+        // still be negotiated through a HelloRetryRequest.
+        if static_prefs::pref!("security.tls.enable_mlkem1024") {
+            named_groups.push(nss_rs::TLS_GRP_KEM_MLKEM1024);
+        }
+        // These operations are infallible when conn.state == State::Init.
+        conn.set_groups(&named_groups)
+            .map_err(|_| NS_ERROR_UNEXPECTED)?;
         // If additional_shares == 2, send mlkem768x25519, x25519, and p256.
         // If additional_shares == 1, send x25519 and p256.
         conn.send_additional_key_shares(additional_shares)
