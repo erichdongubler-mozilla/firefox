@@ -46,6 +46,7 @@ object AppDataCleaner {
 
     private val steps =
         listOf(
+            Step("preferences") { HarnessPreferenceState.clear() },
             Step("bookmarks") { deleteBookmarksStorage() },
             Step("pinnedSites") { deletePinnedSitesStorage() },
             Step("history") {
@@ -106,11 +107,13 @@ object AppDataCleaner {
      */
     fun clear(phase: String, testId: String): List<String> {
         val failed = mutableListOf<String>()
+        val failureDetails = linkedMapOf<String, String>()
         runBlocking {
             for (step in steps) {
                 runCatching { step.run() }
                     .onFailure {
                         failed += step.name
+                        failureDetails[step.name] = "${it::class.simpleName}: ${it.message}"
                         Log("${step.name} clear failed at $phase: ${it.message}")
                     }
             }
@@ -119,7 +122,12 @@ object AppDataCleaner {
             TestLogging.installed()
                 .record(
                     "cleanup",
-                    mapOf("phase" to phase, "testId" to testId, "failed" to failed.joinToString(",")),
+                    mapOf(
+                        "phase" to phase,
+                        "testId" to testId,
+                        "failed" to failed.joinToString(","),
+                        "failureDetails" to failureDetails,
+                    ),
                 )
         }
         return failed

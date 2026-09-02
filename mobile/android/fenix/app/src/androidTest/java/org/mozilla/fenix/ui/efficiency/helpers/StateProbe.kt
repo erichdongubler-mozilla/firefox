@@ -187,6 +187,17 @@ object StateProbe {
                 )
             },
             contributor(
+                name = "preferences",
+                fields = setOf("preferenceOverrideCount", "preferenceOverrideIds"),
+                captureCost = StateCaptureCost.IN_MEMORY,
+            ) {
+                val overrides = HarnessPreferenceState.overrideIds()
+                mapOf(
+                    "preferenceOverrideCount" to observe { overrides.size },
+                    "preferenceOverrideIds" to overrides,
+                )
+            },
+            contributor(
                 name = "searchConfiguration",
                 fields =
                     setOf(
@@ -390,6 +401,7 @@ object StateProbe {
             "tabGroupAssignments",
             "recentlyClosedTabs",
             "downloads",
+            "preferenceOverrideCount",
         )
     private val FALSE_FLAGS = listOf("searchActive", "voiceInputRequested", "voiceInputResult")
 }

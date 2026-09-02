@@ -54,18 +54,18 @@ import org.mozilla.fenix.ui.efficiency.navigation.PageCatalog
  * clipboard. It grants POST_NOTIFICATIONS unconditionally, and starts a MockWebServer for every test whether the test
  * uses one or not.
  *
- * [AppDataCleaner] at order 1 owns the enforced app-data boundary: bookmarks, pinned sites, history, site permissions,
- * sessions, autofill addresses and cards, saved logins, tabs, in-memory downloads, and launcher icon aliases. It runs
- * at both ends and fails the boundary if any step fails. [RuntimeStateCleaner], [InputStateCleaner], and
- * [ActivityStateCleaner] own process-global UI flags, input, and activity/task teardown.
+ * [AppDataCleaner] at order 1 owns the enforced app-data boundary: its allowlisted test preferences, bookmarks, pinned
+ * sites, history, site permissions, sessions, autofill addresses and cards, saved logins, tabs, in-memory downloads,
+ * and launcher icon aliases. It runs at both ends and fails the boundary if any step fails. [RuntimeStateCleaner],
+ * [InputStateCleaner], and [ActivityStateCleaner] own process-global UI flags, input, and activity/task teardown.
  *
  * ## What is NOT cleared by either
  *
  * The Gecko profile, which is not under /data/data at all --- it lives in app-scoped external storage and holds
  * cookies, HSTS state, certificates, Gecko-side site permissions, localStorage and IndexedDB. Also: the default search
- * engine, fenix_preferences.xml, collections, tab groups, Nimbus, Glean, and process memory not named by the runtime
- * cleaner. Under `am instrument` the process is shared across a class's methods, so every unnamed in-memory resource
- * can cross between them.
+ * engine metadata, preference keys outside the harness allowlist, Nimbus, Glean, and process memory not named by the
+ * runtime cleaner. Under `am instrument` the process is shared across a class's methods, so every unnamed in-memory
+ * resource can cross between them.
  *
  * The full account, with what reads each layer, is in mission-control/docs/STATE-BOUNDARIES.md.
  *
@@ -165,6 +165,9 @@ abstract class BaseTest(private val defaultLaunchConfig: LaunchConfig = LaunchCo
                     val cfg = launchConfig()
                     _pageContext = null
                     NavigationRegistry.reset()
+                    requireAppDataCleanup("before", description.displayName)
+                    RuntimeStateCleaner.restore("before", description.displayName)
+                    StateProbe.assertIsolated("afterSetup", description.displayName)
                     _composeRule =
                         AndroidComposeTestRuleV2(
                             HomeActivityIntentTestRule(
@@ -180,9 +183,6 @@ abstract class BaseTest(private val defaultLaunchConfig: LaunchConfig = LaunchCo
                             it.activity
                         }
                     try {
-                        requireAppDataCleanup("before", description.displayName)
-                        RuntimeStateCleaner.restore("before", description.displayName)
-                        StateProbe.assertIsolated("afterSetup", description.displayName)
                         // Dump on ANY failure, not only those raised through a page-object verb.
                         // BasePage.dumpFailure covers navigateToPage and mozVerifyElementsByGroup, but
                         // a page object asserting with a bare JUnit assertTrue --- BrowserPage

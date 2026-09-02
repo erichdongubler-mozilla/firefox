@@ -10,6 +10,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.ui.efficiency.helpers.BaseTest
+import org.mozilla.fenix.ui.efficiency.helpers.HarnessPreferenceState
 import org.mozilla.fenix.ui.efficiency.helpers.StateProbe
 
 @RunWith(AndroidJUnit4::class)
@@ -41,5 +42,14 @@ class StateContributorContractTest : BaseTest() {
             assertEquals(descriptor.sensitivity, contribution.sensitivity)
             assertEquals(descriptor.includeInCompatibilityState, contribution.includeInCompatibilityState)
         }
+    }
+
+    @Test
+    fun harnessOwnedPreferencesHaveUnambiguousIdentityAndStorageKeys() {
+        val descriptors = HarnessPreferenceState.descriptors()
+
+        assertEquals(descriptors.size, descriptors.map { it.id }.toSet().size)
+        assertEquals(descriptors.size, descriptors.map { it.key }.toSet().size)
+        assertTrue(descriptors.all { it.id.isNotBlank() && it.key.isNotBlank() })
     }
 }
