@@ -8,6 +8,7 @@
 #include "llama/llama.h"
 #include "ggml.h"
 #include "ggml-backend.h"
+#include "parakeet_capi.h"
 
 struct PRLibrary;
 
@@ -88,7 +89,17 @@ namespace mozilla::llama {
     (enum ggml_backend_dev_type type))                                      \
   X(ggml_backend_t, ggml_backend_dev_init,                                  \
     (ggml_backend_dev_t device, const char* params))                        \
-  X(void, ggml_backend_free, (ggml_backend_t backend))
+  X(void, ggml_backend_free, (ggml_backend_t backend))                      \
+  /* mudler/parakeet.cpp cache-aware streaming C-API */                     \
+  X(parakeet_ctx*, parakeet_capi_load_fd, (int fd))                         \
+  X(void, parakeet_capi_free, (parakeet_ctx * ctx))                         \
+  X(parakeet_stream*, parakeet_capi_stream_begin_lang,                      \
+    (parakeet_ctx * ctx, const char* target_lang))                          \
+  X(char*, parakeet_capi_stream_feed,                                       \
+    (parakeet_stream * s, const float* pcm, int n_samples, int* eou_out))   \
+  X(char*, parakeet_capi_stream_finalize, (parakeet_stream * s))            \
+  X(void, parakeet_capi_stream_free, (parakeet_stream * s))                 \
+  X(void, parakeet_capi_free_string, (char* s))
 
 struct LlamaLibWrapper {
   LlamaLibWrapper() = default;
