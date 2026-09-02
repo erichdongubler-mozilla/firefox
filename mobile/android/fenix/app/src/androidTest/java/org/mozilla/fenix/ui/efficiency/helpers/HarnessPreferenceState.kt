@@ -10,6 +10,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.getPreferenceKey
 import org.mozilla.fenix.helpers.TestHelper.appContext
+import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.settings.deletebrowsingdata.DeleteBrowsingDataOnQuitType
 
 object HarnessPreferenceState {
@@ -49,7 +50,19 @@ object HarnessPreferenceState {
 
     fun overrideIds(): List<String> {
         val preferences = appContext.components.settings.preferences
-        return descriptors().filter { preferences.contains(it.key) }.map { it.id }.sorted()
+        val persistedDefaults =
+            mapOf(
+                "toolbar.bottom" to FxNimbus.features.defaultBottomToolbar.value().enabled,
+                "toolbar.expanded" to FxNimbus.features.defaultExpandedToolbar.value().enabled,
+            )
+        return descriptors()
+            .filter { preference ->
+                val persistedDefault = persistedDefaults[preference.id]
+                persistedDefault?.let { preferences.getBoolean(preference.key, it) != it }
+                    ?: preferences.contains(preference.key)
+            }
+            .map { it.id }
+            .sorted()
     }
 
     fun clear() {
