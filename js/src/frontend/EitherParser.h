@@ -46,7 +46,7 @@ class EitherParser final {
 
   ParserAtomsTable& parserAtoms() {
     auto& base = parser.match(
-        [](auto* parser) -> frontend::ParserSharedBase& { return *parser; });
+        [](auto* parser) -> frontend::ParserBase& { return *parser; });
     return base.parserAtoms();
   }
 };

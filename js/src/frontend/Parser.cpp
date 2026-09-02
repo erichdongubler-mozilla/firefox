@@ -140,23 +140,8 @@ bool GeneralParser<ParseHandler, Unit>::mustMatchTokenInternal(
   return true;
 }
 
-ParserSharedBase::ParserSharedBase(FrontendContext* fc,
-                                   CompilationState& compilationState,
-                                   Kind kind)
-    : fc_(fc),
-      alloc_(compilationState.parserAllocScope.alloc()),
-      compilationState_(compilationState),
-      pc_(nullptr),
-      usedNames_(compilationState.usedNames) {
-  fc_->nameCollectionPool().addActiveCompilation();
-}
-
-ParserSharedBase::~ParserSharedBase() {
-  fc_->nameCollectionPool().removeActiveCompilation();
-}
-
 #if defined(DEBUG) || defined(JS_JITSPEW)
-void ParserSharedBase::dumpAtom(TaggedParserAtomIndex index) const {
+void ParserBase::dumpAtom(TaggedParserAtomIndex index) const {
   parserAtoms().dump(index);
 }
 #endif
@@ -164,7 +149,11 @@ void ParserSharedBase::dumpAtom(TaggedParserAtomIndex index) const {
 ParserBase::ParserBase(FrontendContext* fc,
                        const ReadOnlyCompileOptions& options,
                        CompilationState& compilationState)
-    : ParserSharedBase(fc, compilationState, ParserSharedBase::Kind::Parser),
+    : fc_(fc),
+      alloc_(compilationState.parserAllocScope.alloc()),
+      compilationState_(compilationState),
+      pc_(nullptr),
+      usedNames_(compilationState.usedNames),
       anyChars(fc, options, this),
       ss(nullptr),
 #ifdef DEBUG
@@ -173,6 +162,7 @@ ParserBase::ParserBase(FrontendContext* fc,
       isUnexpectedEOF_(false),
       awaitHandling_(AwaitIsName),
       inParametersOfAsyncFunction_(false) {
+  fc_->nameCollectionPool().addActiveCompilation();
 }
 
 bool ParserBase::checkOptions() {
@@ -183,7 +173,10 @@ bool ParserBase::checkOptions() {
   return anyChars.checkOptions();
 }
 
-ParserBase::~ParserBase() { MOZ_ASSERT(checkOptionsCalled_); }
+ParserBase::~ParserBase() {
+  MOZ_ASSERT(checkOptionsCalled_);
+  fc_->nameCollectionPool().removeActiveCompilation();
+}
 
 JSAtom* ParserBase::liftParserAtomToJSAtom(TaggedParserAtomIndex index) {
   JSContext* cx = fc_->maybeCurrentJSContext();

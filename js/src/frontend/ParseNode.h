@@ -53,7 +53,6 @@ class ParserAtomsTable;
 class ParserBase;
 class ParseContext;
 struct ExtensibleCompilationStencil;
-class ParserSharedBase;
 class FullParseHandler;
 
 class FunctionBox;
