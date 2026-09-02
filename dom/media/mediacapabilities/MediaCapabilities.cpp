@@ -1539,7 +1539,11 @@ already_AddRefed<layers::KnowsCompositor> MediaCapabilities::GetCompositor() {
     return nullptr;
   }
   RefPtr<layers::KnowsCompositor> knows = renderer->AsKnowsCompositor();
-  if (NS_WARN_IF(!knows)) {
+  if (!knows) {
+    // The compositor bridge may not be established yet (e.g. a not-yet-painted
+    // tab), which is expected and not worth warning about; see how
+    // MediaDecoder.cpp treats the same case.
+    LOG("No compositor available yet for window {}", window->WindowID());
     return nullptr;
   }
   return knows->GetForMedia().forget();
