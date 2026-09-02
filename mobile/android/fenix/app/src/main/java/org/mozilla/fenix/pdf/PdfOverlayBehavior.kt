@@ -13,11 +13,15 @@ import mozilla.components.compose.base.theme.layout.AcornWindowSize
 import org.mozilla.fenix.R
 
 /**
- * A [CoordinatorLayout.Behavior] that keeps the PDF tools clear of the toolbar.
+ * A [CoordinatorLayout.Behavior] that keeps a PDF overlay clear of the browser chrome.
  *
  * @param isAddressBarAtBottom Whether the address bar is at the bottom of the screen.
+ * @param isAnchoredToTop Whether the overlay anchors to the top edge of the parent.
  */
-class PdfToolsBehavior(isAddressBarAtBottom: Boolean) : CoordinatorLayout.Behavior<View>() {
+internal class PdfOverlayBehavior(
+    isAddressBarAtBottom: Boolean,
+    private val isAnchoredToTop: (CoordinatorLayout) -> Boolean,
+) : CoordinatorLayout.Behavior<View>() {
 
     private val addressBarIds = listOf(R.id.toolbar, R.id.composable_toolbar)
 
@@ -27,10 +31,7 @@ class PdfToolsBehavior(isAddressBarAtBottom: Boolean) : CoordinatorLayout.Behavi
     private val bottomEdgeIds =
         if (isAddressBarAtBottom) addressBarIds + R.id.navigation_bar else listOf(R.id.navigation_bar)
 
-    // Read per layout pass rather than cached, as the window can be resized without the tools being recreated.
-    private fun isTabletLayout(parent: CoordinatorLayout) = AcornWindowSize.isLargeWindow(parent.context)
-
-    private fun trackedIds(parent: CoordinatorLayout) = if (isTabletLayout(parent)) topEdgeIds else bottomEdgeIds
+    private fun trackedIds(parent: CoordinatorLayout) = if (isAnchoredToTop(parent)) topEdgeIds else bottomEdgeIds
 
     private fun trackedChrome(parent: CoordinatorLayout): List<View> {
         val ids = trackedIds(parent)
@@ -38,8 +39,8 @@ class PdfToolsBehavior(isAddressBarAtBottom: Boolean) : CoordinatorLayout.Behavi
     }
 
     /**
-     * Each piece of chrome is translated away independently, so the space vacated along the tools' edge is the total of
-     * their translations. Once all of it is hidden this equals the inset, leaving the tools flush with the edge.
+     * Each piece of chrome is translated away independently, so the space vacated along the overlay's edge is the total
+     * of their translations. Once all of it is hidden this equals the inset, leaving the overlay flush with the edge.
      */
     private fun List<View>.translationY(): Float = map { it.translationY }.sum()
 
@@ -51,13 +52,11 @@ class PdfToolsBehavior(isAddressBarAtBottom: Boolean) : CoordinatorLayout.Behavi
         val chrome = trackedChrome(parent)
         val inset = chrome.sumOf { it.height }
 
-        if (isTabletLayout(parent)) {
-            // Tablet UI aligns to the top to form more of a toolbar.
+        if (isAnchoredToTop(parent)) {
             params.gravity = Gravity.TOP
             params.topMargin = inset
             params.bottomMargin = 0
         } else {
-            // Phone UI aligns to the bottom to form a set of FABs.
             params.gravity = Gravity.BOTTOM
             params.topMargin = 0
             params.bottomMargin = inset
@@ -80,3 +79,20 @@ class PdfToolsBehavior(isAddressBarAtBottom: Boolean) : CoordinatorLayout.Behavi
         return true
     }
 }
+
+/**
+ * Positions for the PDF tools. The tools will be a top toolbar for tablets and a bottom set of FABs for phones.
+ *
+ * @param isAddressBarAtBottom Whether the address bar is positioned at the bottom of the screen.
+ * @return A behavior that anchors the tools to the top on tablets and to the bottom on phones.
+ */
+internal fun pdfToolsBehavior(isAddressBarAtBottom: Boolean) =
+    PdfOverlayBehavior(isAddressBarAtBottom) { AcornWindowSize.isLargeWindow(it.context) }
+
+/**
+ * Positions for the signature dialog. The dialog should anchor to the bottom of the screen on all cases.
+ *
+ * @param isAddressBarAtBottom Whether the address bar is positioned at the bottom of the screen.
+ * @return A behavior that anchors the dialog to the bottom.
+ */
+internal fun signatureDialogBehavior(isAddressBarAtBottom: Boolean) = PdfOverlayBehavior(isAddressBarAtBottom) { false }

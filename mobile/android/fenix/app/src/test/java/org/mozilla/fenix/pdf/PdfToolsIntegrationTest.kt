@@ -6,10 +6,12 @@ package org.mozilla.fenix.pdf
 
 import android.content.Context
 import android.os.Looper
+import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.ComponentActivity
 import androidx.coordinatorlayout.widget.CoordinatorLayout
+import androidx.core.view.children
 import io.mockk.every
 import io.mockk.mockk
 import kotlin.test.assertIs
@@ -36,6 +38,7 @@ import org.mozilla.fenix.ext.components
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
 class PdfToolsIntegrationTest {
@@ -88,7 +91,7 @@ class PdfToolsIntegrationTest {
 
         integration.start()
         shadowOf(Looper.getMainLooper()).idle()
-        assertEquals(1, container.childCount)
+        assertEquals(2, container.childCount)
 
         integration.stop()
         assertEquals(0, container.childCount)
@@ -104,7 +107,7 @@ class PdfToolsIntegrationTest {
         integration.start()
         shadowOf(Looper.getMainLooper()).idle()
 
-        assertEquals(1, container.childCount)
+        assertEquals(2, container.childCount)
     }
 
     @Test
@@ -115,7 +118,7 @@ class PdfToolsIntegrationTest {
         integration.start()
         shadowOf(Looper.getMainLooper()).idle()
 
-        assertEquals(1, container.childCount)
+        assertEquals(2, container.childCount)
     }
 
     @Test
@@ -123,7 +126,25 @@ class PdfToolsIntegrationTest {
         integration().start()
         shadowOf(Looper.getMainLooper()).idle()
 
-        assertIs<PdfToolsBehavior>(layoutParams.behavior)
+        assertIs<PdfOverlayBehavior>(layoutParams.behavior)
+    }
+
+    @Test
+    @Config(qualifiers = "sw800dp")
+    fun `GIVEN a tablet window WHEN the feature is started THEN the tools and the dialog anchor to opposite edges`() {
+        // Test for Bug 2067261
+        integration(isAddressBarAtBottom = false).start()
+        shadowOf(Looper.getMainLooper()).idle()
+
+        val gravities =
+            container.children.map { overlay ->
+                val params = overlay.layoutParams as CoordinatorLayout.LayoutParams
+                val behavior = params.behavior as PdfOverlayBehavior
+                behavior.onLayoutChild(container, overlay, View.LAYOUT_DIRECTION_LTR)
+                params.gravity
+            }
+
+        assertEquals(listOf(Gravity.TOP, Gravity.BOTTOM), gravities.toList())
     }
 
     @Test
@@ -200,6 +221,6 @@ class PdfToolsIntegrationTest {
 
         activity.setContentView(detachedContainer)
         shadowOf(Looper.getMainLooper()).idle()
-        assertEquals(2, detachedContainer.childCount)
+        assertEquals(3, detachedContainer.childCount)
     }
 }

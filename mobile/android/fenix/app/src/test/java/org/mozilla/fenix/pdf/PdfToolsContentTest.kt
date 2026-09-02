@@ -5,6 +5,7 @@
 package org.mozilla.fenix.pdf
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
@@ -30,6 +31,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.helpers.FenixGleanTestRule
+import org.mozilla.fenix.pdf.ui.PdfToolsContent
+import org.mozilla.fenix.pdf.ui.SignatureDialogContent
 import org.mozilla.fenix.theme.FirefoxTheme
 
 @RunWith(AndroidJUnit4::class)
@@ -75,19 +78,27 @@ class PdfToolsContentTest {
 
                 BackHandler { backReachedBrowser = true }
 
-                PdfToolsContent(
-                    browserStore = browserStore,
-                    isLargeWindow = isLargeWindow,
-                    signatureState = integration.signatureState,
-                    signatureActions = integration.signatureActions,
-                    toolActions =
-                        PdfToolActions(
-                            onSignClick = integration::handleSignClick,
-                            onDownloadClick = { clicked.add("download") },
-                            onPrintClick = { clicked.add("print") },
-                            onShareClick = { clicked.add("share") },
-                        ),
-                )
+                // The app hosts the two overlays in separate views, so they are laid out side by side here.
+                Column {
+                    PdfToolsContent(
+                        browserStore = browserStore,
+                        isLargeWindow = isLargeWindow,
+                        isCoveredBySignatureDialog = integration.signatureState.isSigning && !isLargeWindow,
+                        onPdfGone = integration.signatureActions.onPdfGone,
+                        toolActions =
+                            PdfToolActions(
+                                onSignClick = integration::handleSignClick,
+                                onDownloadClick = { clicked.add("download") },
+                                onPrintClick = { clicked.add("print") },
+                                onShareClick = { clicked.add("share") },
+                            ),
+                    )
+
+                    SignatureDialogContent(
+                        signatureState = integration.signatureState,
+                        signatureActions = integration.signatureActions,
+                    )
+                }
             }
         }
     }
@@ -204,7 +215,7 @@ class PdfToolsContentTest {
     }
 
     @Test
-    fun `WHEN the sign button is tapped THEN the signature dialog replaces the tools`() {
+    fun `GIVEN a phone sized window WHEN the sign button is tapped THEN the signature dialog replaces the tools`() {
         setTestContent(isLargeWindow = false)
 
         enterPdfViewer()
@@ -213,6 +224,31 @@ class PdfToolsContentTest {
         composeTestRule.onNodeWithTag(PdfToolsTestTag.SIGNATURE_DIALOG).assertIsDisplayed()
         composeTestRule.onNodeWithTag(PdfToolsTestTag.BAR).assertDoesNotExist()
         composeTestRule.onNodeWithTag(PdfToolsTestTag.SIGN_FAB).assertDoesNotExist()
+    }
+
+    @Test
+    fun `GIVEN a tablet sized window WHEN the sign button is tapped THEN the toolbar stays alongside the dialog`() {
+        // Test for Bug 2067261
+        setTestContent(isLargeWindow = true)
+
+        enterPdfViewer()
+        startSigning(testTag = PdfToolsTestTag.SIGN_BUTTON)
+
+        composeTestRule.onNodeWithTag(PdfToolsTestTag.SIGNATURE_DIALOG).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(PdfToolsTestTag.BAR).assertIsDisplayed()
+    }
+
+    @Test
+    fun `GIVEN a tablet sized window WHEN the signature dialog is closed THEN only the toolbar is left`() {
+        setTestContent(isLargeWindow = true)
+
+        enterPdfViewer()
+        startSigning(testTag = PdfToolsTestTag.SIGN_BUTTON)
+
+        composeTestRule.onNodeWithTag(PdfToolsTestTag.SIGNATURE_CLOSE_BUTTON).performClick()
+
+        composeTestRule.onNodeWithTag(PdfToolsTestTag.SIGNATURE_DIALOG).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(PdfToolsTestTag.BAR).assertIsDisplayed()
     }
 
     @Test
