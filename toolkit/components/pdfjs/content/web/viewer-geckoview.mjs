@@ -15,14 +15,13 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  * @licend The above is the entire license notice for the
  * JavaScript code in this page
  */
 
 /**
- * pdfjsVersion = 6.3.280
- * pdfjsBuild = c3257df8d
+ * pdfjsVersion = 6.3.335
+ * pdfjsBuild = 74515c623
  */
 
 ;// ./web/ui_utils.js
@@ -896,7 +895,7 @@ const {
 } = globalThis.pdfjsLib;
 
 ;// ./web/internal_evt.js
-const INTERNAL_EVT = "66acb31d-c658-4d23-ad07-851f03e8c668";
+const INTERNAL_EVT = "251ee865-0628-461b-917a-61511965a918";
 const internalOpt = Object.freeze({
   internal: INTERNAL_EVT
 });
@@ -1527,7 +1526,7 @@ class L10n {
   getDirection() {
     return this.#dir;
   }
-  async get(ids, args = null, fallback) {
+  async get(ids, args = null) {
     if (Array.isArray(ids)) {
       ids = ids.map(id => ({
         id
@@ -1539,7 +1538,7 @@ class L10n {
       id: ids,
       args
     }]);
-    return messages[0]?.value || fallback;
+    return messages[0]?.value;
   }
   async translate(element) {
     (this.#elements ||= new Set()).add(element);
@@ -8802,7 +8801,7 @@ class PDFViewer {
   #savedPageViews = null;
   #deletedPageNumbers = null;
   constructor(options) {
-    const viewerVersion = "6.3.280";
+    const viewerVersion = "6.3.335";
     if (version !== viewerVersion) {
       throw new Error(`The API version "${version}" does not match the Viewer version "${viewerVersion}".`);
     }

@@ -15,14 +15,13 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  * @licend The above is the entire license notice for the
  * JavaScript code in this page
  */
 
 /**
- * pdfjsVersion = 6.3.280
- * pdfjsBuild = c3257df8d
+ * pdfjsVersion = 6.3.335
+ * pdfjsBuild = 74515c623
  */
 
 ;// ./src/shared/util.js
@@ -1542,6 +1541,13 @@ function _collectJS(entry, xref, list, parents) {
     parents.remove(parent);
   }
 }
+function _collectAction(dict, name, xref, actions) {
+  const list = [];
+  _collectJS(dict, xref, list, new RefSet());
+  if (list.length) {
+    actions.set(name, list);
+  }
+}
 function collectActions(xref, dict, eventType) {
   const actions = new Map();
   const additionalActionsDicts = getInheritableProperty({
@@ -1557,26 +1563,14 @@ function collectActions(xref, dict, eventType) {
       }
       for (const [key, rawActionDict] of additionalActions.getRawEntries()) {
         const action = eventType[key];
-        if (!action) {
-          continue;
-        }
-        const parents = new RefSet();
-        const list = [];
-        _collectJS(rawActionDict, xref, list, parents);
-        if (list.length > 0) {
-          actions.set(action, list);
+        if (action) {
+          _collectAction(rawActionDict, action, xref, actions);
         }
       }
     }
   }
   if (dict.has("A")) {
-    const actionDict = dict.get("A");
-    const parents = new RefSet();
-    const list = [];
-    _collectJS(actionDict, xref, list, parents);
-    if (list.length > 0) {
-      actions.set("Action", list);
-    }
+    _collectAction(dict.get("A"), "Action", xref, actions);
   }
   return actions.size ? actions : null;
 }
@@ -2110,9 +2104,6 @@ class ColorSpace {
       destOffset += 3 + alpha01;
     }
   }
-  getOutputLength(inputLength, alpha01) {
-    unreachable("Should not call ColorSpace.getOutputLength");
-  }
   isPassthrough(bits) {
     return false;
   }
@@ -2246,9 +2237,6 @@ class AlternateCS extends ColorSpace {
       base.getRgbBuffer(baseBuf, 0, count, dest, destOffset, 8, alpha01);
     }
   }
-  getOutputLength(inputLength, alpha01) {
-    return this.base.getOutputLength(inputLength * this.base.numComps / this.numComps, alpha01);
-  }
 }
 class PatternCS extends ColorSpace {
   constructor(baseCS) {
@@ -2299,9 +2287,6 @@ class IndexedCS extends ColorSpace {
       destOffset += alpha01;
     }
   }
-  getOutputLength(inputLength, alpha01) {
-    return inputLength * (3 + alpha01);
-  }
   isDefaultDecode(decode, bpc) {
     if (isDefaultDecodeHelper(decode, 2)) {
       return true;
@@ -2333,9 +2318,6 @@ class DeviceGrayCS extends ColorSpace {
       q += alpha01;
     }
   }
-  getOutputLength(inputLength, alpha01) {
-    return inputLength * (3 + alpha01);
-  }
 }
 class DeviceRgbCS extends ColorSpace {
   constructor() {
@@ -2361,9 +2343,6 @@ class DeviceRgbCS extends ColorSpace {
       q += alpha01;
     }
   }
-  getOutputLength(inputLength, alpha01) {
-    return inputLength * (3 + alpha01) / 3 | 0;
-  }
   isPassthrough(bits) {
     return bits === 8;
   }
@@ -2371,9 +2350,6 @@ class DeviceRgbCS extends ColorSpace {
 class DeviceRgbaCS extends ColorSpace {
   constructor() {
     super("DeviceRGBA", 4);
-  }
-  getOutputLength(inputLength, _alpha01) {
-    return inputLength * 4;
   }
   isPassthrough(bits) {
     return bits === 8;
@@ -2409,9 +2385,6 @@ class DeviceCmykCS extends ColorSpace {
       srcOffset += 4;
       destOffset += 3 + alpha01;
     }
-  }
-  getOutputLength(inputLength, alpha01) {
-    return inputLength / 4 * (3 + alpha01) | 0;
   }
 }
 class CalGrayCS extends ColorSpace {
@@ -2457,9 +2430,6 @@ class CalGrayCS extends ColorSpace {
       srcOffset += 1;
       destOffset += 3 + alpha01;
     }
-  }
-  getOutputLength(inputLength, alpha01) {
-    return inputLength * (3 + alpha01);
   }
 }
 class CalRGBCS extends ColorSpace {
@@ -2609,9 +2579,6 @@ class CalRGBCS extends ColorSpace {
       destOffset += 3 + alpha01;
     }
   }
-  getOutputLength(inputLength, alpha01) {
-    return inputLength * (3 + alpha01) / 3 | 0;
-  }
 }
 class LabCS extends ColorSpace {
   constructor(whitePoint, blackPoint, range) {
@@ -2692,9 +2659,6 @@ class LabCS extends ColorSpace {
       srcOffset += 3;
       destOffset += 3 + alpha01;
     }
-  }
-  getOutputLength(inputLength, alpha01) {
-    return inputLength * (3 + alpha01) / 3 | 0;
   }
   isDefaultDecode(decode, bpc) {
     return true;
@@ -2791,9 +2755,6 @@ class IccColorSpace extends ColorSpace {
     QCMS._keepAlpha = alpha01 === 1 && dest.buffer !== src.buffer;
     qcms_convert_array(this.#transformer, src, alpha01 === 1);
     QCMS._destBuffer = null;
-  }
-  getOutputLength(inputLength, alpha01) {
-    return inputLength / this.numComps * (3 + alpha01) | 0;
   }
   static setOptions({
     useWasm,
@@ -5907,7 +5868,6 @@ class OperatorList {
     this.argsArray = [];
     this.optimizer = streamSink && !(intent & RenderingIntentFlag.OPLIST) ? new QueueOptimizer(this) : new NullOptimizer(this);
     this.dependencies = new Set();
-    this._totalLength = 0;
     this.weight = 0;
     this._resolved = streamSink ? null : Promise.resolve();
   }
@@ -5921,9 +5881,6 @@ class OperatorList {
   }
   get ready() {
     return this._resolved || this._streamSink.ready;
-  }
-  get totalLength() {
-    return this._totalLength + this.length;
   }
   addOp(fn, args) {
     this.optimizer.push(fn, args);
@@ -6031,14 +5988,12 @@ class OperatorList {
   }
   flush(lastChunk = false, separateAnnots = null) {
     this.optimizer.flush();
-    const length = this.length;
-    this._totalLength += length;
     this._streamSink.enqueue({
       fnArray: this.fnArray,
       argsArray: this.argsArray,
       lastChunk,
       separateAnnots,
-      length
+      length: this.length
     }, 1, this._transfers);
     this.dependencies.clear();
     this.fnArray.length = 0;
@@ -35331,7 +35286,7 @@ class PartialEvaluator {
                 throw new FormatError(`Unhandled XObject subtype ${type.name}`);
               }
               resolveXObject();
-            }).catch(function (reason) {
+            }).catch(reason => {
               if (reason instanceof AbortException) {
                 return;
               }
@@ -35621,7 +35576,7 @@ class PartialEvaluator {
                 localColorSpaceCache,
                 seenRefs
               }).then(resolveGState, rejectGState);
-            }).catch(function (reason) {
+            }).catch(reason => {
               if (reason instanceof AbortException) {
                 return;
               }
@@ -36508,7 +36463,7 @@ class PartialEvaluator {
                 }
                 resolveXObject();
               }, rejectXObject);
-            }).catch(function (reason) {
+            }).catch(reason => {
               if (reason instanceof AbortException) {
                 return;
               }
@@ -36547,7 +36502,7 @@ class PartialEvaluator {
               textState.fontName = null;
               textState.fontSize = gStateFont[1];
               handleSetFont(null, gStateFont[0]).then(resolveGState, rejectGState);
-            }).catch(function (reason) {
+            }).catch(reason => {
               if (reason instanceof AbortException) {
                 return;
               }
@@ -38920,7 +38875,7 @@ class FileSpec {
 const XMLParserErrorCode = {
   NoError: 0,
   EndOfDocument: -1,
-  UnterminatedCdat: -2,
+  UnterminatedCdata: -2,
   UnterminatedXmlDeclaration: -3,
   UnterminatedDoctypeDeclaration: -4,
   UnterminatedComment: -5,
@@ -39081,7 +39036,7 @@ class XMLParserBase {
             } else if (s.substring(j + 1, j + 8) === "[CDATA[") {
               q = s.indexOf("]]>", j + 8);
               if (q < 0) {
-                this.onError(XMLParserErrorCode.UnterminatedCdat);
+                this.onError(XMLParserErrorCode.UnterminatedCdata);
                 return;
               }
               this.onCdata(s.substring(j + 8, q));
@@ -40628,16 +40583,10 @@ class Catalog {
     if (!(obj instanceof Dict)) {
       return null;
     }
-    const markInfo = {
-      Marked: false,
-      UserProperties: false,
-      Suspects: false
-    };
-    for (const key in markInfo) {
-      const value = obj.get(key);
-      if (typeof value === "boolean") {
-        markInfo[key] = value;
-      }
+    const markInfo = new Map();
+    for (const key of ["Marked", "UserProperties", "Suspects"]) {
+      const val = obj.get(key);
+      markInfo.set(key, typeof val === "boolean" ? val : false);
     }
     return markInfo;
   }
@@ -56725,19 +56674,22 @@ class ScreenAnnotation extends MediaAnnotation {
   }
   static *#renditionActions(dict) {
     const action = dict.get("A");
-    if (action instanceof Dict && isName(action.get("S"), "Rendition") && this.#isPlayAction(action)) {
+    if (this.#isPlayAction(action)) {
       yield action;
     }
     const additionalActions = dict.get("AA");
     if (additionalActions instanceof Dict) {
       for (const [, aa] of additionalActions) {
-        if (aa instanceof Dict && isName(aa.get("S"), "Rendition") && this.#isPlayAction(aa)) {
+        if (this.#isPlayAction(aa)) {
           yield aa;
         }
       }
     }
   }
   static #isPlayAction(action) {
+    if (!(action instanceof Dict) || !isName(action.get("S"), "Rendition")) {
+      return false;
+    }
     const operation = action.get("OP");
     return operation === undefined || operation === AnnotationRenditionOperation.PLAY_OR_RESUME || operation === AnnotationRenditionOperation.PLAY;
   }
@@ -59393,7 +59345,7 @@ class Page {
     const annotations = await this._parsedAnnotations;
     const promises = [];
     for (const annotation of annotations) {
-      promises.push(annotation.save(partialEvaluator, task, annotationStorage, changes).catch(function (reason) {
+      promises.push(annotation.save(partialEvaluator, task, annotationStorage, changes).catch(reason => {
         warn("save - ignoring annotation data during " + `"${task.name}" task: "${reason}".`);
         return null;
       }));
@@ -59504,9 +59456,7 @@ class Page {
     }
     if (annotations.length === 0 || intent & RenderingIntentFlag.ANNOTATIONS_DISABLE) {
       pageOpList.flush(true);
-      return {
-        length: pageOpList.totalLength
-      };
+      return;
     }
     const renderForms = !!(intent & RenderingIntentFlag.ANNOTATIONS_FORMS),
       isEditing = !!(intent & RenderingIntentFlag.IS_EDITING),
@@ -59516,7 +59466,7 @@ class Page {
     const opListPromises = [];
     for (const annotation of annotations) {
       if (intentAny || intentDisplay && annotation.mustBeViewed(annotationStorage, renderForms) && annotation.mustBeViewedWhenEditing(isEditing, modifiedIds) || intentPrint && annotation.mustBePrinted(annotationStorage)) {
-        opListPromises.push(annotation.getOperatorList(partialEvaluator, task, intent, annotationStorage).catch(function (reason) {
+        opListPromises.push(annotation.getOperatorList(partialEvaluator, task, intent, annotationStorage).catch(reason => {
           warn("getOperatorList - ignoring annotation data during " + `"${task.name}" task: "${reason}".`);
           return {
             opList: null,
@@ -59542,9 +59492,6 @@ class Page {
       form,
       canvas
     });
-    return {
-      length: pageOpList.totalLength
-    };
   }
   async extractTextContent({
     handler,
@@ -59610,7 +59557,7 @@ class Page {
       }
       if (annotation.hasTextContent && isVisible) {
         partialEvaluator ??= this._createPartialEvaluator(handler);
-        textContentPromises.push(annotation.extractTextContent(partialEvaluator, task, [-Infinity, -Infinity, Infinity, Infinity]).catch(function (reason) {
+        textContentPromises.push(annotation.extractTextContent(partialEvaluator, task, [-Infinity, -Infinity, Infinity, Infinity]).catch(reason => {
           warn(`getAnnotationsData - ignoring textContent during "${task.name}" task: "${reason}".`);
         }));
       } else if (annotation.overlaysTextContent && isVisible) {
@@ -59649,7 +59596,7 @@ class Page {
       const orphanFields = fieldObjects?.orphanFields;
       const annotationPromises = [];
       for (const annotationRef of annots) {
-        annotationPromises.push(AnnotationFactory.create(this.xref, annotationRef, annotationGlobals, this._localIdFactory, false, orphanFields, null, this.ref).catch(function (reason) {
+        annotationPromises.push(AnnotationFactory.create(this.xref, annotationRef, annotationGlobals, this._localIdFactory, false, orphanFields, null, this.ref).catch(reason => {
           warn(`_parsedAnnotations: "${reason}".`);
           return null;
         }));
@@ -59713,7 +59660,7 @@ class Page {
           await annotation.extractTextContent(partialEvaluator, task, [-Infinity, -Infinity, Infinity, Infinity]);
         }
         return annotation.data;
-      }).catch(function (reason) {
+      }).catch(reason => {
         warn(`collectAnnotationsByType: "${reason}".`);
         return null;
       }));
@@ -60469,7 +60416,7 @@ class PDFDocument {
     if (parentRef && !field.has("Parent") && isName(field.get("Subtype"), "Widget")) {
       orphanFields.put(fieldRef, parentRef);
     }
-    promises.getOrInsertComputed(name, makeArr).push(AnnotationFactory.create(xref, fieldRef, annotationGlobals, null, true, orphanFields, null, null).then(annotation => annotation?.getFieldObject()).catch(function (reason) {
+    promises.getOrInsertComputed(name, makeArr).push(AnnotationFactory.create(xref, fieldRef, annotationGlobals, null, true, orphanFields, null, null).then(annotation => annotation?.getFieldObject()).catch(reason => {
       warn(`#collectFieldObjects: "${reason}".`);
       return null;
     }));
@@ -60680,18 +60627,16 @@ class PDFDocument {
     };
   }
   get hasJSActions() {
-    const promise = this.pdfManager.ensureDoc("_parseHasJSActions");
+    const promise = Promise.all([this.pdfManager.ensureCatalog("jsActions"), this.pdfManager.ensureDoc("fieldObjects")]).then(([catalogJsActions, fieldObjects]) => {
+      if (catalogJsActions) {
+        return true;
+      }
+      if (fieldObjects?.allFields) {
+        return fieldObjects.allFields.values().some(fieldObj => fieldObj.some(obj => obj.actions !== null));
+      }
+      return false;
+    });
     return shadow(this, "hasJSActions", promise);
-  }
-  async _parseHasJSActions() {
-    const [catalogJsActions, fieldObjects] = await Promise.all([this.pdfManager.ensureCatalog("jsActions"), this.pdfManager.ensureDoc("fieldObjects")]);
-    if (catalogJsActions) {
-      return true;
-    }
-    if (fieldObjects?.allFields) {
-      return fieldObjects.allFields.values().some(fieldObj => fieldObj.some(obj => obj.actions !== null));
-    }
-    return false;
   }
   get calculationOrderIds() {
     const calculationOrder = this.catalog.acroForm?.get("CO");
@@ -64327,16 +64272,16 @@ class PDFWorkerStreamRangeReader extends BasePDFStreamRangeReader {
 
 
 class WorkerTask {
+  #capability = Promise.withResolvers();
+  terminated = false;
   constructor(name) {
     this.name = name;
-    this.terminated = false;
-    this._capability = Promise.withResolvers();
   }
   get finished() {
-    return this._capability.promise;
+    return this.#capability.promise;
   }
   finish() {
-    this._capability.resolve();
+    this.#capability.resolve();
   }
   terminate() {
     this.terminated = true;
@@ -64372,12 +64317,11 @@ class WorkerMessageHandler {
     let terminated = false;
     let cancelXHRs = null;
     const WorkerTasks = new Set();
-    const verbosity = getVerbosityLevel();
     const {
       docId,
       apiVersion
     } = docParams;
-    const workerVersion = "6.3.280";
+    const workerVersion = "6.3.335";
     if (apiVersion !== workerVersion) {
       throw new Error(`The API version "${apiVersion}" does not match ` + `the Worker version "${workerVersion}".`);
     }
@@ -64955,7 +64899,6 @@ class WorkerMessageHandler {
       pdfManager.getPage(pageId).then(function (page) {
         const task = new WorkerTask(`GetOperatorList: page ${pageIndex}`);
         startWorkerTask(task);
-        const start = verbosity >= VerbosityLevel.INFOS ? Date.now() : 0;
         page.getOperatorList({
           handler,
           sink,
@@ -64965,10 +64908,7 @@ class WorkerMessageHandler {
           annotationStorage,
           modifiedIds,
           pageIndex
-        }).then(opListInfo => {
-          if (start) {
-            info(`${task.name}; time=${Date.now() - start}ms, len=${opListInfo.length}`);
-          }
+        }).then(() => {
           sink.close();
         }, reason => {
           if (task.terminated) {
@@ -64989,7 +64929,6 @@ class WorkerMessageHandler {
       pdfManager.getPage(pageId).then(function (page) {
         const task = new WorkerTask("GetTextContent: page " + pageIndex);
         startWorkerTask(task);
-        const start = verbosity >= VerbosityLevel.INFOS ? Date.now() : 0;
         page.extractTextContent({
           handler,
           task,
@@ -64997,9 +64936,6 @@ class WorkerMessageHandler {
           includeMarkedContent,
           disableNormalization
         }).then(() => {
-          if (start) {
-            info(`${task.name}; time=${Date.now() - start}ms`);
-          }
           sink.close();
         }, reason => {
           if (task.terminated) {
