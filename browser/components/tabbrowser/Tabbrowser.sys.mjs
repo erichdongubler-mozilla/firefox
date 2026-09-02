@@ -496,7 +496,7 @@ export class Tabbrowser {
   _switcher = null;
 
   /**
-   * @type {Array<{count: number, uris: [string, string], timestamp: number}>}
+   * @type {Array<{count: number, uris: string[], timestamp: number}>}
    */
   #tabSelectTimestamps = [];
 
@@ -3622,6 +3622,7 @@ export class Tabbrowser {
    *    The new tab. The return value will be null if the tab couldn't be
    *    created; this shouldn't normally happen, and an error will be logged
    *    to the console if it does.
+   * @throws {Error} When `options.triggeringPrincipal` is missing.
    */
   addTab(
     uriString,
@@ -3667,10 +3668,9 @@ export class Tabbrowser {
       schemelessInput,
       hasValidUserGestureActivation = false,
       textDirectiveUserActivation = false,
-    } = {}
+    }
   ) {
-    // all callers of addTab that pass a params object need to pass
-    // a valid triggeringPrincipal.
+    // All callers of addTab need to pass a valid triggeringPrincipal.
     if (!triggeringPrincipal) {
       throw new Error(
         "Required argument triggeringPrincipal missing within addTab"
@@ -5774,7 +5774,7 @@ export class Tabbrowser {
 
   /**
    * @typedef {object} StartRemoveTabsResult
-   * @property {Promise<void>} beforeUnloadComplete
+   * @property {Promise<void[]>} beforeUnloadComplete
    *   A promise that is resolved once all the beforeunload handlers have been
    *   called.
    * @property {object[]} tabsWithBeforeUnloadPrompt
@@ -5790,18 +5790,18 @@ export class Tabbrowser {
    * @param {object[]} tabs
    *   The set of tabs to remove.
    * @param {object} options
-   * @param {boolean} options.animate
+   * @param {boolean} [options.animate]
    *   Whether or not to animate closing.
-   * @param {boolean} options.suppressWarnAboutClosingWindow
+   * @param {boolean} [options.suppressWarnAboutClosingWindow]
    *   This will suppress the warning about closing a window with the last tab.
-   * @param {boolean} options.skipPermitUnload
+   * @param {boolean} [options.skipPermitUnload]
    *   Skips the before unload checks for the tabs. Only set this to true when
    *   using it in tandem with `runBeforeUnloadForTabs`.
-   * @param {boolean} options.skipRemoves
+   * @param {boolean} [options.skipRemoves]
    *   Skips actually removing the tabs. The beforeunload handlers still run.
-   * @param {boolean} options.skipSessionStore
+   * @param {boolean} [options.skipSessionStore]
    *   If true, don't record the closed tabs in SessionStore.
-   * @param {TabMetricsContext} options.metricsContext
+   * @param {TabMetricsContext} [options.metricsContext]
    *   The context for the operation for telemetry purposes.
    * @returns {StartRemoveTabsResult}
    * @see Tabbrowser.runBeforeUnloadForTabs
@@ -7889,7 +7889,7 @@ export class Tabbrowser {
   }
 
   /**
-   * @param {MozTabbrowserTab|MozTabbrowserTabGroup[]} elements
+   * @param {Array<MozTabbrowserTab|MozTabbrowserTabGroup>} elements
    * @param {MozTabbrowserTab|MozTabbrowserTabGroup} targetElement
    * @param {object} [options]
    * @param {TabMetricsContext} [options.metricsContext]
@@ -7911,7 +7911,7 @@ export class Tabbrowser {
   }
 
   /**
-   * @param {MozTabbrowserTab|MozTabbrowserTabGroup[]} elements
+   * @param {Array<MozTabbrowserTab|MozTabbrowserTabGroup>} elements
    * @param {MozTabbrowserTab|MozTabbrowserTabGroup} targetElement
    * @param {object} [options]
    * @param {TabMetricsContext} [options.metricsContext]
@@ -8002,8 +8002,8 @@ export class Tabbrowser {
   }
 
   /**
-   * @param {MozTabbrowserTab[]} elements
-   * @param {MozTabbrowserTab|MozTabbrowserTabGroup} targetElement
+   * @param {Array<MozTabbrowserTab|MozTabbrowserTabGroup>} elements
+   * @param {MozTabbrowserTab|MozTabbrowserTabGroup|MozTabSplitViewWrapper} targetElement
    * @param {boolean} [moveBefore=false]
    * @param {object} [options]
    * @param {TabMetricsContext} [options.metricsContext]
