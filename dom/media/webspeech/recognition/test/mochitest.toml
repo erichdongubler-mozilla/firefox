@@ -62,4 +62,7 @@ skip-if = [
 ["test_stop_returns_result_or_nomatch.html"]
 subsuite = "speech-recognition"
 tags = "mtg parakeet-asr"
-skip-if = ["verify"]  # skip under test-verify: it runs outside the subsuite, so serve_model.py (the model hub) is never started
+skip-if = [
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 2053116
+  "verify", # skip under test-verify: it runs outside the subsuite, so serve_model.py (the model hub) is never started
+]
