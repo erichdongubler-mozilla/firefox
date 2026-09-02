@@ -1513,9 +1513,6 @@
       "resource:///modules/DevToolsStartup.sys.mjs": [
         "../../../devtools/startup/DevToolsStartup.sys.mjs"
       ],
-      "resource:///modules/Discovery.sys.mjs": [
-        "../../../browser/modules/Discovery.sys.mjs"
-      ],
       "resource:///modules/ESEDBReader.sys.mjs": [
         "../../../browser/components/migration/ESEDBReader.sys.mjs"
       ],

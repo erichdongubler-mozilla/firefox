@@ -609,7 +609,6 @@ export interface Modules {
   "resource:///modules/Dedupe.sys.mjs": typeof import("resource:///modules/Dedupe.sys.mjs"),
   "resource:///modules/DefaultLaunchOnLogin.sys.mjs": typeof import("resource:///modules/DefaultLaunchOnLogin.sys.mjs"),
   "resource:///modules/DevToolsStartup.sys.mjs": typeof import("resource:///modules/DevToolsStartup.sys.mjs"),
-  "resource:///modules/Discovery.sys.mjs": typeof import("resource:///modules/Discovery.sys.mjs"),
   "resource:///modules/ESEDBReader.sys.mjs": typeof import("resource:///modules/ESEDBReader.sys.mjs"),
   "resource:///modules/EdgeProfileMigrator.sys.mjs": typeof import("resource:///modules/EdgeProfileMigrator.sys.mjs"),
   "resource:///modules/EveryWindow.sys.mjs": typeof import("resource:///modules/EveryWindow.sys.mjs"),

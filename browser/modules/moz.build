@@ -127,7 +127,6 @@ EXTRA_JS_MODULES += [
     "BrowserWindowTracker.sys.mjs",
     "ContentCrashHandlers.sys.mjs",
     "Dedupe.sys.mjs",
-    "Discovery.sys.mjs",
     "EveryWindow.sys.mjs",
     "ExtensionsUI.sys.mjs",
     "FaviconLoader.sys.mjs",
