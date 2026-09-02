@@ -12,6 +12,7 @@ import org.junit.runner.RunWith
 import org.mozilla.fenix.ui.efficiency.helpers.BaseTest
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
 import org.mozilla.fenix.ui.efficiency.navigation.PageCatalog
+import org.mozilla.fenix.ui.efficiency.navigation.PageObjectKind
 
 @RunWith(AndroidJUnit4::class)
 class NavigationGraphContractTest : BaseTest() {
@@ -40,11 +41,17 @@ class NavigationGraphContractTest : BaseTest() {
     @Test
     fun pageContextAndGraphMembershipMatchesTheCharacterizedContract() {
         val context = on
-        val contextPages = PageCatalog.discoverPages().map { it.getter(context).pageName }.toSet()
+        val pages = PageCatalog.discoverPages()
+        val contextPages = pages.map { it.getter(context).pageName }.toSet()
+        val navigablePages =
+            pages.filter { it.kind == PageObjectKind.NAVIGABLE }.map { it.getter(context).pageName }.toSet()
+        val selectorOnlyPages =
+            pages.filter { it.kind == PageObjectKind.SELECTOR_ONLY }.map { it.getter(context).pageName }.toSet()
         val graphPages = NavigationRegistry.diagnostics().pages
 
         assertEquals(setOf("AppEntry", "GooglePlayPage"), graphPages - contextPages)
-        assertEquals(setOf("CollectionsPage", "MicrosurveysPage", "ShortcutsPage"), contextPages - graphPages)
+        assertEquals(setOf("CollectionsPage", "MicrosurveysPage", "ShortcutsPage"), selectorOnlyPages)
+        assertEquals(navigablePages, graphPages - setOf("AppEntry", "GooglePlayPage"))
     }
 
     @Test

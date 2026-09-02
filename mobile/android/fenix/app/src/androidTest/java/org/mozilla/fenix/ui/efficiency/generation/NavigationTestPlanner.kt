@@ -32,7 +32,7 @@ object NavigationTestPlanner {
     }
 
     fun buildReachabilityCases(): List<ReachabilityCase> {
-        return PageCatalog.discoverPages()
+        return PageCatalog.discoverNavigablePages()
             .map { pageRef ->
                 ReachabilityCase(
                     propertyName = pageRef.propertyName,

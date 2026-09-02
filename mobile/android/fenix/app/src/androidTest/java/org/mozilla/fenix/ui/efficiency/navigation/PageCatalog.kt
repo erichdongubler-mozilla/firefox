@@ -13,6 +13,7 @@ object PageCatalog {
     data class PageRef(
         val propertyName: String,
         val getter: PageContext.() -> BasePage,
+        val kind: PageObjectKind,
     )
 
     fun discoverPages(): List<PageRef> {
@@ -27,11 +28,14 @@ object PageCatalog {
         return refs.sortedBy { it.propertyName }
     }
 
+    fun discoverNavigablePages(): List<PageRef> = discoverPages().filter { it.kind == PageObjectKind.NAVIGABLE }
+
     private fun buildPageRef(field: Field): PageRef {
         field.isAccessible = true
 
         return PageRef(
             propertyName = field.name,
+            kind = field.type.getAnnotation(PageObjectContract::class.java)?.kind ?: PageObjectKind.NAVIGABLE,
             getter = {
                 field.isAccessible = true
                 val value = field.get(this)

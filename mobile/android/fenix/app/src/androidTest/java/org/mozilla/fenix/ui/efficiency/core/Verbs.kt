@@ -349,6 +349,13 @@ fun VerbHost.groupPresent(
     whenPresent: String = "'$label' present",
 ): Boolean {
     val cmd = cmd(verb, label, "Checking '$label'...")
+    if (selectors.isEmpty()) {
+        cmd.fail(
+            "'$label' has no selectors",
+            facts = facts(verb, failure = Failure.EMPTY_SELECTOR_GROUP, extra = mapOf("group" to label)),
+        )
+        return false
+    }
 
     fun allPresent(): Boolean = selectors.all { sel ->
         val loc = loc(sel.description, "_in_$label")

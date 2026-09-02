@@ -65,6 +65,9 @@ object Failure {
     /** A page's required elements were not all on screen. */
     const val NOT_ARRIVED = "not_arrived"
 
+    /** A selector or page-identity group declared no observable elements. */
+    const val EMPTY_SELECTOR_GROUP = "empty_selector_group"
+
     /** No registered edge connects where you are to where you asked to go. */
     const val NO_PATH = "no_path"
 }

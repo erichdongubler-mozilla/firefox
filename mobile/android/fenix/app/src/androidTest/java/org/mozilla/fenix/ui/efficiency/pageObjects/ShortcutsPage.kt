@@ -8,8 +8,11 @@ import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.ui.efficiency.helpers.BasePage
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
+import org.mozilla.fenix.ui.efficiency.navigation.PageObjectContract
+import org.mozilla.fenix.ui.efficiency.navigation.PageObjectKind
 import org.mozilla.fenix.ui.efficiency.selectors.ShortcutsSelectors
 
+@PageObjectContract(PageObjectKind.SELECTOR_ONLY)
 class ShortcutsPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule, *>) : BasePage(composeRule) {
     override val pageName = "ShortcutsPage"
 
