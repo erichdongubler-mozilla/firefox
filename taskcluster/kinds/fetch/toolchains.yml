@@ -443,12 +443,13 @@ rust-nightly:
         repo: https://github.com/rust-lang/rust/
         branch: main
 
+# Keep WASI_SDK_VERSION in taskcluster/scripts/misc/build-wasi-sdk.sh in sync.
 wasi-sdk:
-    description: wasi-sdk-20 source code
+    description: wasi-sdk-34 source code
     fetch:
         type: git
         repo: https://github.com/WebAssembly/wasi-sdk
-        revision: 935fe1acd2fcd7ea4aed2d5ee4527482862b6344
+        revision: 5a0bf653a1a06e1c18867567c5937006d3394a69
 
 macosx64-ninja:
     description: ninja 1.13.2
