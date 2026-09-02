@@ -221,7 +221,6 @@ allowlist-types = [
     "mozilla::gfx::FontFeature",
     "mozilla::gfx::FontVariation",
     "mozilla::gfx::FontPaletteValueSet",
-    "mozilla::gfx::Rect",
     "mozilla::StyleImageLayerAttachment",
     "GeckoFontMetrics",
     "GeckoImplicitShadowRoot",
@@ -290,6 +289,7 @@ opaque-types = [
     "JS::StackGCVector",
     "mozilla::StyleThinArc", # https://github.com/rust-lang/rust-bindgen/issues/1557
     "mozilla::gfx::.*Point",
+    "mozilla::gfx::.*Rect",
     "mozilla::gfx::.*Size",
     "mozilla::gfx::.*Margin",
     "mozilla::gfx::.*Matrix",
