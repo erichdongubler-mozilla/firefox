@@ -311,7 +311,8 @@ abstract class BasePage(protected val composeRule: AndroidComposeTestRule<HomeAc
             return null
         }
         return when (locator.layer) {
-            Layer.COMPOSE -> Resolvers.compose(composeRule, locator, selector)
+            Layer.COMPOSE ->
+                Resolvers.displayed(composeRule, locator, selector) ?: Resolvers.compose(composeRule, locator, selector)
             Layer.ESPRESSO -> Resolvers.espresso(locator, selector) { selector.toResourceId() }
             Layer.UIAUTOMATOR -> Resolvers.uiAutomator(mDevice, packageName, locator, selector)
             Layer.UIAUTOMATOR2 -> Resolvers.uiAutomator2(mDevice, packageName, locator, selector)
@@ -319,16 +320,11 @@ abstract class BasePage(protected val composeRule: AndroidComposeTestRule<HomeAc
     }
 
     /**
-     * The click path's resolver: prefer the on-screen match, else the first, as a backend-agnostic [UiElement]. Every
-     * other verb resolves through [mozGetElement] instead, so an element can be clickable and unverifiable - MTE-5737.
+     * Wrap the shared selector resolution as the backend-agnostic click facade. [mozGetElement] chooses the on-screen
+     * Compose match for every verb, so clicking and verification cannot silently operate on different nodes.
      */
     private fun resolve(selector: Selector, applyPreconditions: Boolean = true): UiElement? {
-        if (selector.value.isBlank()) return null
-        if (applyPreconditions && requiresScroll(selector.groups)) {
-            ensureReachable(selector)
-        }
-        return Resolvers.displayed(composeRule, selector)
-            ?: UiElement.wrap(mozGetElement(selector, applyPreconditions = false))
+        return UiElement.wrap(mozGetElement(selector, applyPreconditions))
     }
 
     private fun mozVerifyElement(selector: Selector, applyPreconditions: Boolean = true): Boolean {
