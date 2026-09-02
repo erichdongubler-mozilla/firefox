@@ -176,7 +176,6 @@ const sslNamedGroupDef ssl_named_groups[] = {
     HYGROUP(secp256r1, mlkem768, 256, SECP256R1, MLKEM768, PR_TRUE),
     HYGROUP(secp384r1, mlkem1024, 256, SECP384R1, MLKEM1024, PR_TRUE),
     { ssl_grp_kem_mlkem1024, 256, ssl_kea_kem, SEC_OID_ML_KEM_1024, PR_TRUE },
-    { ssl_grp_kem_xyber768d00, 256, ssl_kea_ecdh_hybrid, SEC_OID_XYBER768D00, PR_FALSE },
     FFGROUP(2048),
     FFGROUP(3072),
     FFGROUP(4096),

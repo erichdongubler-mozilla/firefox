@@ -382,10 +382,6 @@ tls13_CreateKEMKeyPair(sslSocket *ss, const sslNamedGroupDef *groupDef,
     CK_NSS_KEM_PARAMETER_SET_TYPE paramSet;
 
     switch (groupDef->name) {
-        case ssl_grp_kem_xyber768d00:
-            mechanism = CKM_NSS_KYBER_KEY_PAIR_GEN;
-            paramSet = CKP_NSS_KYBER_768_ROUND3;
-            break;
         case ssl_grp_kem_mlkem768x25519:
         case ssl_grp_kem_secp256r1mlkem768:
             mechanism = CKM_ML_KEM_KEY_PAIR_GEN;
@@ -506,8 +502,7 @@ tls13_FindHybridKeyPair(sslSocket *ss, const sslNamedGroupDef *groupDef)
             break;
         case ssl_grp_ec_curve25519: {
             /* a loop to check multiple named groups */
-            SSLNamedGroup gnames[] = { ssl_grp_kem_xyber768d00,
-                                       ssl_grp_kem_mlkem768x25519 };
+            SSLNamedGroup gnames[] = { ssl_grp_kem_mlkem768x25519 };
             for (int i = 0; i < PR_ARRAY_SIZE(gnames); i++) {
                 hybridPair = ssl_LookupEphemeralKeyPair(ss,
                                                         ssl_LookupNamedGroup(gnames[i]));
@@ -543,7 +538,6 @@ tls13_CreateKeyShare(sslSocket *ss, const sslNamedGroupDef *groupDef,
                 case ssl_grp_kem_secp384r1mlkem1024:
                     ecGroup = ssl_LookupNamedGroup(ssl_grp_ec_secp384r1);
                     break;
-                case ssl_grp_kem_xyber768d00:
                 case ssl_grp_kem_mlkem768x25519:
                     ecGroup = ssl_LookupNamedGroup(ssl_grp_ec_curve25519);
                     break;
@@ -795,9 +789,6 @@ tls13_ImportKEMKeyShare(SECKEYPublicKey *peerKey, TLS13KeyShareEntry *entry)
     size_t expected_len;
 
     switch (entry->group->name) {
-        case ssl_grp_kem_xyber768d00:
-            expected_len = X25519_PUBLIC_KEY_BYTES + KYBER768_PUBLIC_KEY_BYTES;
-            break;
         case ssl_grp_kem_mlkem768x25519:
             expected_len = X25519_PUBLIC_KEY_BYTES + KYBER768_PUBLIC_KEY_BYTES;
             break;
@@ -823,13 +814,6 @@ tls13_ImportKEMKeyShare(SECKEYPublicKey *peerKey, TLS13KeyShareEntry *entry)
     }
 
     switch (entry->group->name) {
-        case ssl_grp_kem_xyber768d00:
-            peerKey->keyType = kyberKey;
-            peerKey->u.kyber.params = params_kyber768_round3;
-            // key_exchange.data is `x25519 || kyber768`
-            pk.data = entry->key_exchange.data + X25519_PUBLIC_KEY_BYTES;
-            pk.len = KYBER768_PUBLIC_KEY_BYTES;
-            break;
         case ssl_grp_kem_mlkem768x25519:
             peerKey->keyType = kyberKey;
             peerKey->u.kyber.params = params_ml_kem768;
@@ -879,14 +863,6 @@ tls13_HandleKEMCiphertext(sslSocket *ss, TLS13KeyShareEntry *entry, sslKeyPair *
     SECStatus rv;
 
     switch (entry->group->name) {
-        case ssl_grp_kem_xyber768d00:
-            if (entry->key_exchange.len != X25519_PUBLIC_KEY_BYTES + KYBER768_CIPHERTEXT_BYTES) {
-                ssl_MapLowLevelError(SSL_ERROR_RX_MALFORMED_HYBRID_KEY_SHARE);
-                return SECFailure;
-            }
-            ct.data = entry->key_exchange.data + X25519_PUBLIC_KEY_BYTES;
-            ct.len = KYBER768_CIPHERTEXT_BYTES;
-            break;
         case ssl_grp_kem_mlkem768x25519:
             if (entry->key_exchange.len != X25519_PUBLIC_KEY_BYTES + KYBER768_CIPHERTEXT_BYTES) {
                 ssl_MapLowLevelError(SSL_ERROR_RX_MALFORMED_HYBRID_KEY_SHARE);
@@ -1034,14 +1010,6 @@ tls13_HandleKeyShare(sslSocket *ss,
     switch (entry->group->keaType) {
         case ssl_kea_ecdh_hybrid:
             switch (entry->group->name) {
-                case ssl_grp_kem_xyber768d00:
-                    ec_len = X25519_PUBLIC_KEY_BYTES;
-                    // x25519 share is at the beginning
-                    ec_data = entry->key_exchange.len < ec_len
-                                  ? NULL
-                                  : entry->key_exchange.data;
-                    ecGroup = ssl_LookupNamedGroup(ssl_grp_ec_curve25519);
-                    break;
                 case ssl_grp_kem_mlkem768x25519:
                     ec_len = X25519_PUBLIC_KEY_BYTES;
                     // x25519 share is at the end
