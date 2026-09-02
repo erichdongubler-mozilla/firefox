@@ -2,6 +2,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/**
+ * Bug 1606428 - Shim Rambler Authenticator
+ *
+ * Sites using Rambler's ID helper expect it to define window.ramblerIdHelper,
+ * and their login UI does not appear when the script is blocked. This shim
+ * stubs out that interface and, if the user opts in to loading the real
+ * script, replays the queued calls against it.
+ */
+
 "use strict";
 
 if (!window.ramblerIdHelper) {
