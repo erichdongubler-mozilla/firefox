@@ -5,6 +5,7 @@
 #include "mozilla/dom/BrowsingContext.h"
 
 #include "ipc/IPCMessageUtils.h"
+#include "mozilla/GfxMessageUtils.h"
 
 #ifdef ACCESSIBILITY
 #  include "mozilla/a11y/DocAccessibleParent.h"
@@ -3487,6 +3488,14 @@ void BrowsingContext::DidSet(FieldIndex<IDX_TouchEventsOverrideInternal>,
 void BrowsingContext::DidSet(FieldIndex<IDX_EmbedderColorSchemes>,
                              EmbedderColorSchemes&& aOldValue) {
   if (GetEmbedderColorSchemes() == aOldValue) {
+    return;
+  }
+  PresContextAffectingFieldChanged();
+}
+
+void BrowsingContext::DidSet(FieldIndex<IDX_EmbedderScrollbarInset>,
+                             LayoutDeviceIntMargin&& aOldValue) {
+  if (GetEmbedderScrollbarInset() == aOldValue) {
     return;
   }
   PresContextAffectingFieldChanged();

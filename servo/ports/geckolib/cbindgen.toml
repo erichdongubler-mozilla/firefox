@@ -190,6 +190,7 @@ include = [
   "ViewTimelineInset",
   "OverflowAnchor",
   "OverflowClipMargin",
+  "ScrollbarInset",
   "Resize",
   "Overflow",
   "LengthPercentage",

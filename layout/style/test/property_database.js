@@ -13899,6 +13899,24 @@ if (false) {
       "2px",
     ],
   };
+
+  gCSSProperties["-moz-scrollbar-inset-block"] = {
+    // domProp: "MozScrollbarInsetBlock",
+    inherited: false,
+    type: CSS_TYPE_LONGHAND,
+    initial_values: ["0", "0 0"],
+    other_values: ["1px 2px", "calc(2em + 3ex)", "1px calc(2em)"],
+    invalid_values: ["auto", "20%", "-10px", "1px 2px 3px", "1px 2px 3px 4px"],
+  };
+
+  gCSSProperties["-moz-scrollbar-inset-inline"] = {
+    // domProp: "MozScrollbarInsetInline",
+    inherited: false,
+    type: CSS_TYPE_LONGHAND,
+    initial_values: ["0", "0 0"],
+    other_values: ["1px 2px", "calc(2em + 3ex)", "1px calc(2em)"],
+    invalid_values: ["auto", "20%", "-10px", "1px 2px 3px", "1px 2px 3px 4px"],
+  };
 }
 
 gCSSProperties["scrollbar-color"] = {

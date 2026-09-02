@@ -160,6 +160,7 @@ class nsSubDocumentFrame final : public nsAtomicContainerFrame,
   friend class AsyncFrameInit;
 
   void MaybeUpdateEmbedderColorScheme();
+  void MaybeUpdateEmbedderScrollbarInset();
   void MaybeUpdateEmbedderZoom();
   void MaybeUpdateRemoteStyle(ComputedStyle* aOldComputedStyle = nullptr);
   void PropagateIsUnderHiddenEmbedderElement(bool aValue);

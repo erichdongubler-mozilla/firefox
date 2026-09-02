@@ -7,6 +7,7 @@
 
 #include <tuple>
 #include "GVAutoplayRequestUtils.h"
+#include "Units.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/HalScreenConfiguration.h"
 #include "mozilla/LinkedList.h"
@@ -254,6 +255,10 @@ struct EmbedderColorSchemes {
   /* prefers-color-scheme override based on the color-scheme style of our     \
    * <browser> embedder element. */                                           \
   FIELD(EmbedderColorSchemes, EmbedderColorSchemes)                           \
+  /* Content-area scrollbar insets forwarded from the <browser> embedder's    \
+   * -moz-scrollbar-inset-{block,inline}, so the top-level content viewport   \
+   * scrollbars clear the rounded content-area corners. */                    \
+  FIELD(EmbedderScrollbarInset, LayoutDeviceIntMargin)                        \
   FIELD(DisplayMode, dom::DisplayMode)                                        \
   /* The number of entries added to the session history because of this       \
    * browsing context. */                                                     \
@@ -1332,6 +1337,11 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
     return CheckOnlyEmbedderCanSet(aSource);
   }
 
+  bool CanSet(FieldIndex<IDX_EmbedderScrollbarInset>,
+              const LayoutDeviceIntMargin&, ContentParent* aSource) {
+    return CheckOnlyEmbedderCanSet(aSource);
+  }
+
   bool CanSet(FieldIndex<IDX_PrefersColorSchemeOverride>,
               dom::PrefersColorSchemeOverride, ContentParent*) {
     return IsTop();
@@ -1364,6 +1374,9 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   void DidSet(FieldIndex<IDX_EmbedderColorSchemes>,
               EmbedderColorSchemes&& aOldValue);
+
+  void DidSet(FieldIndex<IDX_EmbedderScrollbarInset>,
+              LayoutDeviceIntMargin&& aOldValue);
 
   void DidSet(FieldIndex<IDX_PrefersColorSchemeOverride>,
               dom::PrefersColorSchemeOverride aOldValue);
