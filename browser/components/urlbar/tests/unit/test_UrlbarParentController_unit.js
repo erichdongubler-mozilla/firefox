@@ -179,7 +179,7 @@ add_task(function test_cancel_query() {
 add_task(function test_receiveResults() {
   const context = createContext();
   context.results = [];
-  controller.receiveResults(context);
+  controller.parentController.receiveResults(context);
 
   Assert.equal(
     generalListener.onQueryResults.callCount,

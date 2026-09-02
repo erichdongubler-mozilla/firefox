@@ -62,7 +62,7 @@ add_task(async function test_providers() {
     "onQueryResults"
   );
 
-  await providersManager.startQuery(context, controller);
+  await providersManager.startQuery(context, controller.parentController);
   // Sanity check that this doesn't throw. It should be a no-op since we await
   // for startQuery.
   providersManager.cancelQuery(context);

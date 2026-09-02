@@ -190,8 +190,8 @@ add_task(async function test() {
     let context = createContext(searchStr, { isPrivate: false });
     // We don't want to generate all the possible results here, just check
     // the heuristic result is not autofill.
-    let controller = UrlbarTestUtils.newMockController();
-    await providersManager.startQuery(context, controller);
+    let { parentController } = UrlbarTestUtils.newMockController();
+    await providersManager.startQuery(context, parentController);
     Assert.ok(context.results[0].heuristic, "Check heuristic result");
     Assert.notEqual(context.results[0].providerName, "UrlbarProviderAutofill");
   }
@@ -260,8 +260,8 @@ add_task(async function test() {
     isPrivate: false,
     sources: [UrlbarShared.RESULT_SOURCE.HISTORY],
   });
-  let controller = UrlbarTestUtils.newMockController();
-  await providersManager.startQuery(context, controller);
+  let { parentController } = UrlbarTestUtils.newMockController();
+  await providersManager.startQuery(context, parentController);
   Assert.ok(context.results[0].heuristic, "Check heuristic result");
   Assert.notEqual(context.results[0].providerName, "UrlbarProviderAutofill");
 

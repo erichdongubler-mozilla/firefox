@@ -420,10 +420,6 @@ export class UrlbarChildController {
     this.#queryId++;
     this.notify(UrlbarShared.NOTIFICATIONS.QUERY_CANCELLED, queryContext);
   }
-  receiveResults(queryContext) {
-    //@ts-expect-error only used in unit tests (which always are direct path).
-    return this.#parentController.receiveResults(queryContext);
-  }
   removeResult(result, options) {
     return this.#parentController.removeResult(result, options);
   }
