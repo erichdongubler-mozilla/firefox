@@ -73,3 +73,24 @@
     border-radius: var(--border-radius-large);
   }
 }
+
+/* Smart Form Fill specific styles */
+#PopupAutoComplete[resultstyles~="smartFormFill"] > richlistbox {
+  min-width: var(--size-layout-medium);
+
+  > richlistitem > autocomplete-row-item {
+    /* Row metrics consumed inside the autocomplete-row-item shadow root. These
+     apply to every row in the popup, not just the Smart Form Fill one. */
+    --row-item-border-radius: var(--border-radius-medium);
+    --row-item-column-gap: var(--space-large);
+    --row-item-label-font-size: larger;
+    --row-item-padding: var(--space-large) var(--space-medium);
+    --sff-loader-image: url("chrome://browser/content/aiwindow/assets/loader.svg");
+  }
+
+  @media not (forced-colors) {
+    .autocomplete-row-item[originaltype~="autofill"] {
+      --button-icon-fill: light-dark(var(--color-violet-desaturated-90), currentColor);
+    }
+  }
+}
