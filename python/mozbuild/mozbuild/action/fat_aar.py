@@ -77,9 +77,8 @@ def fat_aar(
     # Collect multi-architecture inputs to the fat AAR.
     copier = FileCopier()
 
-    for arch, zip_path in zip_paths.items():
-        if not zip_path:
-            zip_path = _download_zip(distdir, arch)
+    for arch, zip_path_opt in zip_paths.items():
+        zip_path = zip_path_opt or _download_zip(distdir, arch)
         if verbose:
             print(f"Processing '{zip_path}' for architecture {arch}")
         # Map old non-architecture-specific path to new architecture-specific path.
