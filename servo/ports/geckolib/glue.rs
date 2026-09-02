@@ -6,8 +6,8 @@ use super::error_reporter::ErrorReporter;
 use super::stylesheet_loader::{AsyncStylesheetParser, StylesheetLoader};
 use cssparser::ToCss as ParserToCss;
 use cssparser::{
-    BasicParseError, ParseError as CssParseError, Parser, ParserInput, ParserState, SourceLocation,
-    Token, UnicodeRange,
+    BasicParseError, ParseError as CssParseError, Parser, ParserState, SourceLocation, Token,
+    UnicodeRange,
 };
 use dom::{DocumentState, ElementState};
 use malloc_size_of::MallocSizeOfOps;
@@ -3047,8 +3047,7 @@ pub extern "C" fn Servo_StyleRule_SetSelectorText(
             Some(CssRuleType::Scope) => ParseRelative::ForScope,
             _ => ParseRelative::No,
         };
-        let mut parser_input = ParserInput::new(&value_str);
-        match SelectorList::parse(&parser, &mut Parser::new(&mut parser_input), parse_relative) {
+        match SelectorList::parse(&parser, &mut Parser::new(&value_str), parse_relative) {
             Ok(selectors) => {
                 rule.selectors = selectors;
                 true
@@ -3281,8 +3280,7 @@ pub extern "C" fn Servo_Keyframe_GetKeyText(keyframe: &LockedKeyframe, result: &
 #[unsafe(no_mangle)]
 pub extern "C" fn Servo_Keyframe_SetKeyText(keyframe: &LockedKeyframe, text: &nsACString) -> bool {
     let text = unsafe { text.as_str_unchecked() };
-    let mut input = ParserInput::new(&text);
-    if let Ok(selector) = Parser::new(&mut input).parse_entirely(KeyframeSelectors::parse) {
+    if let Ok(selector) = Parser::new(&text).parse_entirely(KeyframeSelectors::parse) {
         write_locked_arc(keyframe, |keyframe: &mut Keyframe| {
             keyframe.selector = selector;
         });
@@ -3470,8 +3468,7 @@ pub extern "C" fn Servo_PageRule_SetSelectorText(
     write_locked_arc(rule, |rule: &mut PageRule| {
         use style::stylesheets::PageSelectors;
 
-        let mut parser_input = ParserInput::new(&value_str);
-        let mut parser = Parser::new(&mut parser_input);
+        let mut parser = Parser::new(&value_str);
 
         // Ensure that a blank input results in empty page selectors
         if parser.is_exhausted() {
@@ -4099,8 +4096,7 @@ pub extern "C" fn Servo_FontFaceRule_SetDescriptor(
     out_changed: &mut bool,
 ) -> bool {
     let value = unsafe { value.as_str_unchecked() };
-    let mut input = ParserInput::new(&value);
-    let mut parser = Parser::new(&mut input);
+    let mut parser = Parser::new(&value);
     let url_data = unsafe { UrlExtraData::from_ptr_ref(&data) };
     let context = ParserContext::new(
         Origin::Author,
@@ -4147,9 +4143,7 @@ pub unsafe extern "C" fn Servo_CounterStyleRule_SetName(
     rule: &LockedCounterStyleRule,
     value: &nsACString,
 ) -> bool {
-    let value = unsafe { value.as_str_unchecked() };
-    let mut input = ParserInput::new(&value);
-    let mut parser = Parser::new(&mut input);
+    let mut parser = Parser::new(unsafe { value.as_str_unchecked() });
     match parser.parse_entirely(counter_style::parse_counter_style_name_definition) {
         Ok(name) => {
             write_locked_arc(rule, |rule: &mut CounterStyleRule| rule.set_name(name));
@@ -4455,8 +4449,7 @@ pub extern "C" fn Servo_CounterStyleRule_SetDescriptor(
     value: &nsACString,
 ) -> bool {
     let value = unsafe { value.as_str_unchecked() };
-    let mut input = ParserInput::new(&value);
-    let mut parser = Parser::new(&mut input);
+    let mut parser = Parser::new(&value);
     let url_data = unsafe { dummy_url_data() };
     let context = ParserContext::new(
         Origin::Author,
@@ -5183,8 +5176,7 @@ macro_rules! parse_for {
         $parse_func:path
     ) => {{
         let s = unsafe { $input.as_str_unchecked() };
-        let mut input = ParserInput::new(&s);
-        let mut parser = Parser::new(&mut input);
+        let mut parser = Parser::new(&s);
         let context = ParserContext::new(
             Origin::Author,
             unsafe { dummy_url_data() },
@@ -5302,8 +5294,7 @@ pub extern "C" fn Servo_ParseTimelineRangeName(
     output: &mut specified::animation::TimelineRangeName,
 ) -> bool {
     let range_name = unsafe { range_name.as_str_unchecked() };
-    let mut input = ParserInput::new(&range_name);
-    let mut parser = Parser::new(&mut input);
+    let mut parser = Parser::new(&range_name);
     let Ok(specified) = parser.parse_entirely(specified::animation::TimelineRangeName::parse)
     else {
         return false;
@@ -5426,8 +5417,7 @@ pub extern "C" fn Servo_ParsePseudoElement(
     request: &mut structs::PseudoStyleRequest, /* output */
 ) -> bool {
     let string = data.to_string();
-    let mut input = ParserInput::new(&string);
-    let mut parser = Parser::new(&mut input);
+    let mut parser = Parser::new(&string);
     // This is unspecced, but we'd like to match other browsers' behavior, so we reject the
     // preceding whitespaces and trailing whitespaces.
     // FIXME: Bug 1845712. Figure out if it is necessary to reject preceding and trailing
@@ -6027,8 +6017,7 @@ pub extern "C" fn Servo_NumericDeclaration_Parse(text: &nsACString) -> *mut Nume
     );
 
     let string = unsafe { text.as_str_unchecked() };
-    let mut input = ParserInput::new(&string);
-    let mut parser = Parser::new(&mut input);
+    let mut parser = Parser::new(&string);
 
     let declaration = match parser.parse_entirely(|p| NumericDeclaration::parse(&context, p)) {
         Ok(declaration) => declaration,
@@ -6258,9 +6247,7 @@ pub unsafe extern "C" fn Servo_MediaList_SetText(
     caller_type: CallerType,
 ) {
     let text = unsafe { text.as_str_unchecked() };
-
-    let mut input = ParserInput::new(&text);
-    let mut parser = Parser::new(&mut input);
+    let mut parser = Parser::new(&text);
     let url_data = unsafe { dummy_url_data() };
 
     // TODO(emilio): If the need for `CallerType` appears in more places,
@@ -7034,8 +7021,7 @@ pub unsafe extern "C" fn Servo_DeclarationBlock_SetFontFamily(
     use style::properties::PropertyDeclaration;
 
     let string = unsafe { value.as_str_unchecked() };
-    let mut input = ParserInput::new(&string);
-    let mut parser = Parser::new(&mut input);
+    let mut parser = Parser::new(&string);
     let context = ParserContext::new(
         Origin::Author,
         unsafe { dummy_url_data() },
@@ -7161,8 +7147,7 @@ pub unsafe extern "C" fn Servo_CSSSupports(
     raw_extra_data: *mut URLExtraData,
 ) -> bool {
     let condition = unsafe { cond.as_str_unchecked() };
-    let mut input = ParserInput::new(&condition);
-    let mut input = Parser::new(&mut input);
+    let mut input = Parser::new(&condition);
     let cond = match input.parse_entirely(parse_condition_or_declaration) {
         Ok(c) => c,
         Err(..) => return false,
@@ -7201,8 +7186,7 @@ pub unsafe extern "C" fn Servo_CSSSupports(
 #[unsafe(no_mangle)]
 pub extern "C" fn Servo_CSSSupportsForImport(after_rule: &nsACString) -> bool {
     let condition = unsafe { after_rule.as_str_unchecked() };
-    let mut input = ParserInput::new(&condition);
-    let mut input = Parser::new(&mut input);
+    let mut input = Parser::new(&condition);
 
     // NOTE(emilio): The supports API is not associated to any stylesheet,
     // so the fact that there is no namespace map here is fine.
@@ -9518,8 +9502,7 @@ pub unsafe extern "C" fn Servo_SelectorList_Drop(list: *mut SelectorList) {
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Servo_IsValidCSSColor(value: &nsACString) -> bool {
-    let mut input = ParserInput::new(unsafe { value.as_str_unchecked() });
-    let mut input = Parser::new(&mut input);
+    let mut input = Parser::new(unsafe { value.as_str_unchecked() });
     let context = ParserContext::new(
         Origin::Author,
         unsafe { dummy_url_data() },
@@ -9536,8 +9519,7 @@ pub unsafe extern "C" fn Servo_IsValidCSSColor(value: &nsACString) -> bool {
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Servo_IsValidCSSImage(value: &nsACString) -> bool {
-    let mut input = ParserInput::new(unsafe { value.as_str_unchecked() });
-    let mut input = Parser::new(&mut input);
+    let mut input = Parser::new(unsafe { value.as_str_unchecked() });
     let context = ParserContext::new(
         Origin::Author,
         unsafe { dummy_url_data() },
@@ -9569,8 +9551,7 @@ unsafe fn compute_color(
     use style_traits::StyleParseErrorKind;
 
     let value = unsafe { value.as_str_unchecked() };
-    let mut input = ParserInput::new(value);
-    let mut input = Parser::new(&mut input);
+    let mut input = Parser::new(value);
     let reporter = unsafe { loader.as_mut() }.and_then(|loader| {
         // Make an ErrorReporter that will report errors as being "from DOM".
         ErrorReporter::new(ptr::null_mut(), loader, ptr::null_mut())
@@ -9672,8 +9653,7 @@ pub unsafe extern "C" fn Servo_ColorTo(
     loader: *mut Loader,
 ) -> bool {
     // Figure out the color space.
-    let mut input = ParserInput::new(unsafe { to_color_space.as_str_unchecked() });
-    let mut input = Parser::new(&mut input);
+    let mut input = Parser::new(unsafe { to_color_space.as_str_unchecked() });
     let to_color_space = match ColorSpace::parse(&mut input) {
         Ok(color_space) => color_space,
         Err(_) => {
@@ -9682,8 +9662,7 @@ pub unsafe extern "C" fn Servo_ColorTo(
         },
     };
 
-    let mut input = ParserInput::new(unsafe { from_color.as_str_unchecked() });
-    let mut input = Parser::new(&mut input);
+    let mut input = Parser::new(unsafe { from_color.as_str_unchecked() });
 
     let reporter = unsafe { loader.as_mut() }.and_then(|loader| {
         // Make an ErrorReporter that will report errors as being "from DOM".
@@ -9813,8 +9792,7 @@ pub unsafe extern "C" fn Servo_IntersectionObserverMargin_Parse(
     let value = unsafe { value.as_str_unchecked() };
     let result = unsafe { result.as_mut() }.unwrap();
 
-    let mut input = ParserInput::new(&value);
-    let mut parser = Parser::new(&mut input);
+    let mut parser = Parser::new(&value);
 
     let url_data = unsafe { dummy_url_data() };
     let context = ParserContext::new(
@@ -9857,8 +9835,7 @@ pub extern "C" fn Servo_ParseTransformIntoMatrix(
     use style::properties::longhands::transform;
 
     let string = unsafe { value.as_str_unchecked() };
-    let mut input = ParserInput::new(&string);
-    let mut parser = Parser::new(&mut input);
+    let mut parser = Parser::new(&string);
     let context = ParserContext::new(
         Origin::Author,
         unsafe { dummy_url_data() },
@@ -9896,8 +9873,7 @@ pub extern "C" fn Servo_ParseFilters(
     use style::values::specified::effects::SpecifiedFilter;
 
     let string = unsafe { value.as_str_unchecked() };
-    let mut input = ParserInput::new(&string);
-    let mut parser = Parser::new(&mut input);
+    let mut parser = Parser::new(&string);
     let url_data = unsafe { UrlExtraData::from_ptr_ref(&data) };
     let context = ParserContext::new(
         Origin::Author,
@@ -9962,8 +9938,7 @@ pub unsafe extern "C" fn Servo_ParseFontShorthandForMatching(
     use style::values::specified::font as specified;
 
     let string = unsafe { value.as_str_unchecked() };
-    let mut input = ParserInput::new(&string);
-    let mut parser = Parser::new(&mut input);
+    let mut parser = Parser::new(string);
     let url_data = unsafe { UrlExtraData::from_ptr_ref(&data) };
     let context = ParserContext::new(
         Origin::Author,
@@ -10070,8 +10045,7 @@ pub unsafe extern "C" fn Servo_ParseFontShorthandForMatching(
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Servo_SourceSizeList_Parse(value: &nsACString) -> *mut SourceSizeList {
     let value = unsafe { value.as_str_unchecked() };
-    let mut input = ParserInput::new(value);
-    let mut parser = Parser::new(&mut input);
+    let mut parser = Parser::new(value);
 
     let context = ParserContext::new(
         Origin::Author,
@@ -10382,8 +10356,7 @@ pub extern "C" fn Servo_GenericFontFamily_Parse(input: &nsACString) -> GenericFo
         /* attr_taint */ Default::default(),
     );
     let value = input.to_utf8();
-    let mut input = ParserInput::new(&value);
-    let mut input = Parser::new(&mut input);
+    let mut input = Parser::new(&value);
     GenericFontFamily::parse(&context, &mut input).unwrap_or(GenericFontFamily::None)
 }
 
@@ -10403,8 +10376,7 @@ pub extern "C" fn Servo_ColorScheme_Parse(input: &nsACString, out: &mut u8) -> b
         /* attr_taint */ Default::default(),
     );
     let input = unsafe { input.as_str_unchecked() };
-    let mut input = ParserInput::new(&input);
-    let mut input = Parser::new(&mut input);
+    let mut input = Parser::new(&input);
     let scheme = match input.parse_entirely(|i| ColorScheme::parse(&context, i)) {
         Ok(scheme) => scheme,
         Err(..) => return false,
@@ -10546,7 +10518,7 @@ pub extern "C" fn Servo_EasingFunctionAt(
 
 fn parse_no_context<'i, F, R>(string: &'i str, parse: F) -> Result<R, ()>
 where
-    F: FnOnce(&ParserContext, &mut Parser<'i, '_>) -> Result<R, ParseError>,
+    F: FnOnce(&ParserContext, &mut Parser<'i>) -> Result<R, ParseError>,
 {
     let context = ParserContext::new(
         Origin::Author,
@@ -10559,8 +10531,7 @@ where
         None,
         /* attr_taint */ Default::default(),
     );
-    let mut input = ParserInput::new(string);
-    Parser::new(&mut input)
+    Parser::new(string)
         .parse_entirely(|i| parse(&context, i))
         .map_err(|_| ())
 }
@@ -10805,8 +10776,7 @@ pub unsafe extern "C" fn Servo_Value_Matches_Syntax(
     };
 
     let css_text = unsafe { value.as_str_unchecked() };
-    let mut input = ParserInput::new(css_text);
-    let mut input = Parser::new(&mut input);
+    let mut input = Parser::new(css_text);
     input.skip_whitespace();
 
     // Consider CSS-wide keywords to match any syntax.
@@ -10852,8 +10822,7 @@ pub extern "C" fn Servo_GetSelectorWarnings(
 #[unsafe(no_mangle)]
 pub extern "C" fn Servo_GetRuleBodyText(initial_text: &nsACString, ret_val: &mut nsACString) {
     let css_text = unsafe { initial_text.as_str_unchecked() };
-    let mut input = ParserInput::new(&css_text);
-    let mut input = Parser::new(&mut input);
+    let mut input = Parser::new(&css_text);
 
     let mut found_start = false;
 
@@ -10905,8 +10874,7 @@ pub extern "C" fn Servo_ReplaceBlockRuleBodyTextInStylesheetText(
         return;
     };
 
-    let mut input = ParserInput::new(&css_text[rule_start_index..]);
-    let mut input = Parser::new(&mut input);
+    let mut input = Parser::new(&css_text[rule_start_index..]);
     let mut found_start = false;
 
     // Search forward for the opening brace.
@@ -11009,8 +10977,7 @@ pub struct CSSToken {
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Servo_CSSParser_create(text: &nsACString) -> *mut ParserState {
     let css_text = unsafe { text.as_str_unchecked() };
-    let mut parser_input = ParserInput::new(&css_text);
-    let input = Parser::new(&mut parser_input);
+    let input = Parser::new(&css_text);
     Box::into_raw(Box::new(input.state()))
 }
 
@@ -11036,8 +11003,7 @@ pub unsafe extern "C" fn Servo_CSSParser_NextToken(
     css_token: &mut CSSToken,
 ) -> bool {
     let css_text = unsafe { text.as_str_unchecked() };
-    let mut parser_input = ParserInput::new(&css_text);
-    let mut input = Parser::new(&mut parser_input);
+    let mut input = Parser::new(&css_text);
     input.reset(state);
 
     let token_start = input.position();
@@ -11601,8 +11567,7 @@ pub unsafe extern "C" fn Servo_GetComputationSteps(
 
     let string = str.to_string();
     let mut substituted = None;
-    let mut input = ParserInput::new(&string);
-    let mut parser = Parser::new(&mut input);
+    let mut parser = Parser::new(&string);
 
     let data = raw_data.borrow();
     let element = GeckoElement(element);
@@ -11692,8 +11657,7 @@ pub unsafe extern "C" fn Servo_GetComputationSteps(
     let substituted_str = substituted.as_deref().unwrap_or(&string);
     // Create a new Parser with the substituted string (even if no substitution occured)
     // so we have a clean state and can get the computation steps now.
-    input = ParserInput::new(substituted_str);
-    parser = Parser::new(&mut input);
+    parser = Parser::new(substituted_str);
 
     // At the moment, we're only supporting top-level Math function
     // TODO: we should handle simple values too.
