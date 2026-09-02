@@ -63,6 +63,9 @@ vendoring:
     - ggml/src/ggml-cpu/arch/arm/
     - ggml/src/ggml-cpu/arch/x86/
     - ggml/src/ggml-cpu/CMakeLists.txt
+    - ggml/src/ggml-metal/ggml-metal-impl.h
+    - ggml/src/ggml-metal/ggml-metal.m
+    - ggml/src/ggml-metal/ggml-metal.metal
     - ggml/src/cmake/*
     - ggml/cmake/*
     - ggml/CMakeLists.txt
