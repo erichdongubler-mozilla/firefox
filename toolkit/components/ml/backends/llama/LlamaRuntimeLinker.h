@@ -7,6 +7,7 @@
 
 #include "llama/llama.h"
 #include "ggml.h"
+#include "ggml-backend.h"
 
 struct PRLibrary;
 
@@ -82,7 +83,12 @@ namespace mozilla::llama {
      const struct ggml_threadpool_params* p1))                              \
   X(ggml_threadpool_t, ggml_threadpool_new,                                 \
     (struct ggml_threadpool_params * params))                               \
-  X(void, ggml_threadpool_free, (ggml_threadpool_t threadpool))
+  X(void, ggml_threadpool_free, (ggml_threadpool_t threadpool))             \
+  X(ggml_backend_dev_t, ggml_backend_dev_by_type,                           \
+    (enum ggml_backend_dev_type type))                                      \
+  X(ggml_backend_t, ggml_backend_dev_init,                                  \
+    (ggml_backend_dev_t device, const char* params))                        \
+  X(void, ggml_backend_free, (ggml_backend_t backend))
 
 struct LlamaLibWrapper {
   LlamaLibWrapper() = default;
