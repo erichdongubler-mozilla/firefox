@@ -7,10 +7,15 @@ package org.mozilla.fenix.ui.efficiency.helpers
 import android.content.ComponentName
 import android.content.pm.PackageManager
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import mozilla.components.browser.state.action.DownloadAction
+import mozilla.components.browser.state.action.RecentlyClosedAction
+import mozilla.components.browser.state.action.UndoAction
 import mozilla.components.browser.storage.sync.PlacesHistoryStorage
+import org.mozilla.fenix.components.appstate.AppAction.CollectionsChange
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.helpers.AppAndSystemHelper.deleteBookmarksStorage
 import org.mozilla.fenix.helpers.AppAndSystemHelper.deletePinnedSitesStorage
@@ -52,9 +57,6 @@ object AppDataCleaner {
                 appContext.components.core.permissionStorage.deleteAllSitePermissions()
                 appContext.components.core.geckoSitePermissionsStorage.clearTemporaryPermissions()
             },
-            Step("sessions") {
-                withContext(Dispatchers.IO) { appContext.components.core.sessionStorage.clear() }
-            },
             // A leftover address changes the Autofill settings layout and can push "Add address"
             // off-screen; a leftover card replaces "Add card" with "Manage cards", so a card test
             // starts on a different screen than it expects.
@@ -70,7 +72,23 @@ object AppDataCleaner {
             Step("logins") {
                 withContext(Dispatchers.IO) { appContext.components.core.passwordsStorage.wipeLocal() }
             },
-            Step("tabs") { appContext.components.useCases.tabsUseCases.removeAllTabs() },
+            Step("tabs") { clearTabsAndPendingUndo() },
+            Step("recentlyClosedTabs") {
+                appContext.components.core.recentlyClosedTabsStorage.value.removeAllTabs()
+                appContext.components.core.store.dispatch(RecentlyClosedAction.ReplaceTabsAction(emptyList()))
+            },
+            Step("sessions") {
+                withContext(Dispatchers.IO) { appContext.components.core.sessionStorage.clear() }
+            },
+            Step("collections") {
+                val storage = appContext.components.core.tabCollectionStorage
+                storage.getCollectionsList().forEach { storage.removeCollection(it) }
+                storage.cachedTabCollections = emptyList()
+                appContext.components.appStore.dispatch(CollectionsChange(emptyList()))
+            },
+            Step("tabGroups") {
+                appContext.components.core.tabGroupRepository.deleteAllTabGroupData()
+            },
             Step("downloads") {
                 appContext.components.core.store.dispatch(DownloadAction.RemoveAllDownloadsAction)
             },
@@ -109,6 +127,21 @@ object AppDataCleaner {
 
     private fun Log(msg: String) = android.util.Log.i("AppDataCleaner", msg)
 
+    private suspend fun clearTabsAndPendingUndo() {
+        val components = appContext.components
+        val store = components.core.store
+        val pendingTabIds = store.state.undoHistory.tabs.map { it.state.id }.toSet()
+        if (pendingTabIds.isNotEmpty()) {
+            store.dispatch(UndoAction.RestoreRecoverableTabs)
+            withTimeout(TAB_RESTORE_TIMEOUT_MS) {
+                while (pendingTabIds.any { pendingId -> store.state.tabs.none { it.id == pendingId } }) {
+                    delay(10)
+                }
+            }
+        }
+        components.useCases.tabsUseCases.removeAllTabs(recoverable = false)
+    }
+
     /**
      * Put the launcher icon back to the manifest default.
      *
@@ -143,4 +176,6 @@ object AppDataCleaner {
                 )
             }
     }
+
+    private const val TAB_RESTORE_TIMEOUT_MS = 2_000L
 }

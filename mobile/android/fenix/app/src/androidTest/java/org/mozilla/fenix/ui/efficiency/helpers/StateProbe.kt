@@ -8,6 +8,7 @@ import android.content.ComponentName
 import android.content.pm.PackageManager
 import android.os.Process
 import android.util.Log
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import mozilla.appservices.places.BookmarkRoot
 import mozilla.components.browser.state.state.selectedOrDefaultPrivateSearchEngine
@@ -40,7 +41,14 @@ object StateProbe {
         listOf(
             contributor(
                 name = "browserStore",
-                fields = setOf("tabs", "tabsPrivate", "downloads"),
+                fields =
+                    setOf(
+                        "tabs",
+                        "tabsPrivate",
+                        "downloads",
+                        "pendingUndoTabs",
+                        "recentlyClosedStoreTabs",
+                    ),
                 captureCost = StateCaptureCost.IN_MEMORY,
             ) {
                 mapOf(
@@ -50,6 +58,14 @@ object StateProbe {
                             appContext.components.core.store.state.tabs.count { it.content.private }
                         },
                     "downloads" to observe { appContext.components.core.store.state.downloads.size },
+                    "pendingUndoTabs" to
+                        observe {
+                            appContext.components.core.store.state.undoHistory.tabs.size
+                        },
+                    "recentlyClosedStoreTabs" to
+                        observe {
+                            appContext.components.core.store.state.closedTabs.size
+                        },
                 )
             },
             contributor(
@@ -116,6 +132,40 @@ object StateProbe {
                     "savedSessions" to
                         observe {
                             appContext.components.core.sessionStorage.restore()?.tabs?.size ?: 0
+                        },
+                )
+            },
+            contributor(
+                name = "tabOrganization",
+                fields = setOf("collections", "tabGroups", "tabGroupAssignments", "recentlyClosedTabs"),
+                captureCost = StateCaptureCost.STORAGE_IO,
+                sensitivity = StateSensitivity.AGGREGATE_ONLY,
+            ) {
+                mapOf(
+                    "collections" to
+                        observe {
+                            runBlocking { appContext.components.core.tabCollectionStorage.getCollectionsList().size }
+                        },
+                    "tabGroups" to
+                        observe {
+                            runBlocking {
+                                appContext.components.core.tabGroupRepository.tabGroupDataFlow.first().tabGroups.size
+                            }
+                        },
+                    "tabGroupAssignments" to
+                        observe {
+                            runBlocking {
+                                appContext.components.core.tabGroupRepository.tabGroupDataFlow
+                                    .first()
+                                    .tabGroupAssignments
+                                    .size
+                            }
+                        },
+                    "recentlyClosedTabs" to
+                        observe {
+                            runBlocking {
+                                appContext.components.core.recentlyClosedTabsStorage.value.getTabs().first().size
+                            }
                         },
                 )
             },
@@ -326,6 +376,8 @@ object StateProbe {
         listOf(
             "tabs",
             "tabsPrivate",
+            "pendingUndoTabs",
+            "recentlyClosedStoreTabs",
             "history",
             "bookmarks",
             "logins",
@@ -333,6 +385,10 @@ object StateProbe {
             "creditCards",
             "sitePermissions",
             "savedSessions",
+            "collections",
+            "tabGroups",
+            "tabGroupAssignments",
+            "recentlyClosedTabs",
             "downloads",
         )
     private val FALSE_FLAGS = listOf("searchActive", "voiceInputRequested", "voiceInputResult")
