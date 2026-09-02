@@ -589,7 +589,7 @@ class Core(
         PocketStoriesConfig(
             client,
             contentRecommendationsParams =
-                ContentRecommendationsRequestConfig(locale = LocaleManager.getSelectedLocale(context).toLanguageTag()),
+                ContentRecommendationsRequestConfig(locale = LocaleManager.getSelectedLocale(context)),
             marsSponsoredContentsParams =
                 MarsSpocsRequestConfig(
                     contextId = context.components.settings.contileContextId,
