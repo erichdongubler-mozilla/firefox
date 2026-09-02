@@ -1200,7 +1200,7 @@ async function doAmpMatchingStrategyTest({
     "queryWithMetrics"
   );
 
-  let controller = UrlbarTestUtils.newMockController();
+  let controller = UrlbarTestUtils.mockChildController();
   await controller.startQuery(
     createContext("amp", {
       providers: [UrlbarProviderQuickSuggest.name],

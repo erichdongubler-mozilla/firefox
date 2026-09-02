@@ -56,7 +56,7 @@ add_task(async function test_providers() {
 
   let provider = registerBasicTestProvider([match]);
   let context = createContext(undefined, { providers: [provider.name] });
-  let controller = UrlbarTestUtils.newMockController();
+  let controller = UrlbarTestUtils.mockChildController();
   let resultsPromise = promiseControllerNotification(
     controller,
     "onQueryResults"

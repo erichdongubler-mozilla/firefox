@@ -1122,7 +1122,7 @@ async function check_results({
   // return reliable resultsets, thus we have to wait.
   await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
 
-  const controller = UrlbarTestUtils.newMockController({
+  const controller = UrlbarTestUtils.mockChildController({
     input: {
       isPrivate: context.isPrivate,
       getSearchSource() {

@@ -1459,7 +1459,7 @@ function add_resultGroups_task({
     let providersManager = ProvidersManager.getInstanceForSap("urlbar");
     await providersManager.startQuery(
       context,
-      UrlbarTestUtils.newMockController().parentController
+      UrlbarTestUtils.mockChildController().parentController
     );
     providersManager.unregisterProvider(provider);
     let expectedResults = expectedResultIndexes.map(i => providerResults[i]);

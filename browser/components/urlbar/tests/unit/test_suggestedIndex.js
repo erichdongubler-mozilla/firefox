@@ -566,7 +566,7 @@ async function doSuggestedIndexTest({
   let expectedResults = expected.map(i => results[i]);
   await ProvidersManager.getInstanceForSap("urlbar").startQuery(
     context,
-    UrlbarTestUtils.newMockController().parentController
+    UrlbarTestUtils.mockChildController().parentController
   );
   Assert.deepEqual(context.results, expectedResults);
 }

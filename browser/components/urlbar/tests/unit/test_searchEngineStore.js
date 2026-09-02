@@ -35,7 +35,7 @@ function assertEngineStoresInSync() {
 }
 
 function createEngineStore(isPrivate) {
-  let childController = UrlbarTestUtils.newMockController({
+  let childController = UrlbarTestUtils.mockChildController({
     input: {
       isPrivate,
       window: {

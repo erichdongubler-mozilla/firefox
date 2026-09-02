@@ -179,7 +179,7 @@ add_task(function test_recordedEngagement_resolves_live_results() {
 
 add_task(function test_recordFromChild_records_engagement() {
   Services.fog.testResetFOG();
-  let controller = UrlbarTestUtils.newMockController();
+  let controller = UrlbarTestUtils.mockChildController();
 
   // Hand the controller the payload exactly as the actor message would.
   controller.recordEngagement(
@@ -251,7 +251,7 @@ add_task(function test_collectBounceSnapshot() {
 
 add_task(function test_recordFromChild_records_exposures() {
   Services.fog.testResetFOG();
-  let controller = UrlbarTestUtils.newMockController();
+  let controller = UrlbarTestUtils.mockChildController();
 
   // The child collector resolves exposures content-side and bundles the list
   // into the engagement payload.

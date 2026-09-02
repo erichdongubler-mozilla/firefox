@@ -505,7 +505,7 @@ add_task(async function test() {
     },
   ];
 
-  let { parentController } = UrlbarTestUtils.newMockController();
+  let { parentController } = UrlbarTestUtils.mockChildController();
 
   for (let {
     desc,

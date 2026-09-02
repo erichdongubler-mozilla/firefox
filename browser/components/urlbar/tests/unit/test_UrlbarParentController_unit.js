@@ -49,7 +49,7 @@ add_setup(function () {
     onQueryCancelled: sandbox.stub(),
   };
 
-  controller = UrlbarTestUtils.newMockController({
+  controller = UrlbarTestUtils.mockChildController({
     manager: fPM,
   });
   controller.addListener(generalListener);

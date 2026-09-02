@@ -1578,7 +1578,7 @@ export class UrlbarInputBaseTestUtils {
    *        UrlbarParentController constructor.
    * @returns {UrlbarChildController} A new controller.
    */
-  newMockController(options = {}) {
+  mockChildController(options = {}) {
     let sapName = options.sapName || "urlbar";
     // Ensure a sapName is defined, as otherwise we'd not get the same
     // ProvidersManager instance across tests.

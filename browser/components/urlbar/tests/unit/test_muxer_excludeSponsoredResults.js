@@ -64,7 +64,7 @@ add_task(async function test_filters_sponsored_results() {
   });
   await ProvidersManager.getInstanceForSap("urlbar").startQuery(
     context,
-    UrlbarTestUtils.newMockController().parentController
+    UrlbarTestUtils.mockChildController().parentController
   );
   Assert.deepEqual(
     context.results,
@@ -93,7 +93,7 @@ add_task(async function test_filters_all_sponsored_results() {
   });
   await ProvidersManager.getInstanceForSap("urlbar").startQuery(
     context,
-    UrlbarTestUtils.newMockController().parentController
+    UrlbarTestUtils.mockChildController().parentController
   );
   Assert.deepEqual(
     context.results,
@@ -117,7 +117,7 @@ add_task(async function test_keeps_non_sponsored_when_flag_set() {
   });
   await ProvidersManager.getInstanceForSap("urlbar").startQuery(
     context,
-    UrlbarTestUtils.newMockController().parentController
+    UrlbarTestUtils.mockChildController().parentController
   );
   Assert.deepEqual(
     context.results,
@@ -143,7 +143,7 @@ add_task(async function test_keeps_sponsored_when_flag_unset() {
   let context = createContext(undefined, { providers: [provider.name] });
   await ProvidersManager.getInstanceForSap("urlbar").startQuery(
     context,
-    UrlbarTestUtils.newMockController().parentController
+    UrlbarTestUtils.mockChildController().parentController
   );
   Assert.deepEqual(
     context.results,
@@ -169,7 +169,7 @@ add_task(async function test_keeps_sponsored_tab_when_flag_unset() {
   let context = createContext(undefined, { providers: [provider.name] });
   await ProvidersManager.getInstanceForSap("urlbar").startQuery(
     context,
-    UrlbarTestUtils.newMockController().parentController
+    UrlbarTestUtils.mockChildController().parentController
   );
   Assert.deepEqual(
     context.results,

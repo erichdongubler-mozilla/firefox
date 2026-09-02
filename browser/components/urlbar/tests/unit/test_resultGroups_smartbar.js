@@ -55,7 +55,7 @@ async function smartbarResults(results) {
   });
   await ProvidersManager.getInstanceForSap("urlbar").startQuery(
     context,
-    UrlbarTestUtils.newMockController().parentController
+    UrlbarTestUtils.mockChildController().parentController
   );
   return context.results;
 }

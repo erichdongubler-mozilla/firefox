@@ -304,7 +304,7 @@ add_task(async function timestamps() {
     providers: [UrlbarProviderQuickSuggest.name],
     isPrivate: false,
   });
-  let controller = UrlbarTestUtils.newMockController({
+  let controller = UrlbarTestUtils.mockChildController({
     input: {
       isPrivate: context.isPrivate,
       getSearchSource() {

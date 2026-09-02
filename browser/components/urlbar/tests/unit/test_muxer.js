@@ -68,7 +68,7 @@ add_task(async function test_muxer() {
 
   let provider = registerBasicTestProvider(matches);
   let context = createContext(undefined, { providers: [provider.name] });
-  let controller = UrlbarTestUtils.newMockController();
+  let controller = UrlbarTestUtils.mockChildController();
   /**
    * A test muxer.
    */
@@ -130,7 +130,7 @@ add_task(async function test_preselectedHeuristic_singleProvider() {
   info("Check results, the order should be: b (heuristic), a, c");
   await ProvidersManager.getInstanceForSap("urlbar").startQuery(
     context,
-    UrlbarTestUtils.newMockController().parentController
+    UrlbarTestUtils.mockChildController().parentController
   );
   Assert.deepEqual(context.results, [matches[1], matches[0], matches[2]]);
 });
@@ -183,7 +183,7 @@ add_task(async function test_preselectedHeuristic_multiProviders() {
   info("Check results, the order should be: e (heuristic), a, b, c, d, f");
   await ProvidersManager.getInstanceForSap("urlbar").startQuery(
     context,
-    UrlbarTestUtils.newMockController().parentController
+    UrlbarTestUtils.mockChildController().parentController
   );
   Assert.deepEqual(context.results, [
     matches2[1],
@@ -253,7 +253,7 @@ add_task(async function test_suggestions() {
   info("Check results, the order should be: mozzarella, moz, a, b, @moz, c");
   await ProvidersManager.getInstanceForSap("urlbar").startQuery(
     context,
-    UrlbarTestUtils.newMockController().parentController
+    UrlbarTestUtils.mockChildController().parentController
   );
   Assert.deepEqual(context.results, [
     matches[2],
@@ -304,7 +304,7 @@ add_task(async function test_deduplicate_for_unitConversion() {
   const context = createContext(undefined, {
     providers: [searchProvider.name, unitConversion.name],
   });
-  const controller = UrlbarTestUtils.newMockController();
+  const controller = UrlbarTestUtils.mockChildController();
   await ProvidersManager.getInstanceForSap("urlbar").startQuery(
     context,
     controller.parentController
@@ -606,7 +606,7 @@ async function doBadHeuristicGroupsTest(resultGroups, expectedResults) {
   let context = createContext("foo", { providers: [provider.name] });
   await ProvidersManager.getInstanceForSap("urlbar").startQuery(
     context,
-    UrlbarTestUtils.newMockController().parentController
+    UrlbarTestUtils.mockChildController().parentController
   );
   Assert.deepEqual(context.results, expectedResults);
 
@@ -824,7 +824,7 @@ async function checkSemanticDedupe({
   });
   await ProvidersManager.getInstanceForSap("urlbar").startQuery(
     context,
-    UrlbarTestUtils.newMockController().parentController
+    UrlbarTestUtils.mockChildController().parentController
   );
 
   Assert.deepEqual(
@@ -917,7 +917,7 @@ add_task(async function test_semantic_only_survives() {
   });
   await ProvidersManager.getInstanceForSap("urlbar").startQuery(
     context,
-    UrlbarTestUtils.newMockController().parentController
+    UrlbarTestUtils.mockChildController().parentController
   );
 
   Assert.deepEqual(
@@ -963,7 +963,7 @@ add_task(async function test_dedupe_two_semantic_prefixes() {
   });
   await ProvidersManager.getInstanceForSap("urlbar").startQuery(
     context,
-    UrlbarTestUtils.newMockController().parentController
+    UrlbarTestUtils.mockChildController().parentController
   );
 
   Assert.deepEqual(
@@ -1031,7 +1031,7 @@ add_task(async function test_semantic_history_separate_group_ratio() {
   });
   await providersManager.startQuery(
     limitedResultsContext,
-    UrlbarTestUtils.newMockController().parentController
+    UrlbarTestUtils.mockChildController().parentController
   );
   Assert.equal(limitedResultsContext.results.length, 3, "Fills the budget");
   Assert.equal(
@@ -1047,7 +1047,7 @@ add_task(async function test_semantic_history_separate_group_ratio() {
   });
   await providersManager.startQuery(
     historyViewContext,
-    UrlbarTestUtils.newMockController().parentController
+    UrlbarTestUtils.mockChildController().parentController
   );
   Assert.equal(historyViewContext.results.length, 10, "Fills the budget");
   Assert.equal(
@@ -1075,7 +1075,7 @@ add_task(async function test_semantic_history_separate_group_ratio() {
   });
   await providersManager.startQuery(
     sparseContext,
-    UrlbarTestUtils.newMockController().parentController
+    UrlbarTestUtils.mockChildController().parentController
   );
   Assert.equal(
     sparseContext.results.filter(r => !isSemantic(r)).length,
