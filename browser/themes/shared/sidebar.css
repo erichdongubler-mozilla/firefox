@@ -297,15 +297,6 @@ sidebar-main,
   @media -moz-pref("browser.nova.enabled") and (not -moz-pref("sidebar.verticalTabs")) {
     --sidebar-launcher-button-padding-inline: 4px;
   }
-
-  /* The launcher buttons share a column with the vertical tab strip, so they
-   * take the same inline margin the tabs do. That keeps the collapsed sidebar
-   * at the fixed width tabs.css pins the strip to. */
-  @media -moz-pref("browser.nova.enabled") and -moz-pref("sidebar.verticalTabs") {
-    &:not([uidensity="touch"]) {
-      --sidebar-launcher-button-padding-inline: var(--tab-inner-inline-margin);
-    }
-  }
 }
 
 /* Dividers between sections of the sidebar launcher (below the pinned tabs and
