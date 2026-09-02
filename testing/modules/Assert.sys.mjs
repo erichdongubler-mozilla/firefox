@@ -576,10 +576,8 @@ function compareNumbers(expression, lhs, rhs, message, operator) {
     this.report(expression, lhs, rhs, message, operator);
     return;
   }
-  let lhsIsDate =
-    typeof lhs == "object" && lhs.constructor.name == "Date" && !isNaN(lhs);
-  let rhsIsDate =
-    typeof rhs == "object" && rhs.constructor.name == "Date" && !isNaN(rhs);
+  let lhsIsDate = lhs?.constructor?.name == "Date" && !isNaN(lhs);
+  let rhsIsDate = rhs?.constructor?.name == "Date" && !isNaN(rhs);
   if (lhsIsDate && rhsIsDate) {
     this.report(expression, lhs, rhs, message, operator);
     return;
