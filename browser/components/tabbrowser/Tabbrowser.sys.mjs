@@ -7572,7 +7572,7 @@ export class Tabbrowser {
    * Moves a tab to a new browser window, unless it's already the only tab
    * in the current window, in which case this will do nothing.
    *
-   * @param {MozTabbrowserTab|MozTabbrowserTabGroup|MozTabbrowserTabGroup.labelElement} aTab
+   * @param {MozTabbrowserTab|MozTabbrowserTabGroup|MozTabbrowserTabGroupLabel} aTab
    * @param {object} [aOptions={}]
    *   Key-value pairs that will be serialized into the features string.
    */
@@ -7781,9 +7781,9 @@ export class Tabbrowser {
   }
 
   /**
-   * @param {MozTabbrowserTab|MozTabbrowserTabGroup} element
-   *   The tab or tab group to move. Also accepts a tab group label as a
-   *   stand-in for its group.
+   * @param {MozTabbrowserTab|MozTabbrowserTabGroup|MozTabSplitViewWrapper} element
+   *   The tab, tab group or split view to move. Also accepts a tab group label
+   *   as a stand-in for its group.
    * @param {object} [options]
    * @param {number} [options.tabIndex]
    *   The desired position, expressed as the index within the `tabs` array.
@@ -7922,10 +7922,10 @@ export class Tabbrowser {
   }
 
   /**
-   * @param {MozTabbrowserTab|MozTabbrowserTabGroup} element
-   *   The tab or tab group to move. Also accepts a tab group label as a
-   *   stand-in for its group.
-   * @param {MozTabbrowserTab|MozTabbrowserTabGroup} targetElement
+   * @param {MozTabbrowserTab|MozTabbrowserTabGroup|MozTabSplitViewWrapper} element
+   *   The tab, tab group or split view to move. Also accepts a tab group label
+   *   as a stand-in for its group.
+   * @param {MozTabbrowserTab|MozTabbrowserTabGroup|MozTabSplitViewWrapper} targetElement
    * @param {boolean} [moveBefore=false]
    * @param {object} [options]
    * @param {TabMetricsContext} [options.metricsContext]
