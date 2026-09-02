@@ -18,8 +18,5 @@ type TaskbarTab = any;
 // that uses it, and JSDoc's parser rejects an indexed access type.
 type nsILoadInfo_SchemelessInputType = nsILoadInfo["schemelessInput"];
 
-// Session state TypeScript cannot reach: sessionstore names TabStateData in its
-// JSDoc without defining it anywhere, and TabSplitViewStateData is declared in
-// subscript-loaded tabsplitview.js, which nothing can import.
+// Sessionstore names TabStateData in its JSDoc without defining it anywhere.
 type TabStateData = any;
-type TabSplitViewStateData = any;

@@ -105,6 +105,11 @@ interface MozTabbrowserTabGroupLabel extends XULElement {
   group: MozTabbrowserTabGroup;
 }
 
+// What a split view contributes to session state, as its `state` getter builds
+// it and sessionstore stores it. tabsplitview.js documents the same shape in a
+// JSDoc typedef nothing can import.
+type TabSplitViewStateData = { id: number; numberOfTabs: number };
+
 interface MozTabSplitViewWrapper extends XULElement {
   // Never set, for the same reason as on a tab group: a split view is not
   // itself in one.
@@ -112,7 +117,7 @@ interface MozTabSplitViewWrapper extends XULElement {
 
   tabs: MozTabbrowserTab[];
   splitViewId: number;
-  state: { id: number; numberOfTabs: number };
+  state: TabSplitViewStateData;
   group: MozTabbrowserTabGroup | null;
   pinned: boolean;
   visible: boolean;
