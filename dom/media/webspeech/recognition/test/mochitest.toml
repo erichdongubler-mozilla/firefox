@@ -6,6 +6,10 @@ support-files = [
   "head.js",
   "hello.ogg",
   "hello.ogg^headers^",
+  # One minute excerpt from
+  # https://www.jfklibrary.org/learn/about-jfk/historic-speeches/address-at-rice-university-on-the-nations-space-effort,
+  # public domain speech that isn't too clean and contains a few proper names.
+  "kennedy-appolo.opus",
   "sinoid+hello.ogg",
   "sinoid+hello.ogg^headers^",
   "silence.ogg",
@@ -14,6 +18,20 @@ support-files = [
 
 ["test_abort_end_async.html"]
 
+["test_parakeet_e2e.html"]
+subsuite = "speech-recognition"
+tags = "mtg parakeet-asr"
+# Audio capture doesn't produce real signal under Wayland in CI, so
+# recognition always returns an empty transcript there.
+skip-if = [
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 2053116
+  "verify", # skip under test-verify: it runs outside the subsuite, so serve_model.py (the model hub) is never started
+]
+
 ["test_preference_enable.html"]
+
+# The parakeet tests run in their own subsuite (mochitest-speech-recognition) so
+# the large model artifacts are fetched only for this task. The parakeet-asr tag
+# makes runtests.py start the local model hub (serve_model.py) for them.
 
 ["test_start_after_error.html"]
