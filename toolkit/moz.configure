@@ -1248,23 +1248,6 @@ def webspeech(value):
 set_config("MOZ_WEBSPEECH", webspeech)
 set_define("MOZ_WEBSPEECH", webspeech)
 
-# Speech API test backend
-# ==============================================================
-option(
-    "--enable-webspeechtestbackend",
-    default=webspeech,
-    help="{Enable|Disable} support for HTML Speech API Test Backend",
-)
-
-
-@depends_if("--enable-webspeechtestbackend")
-def webspeech_test_backend(value):
-    return True
-
-
-set_config("MOZ_WEBSPEECH_TEST_BACKEND", webspeech_test_backend)
-set_define("MOZ_WEBSPEECH_TEST_BACKEND", webspeech_test_backend)
-
 
 # Graphics
 # ==============================================================

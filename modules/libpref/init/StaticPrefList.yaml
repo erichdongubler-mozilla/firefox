@@ -13229,20 +13229,10 @@
   value: false
   mirror: always
 
-- name: media.webspeech.test.fake_fsm_events
+- name: media.webspeech.recognition.enable
   type: bool
   value: false
   mirror: always
-
-- name: media.webspeech.test.fake_recognition_service
-  type: bool
-  value: false
-  mirror: always
-
--   name: media.webspeech.recognition.enable
-    type: bool
-    value: false
-    mirror: always
 
 -   name: media.webspeech.synth.enabled
     type: bool
