@@ -68,7 +68,7 @@ const FormFill_Head_Config = {
  * @returns {[string, string, string]} A tuple containing the current, previous,
  *   and next field strings, in that order.
  */
-function splitContext(mlData) {
+export function splitContext(mlData) {
   const cur = [];
   const prev = [];
   const next = [];
