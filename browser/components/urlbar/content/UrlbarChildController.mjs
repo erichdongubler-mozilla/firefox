@@ -62,7 +62,6 @@ export class UrlbarChildController {
     return UrlbarChildController.#logger;
   }
 
-  /** @type {UrlbarParentController | UrlbarParentControllerProxy} */
   #parentController;
 
   #input;
@@ -156,6 +155,8 @@ export class UrlbarChildController {
   /**
    * The paired parent controller -- the real `UrlbarParentController` on the
    * direct path, or the `UrlbarParentControllerProxy` on the message path.
+   *
+   * @type {UrlbarParentController | UrlbarParentControllerProxy}
    */
   get parentController() {
     return this.#parentController;
