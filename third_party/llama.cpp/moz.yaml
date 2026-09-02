@@ -37,6 +37,16 @@ vendoring:
     - requirements.txt
     - run_parser.py
     - moz-overrides.h
+    - generate_metal_embed.py
+    # The Metal backend is kept, not vendored: these files come from an older
+    # llama.cpp than the pinned revision, where the backend was a single
+    # translation unit rather than the split ggml-metal.cpp/-context.m/-device.m
+    # /-ops.cpp it is now. Bug 2068580 tracks updating them, after which they
+    # move back to `include`.
+    - ggml/include/ggml-metal.h
+    - ggml/src/ggml-metal/ggml-metal-impl.h
+    - ggml/src/ggml-metal/ggml-metal.m
+    - ggml/src/ggml-metal/ggml-metal.metal
 
   exclude:
     - "**"
@@ -63,9 +73,6 @@ vendoring:
     - ggml/src/ggml-cpu/arch/arm/
     - ggml/src/ggml-cpu/arch/x86/
     - ggml/src/ggml-cpu/CMakeLists.txt
-    - ggml/src/ggml-metal/ggml-metal-impl.h
-    - ggml/src/ggml-metal/ggml-metal.m
-    - ggml/src/ggml-metal/ggml-metal.metal
     - ggml/src/cmake/*
     - ggml/cmake/*
     - ggml/CMakeLists.txt

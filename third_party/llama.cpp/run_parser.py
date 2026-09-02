@@ -39,7 +39,11 @@ if __name__ == '__main__':
         'ENABLE_TOOLS': 0,
         'ENABLE_DOCS': 0,
         'ENABLE_NEON': 1,
-        'MOZ_GGML_BACKENDS': "cpu metal"
+        # Backends whose CMakeLists.txt the parser descends into, to pick up
+        # their sources. This does not disable a backend: the Metal one is
+        # absent because we vendor its sources without their CMakeLists.txt and
+        # list them by hand in moz.build, so there is nothing here to parse.
+        'MOZ_GGML_BACKENDS': "cpu"
     }
 
     platforms = [
@@ -70,7 +74,6 @@ if __name__ == '__main__':
         if system == "mac":
           variables["APPLE"] = 1
           variables["GGML_ACCELERATE"] = 1
-          variables["GGML_METAL"] = 1
 
         cache_variables = []
         pwd = [LLAMA_DIR]
