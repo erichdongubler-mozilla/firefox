@@ -4538,7 +4538,7 @@ pub unsafe extern "C" fn Servo_ComputedValues_GetForPageContent(
     let rule_node = data.stylist.rule_node_for_precomputed_pseudo(
         &guards,
         &PseudoElement::MozPageContent,
-        extra_declarations,
+        &extra_declarations,
     );
 
     data.stylist
@@ -4584,7 +4584,7 @@ pub unsafe extern "C" fn Servo_ComputedValues_GetForAnonymousBox(
     let data = raw_data.borrow_mut();
     let rule_node = data
         .stylist
-        .rule_node_for_precomputed_pseudo(&guards, &pseudo, vec![]);
+        .rule_node_for_precomputed_pseudo(&guards, &pseudo, &[]);
 
     data.stylist
         .precomputed_values_for_pseudo_with_rule_node::<GeckoElement>(
