@@ -1172,6 +1172,16 @@ export class TelemetryFeed {
   }
 
   /**
+   * @returns Flat list of all sections for the New Tab, each with its assigned layout.
+   */
+  getAllSections() {
+    const merinoData = this.store?.getState()?.DiscoveryStream?.feeds.data;
+    return Object.values(merinoData ?? {}).flatMap(
+      feed => feed?.data?.sections ?? []
+    );
+  }
+
+  /**
    * @returns Number of articles for the New Tab. Does not include spocs (ads)
    */
   getRecommendationCount() {
@@ -1240,7 +1250,7 @@ export class TelemetryFeed {
       corpus_item_id: randomItem.corpus_item_id,
     };
     // If we're replacing a non top stories item, then assign the appropriate
-    // section to the item
+    // section and layout to the item
     if (
       resultItem.section &&
       resultItem.section !== TOP_STORIES_SECTION_NAME &&
@@ -1248,6 +1258,9 @@ export class TelemetryFeed {
     ) {
       resultItem.section = randomItem.section;
       resultItem.section_position = randomItem.section_position;
+      resultItem.layout_name = this.getAllSections().find(
+        section => section.sectionKey === randomItem.section
+      )?.layout?.name;
     }
     return resultItem;
   }

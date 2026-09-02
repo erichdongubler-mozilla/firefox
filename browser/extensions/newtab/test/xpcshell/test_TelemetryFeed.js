@@ -2617,6 +2617,51 @@ add_task(function test_randomizeOrganicContentEvent() {
   sandbox.restore();
 });
 
+add_task(function test_randomizeOrganicContentEvent_tracks_layout_name() {
+  info(
+    "randomizeOrganicContentEvent should set layout_name to the swapped " +
+      "section's layout"
+  );
+  let sandbox = sinon.createSandbox();
+  let instance = new TelemetryFeed();
+
+  const item = {
+    corpus_item_id: "orig",
+    topic: "a",
+    is_sponsored: false,
+    section: "orig-section",
+    section_position: 0,
+    layout_name: "orig-layout",
+  };
+  const randomItem = {
+    corpus_item_id: "swapped",
+    topic: "b",
+    is_sponsored: false,
+    section: "swapped-section",
+  };
+  sandbox.stub(instance, "getRecommendationCount").returns(10);
+  sandbox.stub(instance, "getAllRecommendations").returns([randomItem]);
+  sandbox
+    .stub(instance, "getAllSections")
+    .returns([
+      { sectionKey: "swapped-section", layout: { name: "swapped-layout" } },
+    ]);
+  instance._privateRandomContentTelemetryProbablityValues = { epsilon: 30 };
+  sandbox.stub(NewTabContentPing, "decideWithProbability").returns(false);
+  sandbox.stub(NewTabContentPing, "secureRandIntInRange").returns(0);
+
+  const result = instance.randomizeOrganicContentEvent(item);
+
+  Assert.equal(result.section, "swapped-section", "section is swapped");
+  Assert.equal(
+    result.layout_name,
+    "swapped-layout",
+    "layout_name tracks the swapped section"
+  );
+
+  sandbox.restore();
+});
+
 add_task(async function test_handleSpocPlaceholderDuration_records_metric() {
   info(
     "TelemetryFeed.handleSpocPlaceholderDuration should record the " +

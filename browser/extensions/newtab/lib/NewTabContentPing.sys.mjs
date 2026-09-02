@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
 const lazy = {};
 
@@ -283,10 +284,15 @@ export class NewTabContentPing {
       received_rank,
       // eslint-disable-next-line no-unused-vars
       event_source,
-      // eslint-disable-next-line no-unused-vars
-      layout_name,
       ...result
     } = eventDataDict;
+    // @backward-compat { version 157 } layout_name was added as an extra_key to
+    // the newtab_content impression/click events in 157. A train-hopped XPI can
+    // run on older platform builds whose schema lacks it, which would throw a
+    // Glean error, so drop it below 157.
+    if (Services.vc.compare(AppConstants.MOZ_APP_VERSION, "157.0a1") < 0) {
+      delete result.layout_name;
+    }
     return result;
   }
 
