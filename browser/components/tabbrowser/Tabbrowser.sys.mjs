@@ -4320,7 +4320,7 @@ export class Tabbrowser {
     }
 
     for (let element of group.tabsAndSplitViews) {
-      if (element.tagName == "tab-split-view-wrapper") {
+      if (this.isSplitViewWrapper(element)) {
         splitview = this.adoptSplitView(element, {
           elementIndex,
           tabIndex,
@@ -5391,8 +5391,10 @@ export class Tabbrowser {
       index = Math.max(index, this.pinnedTabCount);
       index = Math.min(index, allItems.length);
     }
-    /** @type {MozTabbrowserTab|undefined} */
-    let itemAfter = allItems.at(index);
+    let itemAfter =
+      /** @type {MozTabbrowserTab|MozTabSplitViewWrapper|MozTabbrowserTabGroupLabel|undefined} */ (
+        allItems.at(index)
+      );
 
     if (pinned && !itemAfter?.pinned) {
       itemAfter = null;
@@ -5401,7 +5403,9 @@ export class Tabbrowser {
       itemAfter =
         itemAfter === splitview.tabs[0]
           ? splitview
-          : splitview.nextElementSibling || null;
+          : /** @type {MozTabbrowserTab|MozTabSplitViewWrapper} */ (
+              splitview.nextElementSibling
+            ) || null;
     }
     // Prevent a flash of unstyled content by setting up the tab content
     // and inherited attributes before appending it (see Bug 1592054):
@@ -6276,7 +6280,9 @@ export class Tabbrowser {
       isVisibleTab &&
       aTab._fullyOpen &&
       triggeringEvent?.inputSource == MouseEvent.MOZ_SOURCE_MOUSE &&
-      triggeringEvent?.target.closest(".tabbrowser-tab");
+      /** @type {Element} */ (triggeringEvent.target).closest(
+        ".tabbrowser-tab"
+      );
     if (lockTabSizing) {
       this.tabContainer._lockTabSizing(aTab, tabWidth);
     } else {
@@ -7601,7 +7607,7 @@ export class Tabbrowser {
 
     // tell a new window to take the "dropped" tab
     let args = Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray);
-    args.appendElement(aTab.splitview ?? aTab);
+    args.appendElement(/** @type {nsISupports} */ (aTab.splitview ?? aTab));
     return lazy.BrowserWindowTracker.openWindow({
       private: lazy.PrivateBrowsingUtils.isWindowPrivate(this.documentGlobal),
       features: Object.entries(aOptions)
@@ -8981,7 +8987,7 @@ export class Tabbrowser {
     }
     if (
       !aEvent.isReplyEventFromRemoteContent &&
-      aEvent.target?.isRemoteBrowser === true
+      /** @type {MozBrowser} */ (aEvent.target)?.isRemoteBrowser === true
     ) {
       aEvent.requestReplyFromRemoteContent();
       return true;
