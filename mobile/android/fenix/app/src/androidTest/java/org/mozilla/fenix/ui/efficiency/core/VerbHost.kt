@@ -15,7 +15,7 @@ import org.mozilla.fenix.ui.efficiency.logging.TimedReporter
 interface VerbHost {
     fun reporter(): TimedReporter
 
-    fun locate(selector: Selector, applyPreconditions: Boolean): Any?
+    fun locate(selector: Selector, applyPreconditions: Boolean): UiElement?
 
     /** Null when the selector's strategy cannot match more than one element. */
     fun locateAll(selector: Selector): SemanticsNodeInteractionCollection?

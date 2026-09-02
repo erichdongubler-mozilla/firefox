@@ -33,7 +33,7 @@ class VerbContractTest {
 
         override fun reporter() = timedReporter
 
-        override fun locate(selector: Selector, applyPreconditions: Boolean): Any? {
+        override fun locate(selector: Selector, applyPreconditions: Boolean): UiElement? {
             locateCalls += 1
             return null
         }

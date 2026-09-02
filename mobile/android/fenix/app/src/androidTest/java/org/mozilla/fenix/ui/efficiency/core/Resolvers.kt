@@ -186,7 +186,7 @@ object Resolvers {
         if (count == 0) return null
         for (i in 0 until count) {
             val node = collection[i]
-            if (ElementState.probe(node, ElementState.Trait.DISPLAYED)) return node
+            if (ElementState.probe(ComposeUiElement(node), ElementState.Trait.DISPLAYED)) return node
         }
         return collection[0]
     }

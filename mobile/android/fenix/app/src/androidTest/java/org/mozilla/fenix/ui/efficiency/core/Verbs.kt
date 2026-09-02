@@ -46,9 +46,9 @@ fun <T : VerbHost> T.require(
     applyPreconditions: Boolean = true,
     dumpOnFailure: Boolean = true,
     optional: Boolean = false,
-    via: ((Selector, Boolean) -> Any?)? = null,
-    predicate: (Any) -> Boolean = { true },
-    action: (Any) -> Unit = {},
+    via: ((Selector, Boolean) -> UiElement?)? = null,
+    predicate: (UiElement) -> Boolean = { true },
+    action: (UiElement) -> Unit = {},
 ): T {
     val cmd = cmd(verb, selector.description, "Attempting to $verb '${selector.description}'...")
 
@@ -231,7 +231,7 @@ fun <T : VerbHost> T.driveUntil(
     attempts: Int,
     want: Boolean,
     dumpOnFailure: Boolean = false,
-    probe: (Any) -> Boolean = { ElementState.probe(it, ElementState.Trait.DISPLAYED) },
+    probe: (UiElement) -> Boolean = { ElementState.probe(it, ElementState.Trait.DISPLAYED) },
     settle: () -> Unit = {},
     step: () -> Unit,
 ): T {
@@ -396,7 +396,7 @@ private fun dumpRef(dumping: Boolean, verb: String, selector: Selector): Map<Str
  * What a lookup saw: [located] is the element if it resolved at all, [matched] only if it also satisfied the predicate.
  * Two fields rather than one nullable so a failure can say which happened.
  */
-private class Probe(val located: Any? = null, val matched: Any? = null)
+private class Probe(val located: UiElement? = null, val matched: UiElement? = null)
 
 /**
  * The lookup itself: poll if asked, and give a covering overlay exactly one chance to be dismissed before declaring the
@@ -406,12 +406,12 @@ private fun VerbHost.seek(
     selector: Selector,
     policy: WaitPolicy,
     applyPreconditions: Boolean,
-    predicate: (Any) -> Boolean,
-    via: ((Selector, Boolean) -> Any?)? = null,
+    predicate: (UiElement) -> Boolean,
+    via: ((Selector, Boolean) -> UiElement?)? = null,
 ): Probe {
-    var seen: Any? = null
+    var seen: UiElement? = null
 
-    fun once(): Any? {
+    fun once(): UiElement? {
         val loc = loc(selector.description)
         val found = runCatching {
             via?.invoke(selector, applyPreconditions) ?: locate(selector, applyPreconditions)

@@ -8,7 +8,6 @@ import android.os.SystemClock
 import android.util.Log
 import android.view.accessibility.AccessibilityWindowInfo
 import androidx.compose.ui.semantics.SemanticsActions
-import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.SemanticsNodeInteractionCollection
 import androidx.compose.ui.test.filter
 import androidx.compose.ui.test.hasAnyChild
@@ -77,7 +76,8 @@ abstract class BasePage(protected val composeRule: AndroidComposeTestRule<HomeAc
 
     override fun reporter() = rep()
 
-    override fun locate(selector: Selector, applyPreconditions: Boolean) = mozGetElement(selector, applyPreconditions)
+    override fun locate(selector: Selector, applyPreconditions: Boolean) =
+        UiElement.wrap(mozGetElement(selector, applyPreconditions))
 
     // Only a Compose tag can name more than one element; the collection verbs report any other
     // strategy as the reason rather than as "not found".
@@ -319,19 +319,11 @@ abstract class BasePage(protected val composeRule: AndroidComposeTestRule<HomeAc
         }.also { if (it == null) Log.i("mozGetElement", "not found: ${selector.description}") }
     }
 
-    /**
-     * Wrap the shared selector resolution as the backend-agnostic click facade. [mozGetElement] chooses the on-screen
-     * Compose match for every verb, so clicking and verification cannot silently operate on different nodes.
-     */
-    private fun resolve(selector: Selector, applyPreconditions: Boolean = true): UiElement? {
-        return UiElement.wrap(mozGetElement(selector, applyPreconditions))
-    }
-
     private fun mozVerifyElement(selector: Selector, applyPreconditions: Boolean = true): Boolean {
         // MUST NOT throw. The page probes poll this before navigation starts, and an escaped
         // exception reaches navigateToPage() -> failure screenshot -> StrictMode penaltyDeath, which
         // masks the real error. Both halves below degrade to false instead.
-        val element = runCatching { mozGetElement(selector, applyPreconditions) }.getOrNull() ?: return false
+        val element = runCatching { locate(selector, applyPreconditions) }.getOrNull() ?: return false
         return ElementState.probe(element, ElementState.Trait.DISPLAYED)
     }
 
@@ -579,7 +571,7 @@ abstract class BasePage(protected val composeRule: AndroidComposeTestRule<HomeAc
             expectation = "clickable",
             via = { sel, pre ->
                 composeRule.waitForIdle()
-                resolve(sel, pre)
+                locate(sel, pre)
             },
             action = UiActions::click,
         )
@@ -623,9 +615,7 @@ abstract class BasePage(protected val composeRule: AndroidComposeTestRule<HomeAc
             action = { element ->
                 // TEXT_MERGED re-fetches by text instead of using the located node: the merged node can
                 // be the whole row, and the gesture has to land on the text itself.
-                if (
-                    element is SemanticsNodeInteraction && selector.strategy == SelectorStrategy.COMPOSE_BY_TEXT_MERGED
-                ) {
+                if (selector.strategy == SelectorStrategy.COMPOSE_BY_TEXT_MERGED) {
                     composeRule.waitUntil(TestAssetHelper.waitingTime) {
                         composeRule.onAllNodesWithText(selector.value).fetchSemanticsNodes().isNotEmpty()
                     }
