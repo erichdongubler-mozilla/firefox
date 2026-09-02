@@ -103,6 +103,7 @@ const JSON_BASIC_URL = EXAMPLE_URL + "html_json-basic.html";
 const JSON_EMPTY_URL = EXAMPLE_URL + "html_json-empty.html";
 const JSON_XSSI_PROTECTION_URL = EXAMPLE_URL + "html_json-xssi-protection.html";
 const JSONL_URL = EXAMPLE_URL + "html_jsonl-test-page.html";
+const JSONL_POST_URL = EXAMPLE_URL + "html_jsonl-post-test-page.html";
 const FONTS_URL = EXAMPLE_URL + "html_fonts-test-page.html";
 const SORTING_URL = EXAMPLE_URL + "html_sorting-test-page.html";
 const FILTERING_URL = EXAMPLE_URL + "html_filter-test-page.html";

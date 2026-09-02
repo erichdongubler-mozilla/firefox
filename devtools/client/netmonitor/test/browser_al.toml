@@ -36,6 +36,7 @@ support-files = [
   "html_json-malformed-test-page.html",
   "html_json-text-mime-test-page.html",
   "html_json-xssi-protection.html",
+  "html_jsonl-post-test-page.html",
   "html_jsonl-test-page.html",
   "html_jsonp-test-page.html",
   "html_maps-test-page.html",
@@ -338,6 +339,8 @@ fail-if = [
 ["browser_net_json_custom_mime.js"]
 
 ["browser_net_json_text_mime.js"]
+
+["browser_net_jsonl-request.js"]
 
 ["browser_net_jsonl.js"]
 
