@@ -48,7 +48,9 @@ Common commands:
 
 Useful flags:
 
--   `--no-autodoc` -- skip Python/JS API generation for faster builds
+-   `--no-autodoc` -- skip Python/JS API generation, for faster builds and to
+    get past a JSDoc failure in a component you are not touching (see *API
+    references from source comments*)
 -   `--verbose` -- run Sphinx in verbose mode for debugging
 -   `--disable-warnings-check` -- ignore unexpected warnings during local development
 -   `--linkcheck` -- validate all links in the documentation
@@ -112,9 +114,11 @@ location, you must add a `SPHINX_TREES` entry in the relevant `moz.build`.
 
 This file controls several critical aspects of the documentation build:
 
--   **`categories`**: Every documentation path must be assigned to a
-    category. If a new doc path is not categorized here, the build fails
-    with an "Uncategorized documentation" error.
+-   **`categories`**: Every documentation *tree* -- a `SPHINX_TREES` root, not
+    a page -- must be assigned to a category, or a full build fails with an
+    "Uncategorized documentation" error. A page added inside a tree that is
+    already listed needs no entry, and the check runs only when the whole tree
+    is built.
 -   **`allowed_warnings`**: Regex patterns for known/acceptable Sphinx
     warnings. Warnings matching these patterns are logged as "KNOWN"
     instead of causing build failures.
@@ -159,6 +163,11 @@ The path is rooted at the documentation tree (leading `/`), and the extension
 must match the actual source file (`.md` or `.rst`). To link to a section, append
 the anchor: `/mots/index.md#desktop-theme`.
 
+A `{doc}` role with no link text renders the target page's *title*, so a noun
+after it reads twice: ``in the {doc}`api` reference`` comes out as "in the
+SessionStore API reference reference". Give the role its own text where the
+sentence already names the thing.
+
 ## API references from source comments
 
 A directory listed in `js_source_paths` has its JSDoc rendered as an API
@@ -172,6 +181,12 @@ they do not agree:
 
         :doc:`Places </browser/places/index>`
 
+-   **A JSDoc failure anywhere aborts every build.** `conf.py` hands sphinx-js
+    the whole `js_source_paths` list whatever directory `./mach doc` was pointed
+    at, so an aborting error names a file the change never touched and scoping
+    the build does not avoid it. `--no-autodoc` builds the page anyway, with the
+    generated API pages missing and `js:autoclass` warning as an unknown
+    directive.
 -   **jsdoc rejects type expressions that TypeScript accepts, and does it
     quietly.** A type predicate (`{element is MozTabbrowserTab}`), a tuple,
     indexed access, and a postfix `[]` on a parenthesised union (`{(A|B)[]}`)
@@ -224,6 +239,11 @@ it in the browser from a CDN, which is what makes these worth knowing:
 ## Best Practices
 
 -   Always build documentation locally before pushing.
+-   For a docs-only change, name the linters that apply:
+    `./mach lint -l codespell -l file-whitespace -l trojan-source <path>`.
+    A bare `./mach lint <path>` exits non-zero with failures from linters that
+    have nothing to check in a `.md` file, which reads as though the change
+    broke something.
 -   Resolve warnings before landing documentation changes.
 -   Keep documentation near the code it describes when appropriate.
 -   Prefer `literalinclude` for code examples instead of copying code.
