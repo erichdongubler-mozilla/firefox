@@ -49,6 +49,8 @@ class SpeechRecognitionParent final : public PSpeechRecognitionParent {
 
   ipc::IPCResult RecvIsModelAvailable(const nsTArray<nsCString>& aLanguages,
                                       IsModelAvailableResolver&& aResolver);
+  ipc::IPCResult RecvIsModelInstalled(const nsTArray<nsCString>& aLanguages,
+                                      IsModelInstalledResolver&& aResolver);
   mozilla::ipc::IPCResult RecvInstallModels(
       const nsTArray<nsCString>& aLanguages, InstallModelsResolver&& aResolver);
   mozilla::ipc::IPCResult RecvInit(const nsCString& aEngineId,
@@ -72,8 +74,9 @@ class SpeechRecognitionParent final : public PSpeechRecognitionParent {
 
   const dom::ContentParentId mContentId;
 
-  // Shared by RecvIsModelAvailable and RecvInstallModels, which otherwise
-  // only differ in the HWInferenceChild call they make. Resolves
+  // Shared by RecvIsModelAvailable, RecvIsModelInstalled, and
+  // RecvInstallModels, which otherwise only differ in the HWInferenceChild
+  // call they make and which request holder they track it with. Resolves
   // aResolver(false) if the utility process/HWInferenceChild isn't
   // available; otherwise calls aSendFunc(hwInferenceChild), tracks the
   // resulting promise in aRequestHolder, and resolves aResolver with the
@@ -146,6 +149,10 @@ class SpeechRecognitionParent final : public PSpeechRecognitionParent {
   MozPromiseRequestHolder<
       hwinference::PHWInferenceChild::IsModelAvailablePromise>
       mIsModelAvailableRequest;
+  // Backs the JS-facing IsModelInstalled query.
+  MozPromiseRequestHolder<
+      hwinference::PHWInferenceChild::IsModelInstalledPromise>
+      mIsModelInstalledRequest;
   // Tracks RetrieveModel()'s installation check, run before fetching the model
   // file for a recognition session.
   MozPromiseRequestHolder<

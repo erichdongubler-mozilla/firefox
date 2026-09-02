@@ -127,6 +127,27 @@ mozilla::ipc::IPCResult SpeechRecognitionParent::RecvIsModelAvailable(
       std::move(aResolver), mIsModelAvailableRequest);
 }
 
+mozilla::ipc::IPCResult SpeechRecognitionParent::RecvIsModelInstalled(
+    const nsTArray<nsCString>& aLanguages,
+    IsModelInstalledResolver&& aResolver) {
+  if (aLanguages.IsEmpty()) {
+    return IPC_FAIL(this,
+                    "RecvIsModelInstalled requires at least one language");
+  }
+
+  nsCString modelId = dom::LanguagesToSpeechModelId(aLanguages);
+  LOGD("{} languages: {} mapped to id={}", __func__,
+       fmt::join(aLanguages, ", "), modelId.get());
+
+  return RunHWInferenceBoolQuery(
+      __func__,
+      [modelId](hwinference::HWInferenceChild* aChild) {
+        return aChild->SendIsModelInstalled(dom::kSpeechRecognitionTask,
+                                            modelId);
+      },
+      std::move(aResolver), mIsModelInstalledRequest);
+}
+
 mozilla::ipc::IPCResult SpeechRecognitionParent::RecvInstallModels(
     const nsTArray<nsCString>& aLanguages, InstallModelsResolver&& aResolver) {
   if (aLanguages.IsEmpty()) {
@@ -447,6 +468,7 @@ void SpeechRecognitionParent::ActorDestroy(ActorDestroyReason aReason) {
   // resolve/reject callbacks never run and try to resolve a dead IPDL
   // resolver after this actor is torn down.
   mIsModelAvailableRequest.DisconnectIfExists();
+  mIsModelInstalledRequest.DisconnectIfExists();
   mRetrieveModelIsInstalledRequest.DisconnectIfExists();
   mInstallModelRequest.DisconnectIfExists();
   mGetModelFileRequest.DisconnectIfExists();
