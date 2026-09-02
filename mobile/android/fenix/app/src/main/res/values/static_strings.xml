@@ -153,8 +153,6 @@
     <string name="preferences_debug_settings_enable_persistent_onboarding" translatable="false">Show onboarding on each app cold open</string>
     <!-- Label for enabling Homepage Customization -->
     <string name="preferences_debug_settings_homepage_customization" translatable="false">Enable Homepage Customization</string>
-    <!-- Label for enabling trending and recent searches on the Homepage Search -->
-    <string name="preferences_debug_settings_homepage_trending_recent_search" translatable="false">Enable Trending and Recent Search on Homepage</string>
 
     <!-- Search Optimization Secret Settings -->
     <string name="preferences_debug_settings_search_optimization" translatable="false">Search Optimization Feature</string>
