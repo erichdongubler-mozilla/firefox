@@ -3643,6 +3643,92 @@ class FullPageTranslationsTestUtils {
  */
 class SelectTranslationsTestUtils {
   /**
+   * Waits for a completed Select Translations request to release its port.
+   *
+   * @returns {Promise<void>}
+   */
+  static async waitForPortToClose() {
+    const engineParent = await EngineProcess.getTranslationsEngineParent();
+
+    await waitForCondition(
+      async () =>
+        (await engineParent.getEngineStateForTests()).activePortCount === 0,
+      "Waiting for Select Translations to release its client port."
+    );
+  }
+
+  /**
+   * Verifies that Select Translations can translate another selection after an
+   * idle timeout.
+   *
+   * @param {object} options
+   * @param {boolean} options.keepProcessAlive
+   * @returns {Promise<void>}
+   */
+  static async assertTranslationAfterEngineIdleTimeout({ keepProcessAlive }) {
+    const { cleanup, runInPage, resolveDownloads } = await loadTestPage({
+      page: SELECT_TEST_PAGE_URL,
+      languagePairs: LANGUAGE_PAIRS,
+      prefs: [
+        ["browser.translations.select.enable", true],
+        ...(keepProcessAlive ? [["browser.ml.enable", true]] : []),
+      ],
+    });
+    let processKeepAlive = null;
+
+    try {
+      processKeepAlive = keepProcessAlive
+        ? await TranslationsEngineTestUtils.keepInferenceProcessAlive()
+        : null;
+
+      await SelectTranslationsTestUtils.openPanel(runInPage, {
+        selectFrenchSection: true,
+        openAtFrenchSection: true,
+        expectedFromLanguage: "fr",
+        expectedToLanguage: "en",
+        expectedDownloads: 1,
+        downloadHandler: resolveDownloads,
+        onOpenPanel: SelectTranslationsTestUtils.assertPanelViewTranslated,
+      });
+      await SelectTranslationsTestUtils.waitForPortToClose();
+
+      await SelectTranslationsTestUtils.clickDoneButton();
+
+      info("Wait for the engine to shut down after its idle timeout.");
+      if (keepProcessAlive) {
+        await TranslationsEngineTestUtils.waitForIdleTimeoutWithProcessAlive(
+          processKeepAlive.engineParent,
+          { sourceLanguage: "fr", targetLanguage: "en" }
+        );
+      } else {
+        await TranslationsEngineTestUtils.waitForIdleTimeout({
+          sourceLanguage: "fr",
+          targetLanguage: "en",
+        });
+      }
+
+      await SelectTranslationsTestUtils.openPanel(runInPage, {
+        selectFrenchSentence: true,
+        openAtFrenchSentence: true,
+        expectedFromLanguage: "fr",
+        expectedToLanguage: "en",
+        expectedDownloads: 1,
+        downloadHandler: resolveDownloads,
+        onOpenPanel: SelectTranslationsTestUtils.assertPanelViewTranslated,
+      });
+      await SelectTranslationsTestUtils.waitForPortToClose();
+
+      await SelectTranslationsTestUtils.clickDoneButton();
+    } finally {
+      try {
+        await processKeepAlive?.release();
+      } finally {
+        await cleanup();
+      }
+    }
+  }
+
+  /**
    * Opens the context menu then asserts properties of the translate-selection item in the context menu.
    *
    * @param {Function} runInPage - A content-exposed function to run within the context of the page.
