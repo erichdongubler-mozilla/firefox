@@ -425,7 +425,11 @@ class Inspector extends EventEmitter {
 
     try {
       const defaultNode = await this.#getDefaultNodeForSelection(rootNodeFront);
-      if (!defaultNode) {
+      if (
+        !defaultNode ||
+        // Target was updated mid-flight, abort the initialization.
+        this.currentTarget !== rootNodeFront.targetFront
+      ) {
         return;
       }
 
@@ -437,6 +441,11 @@ class Inspector extends EventEmitter {
       this.#defaultStartupNodeSelectionReason = null;
 
       await this.#initMarkupView();
+
+      if (this.currentTarget !== rootNodeFront.targetFront) {
+        // Target was updated mid-flight, abort the initialization.
+        return;
+      }
 
       // Setup the toolbar again, since its content may depend on the current document.
       await this.#setupToolbar();
