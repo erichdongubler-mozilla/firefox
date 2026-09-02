@@ -240,6 +240,7 @@ abstract class BasePage(protected val composeRule: AndroidComposeTestRule<HomeAc
                 verb = "verify_group",
                 label = "${pageName}_$group",
                 selectors = mozGetSelectorsByGroup(group),
+                policy = WaitPolicy.Poll(),
                 applyPreconditions = true,
             )
         if (!present) {
