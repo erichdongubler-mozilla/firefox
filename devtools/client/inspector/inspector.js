@@ -179,6 +179,7 @@ class Inspector extends EventEmitter {
   // Stores all the instances of sidebar panels like rule view, computed view, ...
   #panels = new Map();
   #fluentL10n;
+  #defaultNodeSelected = false;
   #defaultStartupNode;
   #defaultStartupNodeDomReference;
   #defaultStartupNodeSelectionReason;
@@ -249,6 +250,11 @@ class Inspector extends EventEmitter {
     // This is used as a fallback if the currently selected node is removed.
     this.#defaultNode = null;
 
+    this.breadcrumbs = new HTMLBreadcrumbs(this);
+    this.styleChangeTracker = new InspectorStyleChangeTracker(this);
+    this.#setupSearchBox();
+    this.#createInspectorShortcuts();
+
     await this.commands.targetCommand.watchTargets({
       types: [this.commands.targetCommand.TYPES.FRAME],
       onAvailable: this.#onTargetAvailable,
@@ -282,18 +288,6 @@ class Inspector extends EventEmitter {
     // telemetry counts in the Grid Inspector are not double counted on reload.
     this.previousURL = this.currentTarget.url;
 
-    // Note: setupSidebar() really has to be called after the first target has
-    // been processed, so that the cssProperties getter works.
-    // But the rest could be moved before the watch* calls.
-    this.styleChangeTracker = new InspectorStyleChangeTracker(this);
-    this.#setupSidebar();
-    this.breadcrumbs = new HTMLBreadcrumbs(this);
-    this.#setupExtensionSidebars();
-    this.#setupSearchBox();
-    this.#createInspectorShortcuts();
-
-    this.#onNewSelection();
-
     this.toolbox.on("host-changed", this.#onHostChanged);
     this.toolbox.nodePicker.on("picker-node-hovered", this.onPickerHovered);
     this.toolbox.nodePicker.on("picker-node-canceled", this.onPickerCanceled);
@@ -309,6 +303,17 @@ class Inspector extends EventEmitter {
     );
 
     return this;
+  }
+
+  /**
+   * Finalize the initialization of all UIs which depends on having a selected
+   * node.
+   */
+  #onDefaultNodeSelected() {
+    this.#setupSidebar();
+    this.#setupExtensionSidebars();
+
+    this.#onNewSelection();
   }
 
   // The onTargetAvailable argument is mandatory for TargetCommand.watchTargets.
@@ -435,6 +440,12 @@ class Inspector extends EventEmitter {
 
       // Setup the toolbar again, since its content may depend on the current document.
       await this.#setupToolbar();
+
+      // Finalize initialization when a default node is successfully selected.
+      if (!this.#defaultNodeSelected) {
+        this.#defaultNodeSelected = true;
+        this.#onDefaultNodeSelected();
+      }
     } catch (e) {
       this.#handleRejectionIfNotDestroyed(e);
       // Show the AppErrorBoundary if the markup view failed to render, unless:
@@ -1451,6 +1462,12 @@ class Inspector extends EventEmitter {
    *        The tab title
    */
   addExtensionSidebar(id, { title }) {
+    if (!this.#defaultNodeSelected) {
+      // The sidebar is not created yet, #setupExtensionSidebars will create
+      // this extension sidebar when the first root node is available.
+      return;
+    }
+
     if (this.#panels.has(id)) {
       throw new Error(
         `Cannot create an extension sidebar for the existent id: ${id}`
@@ -1485,6 +1502,11 @@ class Inspector extends EventEmitter {
    *        The id of the sidebar tab to destroy.
    */
   removeExtensionSidebar(id) {
+    if (!this.#defaultNodeSelected) {
+      // The extension sidebars were not created yet, nothing to remove.
+      return;
+    }
+
     if (!this.#panels.has(id)) {
       throw new Error(`Unable to find a sidebar panel with id "${id}"`);
     }
@@ -1816,15 +1838,18 @@ class Inspector extends EventEmitter {
     this.toolbox.nodePicker.off("picker-node-hovered", this.onPickerHovered);
     this.toolbox.nodePicker.off("picker-node-picked", this.onPickerPicked);
 
-    // Destroy the sidebar first as it may unregister stuff
-    // and still use random attributes on inspector and layout panel
-    this.sidebar.destroy();
-    // Unregister sidebar listener *after* destroying it
-    // in order to process its destroy event and save sidebar sizes
-    this.sidebar.off("select", this.onSidebarSelect);
-    this.sidebar.off("show", this.onSidebarShown);
-    this.sidebar.off("hide", this.onSidebarHidden);
-    this.sidebar.off("destroy", this.onSidebarHidden);
+    // The sidebar is only created once the first root node is available.
+    if (this.sidebar) {
+      // Destroy the sidebar first as it may unregister stuff
+      // and still use random attributes on inspector and layout panel
+      this.sidebar.destroy();
+      // Unregister sidebar listener *after* destroying it
+      // in order to process its destroy event and save sidebar sizes
+      this.sidebar.off("select", this.onSidebarSelect);
+      this.sidebar.off("show", this.onSidebarShown);
+      this.sidebar.off("hide", this.onSidebarHidden);
+      this.sidebar.off("destroy", this.onSidebarHidden);
+    }
 
     for (const [, panel] of this.#panels) {
       panel.destroy({ fromInspectorDestroy: true });
@@ -1840,7 +1865,7 @@ class Inspector extends EventEmitter {
       this.#search = null;
     }
 
-    this.ruleViewSideBar.destroy();
+    this.ruleViewSideBar?.destroy();
     this.ruleViewSideBar = null;
 
     this.#destroyMarkup();
