@@ -23,6 +23,8 @@ UpdateProcessor
 # Used by `BackgroundClipboardContentAnalysisParent` to handle clipboard requests
 # from content processes.
 BkgrndClipboard
+# Blocking thread calling into the parakeet.cpp library.
+Parakeet
 
 ######
 # Thunderbird-only thread names

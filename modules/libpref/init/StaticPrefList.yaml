@@ -13242,6 +13242,15 @@
   value: false
   mirror: always
 
+# Delays the recognition thread, right before it acquires the parent actor's
+# lock during session init, by this many milliseconds. Used by tests to
+# deterministically land actor teardown in that window instead of relying on
+# scheduling luck. 0 (default) means no delay.
+- name: media.webspeech.recognition.testing.parakeet_init_delay_ms
+  type: RelaxedAtomicInt32
+  value: 0
+  mirror: always
+
 -   name: media.webspeech.synth.enabled
     type: bool
     value: true
