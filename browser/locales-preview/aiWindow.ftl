@@ -254,10 +254,20 @@ smartbar-command-coming-soon = More types of tasks are coming soon
 ## Smart Form Fill
 
 ai-smart-form-fill-autocomplete-label = Smart Form Fill
-ai-smart-form-fill-autocomplete-loading = Loading…
-ai-smart-form-fill-autocomplete-sources-label = Sources:
-ai-smart-form-fill-autocomplete-choose-tabs = You need to choose some relevant tabs
-ai-smart-form-fill-autocomplete-open-tabs = You need to open some tabs
+ai-smart-form-fill-autocomplete-loading = Loading
+ai-smart-form-fill-autocomplete-sources-label = Fill from sources
+ai-smart-form-fill-autocomplete-choose-tabs = Open or choose pages related to this form to get autofill suggestions
+ai-smart-form-fill-autocomplete-open-tabs = Open pages related to this form to get autofill suggestions
+ai-smart-form-fill-close-review =
+    .label = Close
+
+# Variables:
+#   $tabs (number) - The number of tabs used as a source for autofill
+ai-smart-form-fill-autocomplete-tabs-count =
+    { $tabs ->
+        [one] { $tabs } tab
+       *[other] { $tabs } tabs
+    }
 
 # Sources are what tabs the Smart Form Fill should use to generate field values
 ai-smart-form-fill-edit-sources = Edit sources
@@ -300,6 +310,3 @@ ai-smart-form-fill-no-suggestions-description = Smart Form Fill wasn’t able to
 
 ai-smart-form-fill-error-heading = Something happened catch-all headline
 ai-smart-form-fill-error-description = General explanation that maybe its the connection, or something else happened, and to try again
-
-ai-smart-form-fill-close-review =
-    .label = Close
