@@ -333,11 +333,6 @@ void RTCRtpScriptTransformer::TransformFrame(
                                         ++mLastEnqueuedFrameCounter, this,
                                         mTimestampMaker);
   }
-  if (NS_WARN_IF(!domFrame->HasData())) {
-    // Prefer dropping the frame over handing script the wrong data.
-    return;
-  }
-
   mReadableSource->Enqueue(domFrame);
 }
 
