@@ -10,6 +10,8 @@ import android.os.Process
 import android.util.Log
 import kotlinx.coroutines.runBlocking
 import mozilla.appservices.places.BookmarkRoot
+import mozilla.components.browser.state.state.selectedOrDefaultPrivateSearchEngine
+import mozilla.components.browser.state.state.selectedOrDefaultSearchEngine
 import mozilla.components.browser.storage.sync.PlacesHistoryStorage
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.helpers.TestHelper.appContext
@@ -135,6 +137,37 @@ object StateProbe {
                 )
             },
             contributor(
+                name = "searchConfiguration",
+                fields =
+                    setOf(
+                        "complete",
+                        "defaultEngineId",
+                        "privateDefaultEngineId",
+                        "customEngineCount",
+                        "hiddenEngineCount",
+                        "disabledShortcutCount",
+                        "additionalEngineCount",
+                        "temporaryEngineId",
+                    ),
+                captureCost = StateCaptureCost.IN_MEMORY,
+                includeInCompatibilityState = false,
+            ) {
+                val browserSearch = appContext.components.core.store.state.search
+                mapOf(
+                    "complete" to observe { browserSearch.complete },
+                    "defaultEngineId" to observe { browserSearch.selectedOrDefaultSearchEngine?.id },
+                    "privateDefaultEngineId" to observe { browserSearch.selectedOrDefaultPrivateSearchEngine?.id },
+                    "customEngineCount" to observe { browserSearch.customSearchEngines.size },
+                    "hiddenEngineCount" to observe { browserSearch.hiddenSearchEngines.size },
+                    "disabledShortcutCount" to observe { browserSearch.disabledSearchEngineIds.size },
+                    "additionalEngineCount" to observe { browserSearch.additionalSearchEngines.size },
+                    "temporaryEngineId" to
+                        observe {
+                            appContext.components.appStore.state.searchState.selectedSearchEngine?.searchEngine?.id
+                        },
+                )
+            },
+            contributor(
                 name = "launcher",
                 fields = setOf("launcherIcon"),
                 captureCost = StateCaptureCost.PACKAGE_MANAGER,
@@ -170,10 +203,11 @@ object StateProbe {
                 schemaVersion = contributor.schemaVersion,
                 captureCost = contributor.captureCost,
                 sensitivity = contributor.sensitivity,
+                includeInCompatibilityState = contributor.includeInCompatibilityState,
                 values = values,
             )
         }
-        val values = contributions.flatMap { it.values.entries }
+        val values = contributions.filter(StateContribution::includeInCompatibilityState).flatMap { it.values.entries }
         check(values.size == values.map { it.key }.toSet().size) {
             "State contributors declare duplicate field ownership"
         }
@@ -269,6 +303,7 @@ object StateProbe {
         fields: Set<String>,
         captureCost: StateCaptureCost,
         sensitivity: StateSensitivity = StateSensitivity.NONE,
+        includeInCompatibilityState: Boolean = true,
         capture: () -> Map<String, Any?>,
     ): StateContributor =
         object : StateContributor {
@@ -277,6 +312,7 @@ object StateProbe {
             override val fields = fields
             override val captureCost = captureCost
             override val sensitivity = sensitivity
+            override val includeInCompatibilityState = includeInCompatibilityState
 
             override fun capture(): Map<String, Any?> = capture()
         }

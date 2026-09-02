@@ -30,12 +30,16 @@ class StateContributorContractTest : BaseTest() {
         val snapshot = StateProbe.snapshot()
 
         assertEquals(descriptors.map { it.name }, snapshot.contributions.map { it.name })
-        assertEquals(descriptors.flatMap { it.fields }.toSet(), snapshot.values.keys)
+        assertEquals(
+            descriptors.filter { it.includeInCompatibilityState }.flatMap { it.fields }.toSet(),
+            snapshot.values.keys,
+        )
         snapshot.contributions.forEach { contribution ->
             val descriptor = descriptors.single { it.name == contribution.name }
             assertEquals(descriptor.fields, contribution.values.keys)
             assertEquals(descriptor.captureCost, contribution.captureCost)
             assertEquals(descriptor.sensitivity, contribution.sensitivity)
+            assertEquals(descriptor.includeInCompatibilityState, contribution.includeInCompatibilityState)
         }
     }
 }

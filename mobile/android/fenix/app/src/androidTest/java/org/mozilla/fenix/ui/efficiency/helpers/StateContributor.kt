@@ -21,6 +21,7 @@ interface StateContributor {
     val fields: Set<String>
     val captureCost: StateCaptureCost
     val sensitivity: StateSensitivity
+    val includeInCompatibilityState: Boolean
 
     fun capture(): Map<String, Any?>
 }
@@ -30,6 +31,7 @@ data class StateContribution(
     val schemaVersion: Int,
     val captureCost: StateCaptureCost,
     val sensitivity: StateSensitivity,
+    val includeInCompatibilityState: Boolean,
     val values: Map<String, Any?>,
 ) {
     fun asRecord(): Map<String, Any?> =
@@ -38,6 +40,7 @@ data class StateContribution(
             "schemaVersion" to schemaVersion,
             "captureCost" to captureCost.name,
             "sensitivity" to sensitivity.name,
+            "includeInCompatibilityState" to includeInCompatibilityState,
             "complete" to values.values.none { it is String && it.startsWith("unreadable:") },
             "values" to values,
         )
