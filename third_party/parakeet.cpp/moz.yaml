@@ -35,3 +35,4 @@ vendoring:
   patches:
     - parakeet-fd-loading.patch # load a model from an fd (sandboxed process)
     - parakeet-no-drwav.patch # drop the vendored dr_wav.h dependency (unused: Firefox only feeds PCM)
+    - parakeet-stream-words.patch # typed per-word drain (timing + confidence)

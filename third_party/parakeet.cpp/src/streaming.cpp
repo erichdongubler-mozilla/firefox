@@ -63,6 +63,7 @@ void StreamingSession::reset() {
     words_.clear();
     words_finalized_ = 0;
     words_taken_ = 0;
+    eou_closed_words_ = 0;
 }
 
 void StreamingSession::process_emitted(const std::vector<int32_t>& emitted) {
@@ -143,12 +144,16 @@ std::vector<int32_t> StreamingSession::feed_mel_chunk(const std::vector<float>& 
     // Re-walk emitted to assign the correct absolute frame to each new event,
     // and accumulate NON-special tokens (absolute frame) for word grouping.
     size_t evi = prev_events;
+    size_t eou_word_tokens = 0;
     for (size_t i = 0; i < emitted.size(); ++i) {
         if (emitted[i] == eou_id_ || emitted[i] == eob_id_) {
             const int abs_frame = base_frame + (int)local_frames[i];
             events_[evi].encoder_frame = abs_frame;
             events_[evi].time_sec = abs_frame * frame_sec_;
             ++evi;
+            // Tokens are walked in emission order, so this is the word-token
+            // count the <EOU> closes.
+            eou_word_tokens = word_tokens_.size();
         } else {
             TokenInfo ti = chunk_tokens[i];
             ti.frame += base_frame;  // local -> absolute encoder frame
@@ -156,8 +161,9 @@ std::vector<int32_t> StreamingSession::feed_mel_chunk(const std::vector<float>& 
         }
     }
     // Regroup the accumulated tokens; words before the last (still-open) one are
-    // final and become available to drain_words().
-    regroup_words(/*flush_all=*/false);
+    // final and become available to drain_words(), as are the words closed by an
+    // <EOU> in this chunk.
+    regroup_words(/*flush_all=*/false, eou_word_tokens);
 
     // 4. End-of-utterance reset. The realtime EOU model is trained to emit <EOU>
     //    (end of utterance) / <EOB> (backchannel) and have the decoder START THE
@@ -200,7 +206,7 @@ std::string StreamingSession::finalize() {
     return take_new_text();
 }
 
-void StreamingSession::regroup_words(bool flush_all) {
+void StreamingSession::regroup_words(bool flush_all, size_t eou_word_tokens) {
     // Re-run the validated offline grouping over the whole accumulated
     // non-special token sequence (it does the punctuation lookahead / refinement
     // exactly like the offline transcribe_with_timestamps path). The last word is
@@ -210,8 +216,33 @@ void StreamingSession::regroup_words(bool flush_all) {
     words_ = group_words(word_tokens_, ml_.config().tokenizer_pieces, frame_sec_f_);
     if (words_.empty()) {
         words_finalized_ = 0;
+    } else if (flush_all) {
+        words_finalized_ = words_.size();
     } else {
-        words_finalized_ = flush_all ? words_.size() : (words_.size() - 1);
+        words_finalized_ = words_.size() - 1;
+        // An <EOU> ends the utterance: the decoder restarts from a fresh state
+        // (see feed_mel_chunk), so no later token can extend a word decoded
+        // before it and those words are final now. Without this the trailing
+        // word of every utterance is withheld until the NEXT utterance emits a
+        // token, so each utterance's last word lags by a whole utterance.
+        // Regroup the closed prefix to count them: the next utterance opens on a
+        // word-start token, so its words are exactly words_[closed.size()..].
+        if (eou_word_tokens > 0) {
+            const std::vector<Word> closed = group_words(
+                std::vector<TokenInfo>(word_tokens_.begin(),
+                                       word_tokens_.begin() + eou_word_tokens),
+                ml_.config().tokenizer_pieces, frame_sec_f_);
+            if (closed.size() > eou_closed_words_) {
+                eou_closed_words_ = closed.size();
+            }
+        }
+        // Applied on every chunk, not just the one that carried the <EOU>: a
+        // caller feeding several chunks per call only drains once at the end, so
+        // recomputing the line above would un-finalize the closed word again and
+        // hold it until the NEXT utterance emits a token.
+        if (eou_closed_words_ > words_finalized_) {
+            words_finalized_ = eou_closed_words_;
+        }
     }
     // Never "un-finalize" a word we've already handed out.
     if (words_finalized_ < words_taken_) words_finalized_ = words_taken_;

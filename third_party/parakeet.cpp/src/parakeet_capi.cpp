@@ -649,6 +649,49 @@ extern "C" void parakeet_capi_free_events(parakeet_stream_event* events) {
     std::free(events);
 }
 
+// Firefox-local: typed drain of finalized words (timing + confidence), so the
+// host gets per-word data without parsing the JSON feed.
+extern "C" int parakeet_capi_stream_drain_words(
+    parakeet_stream* s, parakeet_stream_word** out_words) {
+    if (out_words) *out_words = nullptr;
+    if (!s || !out_words) return -1;
+    if (!s->ctx || !s->ctx->model || !s->sess) return -1;
+    try {
+        std::vector<pk::Word> ws = s->sess->drain_words();
+        s->ctx->last_error.clear();
+        if (ws.empty()) return 0;
+        auto* arr = static_cast<parakeet_stream_word*>(
+            std::calloc(ws.size(), sizeof(parakeet_stream_word)));
+        if (!arr) { s->ctx->last_error = "out of memory"; return -1; }
+        for (size_t i = 0; i < ws.size(); ++i) {
+            char* t = static_cast<char*>(std::malloc(ws[i].text.size() + 1));
+            if (t) {
+                std::memcpy(t, ws[i].text.c_str(), ws[i].text.size() + 1);
+            }
+            arr[i].text  = t;
+            arr[i].start = ws[i].start;
+            arr[i].end   = ws[i].end;
+            arr[i].conf  = ws[i].conf;
+        }
+        *out_words = arr;
+        return (int)ws.size();
+    } catch (const std::exception& e) {
+        s->ctx->last_error = e.what();
+        return -1;
+    } catch (...) {
+        s->ctx->last_error = "unknown error";
+        return -1;
+    }
+}
+
+extern "C" void parakeet_capi_free_words(parakeet_stream_word* words, int count) {
+    if (!words) return;
+    for (int i = 0; i < count; ++i) {
+        std::free(const_cast<char*>(words[i].text));
+    }
+    std::free(words);
+}
+
 namespace {
 
 // Serialize a streaming feed/finalize result to JSON: the newly-finalized text,

@@ -48,6 +48,8 @@ parakeet_capi_load_fd
 parakeet_capi_stream_begin
 parakeet_capi_stream_begin_lang
 parakeet_capi_stream_drain_events
+parakeet_capi_stream_drain_words
+parakeet_capi_free_words
 parakeet_capi_stream_feed
 parakeet_capi_stream_feed_json
 parakeet_capi_stream_finalize

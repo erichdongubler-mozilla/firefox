@@ -242,6 +242,26 @@ int parakeet_capi_stream_drain_events(parakeet_stream* s,
 // Safe on NULL.
 void parakeet_capi_free_events(parakeet_stream_event* events);
 
+// Firefox-local: a finalized word with timing + confidence. Same data the JSON
+// "words" array carries, in a typed form so the host need not parse JSON.
+typedef struct parakeet_stream_word {
+    const char* text;  // malloc'd UTF-8; freed by parakeet_capi_free_words
+    float start;       // seconds from stream start
+    float end;
+    float conf;        // 0..1
+} parakeet_stream_word;
+
+// Drain the words finalized since the previous call (the same set whose text
+// stream_feed returned). Returns the count (>= 0), or -1 on error; on success
+// *out_words is a malloc'd array of `count` entries (free with
+// parakeet_capi_free_words). Mutually exclusive with the JSON feed entry points.
+int parakeet_capi_stream_drain_words(parakeet_stream* s,
+                                     parakeet_stream_word** out_words);
+
+// Free a word array (and each word's text) from parakeet_capi_stream_drain_words.
+// Safe on NULL.
+void parakeet_capi_free_words(parakeet_stream_word* words, int count);
+
 // Like parakeet_capi_stream_feed but returns a malloc'd UTF-8 JSON document
 // instead of bare text:
 //   {"text":"...","eou":0,"eob":0,"frame_sec":0.080000,
