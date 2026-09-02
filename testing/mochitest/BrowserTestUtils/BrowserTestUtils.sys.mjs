@@ -292,16 +292,6 @@ export var BrowserTestUtils = {
               opening
             );
           }
-        }).then(async result => {
-          // The content process only gets the browser's size once we have
-          // reflowed it, off a refresh driver tick, so until then callers that
-          // synthesize input would hit test against a 0x0 viewport.
-          await new Promise(resolve => win.requestAnimationFrame(resolve));
-          // Avoid ever resolving in the middle of a refresh driver tick, which
-          // would otherwise happen whenever this is the last promise to
-          // resolve.
-          await TestUtils.waitForTick();
-          return result;
         }),
       ];
 
