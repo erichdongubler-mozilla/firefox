@@ -354,9 +354,9 @@ class HTMLImageElement final : public nsGenericHTMLElement,
   // Created when we're tracking responsive image state
   RefPtr<ResponsiveImageSelector> mResponsiveSelector;
 
-  // This is a strong reference that this element and the HTMLFormElement
+  // This is a weak reference that this element and the HTMLFormElement
   // cooperate in maintaining.
-  RefPtr<HTMLFormElement> mForm;
+  HTMLFormElement* mForm = nullptr;
 
  private:
   bool SourceElementMatches(Element* aSourceElement);
