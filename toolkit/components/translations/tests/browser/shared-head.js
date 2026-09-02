@@ -5444,6 +5444,144 @@ class AboutTranslationsTestUtils {
   }
 
   /**
+   * Verifies that about:translations can translate additional source text after
+   * its engine shuts down.
+   *
+   * @param {object} options
+   * @param {boolean} [options.keepProcessAlive=false]
+   * @param {Array<[string, any]>} [options.prefs]
+   * @param {(engineParent?: TranslationsEngineParent) => Promise<void>}
+   *   options.shutdownEngine
+   * @returns {Promise<void>}
+   */
+  static async assertTranslationAfterEngineShutdown({
+    keepProcessAlive = false,
+    prefs,
+    shutdownEngine,
+  }) {
+    const { aboutTranslationsTestUtils, cleanup } = await openAboutTranslations(
+      {
+        languagePairs: [
+          { fromLang: "en", toLang: "fr" },
+          { fromLang: "fr", toLang: "en" },
+        ],
+        prefs,
+      }
+    );
+    let processKeepAlive = null;
+
+    try {
+      processKeepAlive = keepProcessAlive
+        ? await TranslationsEngineTestUtils.keepInferenceProcessAlive()
+        : null;
+
+      const initialSourceText = "Hello world";
+
+      await aboutTranslationsTestUtils.assertEvents(
+        {
+          expected: [
+            [
+              AboutTranslationsTestUtils.Events.SourceTextInputDebounced,
+              { sourceText: initialSourceText },
+            ],
+            [
+              AboutTranslationsTestUtils.Events.TranslationRequested,
+              { translationId: 1 },
+            ],
+            [AboutTranslationsTestUtils.Events.ShowTranslatingPlaceholder],
+          ],
+        },
+        async () => {
+          await aboutTranslationsTestUtils.setSourceLanguageSelectorValue("en");
+          await aboutTranslationsTestUtils.setTargetLanguageSelectorValue("fr");
+          await aboutTranslationsTestUtils.setSourceTextAreaValue(
+            initialSourceText
+          );
+        }
+      );
+
+      await aboutTranslationsTestUtils.assertEvents(
+        {
+          expected: [
+            [
+              AboutTranslationsTestUtils.Events.TranslationComplete,
+              { translationId: 1 },
+            ],
+          ],
+        },
+        async () => {
+          await aboutTranslationsTestUtils.resolveDownloads(1);
+        }
+      );
+
+      await aboutTranslationsTestUtils.assertTranslatedText({
+        sourceLanguage: "en",
+        targetLanguage: "fr",
+        sourceText: initialSourceText,
+      });
+
+      await shutdownEngine(processKeepAlive?.engineParent);
+
+      const updatedSourceText = "Hello again";
+
+      info("Update the source text to trigger a new translation.");
+      await aboutTranslationsTestUtils.assertEvents(
+        {
+          expected: [
+            [
+              AboutTranslationsTestUtils.Events.SourceTextInputDebounced,
+              { sourceText: updatedSourceText },
+            ],
+            [
+              AboutTranslationsTestUtils.Events.URLUpdatedFromUI,
+              {
+                sourceLanguage: "en",
+                targetLanguage: "fr",
+                sourceText: updatedSourceText,
+              },
+            ],
+            [
+              AboutTranslationsTestUtils.Events.TranslationRequested,
+              { translationId: 2 },
+            ],
+          ],
+        },
+        async () => {
+          await aboutTranslationsTestUtils.setSourceTextAreaValue(
+            updatedSourceText
+          );
+        }
+      );
+
+      await aboutTranslationsTestUtils.assertEvents(
+        {
+          expected: [
+            [
+              AboutTranslationsTestUtils.Events.TranslationComplete,
+              { translationId: 2 },
+            ],
+          ],
+        },
+        async () => {
+          await aboutTranslationsTestUtils.resolveDownloads(1);
+        }
+      );
+
+      await aboutTranslationsTestUtils.assertTranslatedText({
+        sourceLanguage: "en",
+        targetLanguage: "fr",
+        sourceText: updatedSourceText,
+      });
+    } finally {
+      try {
+        await processKeepAlive?.release();
+      } finally {
+        await cleanup();
+      }
+    }
+  }
+
+  /**
    * Reports any error as a test failure.
    * This will show up more nicely in the test logs.
    *
