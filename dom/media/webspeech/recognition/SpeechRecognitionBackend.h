@@ -245,6 +245,9 @@ class SpeechRecognitionBackend {
   // DetachFromTrack() has stopped the callbacks.
   nsTArray<AudioDataValue> mMonoBuffer;
   const uint32_t mGraphRate;
+  // Graph-thread only, number of frames that couldn't be pushed into
+  // mRingBuffer and has been dropped.
+  uint64_t mFramesDropped = 0;
   // Whether Shutdown() has already run, so it runs exactly once.
   bool mStopped MOZ_GUARDED_BY(sMainThreadCapability) = false;
   // Whether a soundstart was fired without its soundend. The main thread owns
