@@ -26,6 +26,11 @@ scheme = "https"
 
 ["test_install_overlap.html"]
 
+["test_model_available_after_install.html"]
+subsuite = "speech-recognition"
+tags = "mtg parakeet-asr"
+skip-if = ["verify"]  # skip under test-verify: it runs outside the subsuite, so serve_model.py (the model hub) is never started
+
 ["test_parakeet_e2e.html"]
 subsuite = "speech-recognition"
 tags = "mtg parakeet-asr"

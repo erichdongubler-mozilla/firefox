@@ -46,20 +46,37 @@ DEV_DIR = (
 )
 
 
+def _log(msg):
+    print(f"[serve_model] {msg}", flush=True)
+
+
 def resolve_model(name):
     """Return a local path to the model `name`, downloading it from the bucket
     if necessary (dev only). Returns None if it can't be provided."""
     if FETCHES_DIR:
         # CI: must already be present; never download.
         path = Path(FETCHES_DIR) / name
-        return str(path) if path.is_file() else None
+        if path.is_file():
+            _log(
+                f"resolve {name} -> {path} ({path.stat().st_size} bytes, MOZ_FETCHES_DIR)"
+            )
+            return str(path)
+        _log(f"resolve {name} -> MISSING in MOZ_FETCHES_DIR={FETCHES_DIR}; serving 404")
+        return None
     path = DEV_DIR / name
-    if not path.is_file():
-        DEV_DIR.mkdir(parents=True, exist_ok=True)
-        tmp = path.with_suffix(path.suffix + ".part")
-        print(f"Downloading {name} from {BUCKET}...", flush=True)
+    if path.is_file():
+        _log(f"resolve {name} -> {path} ({path.stat().st_size} bytes, dev cache)")
+        return str(path)
+    DEV_DIR.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".part")
+    _log(f"downloading {name} from {BUCKET} ...")
+    try:
         urllib.request.urlretrieve(BUCKET + name, tmp)
         tmp.replace(path)
+    except Exception as e:
+        _log(f"download FAILED for {name} from {BUCKET}{name}: {e}; serving 404")
+        return None
+    _log(f"downloaded {name} -> {path} ({path.stat().st_size} bytes)")
     return str(path)
 
 
@@ -71,7 +88,7 @@ class CORSHandler(http.server.SimpleHTTPRequestHandler):
             resolved = resolve_model(name)
             if resolved:
                 return resolved
-            # fall through (will 404) if CI fetch is missing
+            _log(f"gguf {name} unresolved; falling through to source tree (will 404)")
         # Audio / transcript / dev in-tree files: serve from the source tree.
         return str(SOURCE_ROOT / rel)
 
@@ -90,7 +107,7 @@ class CORSHandler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
 
     def log_message(self, format, *args):
-        pass  # suppress per-request noise
+        _log("request: " + (format % args))
 
 
 print(
