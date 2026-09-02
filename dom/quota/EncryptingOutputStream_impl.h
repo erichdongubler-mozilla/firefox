@@ -229,6 +229,11 @@ nsresult EncryptingOutputStream<CipherStrategy>::FlushToBaseStream() {
       return rv;
     }
 
+    // Cipher works on blocks of size BasicBlockSize. When processing the last
+    // bytes, if they don't align on block size, we will reuse previously used
+    // bytes, or uninitialized bytes, which could possibly leak information.
+    // Though those bytes are discarded later, they could be read on a
+    // compromised content process.
     std::fill(mBuffer.begin() + mNextByte, mBuffer.begin() + roundedNextByte,
               0);
   }
