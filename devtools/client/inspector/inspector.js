@@ -437,10 +437,16 @@ class Inspector extends EventEmitter {
       await this.#setupToolbar();
     } catch (e) {
       this.#handleRejectionIfNotDestroyed(e);
-      // Only if this isn't a toolbox closing exception,
-      // and if the markup view failed rendering,
-      // show the AppErrorBoundary for that exception.
-      if (!this.#destroyed && !this.#markupFrame) {
+      // Show the AppErrorBoundary if the markup view failed to render, unless:
+      // - the toolbox is already closing (-> inspector is destroyed)
+      // - the nodeFront was destroyed, most likely because of a navigation,
+      //   which will reject all pending target actor requests and reject
+      //   getDefaultNodeForSelection.
+      if (
+        !this.#destroyed &&
+        !rootNodeFront.isDestroyed() &&
+        !this.#markupFrame
+      ) {
         this.#showErrorBoundary(e);
       }
     }
