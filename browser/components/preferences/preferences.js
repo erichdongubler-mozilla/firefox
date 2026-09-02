@@ -852,6 +852,11 @@ async function gotoPref(
    */
   let prevCategory = gLastCategory.category;
 
+  // Close any open sub dialogs if navigating away
+  if (prevCategory && prevCategory !== category) {
+    gSubDialog.abortDialogs();
+  }
+
   // Save the previous entry's scroll offset and focused element before
   // switching, so that returning to it later restores the user's place.
   scrollOffsets.save();
