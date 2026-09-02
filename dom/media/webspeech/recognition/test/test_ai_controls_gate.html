@@ -37,21 +37,28 @@ async function run() {
   // Blocked via AI Controls: every entry point must refuse before touching the
   // backend.
   await withControl("blocked", async () => {
+    // Document::WarnOnceAbout fires for the first blocked entry point in this
+    // document and stays quiet afterwards, so this is the only call that can
+    // be checked for the console warning.
+    const warned = new Promise(resolve =>
+      SimpleTest.monitorConsole(resolve, [{ errorMessage: /AI Controls/ }]));
     const availability = await SpeechRecognition.available({
       processLocally: true,
       langs: LANGS,
     });
+    SimpleTest.endMonitorConsole();
+    await warned;
     is(availability, "unavailable",
        "available() reports unavailable when blocked by AI Controls");
 
-    await SpeechRecognition.install({ processLocally: true, langs: LANGS }).then(
-      () => ok(false, "install() should reject when blocked"),
-      err => {
-        is(err.name, "NotAllowedError", "install() rejects with NotAllowedError");
-        ok(/AI settings/.test(err.message),
-           "install() rejection cites the AI settings gate");
-      }
-    );
+    // Blocked means there is nothing to install, reported the same way
+    // available() reports it, rather than as a distinct rejection that would
+    // make the AI Controls state observable.
+    const installed = await SpeechRecognition.install({
+      processLocally: true,
+      langs: LANGS,
+    });
+    is(installed, false, "install() resolves false when blocked by AI Controls");
 
     const sr = new SpeechRecognition();
     let threw = null;

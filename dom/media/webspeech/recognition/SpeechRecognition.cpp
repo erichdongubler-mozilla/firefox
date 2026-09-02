@@ -476,6 +476,7 @@ already_AddRefed<Promise> SpeechRecognition::Available(
 
   // The user can turn on-device speech recognition off via AI Controls.
   if (IsBlockedByAIControls()) {
+    doc->WarnOnceAbout(Document::eSpeechRecognitionBlockedByAIControls);
     promise->MaybeResolve(AvailabilityStatus::Unavailable);
     return promise.forget();
   }
@@ -545,10 +546,18 @@ already_AddRefed<Promise> SpeechRecognition::Install(
     return nullptr;
   }
 
+  // Blocked in AI Controls means there is nothing to install, which is not an
+  // error the page can do anything about: resolve false, as available()
+  // reports unavailable, rather than making the setting observable as a
+  // distinct rejection.
   if (IsBlockedByAIControls()) {
-    aRv.ThrowNotAllowedError(
-        "on-device speech recognition is blocked by the user's AI settings");
-    return nullptr;
+    doc->WarnOnceAbout(Document::eSpeechRecognitionBlockedByAIControls);
+    RefPtr<Promise> promise = Promise::Create(window->AsGlobal(), aRv);
+    if (aRv.Failed()) {
+      return nullptr;
+    }
+    promise->MaybeResolve(false);
+    return promise.forget();
   }
 
   // install() initiates a potentially large download and a permission prompt,
@@ -648,6 +657,9 @@ void SpeechRecognition::StartImpl(MediaStreamTrack* aAudioTrack,
 
   // The user can turn on-device speech recognition off via AI Controls.
   if (IsBlockedByAIControls()) {
+    if (Document* doc = win->GetExtantDoc()) {
+      doc->WarnOnceAbout(Document::eSpeechRecognitionBlockedByAIControls);
+    }
     aRv.ThrowNotAllowedError(
         "on-device speech recognition is blocked by the user's AI settings");
     return;
