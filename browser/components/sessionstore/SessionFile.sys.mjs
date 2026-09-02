@@ -275,7 +275,6 @@ var SessionFileInternal = {
           path_key: key,
           loadfail_reason: "N/A",
         });
-        Glean.sessionRestore.corruptFile.false.add();
         Glean.sessionRestore.readFile.accumulateSingleSample(
           Date.now() - startMs
         );
@@ -338,16 +337,21 @@ var SessionFileInternal = {
             path_key: key,
             loadfail_reason: ` ${ex.name}: Corrupt session file (invalid JSON found)`,
           });
+        } else {
+          lazy.sessionStoreLogger.error(
+            `Unexpected error when reading session file: ${key}`,
+            ex
+          );
+          Glean.sessionRestore.backupCanBeLoadedSessionFile.record({
+            can_load: "false",
+            path_key: key,
+            loadfail_reason: ` ${ex.name}: Could not read session file`,
+          });
         }
       } finally {
         if (exists) {
           noFilesFound = false;
           Glean.sessionRestore.corruptFile[corrupted ? "true" : "false"].add();
-          Glean.sessionRestore.backupCanBeLoadedSessionFile.record({
-            can_load: (!corrupted).toString(),
-            path_key: key,
-            loadfail_reason: "N/A",
-          });
         }
       }
     }
