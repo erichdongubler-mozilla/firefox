@@ -391,7 +391,7 @@ def get_version_maybe_buildid(app_version):
 
     buildid = os.environ.get("MOZ_BUILD_DATE")
     if buildid and len(buildid) != 14:
-        print("Ignoring invalid MOZ_BUILD_DATE: %s" % buildid, file=sys.stderr)
+        print(f"Ignoring invalid MOZ_BUILD_DATE: {buildid}", file=sys.stderr)
         buildid = None
 
     if buildid:
