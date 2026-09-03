@@ -2199,3 +2199,87 @@ ui_density:
           Whether this is the event recorded at startup rather than one
           recorded in response to a change.
         type: boolean
+
+theme_picker:
+  shown: &theme_picker_shown
+    type: event
+    description: >
+      The theme picker was shown to the user.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2052547
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2052547
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - tgiles@mozilla.com
+    expires: never
+    extra_keys:
+      session:
+        type: string
+        description: >
+          An opaque identifier for one showing of the picker. It links a
+          `shown` event to the `change` events from that same showing. No
+          code emits `shown` yet, so nothing populates this key.
+      source:
+        type: string
+        description: >
+          The surface that hosts the picker. The values are `"about:newtab"`,
+          `"about:addons"`, and `"profiles"`. The about:welcome onboarding
+          picker sets no install source, so it records `"unknown"`.
+      layout:
+        type: string
+        description: >
+          The picker's layout mode, `"compact"` or `"full"`. Only
+          `about:newtab` has both. Other surfaces record `"full"`, and
+          `"unknown"` when the caller does not supply it.
+
+  change:
+    <<: *theme_picker_shown
+    description: >
+      The user changed a setting in the theme picker: selected a theme,
+      changed the appearance mode, or toggled native theme styling.
+
+      A theme selection in the profiles picker also records
+      `profiles.existing.theme` or `profiles.new.theme`. Both
+      metrics fire for one click, so do not sum this event with those two.
+    extra_keys:
+      session:
+        type: string
+        description: >
+          The `session` value of the picker showing this change came from. It
+          links this event back to the matching `shown` event. No code emits
+          `shown` yet, so nothing populates this key.
+      source:
+        type: string
+        description: >
+          The surface that hosts the picker. The values are `"about:newtab"`,
+          `"about:addons"`, and `"profiles"`. The about:welcome onboarding
+          picker sets no install source, so it records `"unknown"`.
+      layout:
+        type: string
+        description: >
+          The picker's layout mode, `"compact"` or `"full"`. Only
+          `about:newtab` has both. Other surfaces record `"full"`, and
+          `"unknown"` when the caller does not supply it.
+      property:
+        type: string
+        description: >
+          Which setting changed. Only `"theme"` is recorded today.
+          `"appearance"` and `"nativeTheme"` are declared ahead of the
+          appearance and native theme instrumentation.
+      theme_id:
+        type: string
+        description: >
+          The addon ID of the theme selected. Set on every recorded
+          event, since `property` is always `"theme"` today.
+      appearance:
+        type: string
+        description: >
+          The appearance mode selected, one of `"light"`, `"dark"`, or
+          `"device"`. Not recorded until `property` can be `"appearance"`.
+      native_theme:
+        type: boolean
+        description: >
+          Whether native theme styling was enabled. Not recorded until
+          `property` can be `"nativeTheme"`.
