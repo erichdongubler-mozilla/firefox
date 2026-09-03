@@ -234,15 +234,12 @@ void ModuleLoader::OnModuleLoadComplete(ModuleLoadRequest* aRequest) {
 nsresult ModuleLoader::CompileFetchedModule(
     JSContext* aCx, JS::Handle<JSObject*> aGlobal, JS::CompileOptions& aOptions,
     ModuleLoadRequest* aRequest, JS::MutableHandle<JSObject*> aModuleOut) {
-  if (!nsJSUtils::IsScriptable(aGlobal)) {
-    return NS_ERROR_FAILURE;
-  }
-
   switch (aRequest->mModuleType) {
     case JS::ModuleType::Unknown:
       MOZ_CRASH("Unexpected module type");
     case JS::ModuleType::JavaScriptOrWasm:
-      return CompileJavaScriptOrWasmModule(aCx, aOptions, aRequest, aModuleOut);
+      return CompileJavaScriptOrWasmModule(aCx, aGlobal, aOptions, aRequest,
+                                           aModuleOut);
     case JS::ModuleType::JSON:
       return CompileJsonModule(aCx, aOptions, aRequest, aModuleOut);
     case JS::ModuleType::CSS:
@@ -256,9 +253,43 @@ nsresult ModuleLoader::CompileFetchedModule(
   MOZ_CRASH("Unhandled module type");
 }
 
-nsresult ModuleLoader::CompileJavaScriptOrWasmModule(
+// https://html.spec.whatwg.org/#creating-a-javascript-module-script
+// Step 1: If scripting is disabled, set source to empty string
+nsresult ModuleLoader::CompileEmptyJavaScriptModule(
     JSContext* aCx, JS::CompileOptions& aOptions, ModuleLoadRequest* aRequest,
     JS::MutableHandle<JSObject*> aModuleOut) {
+  JS::SourceText<char16_t> srcBuf;
+  if (!srcBuf.init(aCx, u"", 0, JS::SourceOwnership::Borrowed)) {
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+  RefPtr<JS::Stencil> stencil =
+      JS::CompileModuleScriptToStencil(aCx, aOptions, srcBuf);
+  if (!stencil) {
+    return NS_ERROR_FAILURE;
+  }
+  aRequest->SetStencil(stencil);
+  JS::InstantiateOptions instantiateOptions(aOptions);
+  aModuleOut.set(
+      JS::InstantiateModuleStencil(aCx, instantiateOptions, stencil));
+  return aModuleOut ? NS_OK : NS_ERROR_FAILURE;
+}
+
+nsresult ModuleLoader::CompileJavaScriptOrWasmModule(
+    JSContext* aCx, JS::Handle<JSObject*> aGlobal, JS::CompileOptions& aOptions,
+    ModuleLoadRequest* aRequest, JS::MutableHandle<JSObject*> aModuleOut) {
+  if (!nsJSUtils::IsScriptable(aGlobal)) {
+#ifdef NIGHTLY_BUILD
+    // TODO: Bug 2067200, Creating an empty WebAssembly module if scripting is
+    // disabled.
+    if (aRequest->HasWasmMimeTypeEssence()) {
+      MOZ_ASSERT(aRequest->IsWasmBytes());
+      return NS_ERROR_FAILURE;
+    }
+#endif
+
+    return CompileEmptyJavaScriptModule(aCx, aOptions, aRequest, aModuleOut);
+  }
+
   GetScriptLoader()->CalculateCacheFlag(aRequest);
 
 #ifdef NIGHTLY_BUILD

@@ -86,6 +86,10 @@ class ModuleLoader final : public JS::loader::ModuleLoaderBase {
 
  private:
   nsresult CompileJavaScriptOrWasmModule(
+      JSContext* aCx, JS::Handle<JSObject*> aGlobal,
+      JS::CompileOptions& aOptions, ModuleLoadRequest* aRequest,
+      JS::MutableHandle<JSObject*> aModuleOut);
+  nsresult CompileEmptyJavaScriptModule(
       JSContext* aCx, JS::CompileOptions& aOptions, ModuleLoadRequest* aRequest,
       JS::MutableHandle<JSObject*> aModuleOut);
   nsresult CompileJsonModule(JSContext* aCx, JS::CompileOptions& aOptions,
