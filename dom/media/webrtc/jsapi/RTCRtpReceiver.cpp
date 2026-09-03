@@ -801,7 +801,7 @@ void RTCRtpReceiver::UpdateTransport() {
   }
 }
 
-bool RTCRtpReceiver::CanReceiveEarlyMedia() const {
+bool RTCRtpReceiver::CanReceiveEarlyMedia() {
   MOZ_ASSERT(NS_IsMainThread());
   if (!GetJsepTransceiver().mRecvTrack.GetReceptive()) {
     // The local description we just applied isn't actually offering to
@@ -811,36 +811,32 @@ bool RTCRtpReceiver::CanReceiveEarlyMedia() const {
     // preferred direction and can disagree with what was actually applied.
     return false;
   }
-  if (GetJsepTransceiver().mRecvTrack.GetNegotiatedDetails()) {
-    // We have been negotiated for real (maybe not on this round, but at
-    // some point); defer entirely to IsReceiving(), which reflects that
-    // real negotiated outcome via mCurrentDirection.
+  if (mPc->GetSignalingState() != RTCSignalingState::Have_local_offer) {
+    // No pending, unanswered local offer right now to be tentative about.
     return false;
   }
-  // Only a bundle whose owner completed a prior negotiation round is
-  // actually live (has gone through ICE/DTLS); a fresh bundle (owner
-  // included) cannot have received anything yet.
-  return GetJsepTransceiver().HasBundleLevel() && HasNegotiatedBundleOwner();
+  if (!HasNegotiatedBundleOwner()) {
+    // Only a bundle with at least one negotiated member is actually live
+    // (has gone through ICE/DTLS); a fresh bundle cannot have received
+    // anything yet.
+    return false;
+  }
+  // Only tentative if our own recv-relevant offer actually changed this
+  // round; otherwise the real negotiated details -- still valid, and
+  // unaffected by an unrelated renegotiation elsewhere in the session --
+  // should keep being used instead.
+  return mPc->LocalOfferedRecvParamsChanged(GetMid());
 }
 
-bool RTCRtpReceiver::HasNegotiatedBundleOwner() const {
+bool RTCRtpReceiver::HasNegotiatedBundleOwner() {
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(GetJsepTransceiver().HasBundleLevel());
-  // mTransport.mIce is not a reliable proxy for this: CopyBundleTransports()
-  // copies the owner's mTransport (mIce included) onto every follower
-  // whenever bundle levels are (re)assigned, with no check that the owner
-  // was ever itself negotiated, so mIce can be set even when the whole
-  // bundle, owner included, is brand new.
-  nsTArray<RefPtr<RTCRtpTransceiver>> transceivers;
-  mPc->GetTransceivers(transceivers);
-  for (const auto& transceiver : transceivers) {
-    const JsepTransceiver& jsepTransceiver = transceiver->GetJsepTransceiver();
-    if (jsepTransceiver.HasLevel() &&
-        jsepTransceiver.GetLevel() == GetJsepTransceiver().BundleLevel()) {
-      return jsepTransceiver.IsNegotiated();
-    }
-  }
-  return false;
+  // See JsepSessionImpl::SetLocalDescription() for how this is computed:
+  // it identifies whichever transceiver currently owns this mid's transport
+  // (the bundle tag, or this transceiver itself if unbundled) and checks
+  // whether *that* transceiver already had its own transport as of last
+  // round -- not just BundleLevel() (which JSEP can clear speculatively
+  // mid-round -- see EnsureHasOwnTransport()).
+  return GetJsepTransceiver().CanUseExistingTransport();
 }
 
 void RTCRtpReceiver::UpdateConduit() {
@@ -889,8 +885,19 @@ void RTCRtpReceiver::UpdateVideoConduit() {
     }
   }
 
-  if (GetJsepTransceiver().mRecvTrack.GetNegotiatedDetails() &&
-      GetJsepTransceiver().mRecvTrack.GetActive()) {
+  if (CanReceiveEarlyMedia()) {
+    // Early media (bug 2019381); see CanReceiveEarlyMedia(). Once a real
+    // answer arrives, the negotiated-details branch below takes back over.
+    std::vector<VideoCodecConfig> configs;
+    RTCRtpTransceiver::EarlyRecvCodecsToVideoCodecConfigs(
+        GetJsepTransceiver().mRecvTrack, &configs);
+    if (!configs.empty()) {
+      mVideoCodecs = configs;
+      mVideoRtpRtcpConfig =
+          Some(RtpRtcpConfig(webrtc::RtcpMode::kCompound, true));
+    }
+  } else if (GetJsepTransceiver().mRecvTrack.GetNegotiatedDetails() &&
+             GetJsepTransceiver().mRecvTrack.GetActive()) {
     const auto& details(
         *GetJsepTransceiver().mRecvTrack.GetNegotiatedDetails());
 
@@ -920,17 +927,6 @@ void RTCRtpReceiver::UpdateVideoConduit() {
 
     mVideoCodecs = configs;
     mVideoRtpRtcpConfig = Some(details.GetRtpRtcpConfig());
-  } else if (CanReceiveEarlyMedia()) {
-    // Early media (bug 2019381): no real negotiation yet, but we can start
-    // receiving based on what we offered.
-    std::vector<VideoCodecConfig> configs;
-    RTCRtpTransceiver::EarlyRecvCodecsToVideoCodecConfigs(
-        GetJsepTransceiver().mRecvTrack, &configs);
-    if (!configs.empty()) {
-      mVideoCodecs = configs;
-      mVideoRtpRtcpConfig =
-          Some(RtpRtcpConfig(webrtc::RtcpMode::kCompound, true));
-    }
   }
 }
 
@@ -959,8 +955,17 @@ void RTCRtpReceiver::UpdateAudioConduit() {
     }
   }
 
-  if (GetJsepTransceiver().mRecvTrack.GetNegotiatedDetails() &&
-      GetJsepTransceiver().mRecvTrack.GetActive()) {
+  if (CanReceiveEarlyMedia()) {
+    // Early media (bug 2019381); see CanReceiveEarlyMedia(). Once a real
+    // answer arrives, the negotiated-details branch below takes back over.
+    std::vector<AudioCodecConfig> configs;
+    RTCRtpTransceiver::EarlyRecvCodecsToAudioCodecConfigs(
+        GetJsepTransceiver().mRecvTrack, &configs);
+    if (!configs.empty()) {
+      mAudioCodecs = configs;
+    }
+  } else if (GetJsepTransceiver().mRecvTrack.GetNegotiatedDetails() &&
+             GetJsepTransceiver().mRecvTrack.GetActive()) {
     const auto& details(
         *GetJsepTransceiver().mRecvTrack.GetNegotiatedDetails());
     std::vector<AudioCodecConfig> configs;
@@ -989,15 +994,6 @@ void RTCRtpReceiver::UpdateAudioConduit() {
     }
 
     mAudioCodecs = configs;
-  } else if (CanReceiveEarlyMedia()) {
-    // Early media (bug 2019381): no real negotiation yet, but we can start
-    // receiving based on what we offered.
-    std::vector<AudioCodecConfig> configs;
-    RTCRtpTransceiver::EarlyRecvCodecsToAudioCodecConfigs(
-        GetJsepTransceiver().mRecvTrack, &configs);
-    if (!configs.empty()) {
-      mAudioCodecs = configs;
-    }
   }
 }
 

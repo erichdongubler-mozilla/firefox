@@ -2594,6 +2594,183 @@ TEST_P(JsepSessionTest, RenegotiationOffererDisablesBundleTransport) {
   }
 }
 
+TEST_P(JsepSessionTest, EarlyMediaBundleFreshGroupNotNegotiated) {
+  AddTracks(*mSessionOff);
+  AddTracks(*mSessionAns);
+
+  if (types.size() < 2) {
+    // No bundle will happen here.
+    return;
+  }
+
+  std::string offer = CreateOffer();
+  SetLocalOffer(offer, CHECK_SUCCESS);
+
+  // Nothing has ever been negotiated yet, so no bundle group can have a
+  // negotiated member.
+  for (const auto& transceiver : GetTransceivers(*mSessionOff)) {
+    if (!transceiver.HasLevel()) {
+      continue;
+    }
+    ASSERT_FALSE(transceiver.CanUseExistingTransport())
+    << "level " << transceiver.GetLevel();
+  }
+}
+
+TEST_P(JsepSessionTest, EarlyMediaBundleFollowerSeesNegotiatedOwner) {
+  AddTracks(*mSessionOff);
+  AddTracks(*mSessionAns);
+
+  OfferAnswer();
+
+  std::vector<SdpMediaSection::MediaType> extraTypes;
+  extraTypes.push_back(SdpMediaSection::kAudio);
+  AddTracks(*mSessionOff, extraTypes);
+  types.insert(types.end(), extraTypes.begin(), extraTypes.end());
+
+  if (types.size() < 2) {
+    // No bundle will happen here.
+    return;
+  }
+
+  std::string offer = CreateOffer();
+  SetLocalOffer(offer, CHECK_SUCCESS);
+
+  // Every transceiver here is in the same bundle group, whose owner (level
+  // 0) was already negotiated in the first round -- this must hold both for
+  // the pre-existing, already-negotiated transceivers and for the
+  // brand-new one that just joined the group this round.
+  auto transceivers = GetTransceivers(*mSessionOff);
+  ASSERT_FALSE(transceivers.empty());
+  for (const auto& transceiver : transceivers) {
+    if (!transceiver.HasLevel()) {
+      continue;
+    }
+    ASSERT_TRUE(transceiver.CanUseExistingTransport())
+    << "level " << transceiver.GetLevel();
+  }
+}
+
+TEST_P(JsepSessionTest, EarlyMediaSurvivesOwnerStopAndReplacement) {
+  AddTracks(*mSessionOff);
+  AddTracks(*mSessionAns);
+
+  if (types.size() < 2) {
+    return;
+  }
+
+  OfferAnswer();
+
+  auto stopped = GetTransceiverByLevel(*mSessionOff, 0);
+  stopped->Stop();
+  mSessionOff->SetTransceiver(*stopped);
+
+  std::string offer = CreateOffer();
+  SetLocalOffer(offer, CHECK_SUCCESS);
+
+  // Our bundle implementation still enforces "bundle tag owns the
+  // transport" (see bug 2065274): stopping the old tag (level 0) means
+  // none of the surviving group members -- including whichever one gets
+  // promoted to the new bundle tag -- was itself a negotiated transport
+  // owner as of last round, so none of them can use an existing transport
+  // here until bug 2065274 lands. Same situation as the
+  // reofferReplacesBundleOwner mochitest.
+  for (const auto& transceiver : GetTransceivers(*mSessionOff)) {
+    if (!transceiver.HasLevel() || transceiver.IsStopping() ||
+        transceiver.IsStopped()) {
+      continue;
+    }
+    ASSERT_FALSE(transceiver.CanUseExistingTransport())
+    << "level " << transceiver.GetLevel();
+  }
+}
+
+TEST_F(JsepSessionTest, EarlyMediaOnMultipleBundleTags) {
+  AddTracks(*mSessionOff, "audio,video");
+  AddTracks(*mSessionAns, "audio,video");
+
+  OfferAnswer(CHECK_SUCCESS);
+
+  // Under the default kBundleBalanced policy, SetupBundle() only marks
+  // bundle-only on an m-section whose media type has already been seen
+  // earlier in the SDP; the first m-section of each type -- level 0 (audio)
+  // and level 1 (video) here -- stays unmarked. For an offer,
+  // SdpHelper::OwnsTransport() conservatively treats an unmarked m-section
+  // as possibly owning its own transport, so EnsureHasOwnTransport()
+  // speculatively clears level 1's BundleLevel() this round even though
+  // it's still listed in the reoffer's BUNDLE group.
+  std::string offer = CreateOffer();
+  UniquePtr<Sdp> parsedOffer = Parse(offer);
+  ASSERT_FALSE(parsedOffer->GetMediaSection(1).GetAttributeList().HasAttribute(
+      SdpAttribute::kBundleOnlyAttribute));
+
+  SetLocalOffer(offer, CHECK_SUCCESS);
+
+  Maybe<JsepTransceiver> level1 = GetTransceiverByLevel(*mSessionOff, 1);
+  ASSERT_TRUE(level1);
+  ASSERT_FALSE(level1->HasBundleLevel());
+  ASSERT_TRUE(level1->CanUseExistingTransport());
+}
+
+TEST_F(JsepSessionTest, EarlyMediaBitRecomputedAfterRollback) {
+  AddTracks(*mSessionOff, "audio,video");
+  AddTracks(*mSessionAns, "audio,video");
+
+  OfferAnswer(CHECK_SUCCESS);
+
+  auto stopped = GetTransceiverByLevel(*mSessionOff, 0);
+  stopped->Stop();
+  mSessionOff->SetTransceiver(*stopped);
+
+  std::string offer = CreateOffer();
+  SetLocalOffer(offer, CHECK_SUCCESS);
+
+  ASSERT_FALSE(
+      mSessionOff->SetLocalDescription(kJsepSdpRollback, "").mError.isSome());
+
+  // A fresh offer round after rollback must recompute the flag from the
+  // reverted transceiver state, not leave behind whatever the aborted round
+  // happened to cache -- rollback itself doesn't touch this field (see
+  // JsepTransceiver.h), since it's only ever consulted while in
+  // have-local-offer for the round that set it.
+  std::string freshOffer = CreateOffer();
+  SetLocalOffer(freshOffer, CHECK_SUCCESS);
+  for (const auto& transceiver : GetTransceivers(*mSessionOff)) {
+    if (!transceiver.HasLevel() || transceiver.IsStopping() ||
+        transceiver.IsStopped()) {
+      continue;
+    }
+    ASSERT_TRUE(transceiver.CanUseExistingTransport())
+    << "level " << transceiver.GetLevel();
+  }
+}
+
+TEST_F(JsepSessionTest,
+       TransportRemintedForConservativeFollowerWhenOwnerStaysHealthy) {
+  AddTracks(*mSessionOff, "audio,video");
+  AddTracks(*mSessionAns, "audio,video");
+
+  OfferAnswer(CHECK_SUCCESS);
+
+  std::string transportIdBefore =
+      GetTransceiverByLevel(*mSessionOff, 1)->mTransport.mTransportId;
+
+  // Steady state: audio (the real bundle tag) is never touched. Video still
+  // lacks bundle-only every round under the default kBundleBalanced policy
+  // (see EarlyMediaOnMultipleBundleTags),
+  // so EnsureHasOwnTransport() is still speculatively invoked on it -- but
+  // since its real owner is still healthy, the transport-reuse fix must NOT
+  // kick in here: the existing candidate-regathering hedge (see
+  // RenegotiationWithCandidates) depends on this transport actually being
+  // discarded and reminted every round.
+  std::string offer = CreateOffer();
+  SetLocalOffer(offer, CHECK_SUCCESS);
+
+  std::string transportIdAfter =
+      GetTransceiverByLevel(*mSessionOff, 1)->mTransport.mTransportId;
+  ASSERT_NE(transportIdBefore, transportIdAfter);
+}
+
 TEST_P(JsepSessionTest, RenegotiationAnswererDoesNotRejectStoppedTransceiver) {
   AddTracks(*mSessionOff);
   AddTracks(*mSessionAns);

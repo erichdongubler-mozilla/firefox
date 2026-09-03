@@ -176,17 +176,21 @@ class RTCRtpReceiver : public nsISupports,
   void UpdateAudioConduit();
 
   // Early media (bug 2019381): whether we should start receiving based on
-  // what we offered, even though this transceiver has not itself been
-  // negotiated yet. Only true for a bundled recvonly/sendrecv transceiver,
-  // offered locally, whose bundle owner completed a prior negotiation round
-  // -- ie; a packet could actually have arrived already, unlike a bundle
-  // that (owner included) has never gone through ICE/DTLS.
-  bool CanReceiveEarlyMedia() const;
+  // what we offered, even though we don't have a real answer for our
+  // current local offer yet (which may be the first one ever, or a
+  // reoffer that actually changed our own recv side). Only true for a
+  // transceiver that's currently offering to receive, bundled onto a
+  // transport with at least one negotiated member -- ie; a packet could
+  // actually have arrived already, unlike a bundle that has never gone
+  // through ICE/DTLS -- and whose own recv-relevant offer changed this
+  // round, so the still-valid real negotiated details aren't preferred
+  // over it.
+  bool CanReceiveEarlyMedia();
 
-  // Whether the transceiver that owns our bundle level has itself completed
-  // a prior negotiation round. Only meaningful when HasBundleLevel() is
-  // true.
-  bool HasNegotiatedBundleOwner() const;
+  // Whether our bundle group has at least one member that has itself
+  // completed a prior negotiation round as a transport owner, per the
+  // current local description's bundle grouping.
+  bool HasNegotiatedBundleOwner();
 
   std::string GetMid() const;
   JsepTransceiver& GetJsepTransceiver();
