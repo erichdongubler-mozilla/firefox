@@ -532,6 +532,20 @@ struct CompositionPayload {
   TimeStamp mTimeStamp;
 };
 
+// clang-format off
+MOZ_DEFINE_ENUM_CLASS_WITH_BASE(
+  RemoteDecoderVideoType, int8_t, (
+    TypeNone,
+    Buffer,
+    D3D10,
+    DXGIYCbCr,
+    DMABuf,
+    MacIOSurface,
+    DcompSurface,
+    AndroidImageReaderImage
+));
+// clang-format on
+
 }  // namespace layers
 }  // namespace mozilla
 

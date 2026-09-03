@@ -684,14 +684,14 @@ ExternalTextureSourceHost::CreateFromDXGITextureHost(
     const layers::DXGITextureHostD3D11* aTextureHost) {
 #ifdef XP_WIN
   RefPtr<gfx::FileHandleWrapper> handle;
-  if (aTextureHost->mGpuProcessTextureId) {
+  if (aTextureHost->mDescriptor.gpuProcessTextureId()) {
     auto* textureMap = layers::GpuProcessD3D11TextureMap::Get();
     if (textureMap) {
-      handle =
-          textureMap->GetSharedHandle(aTextureHost->mGpuProcessTextureId.ref());
+      handle = textureMap->GetSharedHandle(
+          aTextureHost->mDescriptor.gpuProcessTextureId().ref());
     }
-  } else if (aTextureHost->mHandle) {
-    handle = aTextureHost->mHandle;
+  } else if (aTextureHost->mDescriptor.handle()) {
+    handle = aTextureHost->mDescriptor.handle();
   }
 
   if (!handle) {
@@ -702,8 +702,9 @@ ExternalTextureSourceHost::CreateFromDXGITextureHost(
   }
 
   const gfx::YUVRangedColorSpace colorSpace = gfx::ToYUVRangedColorSpace(
-      gfx::ToYUVColorSpace(aTextureHost->mColorSpace),
-      aTextureHost->mColorRange, aTextureHost->mTransferFunction);
+      gfx::ToYUVColorSpace(aTextureHost->mDescriptor.colorSpace()),
+      aTextureHost->mDescriptor.colorRange(),
+      aTextureHost->mDescriptor.transferFunction());
 
   ffi::WGPUTextureFormat textureFormat;
   AutoTArray<std::pair<ffi::WGPUTextureFormat, ffi::WGPUTextureAspect>, 2>
@@ -799,7 +800,7 @@ ExternalTextureSourceHost::CreateFromDXGITextureHost(
   ExternalTextureSourceHost source(
       usedTextureIds, usedViewIds, aDesc.mSize, aTextureHost->mFormat,
       colorSpace, aDesc.mSampleTransform, aDesc.mLoadTransform);
-  source.mFenceId = aTextureHost->mFencesHolderId;
+  source.mFenceId = aTextureHost->mDescriptor.fencesHolderId();
   return source;
 #else
   MOZ_CRASH();
@@ -812,12 +813,13 @@ ExternalTextureSourceHost::CreateFromDXGIYCbCrTextureHost(
     const ExternalTextureSourceDescriptor& aDesc,
     const layers::DXGIYCbCrTextureHostD3D11* aTextureHost) {
 #ifdef XP_WIN
-  const gfx::YUVRangedColorSpace colorSpace = gfx::ToYUVRangedColorSpace(
-      aTextureHost->mYUVColorSpace, aTextureHost->mColorRange,
-      aTextureHost->mTransferFunction);
+  const gfx::YUVRangedColorSpace colorSpace =
+      gfx::ToYUVRangedColorSpace(aTextureHost->mDescriptor.yUVColorSpace(),
+                                 aTextureHost->mDescriptor.colorRange(),
+                                 aTextureHost->mDescriptor.transferFunction());
 
   ffi::WGPUTextureFormat planeFormat;
-  switch (aTextureHost->mColorDepth) {
+  switch (aTextureHost->mDescriptor.colorDepth()) {
     case gfx::ColorDepth::COLOR_8:
       planeFormat = {ffi::WGPUTextureFormat_R8Unorm};
       break;
@@ -825,18 +827,20 @@ ExternalTextureSourceHost::CreateFromDXGIYCbCrTextureHost(
     case gfx::ColorDepth::COLOR_12:
     case gfx::ColorDepth::COLOR_16:
       gfxCriticalNoteOnce << "Unsupported color depth: "
-                          << aTextureHost->mColorDepth;
+                          << aTextureHost->mDescriptor.colorDepth();
       aParent->ReportError(
           aDeviceId, dom::GPUErrorFilter::Internal,
           nsPrintfCString(
               "Unsupported color depth: %s",
-              mozilla::ToString(aTextureHost->mColorDepth).c_str()));
+              mozilla::ToString(aTextureHost->mDescriptor.colorDepth())
+                  .c_str()));
       return CreateError();
   }
 
   for (int i = 0; i < 3; i++) {
     {
-      const auto size = i == 0 ? aTextureHost->mSizeY : aTextureHost->mSizeCbCr;
+      const auto size = i == 0 ? aTextureHost->mDescriptor.sizeY()
+                               : aTextureHost->mDescriptor.sizeCbCr();
       const ffi::WGPUTextureDescriptor textureDesc{
           .size =
               ffi::WGPUExtent3d{
@@ -877,7 +881,7 @@ ExternalTextureSourceHost::CreateFromDXGIYCbCrTextureHost(
   ExternalTextureSourceHost source(
       aDesc.mTextureIds, aDesc.mViewIds, aDesc.mSize, aTextureHost->GetFormat(),
       colorSpace, aDesc.mSampleTransform, aDesc.mLoadTransform);
-  source.mFenceId = Some(aTextureHost->mFencesHolderId);
+  source.mFenceId = Some(aTextureHost->mDescriptor.fencesHolderId());
   return source;
 #else
   MOZ_CRASH();
