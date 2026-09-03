@@ -2,6 +2,17 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+
+const lazy = {};
+
+XPCOMUtils.defineLazyServiceGetter(
+  lazy,
+  "PushService",
+  "@mozilla.org/push/Service;1",
+  Ci.nsIPushService
+);
+
 /**
  * Command-line handler for the --receive-push-messages argument.
  */
@@ -43,9 +54,29 @@ export class CommandLineHandler {
   }
 
   /**
+   * Ensure the Push Service is ready.
+   *
+   * @returns {Promise<boolean>} Resolves to true if the Push Service is ready.
+   */
+  async ensurePushServiceReady() {
+    try {
+      await lazy.PushService.wrappedJSObject.ensureReady();
+    } catch (e) {
+      if (e.result != Cr.NS_ERROR_NOT_AVAILABLE) {
+        throw e;
+      }
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
    * Receive push messages.
    *
    * @returns {Promise<void>} Resolves when receiving stops.
    */
-  async receivePushMessages() {}
+  async receivePushMessages() {
+    await this.ensurePushServiceReady();
+  }
 }

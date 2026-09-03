@@ -208,3 +208,45 @@ add_task(async function test_not_kept_alive_if_firefox_is_running() {
     "Firefox is not kept alive"
   );
 });
+
+const PUSH_SERVICE = Cc["@mozilla.org/push/Service;1"].getService(
+  Ci.nsIPushService
+);
+
+async function startsPushService(pushServiceError) {
+  let ensureReady = sinon
+    .stub(PUSH_SERVICE.wrappedJSObject, "ensureReady")
+    .resolves();
+  if (pushServiceError) {
+    ensureReady.throws(pushServiceError);
+  }
+
+  try {
+    return await CommandLineHandler.prototype.ensurePushServiceReady();
+  } finally {
+    ensureReady.restore();
+  }
+}
+
+add_task(async function test_push_service_ready() {
+  ok(await startsPushService(), "The Push Service is ready");
+});
+
+add_task(async function test_push_service_disabled() {
+  ok(
+    !(await startsPushService(
+      Components.Exception("", Cr.NS_ERROR_NOT_AVAILABLE)
+    )),
+    "The Push Service is disabled"
+  );
+});
+
+add_task(async function test_push_service_broken() {
+  let pushServiceError = new Error("The Push Service is broken");
+
+  await Assert.rejects(
+    startsPushService(pushServiceError),
+    e => e == pushServiceError,
+    "The Push Service is broken"
+  );
+});
