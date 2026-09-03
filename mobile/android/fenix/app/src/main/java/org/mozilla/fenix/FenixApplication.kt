@@ -1167,6 +1167,7 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
                 when {
                     settings.shouldUseLightTheme -> "light"
                     settings.shouldUseDarkTheme -> "dark"
+                    settings.shouldUseOledTheme -> "oled"
                     settings.shouldFollowDeviceTheme -> "system"
                     settings.shouldUseAutoBatteryTheme -> "battery"
                     else -> ""
