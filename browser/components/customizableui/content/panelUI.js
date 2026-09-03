@@ -1267,10 +1267,17 @@ const PanelUI = {
       notification.id === "update-restart" &&
       Services.prefs.getBoolPref("browser.nova.enabled", false);
 
+    // Drop the description in private windows
+    const noDescription =
+      isNovaUpdateRestart && PrivateBrowsingUtils.isWindowPrivate(window);
+    this._panelBannerItem.toggleAttribute("no-description", noDescription);
+
     if (isNovaUpdateRestart) {
       this._panelBannerItem.setAttribute(
         "aria-labelledby",
-        "appMenu-update-banner-title appMenu-update-banner-description"
+        noDescription
+          ? "appMenu-update-banner-title"
+          : "appMenu-update-banner-title appMenu-update-banner-description"
       );
     } else {
       this._panelBannerItem.removeAttribute("aria-labelledby");

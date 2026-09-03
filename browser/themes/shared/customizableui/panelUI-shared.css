@@ -580,8 +580,6 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
 }
 
 .appMenu-update-banner-text {
-  /* A couple pixels of padding so the two-line text block visually centers
-     against the leading icon. */
   padding-block: var(--space-xsmall);
 }
 
@@ -594,7 +592,7 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
     transform: scale(1);
     opacity: var(--opacity-deemphasized-strong);
   }
-  50% {
+  85% {
     transform: scale(1.75);
     opacity: 0;
   }
@@ -616,21 +614,20 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
     .panel-banner-item,
     .addon-banner-item {
       --panel-banner-item-color: var(--promo-message-text-color-vibrant);
-      --panel-banner-item-background-color: var(--promo-background-color-vibrant);
+      --panel-banner-item-icon-color: light-dark(var(--icon-color-accent-primary-desaturated), var(--icon-color-information));
+      --panel-banner-item-background-color: light-dark(var(--promo-background-color-vibrant), var(--background-color-information));
       --panel-banner-item-hover-bgcolor: color-mix(in srgb, var(--panel-banner-item-background-color) 85%, currentColor);
       --panel-banner-item-active-bgcolor: color-mix(in srgb, var(--panel-banner-item-background-color) 70%, currentColor);
       align-items: center;
-      gap: var(--space-medium);
+      gap: var(--space-small);
       border: var(--promo-border-width) solid var(--promo-border-color-vibrant);
       border-radius: var(--promo-border-radius);
-      margin-inline: var(--promo-padding);
-      margin-block-end: var(--space-small);
       padding-inline: var(--promo-padding);
       padding-block: var(--space-large);
     }
 
     .panel-banner-item > .toolbarbutton-icon {
-      --icon-color: var(--icon-color-accent-primary-desaturated);
+      --icon-color: var(--panel-banner-item-icon-color);
       order: 0;
       flex-shrink: 0;
       fill: var(--icon-color);
@@ -659,7 +656,7 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
       align-items: flex-start;
 
       > .appMenu-update-banner-pulse-ring {
-        --border-color: var(--icon-color-accent-primary-desaturated);
+        --border-color: var(--panel-banner-item-icon-color);
         display: block;
         position: absolute;
         width: var(--icon-size-small);
@@ -672,7 +669,7 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
         pointer-events: none;
 
         @media (prefers-reduced-motion: no-preference) {
-          animation: appMenu-update-banner-pulse 4s var(--animation-easing-function) infinite;
+          animation: appMenu-update-banner-pulse 2s ease-out infinite;
         }
       }
 
@@ -683,6 +680,39 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
       .appMenu-update-banner-text {
         display: flex;
       }
+
+      &[no-description] {
+        align-items: center;
+        padding-block: var(--space-medium);
+
+        .appMenu-update-banner-description {
+          display: none;
+        }
+        .appMenu-update-banner-title {
+          margin-block-start: 0;
+        }
+        > .appMenu-update-banner-pulse-ring {
+          inset-block: 0;
+          margin-block: auto;
+        }
+      }
+    }
+
+    /* Inset the top cards by the panel body's block padding so top, inline and
+       bottom gaps match at any density. */
+    #appMenu-mainView > .panel-subview-body {
+      > #appMenu-update-banner,
+      > #appMenu-menu-message,
+      > #appMenu-fxa-sign-in-promo,
+      > #appMenu-addon-banners > .addon-banner-item {
+        margin-inline: var(--panel-separator-padding-inline);
+        margin-block: 0 var(--panel-separator-padding-block);
+      }
+    }
+
+    /* menu-message sets its own :host margin in menu-message.css */
+    #appMenu-menu-message menu-message {
+      margin: 0;
     }
   }
 }
@@ -720,6 +750,7 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
     /* Without some padding the button gets too crowded even for compact mode
       when the text wraps to a newline. */
     padding-block: var(--space-xsmall);
+    margin-block-start: var(--space-xsmall);
   }
 }
 
