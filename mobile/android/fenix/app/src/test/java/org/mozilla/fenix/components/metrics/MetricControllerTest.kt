@@ -1277,6 +1277,44 @@ class MetricControllerTest {
             }
     }
 
+    @Test
+    fun `WHEN capture_duration fact is processed THEN captureDuration timing distribution accumulates the sample`() {
+        val controller = createReleaseMetricController()
+
+        assertNull(BrowserThumbnails.captureDuration.testGetValue())
+
+        controller.run {
+            Fact(
+                    component = Component.BROWSER_THUMBNAILS,
+                    action = Action.IMPLEMENTATION_DETAIL,
+                    item = BrowserThumbnailsFacts.Items.CAPTURE_DURATION,
+                    metadata = mapOf(BrowserThumbnailsFacts.MetadataKeys.DURATION_MS to 42L),
+                )
+                .process()
+        }
+
+        val distribution = BrowserThumbnails.captureDuration.testGetValue()
+        assertNotNull(distribution)
+        assertEquals(1L, distribution.count)
+    }
+
+    @Test
+    fun `WHEN capture_duration fact has missing duration metadata THEN nothing is accumulated`() {
+        val controller = createReleaseMetricController()
+
+        controller.run {
+            Fact(
+                    component = Component.BROWSER_THUMBNAILS,
+                    action = Action.IMPLEMENTATION_DETAIL,
+                    item = BrowserThumbnailsFacts.Items.CAPTURE_DURATION,
+                    metadata = null,
+                )
+                .process()
+        }
+
+        assertNull(BrowserThumbnails.captureDuration.testGetValue())
+    }
+
     private fun createReleaseMetricController(
         services: List<MetricsService> = emptyList(),
         isDataTelemetryEnabled: () -> Boolean = { true },

@@ -519,6 +519,12 @@ internal class ReleaseMetricController(
                 value?.let { BrowserThumbnails.captureResult[it].add() } ?: Unit
             }
 
+            Component.BROWSER_THUMBNAILS to BrowserThumbnailsFacts.Items.CAPTURE_DURATION -> {
+                (metadata?.get(BrowserThumbnailsFacts.MetadataKeys.DURATION_MS) as? Long)?.let {
+                    BrowserThumbnails.captureDuration.accumulateSamples(listOf(it))
+                } ?: Unit
+            }
+
             else -> {
                 // no-op
             }

@@ -17105,3 +17105,23 @@ browser_thumbnails:
     metadata:
       tags:
         - Tabs
+  capture_duration:
+    type: timing_distribution
+    time_unit: millisecond
+    description: |
+      Wall-clock time from EngineView.captureThumbnail(...) call to its
+      onFinish callback. Includes engine compositor readback but not the
+      subsequent disk write. Long tails typically indicate the compositor
+      is struggling or the surface is mid-teardown.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2067066
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2067066
+    notification_emails:
+      - android-probes@mozilla.com
+    data_sensitivity:
+      - technical
+    expires: never
+    metadata:
+      tags:
+        - Tabs
