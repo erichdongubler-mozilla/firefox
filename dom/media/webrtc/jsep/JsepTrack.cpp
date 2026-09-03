@@ -103,6 +103,43 @@ std::vector<uint32_t> JsepTrack::GetRtxSsrcs() const {
   return result;
 }
 
+void JsepTrack::PopulatePreferredCodecs(
+    const nsTArray<UniquePtr<JsepCodecDescription>>& aPreferredCodecs,
+    bool aUsePreferredCodecsOrder) {
+  mUsePreferredCodecsOrder = aUsePreferredCodecsOrder;
+  if (!aUsePreferredCodecsOrder) {
+    // aPreferredCodecs is just the full default list here; no real
+    // preference order to apply.
+    return;
+  }
+
+  // Unlike PopulateCodecs(), this reorders mPrototypeCodecs to put
+  // aPreferredCodecs first (in their given order), without discarding any
+  // existing codec that isn't in aPreferredCodecs. A negotiated answer may
+  // still legitimately select one of those codecs for sending, even if it
+  // was excluded by setCodecPreferences() (RFC 8829 5.3.1 allows the answer
+  // to list codecs absent from the offer).
+  auto preferredIndex =
+      [&](const UniquePtr<JsepCodecDescription>& aCodec) -> size_t {
+    for (size_t i = 0; i < aPreferredCodecs.Length(); ++i) {
+      const auto& preferred = aPreferredCodecs[i];
+      if (aCodec->Type() == preferred->Type() &&
+          aCodec->mName == preferred->mName &&
+          aCodec->mClock == preferred->mClock &&
+          aCodec->mChannels == preferred->mChannels) {
+        return i;
+      }
+    }
+    return aPreferredCodecs.Length();
+  };
+
+  std::stable_sort(mPrototypeCodecs.begin(), mPrototypeCodecs.end(),
+                   [&](const UniquePtr<JsepCodecDescription>& aLhs,
+                       const UniquePtr<JsepCodecDescription>& aRhs) {
+                     return preferredIndex(aLhs) < preferredIndex(aRhs);
+                   });
+}
+
 void JsepTrack::PopulateCodecs(
     const nsTArray<UniquePtr<JsepCodecDescription>>& aPreferredCodecs,
     bool aUsePreferredCodecsOrder) {

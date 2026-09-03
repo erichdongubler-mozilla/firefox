@@ -1919,6 +1919,12 @@ void RTCRtpSender::SyncFromJsep(const JsepTransceiver& aJsepTransceiver) {
 }
 
 void RTCRtpSender::SyncToJsep(JsepTransceiver& aJsepTransceiver) const {
+  if (!mTransceiver->GetPreferredCodecs().IsEmpty()) {
+    aJsepTransceiver.mSendTrack.PopulatePreferredCodecs(
+        mTransceiver->GetPreferredCodecs(),
+        mTransceiver->GetPreferredCodecsInUse());
+  }
+
   std::vector<std::string> streamIds;
   for (const auto& stream : mStreams) {
     nsString wideStreamId;
