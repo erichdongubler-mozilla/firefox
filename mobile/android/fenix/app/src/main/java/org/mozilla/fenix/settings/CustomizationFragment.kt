@@ -269,6 +269,9 @@ class CustomizationFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFrag
         val settings = requireComponents.settings
         radioDarkestTheme = requirePreference(R.string.pref_key_oled_theme)
         radioDarkestTheme.isVisible = settings.enableOledTheme
+        radioDarkestTheme.onClickListener {
+            setNewTheme(AppCompatDelegate.MODE_NIGHT_YES)
+        }
     }
 
     private fun bindFollowDeviceTheme() {

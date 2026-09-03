@@ -695,9 +695,10 @@ class Core(
         val inDark =
             (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
                 Configuration.UI_MODE_NIGHT_YES
+        val settings = context.components.settings
         return when {
-            context.components.settings.shouldUseDarkTheme -> PreferredColorScheme.Dark
-            context.components.settings.shouldUseLightTheme -> PreferredColorScheme.Light
+            settings.shouldUseDarkTheme || settings.shouldUseOledTheme -> PreferredColorScheme.Dark
+            settings.shouldUseLightTheme -> PreferredColorScheme.Light
             inDark -> PreferredColorScheme.Dark
             else -> PreferredColorScheme.Light
         }

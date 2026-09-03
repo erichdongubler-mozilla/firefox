@@ -795,7 +795,7 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
             settings.shouldUseLightTheme -> {
                 AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
             }
-            settings.shouldUseDarkTheme -> {
+            settings.shouldUseDarkTheme || settings.shouldUseOledTheme -> {
                 AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
             }
             SDK_INT < Build.VERSION_CODES.P && settings.shouldUseAutoBatteryTheme -> {
