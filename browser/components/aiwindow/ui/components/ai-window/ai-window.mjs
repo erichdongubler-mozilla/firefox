@@ -60,8 +60,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/models/ConversationSuggestions.sys.mjs",
   generateResumeActivityConversationStarters:
     "moz-src:///browser/components/aiwindow/models/ConversationSuggestions.sys.mjs",
-  MAX_NUM_MEMORIES_FOR_RESUME_ACTIVITY:
-    "moz-src:///browser/components/aiwindow/models/ConversationSuggestions.sys.mjs",
   constructConversationToResumeActivity:
     "moz-src:///browser/components/aiwindow/models/ConversationSuggestions.sys.mjs",
   MemoriesManager:
@@ -186,7 +184,10 @@ const HISTORY_MENU_EVENTS = [
 ];
 const MAX_SIDEBAR_STARTER_CACHE_KEYS = 20;
 const MAX_TOP_SITES = 8;
-const MAX_PILL_COUNT = 3;
+// Temporary cap until regular starters increase to 5.
+const MAX_PILL_COUNT = 6;
+// Show 3 undismissed candidates from the larger generated pool.
+const MAX_RESUME_PILLS_DISPLAYED = 3;
 // TEMP: English-only workaround. Remove once resume headlines support
 // localization - see Bug 2066263.
 const RESUME_HEADLINE_PREFIX_RE = /^\s*pick\s+up\b[\s:;,.—-]*/iu;
@@ -281,6 +282,15 @@ export class AIWindow extends MozLitElement {
     return (
       this.memoriesConversationPref ||
       this.memoriesHistoryPref ||
+      this.#hasMemories
+    );
+  }
+
+  // Skip resume loading UI when generation cannot produce results.
+  get #resumeActivityMemoriesEnabled() {
+    return (
+      (this.#memoriesToggled ??
+        (this.memoriesConversationPref || this.memoriesHistoryPref)) &&
       this.#hasMemories
     );
   }
@@ -1322,14 +1332,10 @@ export class AIWindow extends MozLitElement {
       if (shouldLoadResumeStarters) {
         this.#canLoadResumeStarters = false;
 
-        // Ensure #hasMemories is current before checking it.
-        if (!this.memoriesConversationPref && !this.memoriesHistoryPref) {
-          await this.#refreshHasMemories();
-        }
-        const memoriesEnabled =
-          this.#memoriesToggled ?? this.#memoriesIconShown;
+        // Refresh the memory gate before loading resume starters.
+        await this.#refreshHasMemories();
 
-        if (memoriesEnabled) {
+        if (this.#resumeActivityMemoriesEnabled) {
           resumeStartersPromise =
             lazy.generateResumeActivityConversationStarters();
 
@@ -1381,7 +1387,7 @@ export class AIWindow extends MozLitElement {
       } else if (resumeStartersPromise) {
         const resumeStarters = this.#resumeActivitiesToStarterPrompts(
           await resumeStartersPromise
-        ).slice(0, lazy.MAX_NUM_MEMORIES_FOR_RESUME_ACTIVITY);
+        ).slice(0, MAX_RESUME_PILLS_DISPLAYED);
 
         if (selectedTab === this.#getCurrentTab()) {
           starters = [...resumeStarters, ...starters].slice(0, MAX_PILL_COUNT);
@@ -2047,7 +2053,7 @@ export class AIWindow extends MozLitElement {
     let conversation = null;
     this.#isGeneratingResumeActivityConversation = true;
     try {
-      if (this.#memoriesToggled ?? this.#memoriesIconShown) {
+      if (this.#resumeActivityMemoriesEnabled) {
         try {
           conversation = await lazy.constructConversationToResumeActivity({
             memory: resumePrompt.memory,

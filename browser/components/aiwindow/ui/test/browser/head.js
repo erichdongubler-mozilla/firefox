@@ -507,11 +507,21 @@ async function getConversationId(browser) {
   return aiWindow.conversationId.toString();
 }
 
-async function stubResumeActivityGeneration(sb) {
-  const urls = [1, 2, 3, 4, 5].map(id => ({
-    url: `https://example.com/${id}`,
-    title: `Example ${id}`,
-  }));
+/**
+ * Stubs resume generation for the supplied memories, cards, and URLs.
+ *
+ * @param {object} sb - Sinon sandbox, owned and restored by the caller
+ * @param {object} options
+ * @param {Array<object>} options.memories
+ * @param {Array<object>} options.cards - Mocked headline-generation output
+ * @param {Array<{url: string, title: string}>} options.urls - Inserted into
+ *   Places and removed again on cleanup
+ * @param {?string} [options.fxAccountToken]
+ */
+async function _stubResumeActivityGenerationCore(
+  sb,
+  { memories, cards, urls, fxAccountToken = null }
+) {
   for (const [index, page] of urls.entries()) {
     await PlacesUtils.history.insert({
       ...page,
@@ -523,25 +533,6 @@ async function stubResumeActivityGeneration(sb) {
       ],
     });
   }
-
-  const memories = [
-    {
-      id: "memory-1",
-      memory_summary: "Research project",
-      source_ids: {
-        history_source_ids: urls
-          .slice(0, 4)
-          .map(({ url }) => PlacesUtils.history.hashURL(url)),
-      },
-    },
-    {
-      id: "memory-2",
-      memory_summary: "Trip planning",
-      source_ids: {
-        history_source_ids: [PlacesUtils.history.hashURL(urls[4].url)],
-      },
-    },
-  ];
 
   const getMemoriesStub = sb
     .stub(MemoriesManager, "getMemoriesByAttribute")
@@ -563,17 +554,9 @@ async function stubResumeActivityGeneration(sb) {
       setUntrustedInput() {},
       commit() {},
     },
-    run: sb.stub().resolves({
-      finalOutput: JSON.stringify([
-        {
-          id: 0,
-          headline: "Pick up your research",
-          status: "Continue reading",
-        },
-      ]),
-    }),
+    run: sb.stub().resolves({ finalOutput: JSON.stringify(cards) }),
   }));
-  sb.stub(openAIEngine, "getFxAccountToken").resolves(null);
+  sb.stub(openAIEngine, "getFxAccountToken").resolves(fxAccountToken);
 
   const originalAvailableLocales = Services.locale.availableLocales;
   const originalRequestedLocales = Services.locale.requestedLocales;
@@ -596,6 +579,73 @@ async function stubResumeActivityGeneration(sb) {
       Services.locale.requestedLocales = originalRequestedLocales;
     },
   };
+}
+
+/**
+ * Stubs two candidates with one valid resume pill.
+ *
+ * @param {object} sb - Sinon sandbox, owned and restored by the caller
+ * @param {object} [options]
+ * @param {?string} [options.fxAccountToken]
+ */
+async function stubResumeActivityGeneration(sb, { fxAccountToken } = {}) {
+  const urls = [1, 2, 3, 4, 5].map(id => ({
+    url: `https://example.com/${id}`,
+    title: `Example ${id}`,
+  }));
+  const memories = [
+    {
+      id: "memory-1",
+      memory_summary: "Research project",
+      source_ids: {
+        history_source_ids: urls
+          .slice(0, 4)
+          .map(({ url }) => PlacesUtils.history.hashURL(url)),
+      },
+    },
+    {
+      id: "memory-2",
+      memory_summary: "Trip planning",
+      source_ids: {
+        history_source_ids: [PlacesUtils.history.hashURL(urls[4].url)],
+      },
+    },
+  ];
+  const cards = [
+    { id: 0, headline: "Pick up your research", status: "Continue reading" },
+  ];
+  return _stubResumeActivityGenerationCore(sb, {
+    memories,
+    cards,
+    urls,
+    fxAccountToken,
+  });
+}
+
+/**
+ * Stubs `memoryCount` ranked candidates with valid headlines.
+ *
+ * @param {object} sb - Sinon sandbox, owned and restored by the caller
+ * @param {number} memoryCount
+ */
+async function stubResumeActivityGenerationPool(sb, memoryCount) {
+  const urls = Array.from({ length: memoryCount }, (_, i) => ({
+    url: `https://example.com/pool-${i}`,
+    title: `Example ${i}`,
+  }));
+  const memories = urls.map((page, i) => ({
+    id: `pool-memory-${i}`,
+    memory_summary: `Research topic ${i}`,
+    source_ids: {
+      history_source_ids: [PlacesUtils.history.hashURL(page.url)],
+    },
+  }));
+  const cards = memories.map((memory, i) => ({
+    id: i,
+    headline: `Pick up ${memory.memory_summary}`,
+    status: "Continue",
+  }));
+  return _stubResumeActivityGenerationCore(sb, { memories, cards, urls });
 }
 
 /**

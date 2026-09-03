@@ -455,15 +455,8 @@ add_task(async function test_fullpage_resume_starters() {
     const aiWindow = browser.contentDocument.querySelector("ai-window");
     const promptsEl = aiWindow.shadowRoot.querySelector("smartwindow-prompts");
 
-    // 1 valid resume pill (memory-2's headline comes back empty) + 3 static
-    // starters, truncated to MAX_PILL_COUNT (3) - independent of
-    // MAX_NUM_MEMORIES_FOR_RESUME_ACTIVITY, since this fixture never yields
-    // more than 1 valid resume pill.
-    Assert.equal(
-      buttons.length,
-      3,
-      "Resume pill plus static starters, truncated to MAX_PILL_COUNT"
-    );
+    // One valid resume pill plus three static starters.
+    Assert.equal(buttons.length, 4, "Resume pill plus static starters");
     Assert.equal(
       buttons[0].ariaLabel,
       "Pick up your research",
@@ -637,7 +630,7 @@ add_task(async function test_dismiss_removes_pill_and_stays_dismissed() {
 
     await TestUtils.waitForCondition(async () => {
       const remaining = await getPromptButtons(browser);
-      return remaining.length === 2;
+      return remaining.length === 3;
     }, "Dismissed pill should be removed");
     const remaining = await getPromptButtons(browser);
     Assert.ok(
@@ -685,6 +678,92 @@ add_task(async function test_dismiss_removes_pill_and_stays_dismissed() {
     await SpecialPowers.popPrefEnv();
   }
 });
+
+add_task(
+  async function test_resume_pool_displays_top_3_and_dismiss_reveals_next() {
+    const sb = sinon.createSandbox();
+    let win, tab2;
+
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        ["browser.smartwindow.memories.generateFromConversation", true],
+        ["browser.smartwindow.memories.generateFromHistory", true],
+      ],
+    });
+
+    let resumeActivityStubs;
+    try {
+      resumeActivityStubs = await stubResumeActivityGenerationPool(sb, 4);
+      win = await openAIWindow();
+      const browser = win.gBrowser.selectedBrowser;
+      await getPromptButtons(browser);
+      const aiWindow = browser.contentDocument.querySelector("ai-window");
+      const promptsEl = aiWindow.shadowRoot.querySelector(
+        "smartwindow-prompts"
+      );
+
+      const resumeIds = () =>
+        promptsEl.prompts
+          .filter(prompt => prompt.type === "resume")
+          .map(prompt => prompt.memory.id);
+
+      await TestUtils.waitForCondition(
+        () => resumeIds().length === 3,
+        "Wait for the top 3 resume pills to resolve"
+      );
+      Assert.deepEqual(
+        resumeIds(),
+        ["pool-memory-0", "pool-memory-1", "pool-memory-2"],
+        "Only the top 3 of the 4-candidate pool should display"
+      );
+
+      const dismissButton = await getDismissButton(browser);
+      dismissButton.click();
+
+      await TestUtils.waitForCondition(
+        () => !resumeIds().includes("pool-memory-0"),
+        "Dismissed candidate should be removed from the current tab"
+      );
+
+      tab2 = await BrowserTestUtils.openNewForegroundTab({
+        gBrowser: win.gBrowser,
+        opening: AIWINDOW_URL,
+        waitForLoad: true,
+      });
+      await getPromptButtons(tab2.linkedBrowser);
+      const aiWindow2 =
+        tab2.linkedBrowser.contentDocument.querySelector("ai-window");
+      const promptsEl2 = aiWindow2.shadowRoot.querySelector(
+        "smartwindow-prompts"
+      );
+
+      const resumeIds2 = () =>
+        promptsEl2.prompts
+          .filter(prompt => prompt.type === "resume")
+          .map(prompt => prompt.memory.id);
+
+      await TestUtils.waitForCondition(
+        () => resumeIds2().length === 3,
+        "New tab's top 3 resume pills should resolve"
+      );
+      Assert.deepEqual(
+        resumeIds2(),
+        ["pool-memory-1", "pool-memory-2", "pool-memory-3"],
+        "A new tab should surface the pool's 4th candidate in the dismissed slot"
+      );
+    } finally {
+      if (tab2) {
+        BrowserTestUtils.removeTab(tab2);
+      }
+      if (win) {
+        await BrowserTestUtils.closeWindow(win);
+      }
+      sb.restore();
+      await resumeActivityStubs?.cleanup();
+      await SpecialPowers.popPrefEnv();
+    }
+  }
+);
 
 add_task(async function test_resume_prompt_click_shows_confirmation_card() {
   const sb = sinon.createSandbox();
@@ -819,17 +898,60 @@ add_task(
 );
 
 add_task(
-  async function test_fullpage_resume_starters_disabled_without_existing_memories() {
+  async function test_fullpage_resume_starters_disabled_when_prefs_off() {
     const sb = sinon.createSandbox();
     let win;
 
-    // Prefs off alone don't disable resume starters - #memoriesIconShown
-    // falls back to #hasMemories, so this only holds with no existing
-    // memories either.
     await SpecialPowers.pushPrefEnv({
       set: [
         ["browser.smartwindow.memories.generateFromConversation", false],
         ["browser.smartwindow.memories.generateFromHistory", false],
+      ],
+    });
+
+    try {
+      // Existing memories should not override disabled generation prefs.
+      const existingMemories = [{ id: "memory-1", memory_summary: "Test" }];
+      const getMemoriesStub = sb
+        .stub(MemoriesManager, "getMemoriesByAttribute")
+        .resolves(existingMemories);
+      sb.stub(MemoriesManager, "getAllMemories").resolves(existingMemories);
+      win = await openAIWindow();
+      const browser = win.gBrowser.selectedBrowser;
+      await getPromptButtons(browser);
+      const aiWindow = browser.contentDocument.querySelector("ai-window");
+      const promptsEl = aiWindow.shadowRoot.querySelector(
+        "smartwindow-prompts"
+      );
+
+      Assert.ok(
+        promptsEl.prompts.every(prompt => prompt.type !== "resume"),
+        "Resume pills should not render with both memories prefs off"
+      );
+      Assert.ok(
+        getMemoriesStub.notCalled,
+        "Resume starter generation should not run with both memories prefs off"
+      );
+    } finally {
+      if (win) {
+        await BrowserTestUtils.closeWindow(win);
+      }
+      sb.restore();
+      await SpecialPowers.popPrefEnv();
+    }
+  }
+);
+
+add_task(
+  async function test_fullpage_resume_starters_disabled_without_existing_memories() {
+    const sb = sinon.createSandbox();
+    let win;
+
+    // Enabled prefs cannot generate resume starters without memories.
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        ["browser.smartwindow.memories.generateFromConversation", true],
+        ["browser.smartwindow.memories.generateFromHistory", true],
       ],
     });
 
@@ -848,11 +970,11 @@ add_task(
 
       Assert.ok(
         promptsEl.prompts.every(prompt => prompt.type !== "resume"),
-        "Resume pills should not render with memories disabled and none existing"
+        "Resume pills should not render with no existing memories, even with prefs on"
       );
       Assert.ok(
         getMemoriesStub.notCalled,
-        "Resume starter generation should not run with memories disabled and none existing"
+        "Resume starter generation should not run with no existing memories"
       );
     } finally {
       if (win) {

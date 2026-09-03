@@ -110,10 +110,8 @@ export function _setGetConversationsByIdForTesting(fn) {
 // Max number of memories to include in prompts
 const MAX_NUM_MEMORIES = 8;
 
-// Max number of memories to surface as "Pick up where you left off" pills.
-// The New Tab UI maintains a fixed pill count regardless; this only bounds how
-// many memory-backed candidates the models layer returns.
-export const MAX_NUM_MEMORIES_FOR_RESUME_ACTIVITY = 2;
+// Generate extra candidates so dismissals can reveal replacements.
+const MAX_NUM_MEMORIES_FOR_RESUME_ACTIVITY = 6;
 // Max number of URLs to include per memory in the "Pick up where you left off" prompt.
 export const MAX_NUM_URLS_PER_MEMORY = 10;
 
