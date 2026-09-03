@@ -30,7 +30,16 @@ export class CommandLineHandler {
       return;
     }
 
-    this.receivePushMessages();
+    // Keep Firefox alive while receiving push messages
+    Services.startup.enterLastWindowClosingSurvivalArea();
+
+    this.receivePushMessages()
+      .catch(e => {
+        console.error("Error receiving push messages:", e);
+      })
+      .finally(() => {
+        Services.startup.exitLastWindowClosingSurvivalArea();
+      });
   }
 
   /**

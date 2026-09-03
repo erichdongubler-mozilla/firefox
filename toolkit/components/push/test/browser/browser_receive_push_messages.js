@@ -160,3 +160,51 @@ add_task(async function test_blank_window_not_displayed_with_the_argument() {
 add_task(async function test_blank_window_displayed_without_the_argument() {
   ok(createsBlankWindow([]), "The blank window is displayed");
 });
+
+async function survivalAreaUsage(commandLineState) {
+  let survivalAreaExited = Promise.withResolvers();
+  let enterLastWindowClosingSurvivalArea = sinon.stub();
+  let exitLastWindowClosingSurvivalArea = sinon
+    .stub()
+    .callsFake(() => survivalAreaExited.resolve());
+  let startup = sinon.stub(Services, "startup").value({
+    enterLastWindowClosingSurvivalArea,
+    exitLastWindowClosingSurvivalArea,
+  });
+
+  try {
+    Cc[RECEIVE_PUSH_MESSAGES_CONTRACT_ID].getService(
+      Ci.nsICommandLineHandler
+    ).handle(
+      Cu.createCommandLine(["--receive-push-messages"], null, commandLineState)
+    );
+
+    if (enterLastWindowClosingSurvivalArea.called) {
+      // Waits until exitLastWindowClosingSurvivalArea is called
+      await survivalAreaExited.promise;
+    }
+  } finally {
+    startup.restore();
+  }
+
+  return {
+    entered: enterLastWindowClosingSurvivalArea.called,
+    exited: exitLastWindowClosingSurvivalArea.called,
+  };
+}
+
+add_task(async function test_kept_alive_if_firefox_is_not_running() {
+  Assert.deepEqual(
+    await survivalAreaUsage(Ci.nsICommandLine.STATE_INITIAL_LAUNCH),
+    { entered: true, exited: true },
+    "Firefox is kept alive while receiving push messages"
+  );
+});
+
+add_task(async function test_not_kept_alive_if_firefox_is_running() {
+  Assert.deepEqual(
+    await survivalAreaUsage(Ci.nsICommandLine.STATE_REMOTE_AUTO),
+    { entered: false, exited: false },
+    "Firefox is not kept alive"
+  );
+});
