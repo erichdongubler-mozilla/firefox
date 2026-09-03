@@ -10,6 +10,7 @@
 #include "NotificationController.h"
 #include "States.h"
 #include "mozilla/dom/DocumentInlines.h"
+#include "nsAccUtils.h"
 #include "nsAccessibilityService.h"
 
 #ifdef A11Y_LOG
@@ -111,9 +112,7 @@ inline void DocAccessible::NotifyOfLoad(uint32_t aLoadEventType) {
 
 inline void DocAccessible::MaybeNotifyOfValueChange(
     LocalAccessible* aAccessible) {
-  if (aAccessible->IsCombobox() || aAccessible->IsPassword() ||
-      aAccessible->Role() == roles::ENTRY ||
-      aAccessible->Role() == roles::SPINBUTTON) {
+  if (nsAccUtils::CanFireValueChangeEvent(aAccessible)) {
     FireDelayedEvent(nsIAccessibleEvent::EVENT_TEXT_VALUE_CHANGE, aAccessible);
   }
 }
