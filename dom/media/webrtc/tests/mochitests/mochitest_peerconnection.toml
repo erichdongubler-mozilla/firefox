@@ -236,6 +236,8 @@ scheme = "http"
 
 ["test_peerConnection_disabledVideoPreNegotiation.html"]
 
+["test_peerConnection_earlyMediaReoffer.html"]
+
 ["test_peerConnection_encodingsNegotiation.html"]
 
 ["test_peerConnection_errorCallbacks.html"]
