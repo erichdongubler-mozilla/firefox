@@ -469,6 +469,8 @@ skip-if = [
 
 ["browser_vertical_tabs_customize_navbar.js"]
 
+["browser_vertical_tabs_default_area.js"]
+
 ["browser_widget_animation.js"]
 skip-if = [
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 1961548

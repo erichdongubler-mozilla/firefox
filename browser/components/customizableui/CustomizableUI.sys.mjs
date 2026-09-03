@@ -4139,11 +4139,17 @@ var CustomizableUIInternal = {
         // area here.
         let canBeAutoAdded = autoAdd && !gSeenWidgets.has(widget.id);
         if (!widget.currentArea && (!widget.removable || canBeAutoAdded)) {
-          if (widget.defaultArea) {
-            if (this.isAreaLazy(widget.defaultArea)) {
-              gFuturePlacements.get(widget.defaultArea).add(widget.id);
+          // The CustomizableUI.AREA_TABSTRIP is hidden while tabs are vertical, so a widget that
+          // defaults into it would be auto-added somewhere the user can't see.
+          let defaultArea =
+            (CustomizableUI.verticalTabsEnabled &&
+              widget.defaultAreaVerticalTabs) ||
+            widget.defaultArea;
+          if (defaultArea) {
+            if (this.isAreaLazy(defaultArea)) {
+              gFuturePlacements.get(defaultArea).add(widget.id);
             } else {
-              this.addWidgetToArea(widget.id, widget.defaultArea);
+              this.addWidgetToArea(widget.id, defaultArea);
             }
           }
         }
@@ -4253,6 +4259,7 @@ var CustomizableUIInternal = {
       removable: true,
       overflows: true,
       defaultArea: null,
+      defaultAreaVerticalTabs: null,
       shortcutId: null,
       tabSpecific: false,
       locationSpecific: false,
@@ -4333,6 +4340,14 @@ var CustomizableUIInternal = {
           "valid defaultArea as well."
       );
       return null;
+    }
+
+    if (
+      aData.defaultAreaVerticalTabs &&
+      (aSource == CustomizableUI.SOURCE_BUILTIN ||
+        gAreas.has(aData.defaultAreaVerticalTabs))
+    ) {
+      widget.defaultAreaVerticalTabs = aData.defaultAreaVerticalTabs;
     }
 
     if ("type" in aData && gSupportedWidgetTypes.has(aData.type)) {
@@ -6252,6 +6267,11 @@ export var CustomizableUI = {
    *   The default area to add the widget to. If not supplied, this widget will
    *   be placed in the palette by default. A valid default area is required if
    *   the widget is not removable.
+   * @property {string} [defaultAreaVerticalTabs]
+   *   The default area to add the widget to while tabs are vertical, taking
+   *   precedence over defaultArea. Widgets that default into AREA_TABSTRIP
+   *   need this, as that area is hidden while tabs are vertical. If not
+   *   supplied, defaultArea is used regardless of tab orientation.
    * @property {string} [shortcutId]
    *   The id of an element that has a shortcut for this widget. This is only
    *   used to display the shortcut as part of the tooltip for builtin widgets

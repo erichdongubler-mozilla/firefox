@@ -1369,6 +1369,7 @@ export const AIWindow = {
       type: "view",
       viewId: "ai-window-toggle-view",
       defaultArea: lazy.CustomizableUI.AREA_TABSTRIP,
+      defaultAreaVerticalTabs: lazy.CustomizableUI.AREA_NAVBAR,
       removable: true,
       showInPrivateBrowsing: false,
       onCreated: node => {
@@ -1393,6 +1394,7 @@ export const AIWindow = {
       id: GROUP_TABS_BUTTON_ID,
       l10nId: "smartwindow-organize-tabs-button",
       defaultArea: lazy.CustomizableUI.AREA_TABSTRIP,
+      defaultAreaVerticalTabs: lazy.CustomizableUI.AREA_NAVBAR,
       // Profiles that already have a saved tab strip only get a new default
       // widget put in its default spot if it is marked as newly introduced;
       // without this it lands at the end of the toolbar instead.
