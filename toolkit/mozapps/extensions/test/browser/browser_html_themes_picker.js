@@ -478,6 +478,9 @@ add_task(async function test_picker_button_click_updates_active_theme() {
   const sunCard = getThemeCard(picker, NOVA_SUN_ID_PREFIX);
   const defaultCard = getThemeCard(picker, DEFAULT_THEME_ID_PREFIX);
 
+  await Services.fog.testFlushAllChildren();
+  Services.fog.testResetFOG();
+
   let promiseActiveThemePrefChanged = TestUtils.waitForPrefChange(
     PREF_ACTIVE_THEME_ID,
     value => value === NOVA_SUN_ID
@@ -491,6 +494,12 @@ add_task(async function test_picker_button_click_updates_active_theme() {
   await promiseActiveThemePrefChanged;
 
   await picker.updateComplete;
+  await Services.fog.testFlushAllChildren();
+  const events = Glean.themePicker.change.testGetValue();
+  Assert.equal(events?.length, 1, "theme_picker.change is recorded once");
+  Assert.equal(events[0].extra.property, "theme", "property is theme");
+  Assert.equal(events[0].extra.layout, "full", "layout is full");
+
   Assert.equal(
     getThemeButton(sunCard).getAttribute("data-l10n-id"),
     "aboutaddons-themes-picker-disable-button",

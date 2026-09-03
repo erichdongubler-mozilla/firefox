@@ -105,7 +105,9 @@ export class ThemePickerDirectController {
    * @param {string} themeId
    */
   async setTheme(themeId) {
-    await this.themesManager.updateThemeState(themeId, true);
+    await this.themesManager.updateThemeState(themeId, true, {
+      layout: this.host.layout,
+    });
   }
 
   updateHost = () => {

@@ -466,9 +466,10 @@
         let requested = [];
         picker.controller.themesManager.updateThemeState = async (
           themeId,
-          enabled
+          enabled,
+          options
         ) => {
-          requested.push({ themeId, enabled });
+          requested.push({ themeId, enabled, options });
           Services.prefs.setCharPref(PREF_ACTIVE_THEME_ID, themeId);
           return true;
         };
@@ -488,8 +489,14 @@
 
         SimpleTest.isDeeply(
           requested,
-          [{ themeId: "nova-sun@mozilla.org", enabled: true }],
-          "The themes manager is asked to enable the selected theme."
+          [
+            {
+              themeId: "nova-sun@mozilla.org",
+              enabled: true,
+              options: { layout: "full" },
+            },
+          ],
+          "The themes manager is asked to enable the selected theme with the host layout."
         );
       });
 
@@ -540,7 +547,13 @@
         });
         let picker = await renderThemePicker({ layout: "compact" });
 
-        picker.controller.themesManager.updateThemeState = async themeId => {
+        let requested = [];
+        picker.controller.themesManager.updateThemeState = async (
+          themeId,
+          enabled,
+          options
+        ) => {
+          requested.push({ themeId, enabled, options });
           Services.prefs.setCharPref(PREF_ACTIVE_THEME_ID, themeId);
           return true;
         };
@@ -557,6 +570,17 @@
         await waitForCondition(
           () => picker.activeThemeId == secondTheme.id,
           "The active theme is updated after clicking."
+        );
+        SimpleTest.isDeeply(
+          requested,
+          [
+            {
+              themeId: secondTheme.id,
+              enabled: true,
+              options: { layout: "compact" },
+            },
+          ],
+          "The themes manager is asked to enable the selected theme with the compact layout."
         );
 
         let picker2 = await renderThemePicker({ layout: "compact" });

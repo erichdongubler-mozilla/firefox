@@ -172,7 +172,8 @@ export class AboutaddonsThemesPicker extends MozLitElement {
     this._hasError = false;
     const success = await this.#manager.updateThemeState(
       themeId,
-      !this.#isActive(themeId)
+      !this.#isActive(themeId),
+      { layout: "full" }
     );
     this._hasError = !success;
     await this.#loadThemes();
