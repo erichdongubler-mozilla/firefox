@@ -192,6 +192,10 @@ class DrawTargetRecording final : public DrawTarget {
   virtual void Fill(const Path* aPath, const Pattern& aPattern,
                     const DrawOptions& aOptions = DrawOptions()) override;
 
+  virtual void FillCircle(const Point& aOrigin, float aRadius,
+                          const Pattern& aPattern,
+                          const DrawOptions& aOptions = DrawOptions()) override;
+
   /*
    * Fill a series of glyphs on the draw target with a certain source pattern.
    */
