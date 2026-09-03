@@ -100,6 +100,10 @@
 #include "nsThreadUtils.h"
 #include "nscore.h"
 
+#ifdef ACCESSIBILITY
+#  include "nsAccessibilityService.h"
+#endif
+
 using namespace mozilla;
 using namespace mozilla::dom;
 
@@ -459,6 +463,11 @@ void nsGenericHTMLElement::SetEditContext(mozilla::dom::EditContext* aContext,
   int32_t delta = (aContext != nullptr) - (oldEditContext != nullptr);
   if (delta) {
     ChangeEditableState(delta);
+#ifdef ACCESSIBILITY
+    if (nsAccessibilityService* accService = GetAccService()) {
+      accService->NotifyOfEditContextAttachmentChange(this);
+    }
+#endif
   }
 }
 
