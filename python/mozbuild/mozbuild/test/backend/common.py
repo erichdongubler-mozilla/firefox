@@ -329,7 +329,12 @@ class BackendTester(unittest.TestCase):
     def _consume(self, name, cls, env=None):
         env, objs = self._emit(name, env=env)
         backend = cls(env)
-        backend.consume(objs)
+        try:
+            backend.consume(objs)
+        except Exception:
+            for backend_file in getattr(backend, "_backend_files", {}).values():
+                backend_file.fh.avoid_writing_to_file()
+            raise
 
         return env
 
