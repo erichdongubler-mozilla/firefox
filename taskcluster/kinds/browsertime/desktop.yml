@@ -1137,7 +1137,7 @@ browsertime-nav-bench:
         apps: [firefox]
         subtests: [nav-bench]
         run-visual-metrics: true
-    description: Raptor (browsertime) navigation benchmark across 5 sites
+    description: Raptor (browsertime) navigation benchmark across 9 sites
     max-run-time: 3600
     run-on-projects:
         by-app:
