@@ -283,6 +283,7 @@ export class SearchModeSwitcher {
         ) {
           return;
         }
+        event.preventDefault();
         break;
       }
       case "auxclick": {
