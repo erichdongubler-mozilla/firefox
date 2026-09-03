@@ -22,6 +22,9 @@ export class CommandLineHandler {
       return;
     }
 
+    // Don't display a window
+    cmdLine.preventDefault = true;
+
     // Firefox is already running and receiving push messages
     if (cmdLine.state != Ci.nsICommandLine.STATE_INITIAL_LAUNCH) {
       return;

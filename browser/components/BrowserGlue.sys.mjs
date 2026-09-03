@@ -628,6 +628,11 @@ BrowserGlue.prototype = {
         return false;
       }
 
+      // Don't display the blank window with the --receive-push-messages argument
+      if (cmdLine.findFlag("receive-push-messages", false) != -1) {
+        return false;
+      }
+
       // Bug 1635927: skip the early blank window when the user passes window
       // sizing/positioning flags, otherwise the blank window's persisted size
       // from xulstore is reused and the CLI values are silently dropped.

@@ -76,3 +76,87 @@ add_task(async function test_push_messages_not_received_with_firefox_running() {
     "Push messages are not received"
   );
 });
+
+function windowIsDisplayed(commandLineState) {
+  let cmdLine = Cu.createCommandLine(
+    ["--receive-push-messages"],
+    null,
+    commandLineState
+  );
+
+  let receivePushMessages = sinon
+    .stub(CommandLineHandler.prototype, "receivePushMessages")
+    .resolves();
+
+  try {
+    Cc[RECEIVE_PUSH_MESSAGES_CONTRACT_ID].getService(
+      Ci.nsICommandLineHandler
+    ).handle(cmdLine);
+  } finally {
+    receivePushMessages.restore();
+  }
+
+  return !cmdLine.preventDefault;
+}
+
+add_task(async function test_window_not_displayed_if_firefox_is_not_running() {
+  ok(
+    !windowIsDisplayed(Ci.nsICommandLine.STATE_INITIAL_LAUNCH),
+    "No window is displayed"
+  );
+});
+
+add_task(async function test_window_not_displayed_if_firefox_is_running() {
+  ok(
+    !windowIsDisplayed(Ci.nsICommandLine.STATE_REMOTE_AUTO),
+    "No window is displayed"
+  );
+});
+
+const BROWSER_GLUE =
+  Cc["@mozilla.org/browser/browserglue;1"].getService().wrappedJSObject;
+
+function createsBlankWindow(commandLineArguments) {
+  // The blank window is only created if width and height already have a value
+  const CHROME_URL = AppConstants.BROWSER_CHROME_URL;
+  for (let [attribute, value] of [
+    ["width", "1000"],
+    ["height", "800"],
+  ]) {
+    Services.xulStore.setValue(CHROME_URL, "main-window", attribute, value);
+    registerCleanupFunction(() =>
+      Services.xulStore.removeValue(CHROME_URL, "main-window", attribute)
+    );
+  }
+
+  // Prevents a real blank window from being created during the test
+  const OPEN_WINDOW_CALLED = new Error("Services.ww.openWindow called");
+  let openWindow = sinon.stub().throws(OPEN_WINDOW_CALLED);
+  let windowWatcher = sinon.stub(Services, "ww").value({ openWindow });
+
+  try {
+    BROWSER_GLUE._earlyBlankFirstPaint(
+      Cu.createCommandLine(
+        commandLineArguments,
+        null,
+        Ci.nsICommandLine.STATE_INITIAL_LAUNCH
+      )
+    );
+  } catch (e) {
+    if (e != OPEN_WINDOW_CALLED) {
+      throw e;
+    }
+  } finally {
+    windowWatcher.restore();
+  }
+
+  return openWindow.called;
+}
+
+add_task(async function test_blank_window_not_displayed_with_the_argument() {
+  ok(!createsBlankWindow(["--receive-push-messages"]), "No blank window");
+});
+
+add_task(async function test_blank_window_displayed_without_the_argument() {
+  ok(createsBlankWindow([]), "The blank window is displayed");
+});
