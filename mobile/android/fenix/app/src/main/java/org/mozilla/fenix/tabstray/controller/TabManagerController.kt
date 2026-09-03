@@ -350,10 +350,9 @@ class DefaultTabManagerController(
         val isCurrentTab = tabsTrayStore.state.selectedTabId == tab.id
 
         if (tabsRemaining || !isCurrentTab) {
-            // Using isNormal here makes it read beautifully
-            val excludedTabIds = if (isNormal) getExcludedNormalTabIds() else emptySet()
+            val excludedFallbackTabIds = if (isNormal) getExcludedFallbackNormalTabIds() else emptySet()
 
-            tabsUseCases.removeTab(excludedTabIds = excludedTabIds, tabId = tab.id)
+            tabsUseCases.removeTab(excludedFallbackTabIds = excludedFallbackTabIds, tabId = tab.id)
             showUndoSnackbarForTab(isPrivate)
 
             TabsTray.closedExistingTab.record(TabsTray.ClosedExistingTabExtra(source ?: "unknown"))
@@ -383,10 +382,10 @@ class DefaultTabManagerController(
             showCancelledDownloadWarning(privateDownloads.size, tab.id, source)
             return
         } else if (settings.enableHomepageAsNewTab) {
-            val excludedTabIds = if (isPrivate) emptySet() else getExcludedNormalTabIds()
+            val excludedFallbackTabIds = if (isPrivate) emptySet() else getExcludedFallbackNormalTabIds()
             tabsUseCases.removeTab(
                 tabId = tab.id,
-                excludedTabIds = excludedTabIds,
+                excludedFallbackTabIds = excludedFallbackTabIds,
             )
             showUndoSnackbarForTab(isPrivate)
         } else {
@@ -401,7 +400,7 @@ class DefaultTabManagerController(
      * Calculates the IDs of normal tabs that should be protected from being selected after other tabs are deleted. This
      * includes all inactive tabs and tabs inside open (visible) tab groups.
      */
-    private fun getExcludedNormalTabIds(): Set<String> {
+    private fun getExcludedFallbackNormalTabIds(): Set<String> {
         val state = tabsTrayStore.state
 
         val inactiveTabIds = state.inactiveTabs.tabs.map { it.id }
@@ -454,9 +453,9 @@ class DefaultTabManagerController(
         val closingTabIds = tabs.map { it.id }.toSet()
 
         if (willTabsRemainAfterDeletion(isPrivate = isPrivate, closingTabIds = closingTabIds)) {
-            val excludedTabIds = if (isNormal) getExcludedNormalTabIds() else emptySet()
+            val excludedFallbackTabIds = if (isNormal) getExcludedFallbackNormalTabIds() else emptySet()
 
-            tabsUseCases.removeTabs(excludedTabIds = excludedTabIds, ids = tabs.map { it.id })
+            tabsUseCases.removeTabs(excludedFallbackTabIds = excludedFallbackTabIds, ids = tabs.map { it.id })
             showUndoSnackbarForMultipleTabs(isPrivate, tabs.size)
         } else {
             handleRemoveAllTabs(
@@ -727,7 +726,7 @@ class DefaultTabManagerController(
         browserStore.state.potentialInactiveTabs
             .map { it.id }
             .let {
-                tabsUseCases.removeTabs(it, excludedTabIds = emptySet())
+                tabsUseCases.removeTabs(it, excludedFallbackTabIds = emptySet())
                 numTabs = it.size
             }
         showUndoSnackbarForInactiveTab(numTabs)

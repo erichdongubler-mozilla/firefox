@@ -952,7 +952,7 @@ class DefaultTabManagerControllerTest {
 
         assertTrue(showUndoSnackbarForTabInvoked)
         verify(exactly = 0) { controller.dismissTabManagerAndNavigateHome(any()) }
-        verify { tabsUseCases.removeTab(tabId = "activeId", excludedTabIds = setOf("inactiveId")) }
+        verify { tabsUseCases.removeTab(tabId = "activeId", excludedFallbackTabIds = setOf("inactiveId")) }
     }
 
     @Test
@@ -1094,7 +1094,7 @@ class DefaultTabManagerControllerTest {
 
         controller.handleTabDeletion(TabsTrayItem.Tab(tab = active1))
 
-        verify { tabsUseCases.removeTab(tabId = "active1", excludedTabIds = setOf("inactive1")) }
+        verify { tabsUseCases.removeTab(tabId = "active1", excludedFallbackTabIds = setOf("inactive1")) }
         verify(exactly = 0) { controller.dismissTabManagerAndNavigateHome(sessionId = any()) }
         assertTrue(showUndoSnackbarForTabInvoked)
     }
@@ -1246,7 +1246,7 @@ class DefaultTabManagerControllerTest {
 
         controller.handleTabDeletion(TabsTrayItem.Tab(tab = focusedPrivateTab))
 
-        verify { tabsUseCases.removeTab(tabId = "focusedPrivate", excludedTabIds = any()) }
+        verify { tabsUseCases.removeTab(tabId = "focusedPrivate", excludedFallbackTabIds = any()) }
         verify(exactly = 0) { controller.dismissTabManagerAndNavigateHome(any()) }
         assertTrue(showUndoSnackbarForTabInvoked)
     }
@@ -1291,7 +1291,7 @@ class DefaultTabManagerControllerTest {
 
         controller.handleTabDeletion(TabsTrayItem.Tab(tab = focusedNormalTab))
 
-        verify { tabsUseCases.removeTab(tabId = "focusedNormal", excludedTabIds = emptySet()) }
+        verify { tabsUseCases.removeTab(tabId = "focusedNormal", excludedFallbackTabIds = emptySet()) }
         verify(exactly = 0) { controller.dismissTabManagerAndNavigateHome(any()) }
         assertTrue(showUndoSnackbarForTabInvoked)
     }
@@ -1330,7 +1330,7 @@ class DefaultTabManagerControllerTest {
         controller.handleTabDeletion(displayTab)
 
         verify { controller.dismissTabManagerAndNavigateHome(displayTab.id) }
-        verify(exactly = 0) { tabsUseCases.removeTab(tabId = displayTab.id, excludedTabIds = any()) }
+        verify(exactly = 0) { tabsUseCases.removeTab(tabId = displayTab.id, excludedFallbackTabIds = any()) }
         assertFalse(showUndoSnackbarForTabInvoked)
     }
 
@@ -1369,7 +1369,7 @@ class DefaultTabManagerControllerTest {
         controller.handleTabDeletion(displayTab)
 
         verify(exactly = 0) { controller.dismissTabManagerAndNavigateHome(displayTab.id) }
-        verify { tabsUseCases.removeTab(tabId = displayTab.id, excludedTabIds = any()) }
+        verify { tabsUseCases.removeTab(tabId = displayTab.id, excludedFallbackTabIds = any()) }
         assertTrue(showUndoSnackbarForTabInvoked)
     }
 
@@ -1397,7 +1397,7 @@ class DefaultTabManagerControllerTest {
         controller.deleteMultipleTabs(tabItems)
 
         verify { controller.dismissTabManagerAndNavigateHome(ALL_PRIVATE_TABS) }
-        verify(exactly = 0) { tabsUseCases.removeTabs(ids = any(), excludedTabIds = any()) }
+        verify(exactly = 0) { tabsUseCases.removeTabs(ids = any(), excludedFallbackTabIds = any()) }
     }
 
     @Test
@@ -1734,7 +1734,7 @@ class DefaultTabManagerControllerTest {
 
         controller.deleteMultipleTabs(itemsToDelete)
 
-        verify { tabsUseCases.removeTabs(ids = itemsToDelete.map { it.id }, excludedTabIds = emptySet()) }
+        verify { tabsUseCases.removeTabs(ids = itemsToDelete.map { it.id }, excludedFallbackTabIds = emptySet()) }
 
         verify(exactly = 0) { controller.dismissTabManagerAndNavigateHome(any()) }
         assertEquals(false, undoSnackbarIsPrivate)
@@ -1788,7 +1788,9 @@ class DefaultTabManagerControllerTest {
 
         controller.deleteMultipleTabs(tabs = itemsToDelete)
 
-        verify { tabsUseCases.removeTabs(ids = itemsToDelete.map { it.id }, excludedTabIds = setOf("inactive_safe")) }
+        verify {
+            tabsUseCases.removeTabs(ids = itemsToDelete.map { it.id }, excludedFallbackTabIds = setOf("inactive_safe"))
+        }
 
         verify(exactly = 0) { controller.dismissTabManagerAndNavigateHome(any()) }
         assertEquals(false, undoSnackbarIsPrivate)
@@ -1796,7 +1798,7 @@ class DefaultTabManagerControllerTest {
     }
 
     @Test
-    fun `GIVEN an unselected visible tab and a closed group WHEN deleteMultipleTabs includes the focused tab THEN it removes the tab and omits the closed group from excludedTabIds`() {
+    fun `GIVEN an unselected visible tab and a closed group WHEN deleteMultipleTabs includes the focused tab THEN it removes the tab and omits the closed group from excludedFallbackTabIds`() {
         val focusedTabToDelete = createTab(id = "focused_tab_to_delete", url = "https://mozilla.org", private = false)
         val unselectedVisibleTab =
             createTab(id = "unselected_visible_tab", url = "https://mozilla.com", private = false)
@@ -1844,7 +1846,7 @@ class DefaultTabManagerControllerTest {
 
         controller.deleteMultipleTabs(tabs = itemsToDelete)
 
-        verify { tabsUseCases.removeTabs(ids = listOf("focused_tab_to_delete"), excludedTabIds = emptySet()) }
+        verify { tabsUseCases.removeTabs(ids = listOf("focused_tab_to_delete"), excludedFallbackTabIds = emptySet()) }
 
         verify(exactly = 0) { controller.dismissTabManagerAndNavigateHome(any()) }
         assertEquals(false, undoSnackbarIsPrivate)
@@ -2059,7 +2061,9 @@ class DefaultTabManagerControllerTest {
 
         verify { controller.dismissTabManagerAndNavigateHome("private_last") }
 
-        verify(exactly = 0) { tabsUseCases.removeTab(tabId = any<String>(), excludedTabIds = any<Set<String>>()) }
+        verify(exactly = 0) {
+            tabsUseCases.removeTab(tabId = any<String>(), excludedFallbackTabIds = any<Set<String>>())
+        }
     }
 
     @Test
@@ -2089,7 +2093,7 @@ class DefaultTabManagerControllerTest {
 
         verify(exactly = 0) { controller.dismissTabManagerAndNavigateHome("private_last") }
 
-        verify { tabsUseCases.removeTab(tabId = any<String>(), excludedTabIds = any<Set<String>>()) }
+        verify { tabsUseCases.removeTab(tabId = any<String>(), excludedFallbackTabIds = any<Set<String>>()) }
     }
 
     @Test

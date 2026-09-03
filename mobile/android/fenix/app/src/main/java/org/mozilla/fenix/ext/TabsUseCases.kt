@@ -20,7 +20,7 @@ fun TabsUseCases.removeAllActiveNormalTabs(state: BrowserState, settings: Settin
     val (activeTabs, inactiveTabs) = state.partitionNormalTabsByActiveTime(settings = settings)
     val tabIdsToRemove = activeTabs.map { it.id }
 
-    removeTabs(ids = tabIdsToRemove, excludedTabIds = inactiveTabs.mapTo(mutableSetOf()) { it.id })
+    removeTabs(ids = tabIdsToRemove, excludedFallbackTabIds = inactiveTabs.mapTo(mutableSetOf()) { it.id })
 
     return tabIdsToRemove.size
 }

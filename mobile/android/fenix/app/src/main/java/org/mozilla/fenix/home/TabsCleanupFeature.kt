@@ -147,7 +147,7 @@ class TabsCleanupFeature(
 
         val inactiveTabs = browserStore.state.actualInactiveTabs(settings = settings)
 
-        tabsUseCases.removeTab(tabId = sessionId, excludedTabIds = inactiveTabs.map { it.id }.toSet())
+        tabsUseCases.removeTab(tabId = sessionId, excludedFallbackTabIds = inactiveTabs.map { it.id }.toSet())
 
         var tabId = ""
         if (settings.enableHomepageAsNewTab && !hasTabsRemaining) {

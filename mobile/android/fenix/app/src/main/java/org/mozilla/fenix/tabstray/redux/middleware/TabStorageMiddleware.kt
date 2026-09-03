@@ -827,7 +827,7 @@ class TabStorageMiddleware(
 
             removeTabsUseCase.invoke(
                 ids = group.tabs.map { it.id },
-                excludedTabIds = inactiveTabIds,
+                excludedFallbackTabIds = inactiveTabIds,
             )
 
             tabGroupRepository.deleteTabGroupById(group.id)
