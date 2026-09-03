@@ -71,8 +71,8 @@ export class ThemePickerParent extends JSWindowActorParent {
     };
   }
 
-  async updateTheme({ themeId }) {
-    await this.themesManager.updateThemeState(themeId, true);
+  async updateTheme({ themeId, layout }) {
+    await this.themesManager.updateThemeState(themeId, true, { layout });
     return this.getActiveThemeId();
   }
 

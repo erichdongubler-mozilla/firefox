@@ -54,8 +54,9 @@ export class ThemePickerRemoteController {
   }
 
   hostConnected() {
+    this.installSource = this.host.getAttribute("installsource") || "unknown";
     this.dispatchActorEvent("ThemePickerGetInitialState", {
-      installSource: this.host.getAttribute("installsource") || "unknown",
+      installSource: this.installSource,
       showInCompactLayout: this.host.layout === "compact",
     });
   }
@@ -109,16 +110,21 @@ export class ThemePickerRemoteController {
       case "theme":
         this.dispatchActorEvent("ThemePickerUpdateTheme", {
           themeId: String(value),
+          layout: this.host.layout,
         });
         break;
       case "appearance":
         this.dispatchActorEvent("ThemePickerUpdateAppearance", {
           appearance: value,
+          installsource: this.installSource,
+          layout: this.host.layout,
         });
         break;
       case "nativeTheme":
         this.dispatchActorEvent("ThemePickerUpdateNativeTheme", {
           nativeTheme: Boolean(value),
+          installsource: this.installSource,
+          layout: this.host.layout,
         });
         break;
     }
