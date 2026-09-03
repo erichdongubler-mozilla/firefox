@@ -252,7 +252,7 @@ export var RecentlyClosedTabsAndWindowsMenuUtils = {
       undoAllInTabData(
         tabData,
         tab => {
-          lazy.SessionStore.undoCloseTabFromClosedWindow(
+          lazy.SessionStore.undoClosedTabFromClosedWindow(
             { sourceClosedId: tab.sourceClosedId },
             tab.closedId,
             currentWindow
