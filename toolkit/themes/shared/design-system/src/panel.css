@@ -6,7 +6,7 @@
   /* Compact mode */
   &[uidensity="compact"] {
     --panel-menuitem-margin-inline: 4px;
-    --panel-menuitem-padding-block: 4px;
+    --panel-menuitem-padding-block: 6px;
     --panel-separator-padding-inline: 4px;
   }
 }
