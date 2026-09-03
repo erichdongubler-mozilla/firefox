@@ -178,6 +178,25 @@ void FeaturePolicy::SetDeclaredPolicy(Document* aDocument,
   }
 }
 
+void FeaturePolicy::SetDeclaredHeaderPolicy(Document* aDocument,
+                                            const nsAString& aPolicyString,
+                                            nsIPrincipal* aSelfOrigin) {
+  ResetDeclaredPolicy();
+
+  mDeclaredString = aPolicyString;
+  mSelfOrigin = aSelfOrigin;
+
+  (void)NS_WARN_IF(!FeaturePolicyParser::ParsePolicyFromHeader(
+      NS_ConvertUTF16toUTF8(aPolicyString), aDocument, aSelfOrigin, mFeatures));
+
+  // Only store explicitly declared allowlist
+  for (const Feature& feature : mFeatures) {
+    if (feature.HasAllowList()) {
+      AppendToDeclaredAllowInAncestorChain(feature);
+    }
+  }
+}
+
 void FeaturePolicy::ResetDeclaredPolicy() {
   mFeatures.Clear();
   mDeclaredString.Truncate();

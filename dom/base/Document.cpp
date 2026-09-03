@@ -4298,7 +4298,8 @@ nsresult Document::InitFeaturePolicy(nsIChannel* aChannel) {
     InitFeaturePolicy(AsVariant(Nothing{}));
   }
 
-  // We don't want to parse the http Feature-Policy header if this pref is off.
+  // We don't want to parse the http Permissions-Policy header if this pref is
+  // off.
   if (!StaticPrefs::dom_security_featurePolicy_header_enabled()) {
     return NS_OK;
   }
@@ -4315,10 +4316,10 @@ nsresult Document::InitFeaturePolicy(nsIChannel* aChannel) {
 
   // query the policy from the header
   nsAutoCString value;
-  rv = httpChannel->GetResponseHeader("Feature-Policy"_ns, value);
+  rv = httpChannel->GetResponseHeader("Permissions-Policy"_ns, value);
   if (NS_SUCCEEDED(rv)) {
-    FeaturePolicy()->SetDeclaredPolicy(this, NS_ConvertUTF8toUTF16(value),
-                                       NodePrincipal(), nullptr);
+    FeaturePolicy()->SetDeclaredHeaderPolicy(this, NS_ConvertUTF8toUTF16(value),
+                                             NodePrincipal());
   }
 
   return NS_OK;

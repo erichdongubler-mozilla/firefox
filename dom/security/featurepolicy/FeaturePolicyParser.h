@@ -21,6 +21,11 @@ class FeaturePolicyParser final {
   static bool ParseString(const nsAString& aPolicy, Document* aDocument,
                           nsIPrincipal* aSelfOrigin, nsIPrincipal* aSrcOrigin,
                           nsTArray<Feature>& aParsedFeatures);
+
+  static bool ParsePolicyFromHeader(const nsACString& aPolicy,
+                                    Document* aDocument,
+                                    nsIPrincipal* aSelfOrigin,
+                                    nsTArray<Feature>& aParsedFeatures);
 };
 
 }  // namespace mozilla::dom
