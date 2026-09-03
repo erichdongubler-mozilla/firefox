@@ -1185,8 +1185,9 @@ nsString nsContentSecurityUtils::GetIsElementNonceableNonce(
   // element’s attribute list:
   if (nsCOMPtr<nsIScriptElement> script =
           do_QueryInterface(const_cast<Element*>(&aElement))) {
-    auto containsScriptOrStyle = [](const nsAString& aStr) {
-      return aStr.LowerCaseFindASCII("<script") != kNotFound ||
+    auto containsLinkScriptOrStyle = [](const nsAString& aStr) {
+      return aStr.LowerCaseFindASCII("<link") != kNotFound ||
+             aStr.LowerCaseFindASCII("<script") != kNotFound ||
              aStr.LowerCaseFindASCII("<style") != kNotFound;
     };
 
@@ -1194,21 +1195,21 @@ nsString nsContentSecurityUtils::GetIsElementNonceableNonce(
     uint32_t i = 0;
     while (BorrowedAttrInfo info = aElement.GetAttrInfoAt(i++)) {
       // Step 2.1. If attribute’s name contains an ASCII case-insensitive match
-      // for "<script" or "<style", return "Not Nonceable".
+      // for "<link", <script" or "<style", return "Not Nonceable".
       const nsAttrName* name = info.mName;
       if (nsAtom* prefix = name->GetPrefix()) {
-        if (containsScriptOrStyle(nsDependentAtomString(prefix))) {
+        if (containsLinkScriptOrStyle(nsDependentAtomString(prefix))) {
           return EmptyString();
         }
       }
-      if (containsScriptOrStyle(nsDependentAtomString(name->LocalName()))) {
+      if (containsLinkScriptOrStyle(nsDependentAtomString(name->LocalName()))) {
         return EmptyString();
       }
 
       // Step 2.2. If attribute’s value contains an ASCII case-insensitive match
-      // for "<script" or "<style", return "Not Nonceable".
+      // for "<link", "<script" or "<style", return "Not Nonceable".
       info.mValue->ToString(value);
-      if (containsScriptOrStyle(value)) {
+      if (containsLinkScriptOrStyle(value)) {
         return EmptyString();
       }
     }
