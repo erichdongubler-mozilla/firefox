@@ -67,15 +67,8 @@
   &[lwt-tab-selected="dark"] {
     --tab-selected-color-scheme: dark;
   }
-  @media (forced-colors) {
-    &:not([lwtheme]) {
-      --tab-outline-color: ButtonText;
-      --tab-hover-outline-color: SelectedItem;
-      --tab-selected-outline-color: SelectedItem;
-    }
-  }
   &[lwtheme] {
-    --tab-selected-outline-color: var(--lwt-tab-line-color, currentColor);
+    --tab-border-color-selected: var(--lwt-tab-line-color, currentColor);
   }
   --tab-dragover-transition: transform 200ms var(--animation-easing-function);
   --tab-dragover-outline-color: var(--focus-outline-color);
@@ -355,6 +348,7 @@ tab-split-view-wrapper[dragtarget] {
 }
 
 .tab-content {
+  color: var(--tab-text-color);
   position: relative;
   padding: 0 var(--tab-inline-padding);
 
@@ -362,12 +356,16 @@ tab-split-view-wrapper[dragtarget] {
     min-width: 0;
   }
 
+  .tabbrowser-tab:hover > .tab-stack > &:not([selected], [multiselected]) {
+    color: var(--tab-text-color-hover);
+  }
+
   :root:not([uidensity="compact"], [sidebar-expand-on-hover]) &[pinned] {
     padding: 0 calc((var(--tab-min-height) - var(--icon-size)) / 2);
   }
 
   &:is([selected], [multiselected]) {
-    color: var(--tab-selected-textcolor);
+    color: var(--tab-text-color-selected);
     color-scheme: var(--tab-selected-color-scheme);
   }
 }
@@ -706,7 +704,7 @@ tab-split-view-wrapper[dragtarget] {
       --audio-overlay-extra-background: transparent;
       background-color: var(--lwt-accent-color);
       -moz-context-properties: fill;
-      fill: var(--tab-selected-textcolor);
+      fill: var(--tab-text-color-selected);
       color-scheme: var(--tab-selected-color-scheme);
       border-radius: var(--border-radius-circle);
       border: var(--border-width) solid var(--button-border-color-ghost);
@@ -786,7 +784,7 @@ tab-split-view-wrapper[dragtarget] {
         background-color: var(--lwt-accent-color);
         background-image: image(var(--audio-overlay-extra-background)), image(var(--toolbox-background-color));
         -moz-context-properties: fill;
-        fill: var(--tab-selected-textcolor);
+        fill: var(--tab-text-color-selected);
         color-scheme: var(--tab-selected-color-scheme);
         border-radius: var(--border-radius-circle);
         border: var(--border-width) solid var(--button-background-color-ghost);
@@ -856,7 +854,7 @@ tab-split-view-wrapper[dragtarget] {
   /* FIXME: What's the point of the image(transparent)? */
   background-image: image(transparent), image(var(--toolbox-background-color));
   -moz-context-properties: fill;
-  fill: var(--tab-selected-textcolor);
+  fill: var(--tab-text-color-selected);
   color-scheme: var(--tab-selected-color-scheme);
   border-radius: var(--border-radius-circle);
 
@@ -974,28 +972,24 @@ tab-split-view-wrapper[dragtarget] {
   box-sizing: border-box;
   padding: var(--tab-content-button-padding);
   list-style-image: url(resource://content-accessible/close-12.svg);
+  background-color: var(--tab-close-button-background-color);
+  color: var(--tab-close-button-text-color);
+  outline-color: var(--tab-close-button-border-color);
 
   /* Adjust border radius by the distance to the tab. This is a hardcoded approximation
      because the exact distance is intentionally not always equal across all sides. */
   border-radius: calc(var(--tab-border-radius) - 3px);
 
-  /* Match the hover and active backgrounds of .tab-audio-button, which is a
-     ghost variant moz-button. */
-  @media -moz-pref("browser.nova.enabled") {
-    color: var(--button-text-color-ghost);
-    border: var(--border-width) solid var(--button-border-color-ghost);
+  &:hover {
+    background-color: var(--tab-close-button-background-color-hover);
+    color: var(--tab-close-button-text-color-hover);
+    outline-color: var(--tab-close-button-border-color-hover);
+  }
 
-    &:hover {
-      background-color: var(--button-background-color-ghost-hover);
-      color: var(--button-text-color-ghost-hover);
-      border-color: var(--button-border-color-ghost-hover);
-    }
-
-    &:hover:active {
-      background-color: var(--button-background-color-ghost-active);
-      color: var(--button-text-color-ghost-active);
-      border-color: var(--button-border-color-ghost-active);
-    }
+  &:hover:active {
+    background-color: var(--tab-close-button-background-color-active);
+    color: var(--tab-close-button-text-color-active);
+    outline-color: var(--tab-close-button-border-color-active);
   }
 
   #tabbrowser-tabs[orient="horizontal"] &[pinned],
@@ -1025,20 +1019,22 @@ tab-split-view-wrapper[dragtarget] {
 }
 
 .tab-background {
+  background-color: var(--tab-background-color);
   border-radius: var(--tab-border-radius);
   margin-block: var(--tab-margin-block);
   min-height: var(--tab-min-height);
-  outline: var(--tab-outline);
+  outline: var(--tab-border);
+  outline-color: var(--tab-border-color);
   outline-offset: var(--tab-outline-offset);
 
   .tabbrowser-tab:hover > .tab-stack > &:not([selected], [multiselected]) {
     background-color: var(--tab-background-color-hover);
-    outline-color: var(--tab-hover-outline-color);
+    outline-color: var(--tab-border-color-hover);
   }
 
   &:is([selected], [multiselected]) {
     background-color: var(--tab-background-color-selected);
-    outline-color: var(--tab-selected-outline-color);
+    outline-color: var(--tab-border-color-selected);
     box-shadow: var(--tab-box-shadow-selected);
   }
 
@@ -1612,12 +1608,12 @@ tab-group > tab-split-view-wrapper {
   }
 
   &:not([hasactivetab]) {
-    outline: var(--tab-outline);
+    outline: var(--tab-border);
     outline-offset: var(--tab-outline-offset);
 
     &:hover {
       background-color: var(--tab-background-color-hover);
-      outline-color: var(--tab-hover-outline-color);
+      outline-color: var(--tab-border-color-hover);
     }
 
     .tabbrowser-tab {
@@ -2649,7 +2645,7 @@ tab-group {
 
   &:hover {
     background-color: var(--tab-background-color-hover);
-    outline-color: var(--tab-hover-outline-color);
+    outline-color: var(--tab-border-color-hover);
   }
 
   &:focus-visible {
@@ -2895,7 +2891,6 @@ tab-group {
       height: 15px;
       padding: 3.5px;
       margin: 0;
-      fill: var(--tab-selected-textcolor);
       /* We want to make this look like the selected tab, but fully opaque. For that,
        * we build a stack of `--lwt-accent-color` (guaranteed opaque), then
        * `--toolbox-background-color`, then `--tab-background-color-selected`.
@@ -2907,14 +2902,13 @@ tab-group {
        * We also apply one extra color on top (--close-button-extra-background)
        * for hover / active feedback.
        */
-      --close-button-extra-background: transparent;
+      --close-button-extra-background: var(--tab-close-button-background-color);
       background-color: var(--lwt-accent-color);
       background-image: image(var(--close-button-extra-background)), image(var(--tab-background-color-selected)), image(var(--toolbox-background-color));
       color-scheme: var(--tab-selected-color-scheme);
-      outline-color: var(--tab-selected-outline-color);
+      outline-color: var(--tab-close-button-border-color);
       box-shadow: var(--tab-box-shadow-selected);
       border-radius: var(--border-radius-circle);
-      border: var(--border-width) solid var(--button-border-color-ghost);
       display: block;
       position: absolute;
       inset: auto;
@@ -2927,14 +2921,6 @@ tab-group {
         height: var(--icon-size);
         padding: 2px;
         box-shadow: var(--box-shadow-level-1);
-
-        &:hover {
-          border-color: var(--button-border-color-hover);
-        }
-
-        &:hover:active {
-          border-color: var(--button-border-color-active);
-        }
       }
 
       &:-moz-window-inactive {
@@ -2943,11 +2929,13 @@ tab-group {
       }
 
       &:hover {
-        --close-button-extra-background: var(--button-background-color-ghost-hover);
+        --close-button-extra-background: var(--tab-close-button-background-color-hover);
+        outline-color: var(--tab-close-button-border-color-hover);
       }
 
       &:hover:active {
-        --close-button-extra-background: var(--button-background-color-ghost-active);
+        --close-button-extra-background: var(--tab-close-button-background-color-active);
+        outline-color: var(--tab-close-button-border-color-active);
       }
 
       .tabbrowser-tab:hover & {
@@ -3025,8 +3013,8 @@ tab-group {
 #TabsToolbar #firefox-view-button[open] > .toolbarbutton-icon {
   background-color: var(--tab-background-color-selected);
   box-shadow: var(--tab-box-shadow-selected);
-  outline-color: var(--tab-selected-outline-color);
-  color: var(--tab-selected-textcolor);
+  outline-color: var(--tab-border-color-selected);
+  color: var(--tab-text-color-selected);
   color-scheme: var(--tab-selected-color-scheme);
 
   /* The below lines are required for dark, light, and

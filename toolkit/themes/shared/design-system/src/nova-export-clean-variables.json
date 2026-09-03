@@ -1886,43 +1886,48 @@
           "hover": {
             "Light": "rgba(0, 0, 0, 0)",
             "Dark": "rgba(0, 0, 0, 0)",
-            "HCM": "{SelectedItem}",
+            "HCM": "{button/border/color/hover}",
             "Private": "rgba(0, 0, 0, 0)",
             "Smart Light (WIP)": "rgba(0, 0, 0, 0)"
           },
           "selected": {
             "Light": "rgba(0, 0, 0, 0)",
             "Dark": "rgba(0, 0, 0, 0)",
-            "HCM": "{SelectedItem}",
+            "HCM": "{button/border/color/selected}",
             "Private": "rgba(0, 0, 0, 0)",
             "Smart Light (WIP)": "rgba(0, 0, 0, 0)",
             "leading": {
               "Light": "{color/violet/30}",
               "Dark": "{color/violet/30}",
-              "HCM": "{border/color}",
+              "HCM": "{tab/border/color/selected}",
               "Private": "{color/violet/30}",
               "Smart Light (WIP)": "{color/violet/30}"
             },
             "trailing": {
               "Light": "{color/orange/30}",
               "Dark": "{color/orange/30}",
-              "HCM": "{border/color}",
+              "HCM": "{tab/border/color/selected}",
               "Private": "{color/violet/50}",
               "Smart Light (WIP)": "{color/orange/30}"
             }
-          }
+          },
+          "Light": "rgba(255, 255, 255, 0)",
+          "Dark": "rgba(255, 255, 255, 0)",
+          "HCM": "{button/border/color}",
+          "Private": "rgba(255, 255, 255, 0)",
+          "Smart Light (WIP)": "rgba(255, 255, 255, 0)"
         }
       },
       "background": {
         "color": {
-          "Light": "rgba(0, 0, 0, 0)",
-          "Dark": "rgba(0, 0, 0, 0)",
-          "HCM": "rgba(0, 0, 0, 0)",
+          "Light": "{button/background/color}",
+          "Dark": "{button/background/color}",
+          "HCM": "{button/background/color}",
           "Private": "rgba(0, 0, 0, 0)",
           "hover": {
             "Light": "{toolbarbutton/background/color/hover}",
             "Dark": "{toolbarbutton/background/color/hover}",
-            "HCM": "rgba(0, 0, 0, 0)",
+            "HCM": "{button/background/color/hover}",
             "Private": "{toolbarbutton/background/color/hover}",
             "Smart Light (WIP)": "rgba(66, 14, 80, 0.11999999731779099)"
           },
@@ -1946,7 +1951,7 @@
           "selected": {
             "Light": "{background/color/box}",
             "Dark": "{background/color/box}",
-            "HCM": "{ButtonFace}",
+            "HCM": "{button/background/color/selected}",
             "Private": "{background/color/box}",
             "Smart Light (WIP)": "#FFFFFF"
           }
@@ -2029,11 +2034,6 @@
       },
       "outline": {
         "color": {
-          "Light": "rgba(255, 255, 255, 0)",
-          "Dark": "rgba(255, 255, 255, 0)",
-          "HCM": "{button/border/color}",
-          "Private": "rgba(255, 255, 255, 0)",
-          "Smart Light (WIP)": "rgba(255, 255, 255, 0)",
           "selected": {
             "Light": "rgba(255, 255, 255, 0)",
             "Dark": "rgba(255, 255, 255, 0)",
@@ -2047,7 +2047,12 @@
             "HCM": "{button/border/color/hover}",
             "Private": "rgba(255, 255, 255, 0)",
             "Smart Light (WIP)": "rgba(255, 255, 255, 0)"
-          }
+          },
+          "Light": "rgba(255, 255, 255, 0)",
+          "Dark": "rgba(255, 255, 255, 0)",
+          "HCM": "{button/border/color}",
+          "Private": "rgba(255, 255, 255, 0)",
+          "Smart Light (WIP)": "rgba(255, 255, 255, 0)"
         }
       }
     },
@@ -2590,6 +2595,13 @@
           "Private": "{text/color}",
           "Smart Light (WIP)": "{text/color}",
           "inactive": {
+            "Light": "{toolbox/text/color}",
+            "Dark": "{toolbox/text/color}",
+            "HCM": "{toolbox/text/color}",
+            "Private": "{toolbox/text/color}",
+            "Smart Light (WIP)": "{toolbox/text/color}"
+          },
+          "current": {
             "Light": "{toolbox/text/color}",
             "Dark": "{toolbox/text/color}",
             "HCM": "{toolbox/text/color}",

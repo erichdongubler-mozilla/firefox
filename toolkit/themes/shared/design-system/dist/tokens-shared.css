@@ -555,6 +555,8 @@
     --toolbox-background-color: light-dark(rgb(234, 234, 237), var(--color-gray-90));
     --toolbox-background-color-inactive: var(--toolbox-background-color);
     --toolbox-text-color: light-dark(var(--color-gray-100), var(--color-gray-0));
+    /* Figma aliases this to toolbox/text/color so designers see a real color, but CSS must use currentColor: the tab inherits --lwt-text-color under an lwtheme and --toolbox-text-color-inactive in a background window, neither of which --toolbox-text-color tracks. Listed in figma-import.mjs's FIGMA_IGNORES so the alias doesn't overwrite this. */
+    --toolbox-text-color-current: currentColor;
     --toolbox-text-color-inactive: var(--toolbox-text-color);
   }
 
@@ -1027,6 +1029,8 @@
         color-mix(var(--toolbox-background-color-gradient-trailing) 50%, transparent) 101.72%
       );
       --toolbox-text-color: var(--text-color);
+      /* Figma aliases this to toolbox/text/color so designers see a real color, but CSS must use currentColor: the tab inherits --lwt-text-color under an lwtheme and --toolbox-text-color-inactive in a background window, neither of which --toolbox-text-color tracks. Listed in figma-import.mjs's FIGMA_IGNORES so the alias doesn't overwrite this. */
+      --toolbox-text-color-current: var(--toolbox-text-color);
     }
 
     @layer tokens-prefers-contrast-nova {

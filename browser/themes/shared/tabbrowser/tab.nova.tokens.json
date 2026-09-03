@@ -6,17 +6,29 @@
   },
   "border": {
     "color": {
+      "@base": {
+        "value": {
+          "default": "transparent",
+          "forcedColors": "{button.border.color.@base}"
+        }
+      },
+      "hover": {
+        "value": {
+          "default": "transparent",
+          "forcedColors": "{button.border.color.hover}"
+        }
+      },
       "selected": {
         "leading": {
           "value": {
             "default": "{color.violet.30}",
-            "forcedColors": "{border.color.@base}"
+            "forcedColors": "{tab.border.color.selected.@base}"
           }
         },
         "trailing": {
           "value": {
             "default": "{color.orange.30}",
-            "forcedColors": "{border.color.@base}"
+            "forcedColors": "{tab.border.color.selected.@base}"
           }
         }
       }
@@ -26,6 +38,33 @@
     "shadow": {
       "selected": {
         "value": "none"
+      }
+    }
+  },
+  "background": {
+    "color": {
+      "@base": {
+        "value": {
+          "nativeTheme": "transparent",
+          "default": "{button.background.color.@base}"
+        }
+      },
+      "selected": {
+        "value": {
+          "nativeTheme": "{toolbar.background.color}",
+          "default": "{background.color.box.@base}",
+          "forcedColors": "{button.background.color.selected}"
+        }
+      }
+    }
+  },
+  "text": {
+    "color": {
+      "selected": {
+        "value": {
+          "nativeTheme": "{toolbar.text.color}",
+          "default": "{toolbox.text.color.@base}"
+        }
       }
     }
   },
