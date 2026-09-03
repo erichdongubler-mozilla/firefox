@@ -2373,12 +2373,9 @@ export class Tabbrowser {
     };
   }
 
-  setInitialTabTitle(aTab, aTitle, aOptions = {}) {
+  setInitialTabTitle(aTab, aTitle, options = {}) {
     // Convert some non-content title (actually a url) to human readable title
-    if (
-      !aOptions.isContentTitle &&
-      this.documentGlobal.isBlankPageURL(aTitle)
-    ) {
+    if (!options.isContentTitle && this.documentGlobal.isBlankPageURL(aTitle)) {
       aTitle = this.tabContainer.emptyTabTitle;
     }
 
@@ -2387,7 +2384,7 @@ export class Tabbrowser {
         aTab._labelIsInitialTitle = true;
       }
 
-      this.#setTabLabel(aTab, aTitle, aOptions);
+      this.#setTabLabel(aTab, aTitle, options);
     }
   }
 
@@ -2922,7 +2919,7 @@ export class Tabbrowser {
     return true;
   }
 
-  updateBrowserRemotenessByURL(aBrowser, aURL, aOptions = {}) {
+  updateBrowserRemotenessByURL(aBrowser, aURL, options = {}) {
     if (!this.documentGlobal.gMultiProcessBrowser) {
       return this.updateBrowserRemoteness(aBrowser, {
         remoteType: lazy.E10SUtils.NOT_REMOTE,
@@ -2931,7 +2928,7 @@ export class Tabbrowser {
 
     let oldRemoteType = aBrowser.remoteType;
 
-    aOptions.remoteType = ChromeUtils.predictRemoteTypeForURI(aURL, {
+    options.remoteType = ChromeUtils.predictRemoteTypeForURI(aURL, {
       window: this.documentGlobal,
       userContextId: this.getTabForBrowser(aBrowser).userContextId,
       preferredRemoteType: oldRemoteType,
@@ -2939,8 +2936,8 @@ export class Tabbrowser {
 
     // If this URL can't load in the current browser then flip it to the
     // correct type.
-    if (oldRemoteType != aOptions.remoteType || aOptions.newFrameloader) {
-      return this.updateBrowserRemoteness(aBrowser, aOptions);
+    if (oldRemoteType != options.remoteType || options.newFrameloader) {
+      return this.updateBrowserRemoteness(aBrowser, options);
     }
 
     return false;
@@ -5707,12 +5704,12 @@ export class Tabbrowser {
    *
    * @param {MozTabbrowserTab} aTab
    *   The tab we will skip removing
-   * @param {object} [aParams]
+   * @param {object} [options]
    *   An optional set of parameters that will be passed to the
    *   `removeTabs` function.
-   * @param {boolean} [aParams.skipWarnAboutClosingTabs]
+   * @param {boolean} [options.skipWarnAboutClosingTabs]
    *   Skip showing the tab close warning prompt.
-   * @param {boolean} [aParams.skipPinnedOrSelectedTabs=true]
+   * @param {boolean} [options.skipPinnedOrSelectedTabs=true]
    *   Skip closing tabs that are selected or pinned.
    */
   removeAllTabsBut(
@@ -6128,7 +6125,7 @@ export class Tabbrowser {
         }
       }
 
-      let aParams = {
+      let removeTabOptions = {
         animate,
         prewarmed: true,
         skipPermitUnload,
@@ -6138,7 +6135,7 @@ export class Tabbrowser {
 
       // Now run again sequentially the beforeunload listeners that will result in a prompt.
       for (let tab of tabsWithBeforeUnloadPrompt) {
-        this.removeTab(tab, aParams);
+        this.removeTab(tab, removeTabOptions);
         if (!tab.closing) {
           // If we abort the closing of the tab.
           tab._closedInMultiselection = false;
@@ -6149,7 +6146,7 @@ export class Tabbrowser {
       // Avoid changing the selected browser several times by removing it,
       // if appropriate, lastly.
       if (lastToClose) {
-        this.removeTab(lastToClose, aParams);
+        this.removeTab(lastToClose, removeTabOptions);
         if (!lastToClose.closing) {
           closedTabCount -= 1;
         }
@@ -6170,8 +6167,8 @@ export class Tabbrowser {
     this.#avoidSingleSelectedTab();
   }
 
-  removeCurrentTab(aParams) {
-    this.removeTab(this.selectedTab, aParams);
+  removeCurrentTab(options) {
+    this.removeTab(this.selectedTab, options);
   }
 
   /**
@@ -7595,10 +7592,10 @@ export class Tabbrowser {
    * in the current window, in which case this will do nothing.
    *
    * @param {MozTabbrowserTab|MozTabbrowserTabGroup|MozTabbrowserTabGroupLabel} aTab
-   * @param {object} [aOptions={}]
+   * @param {object} [options={}]
    *   Key-value pairs that will be serialized into the features string.
    */
-  replaceTabWithWindow(aTab, aOptions = {}) {
+  replaceTabWithWindow(aTab, options = {}) {
     if (this.tabs.length == 1) {
       return null;
     }
@@ -7617,7 +7614,7 @@ export class Tabbrowser {
     args.appendElement(/** @type {nsISupports} */ (aTab.splitview ?? aTab));
     return lazy.BrowserWindowTracker.openWindow({
       private: lazy.PrivateBrowsingUtils.isWindowPrivate(this.documentGlobal),
-      features: Object.entries(aOptions)
+      features: Object.entries(options)
         .map(([key, value]) => `${key}=${value}`)
         .join(","),
       openerWindow: this.documentGlobal,
@@ -7632,13 +7629,13 @@ export class Tabbrowser {
    *
    * @param {MozTabbrowserTab} contextTab
    *   The tab the command applies to, which need not be selected.
-   * @param {object} [aOptions]
+   * @param {object} [options]
    *   Key-value pairs that will be serialized into the features string.
    */
-  replaceTabsWithWindow(contextTab, aOptions = {}) {
+  replaceTabsWithWindow(contextTab, options = {}) {
     if (this.isTabGroupLabel(contextTab)) {
       // TODO bug 1967937: Pass contextTab.group instead.
-      return this.replaceTabWithWindow(contextTab, aOptions);
+      return this.replaceTabWithWindow(contextTab, options);
     }
 
     let elements;
@@ -7654,12 +7651,12 @@ export class Tabbrowser {
 
     this.recordTabMetrics(
       this.TabMetrics.METRIC_ACTION.DETACH,
-      aOptions.metricsContext,
+      options.metricsContext,
       { tabCount: elements.length }
     );
 
     if (elements.length == 1) {
-      return this.replaceTabWithWindow(elements[0], aOptions);
+      return this.replaceTabWithWindow(elements[0], options);
     }
 
     // Play the closing animation for all selected tabs to give
@@ -7687,7 +7684,7 @@ export class Tabbrowser {
         : elements[0];
     }
 
-    let win = this.replaceTabWithWindow(selectedTab, aOptions);
+    let win = this.replaceTabWithWindow(selectedTab, options);
     win.addEventListener(
       "before-initial-tab-adopted",
       () => {
@@ -8532,18 +8529,18 @@ export class Tabbrowser {
    *          Can be from a different window as well
    * @param   {boolean} aRestoreTabImmediately
    *          Can defer loading of the tab contents
-   * @param   {object} [aOptions]
+   * @param   {object} [options]
    *          Takes `inBackground` and `tabIndex`, as
    *          `SessionStore.duplicateTab` does
    * @returns {MozTabbrowserTab}
    */
-  duplicateTab(aTab, aRestoreTabImmediately, aOptions) {
+  duplicateTab(aTab, aRestoreTabImmediately, options) {
     let newTab = lazy.SessionStore.duplicateTab(
       this.documentGlobal,
       aTab,
       0,
       aRestoreTabImmediately,
-      aOptions
+      options
     );
     if (aTab.group) {
       Glean.tabgroup.tabInteractions.duplicate.add();
