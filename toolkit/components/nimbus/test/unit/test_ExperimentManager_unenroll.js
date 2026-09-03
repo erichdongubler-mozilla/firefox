@@ -386,7 +386,7 @@ add_task(async function testUnenrollBogusReason() {
 
   await manager.enroll(
     NimbusTestUtils.factories.recipe("bogus", {
-      branches: [NimbusTestUtils.factories.recipe.branches[0]],
+      branches: NimbusTestUtils.factories.branches(true),
     }),
     "test"
   );

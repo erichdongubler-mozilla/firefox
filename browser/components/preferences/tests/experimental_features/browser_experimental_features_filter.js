@@ -37,7 +37,7 @@ add_task(async function testFilterFeatures() {
     {
       ...DEFAULT_LABS_RECIPES[3],
       slug: "test-featureD",
-      bucketConfig: NimbusTestUtils.factories.recipe.bucketConfig,
+      bucketConfig: NimbusTestUtils.factories.bucketConfig(),
     },
   ];
   const cleanup = await setupLabsTest(recipes);

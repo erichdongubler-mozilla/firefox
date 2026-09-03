@@ -333,6 +333,114 @@ export const NimbusTestUtils = {
 
   factories: {
     /**
+     * Create a branch with the given feature configuration.
+     *
+     * @param {string} slug
+     * The branch slug.
+     *
+     * @param {object} options
+     *
+     * @param {number} options.ratio
+     * The branch ratio.
+     *
+     * @param {object[]} option.features
+     * The list of feature configurations.
+     *
+     * Mutually exclusive with `featureId` and `value`
+     *
+     * @param {string | undefined} options.featureId
+     * The feature ID for the feature used by the branch.
+     *
+     * Requires `value`. Mutually exclusive with `value`.
+     *
+     * @param {object | undefined} options.value
+     * The feature value for the feature used by the branch.
+     *
+     * Requires `featureId`. Mutually exclusive with `features`.
+     *
+     * @returns {object}
+     * The created branch.
+     */
+    branch(slug = "control", { ratio = 1, featureId, value, features } = {}) {
+      if (
+        (typeof featureId === "undefined") !==
+        (typeof value === "undefined")
+      ) {
+        throw new TypeError(
+          "Either provide both featureId and value or neither"
+        );
+      }
+
+      if (typeof features !== "undefined" && typeof featureId !== "undefined") {
+        throw new TypeError("features and featureId are mutually exclusive");
+      }
+
+      return {
+        slug,
+        ratio,
+        features: features ?? [
+          {
+            featureId: featureId ?? "testFeature",
+            value: value ?? { testInt: 123, enabled: true },
+          },
+        ],
+        firefoxLabsTitle: null,
+      };
+    },
+
+    /**
+     * Create a set of branches.
+     *
+     * @param {boolean} isRollout
+     * Whether or not to create the branches for a rollout.
+     *
+     * @returns {object[]}
+     * The branches.
+     */
+    branches(isRollout = false) {
+      return isRollout
+        ? [NimbusTestUtils.factories.branch("control")]
+        : [
+            NimbusTestUtils.factories.branch("control"),
+            NimbusTestUtils.factories.branch("treatment"),
+          ];
+    },
+
+    /**
+     * A helper for generating valid bucketing configurations.
+     *
+     * By default, this bucketing configuration will always result in enrollment.
+     *
+     * @param {object} bucketConfig
+     * The bucket configuration.
+     *
+     * @param {string} bucketConfig.namespace
+     * The namespace used as a seed.
+     *
+     * @param {string} bucketConfig.randomizationUnit
+     * The randomization unit, which determines what client ID is used in the
+     * seed.
+     *
+     * @param {number} bucketConfig.start
+     * The start of the enrolling buckets.
+     *
+     * @param {number} bucketConfig.count
+     * The number of enrolling buckets.
+     *
+     * @param {number} bucketConfig.total
+     * The total number of buckets.
+     */
+    bucketConfig(bucketConfig = {}) {
+      return {
+        namespace: bucketConfig.namespace ?? "nimbus-test-utils",
+        randomizationUnit: bucketConfig.randomizationUnit ?? "normandy_id",
+        start: bucketConfig.start ?? 0,
+        count: bucketConfig.count ?? 1000,
+        total: bucketConfig.total ?? 1000,
+      };
+    },
+
+    /**
      * Create an enrollment from a recipe.
      *
      * @param {object} recipe
@@ -404,10 +512,8 @@ export const NimbusTestUtils = {
         proposedEnrollment: 7,
         referenceBranch: "control",
         application: "firefox-desktop",
-        branches: isRollout
-          ? [NimbusTestUtils.factories.recipe.branches[0]]
-          : NimbusTestUtils.factories.recipe.branches,
-        bucketConfig: NimbusTestUtils.factories.recipe.bucketConfig,
+        branches: NimbusTestUtils.factories.branches(isRollout),
+        bucketConfig: NimbusTestUtils.factories.bucketConfig(),
         userFacingName: "NimbusTestUtils recipe",
         userFacingDescription: "NimbusTestUtils recipe",
         featureIds: props?.branches?.[0].features?.map(f => f.featureId) || [
@@ -949,16 +1055,8 @@ export const NimbusTestUtils = {
       slug ?? `${featureId}-${experimentType}-${Math.random()}`;
 
     const recipe = NimbusTestUtils.factories.recipe(experimentId, {
-      bucketConfig: {
-        ...NimbusTestUtils.factories.recipe.bucketConfig,
-        count: 1000,
-      },
       branches: [
-        {
-          slug: branchSlug,
-          ratio: 1,
-          features: [{ featureId, value }],
-        },
+        NimbusTestUtils.factories.branch(branchSlug, { featureId, value }),
       ],
       isRollout,
     });
@@ -1422,55 +1520,6 @@ export const NimbusTestUtils = {
 };
 
 Object.defineProperties(NimbusTestUtils.factories.recipe, {
-  bucketConfig: {
-    /**
-     * A helper for generating valid bucketing configurations.
-     *
-     * This bucketing configuration will always result in enrollment.
-     */
-    get() {
-      return {
-        namespace: "nimbus-test-utils",
-        randomizationUnit: "normandy_id",
-        start: 0,
-        count: 1000,
-        total: 1000,
-      };
-    },
-  },
-
-  /**
-   * A helper for generating experiment branches.
-   */
-  branches: {
-    get() {
-      return [
-        {
-          slug: "control",
-          ratio: 1,
-          features: [
-            {
-              featureId: "testFeature",
-              value: { testInt: 123, enabled: true },
-            },
-          ],
-          firefoxLabsTitle: null,
-        },
-        {
-          slug: "treatment",
-          ratio: 1,
-          features: [
-            {
-              featureId: "testFeature",
-              value: { testInt: 123, enabled: true },
-            },
-          ],
-          firefoxLabsTitle: null,
-        },
-      ];
-    },
-  },
-
   /**
    * A helper for generating a recipe that has a single branch with the given
    * feature config.
@@ -1483,17 +1532,7 @@ Object.defineProperties(NimbusTestUtils.factories.recipe, {
     ) {
       return NimbusTestUtils.factories.recipe(slug, {
         branches: [
-          {
-            slug: branchSlug,
-            ratio: 1,
-            features: [
-              {
-                featureId,
-                value,
-              },
-            ],
-            firefoxLabsTitle: null,
-          },
+          NimbusTestUtils.factories.branch(branchSlug, { featureId, value }),
         ],
         ...props,
       });
