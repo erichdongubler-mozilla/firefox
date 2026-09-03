@@ -2381,11 +2381,7 @@
 # back from the in-process clipboard cache is unaffected).
 - name: clipboard.readCustomFormatsFromClipboard.enabled
   type: RelaxedAtomicBool
-#if defined(ANDROID)
-  value: false
-#else
   value: @IS_NIGHTLY_BUILD@
-#endif
   mirror: always
 
 #---------------------------------------------------------------------------
@@ -2721,11 +2717,7 @@
 # Master gate for the web custom format support in the Async Clipboard API.
 - name: dom.clipboard.customFormatSupport.enabled
   type: RelaxedAtomicBool
-#if defined(ANDROID)
-  value: false
-#else
   value: @IS_NIGHTLY_BUILD@
-#endif
   mirror: always
 
 # HTML specification says the level should be 5
