@@ -137,6 +137,15 @@ export class ThemePicker extends MozLitElement {
     return new (getThemePickerController())(host);
   }
 
+  shown() {
+    this.dispatchEvent(
+      new CustomEvent("themepickershown", {
+        bubbles: true,
+        composed: true,
+      })
+    );
+  }
+
   /**
    * @param {ThemechangeProperty} property
    * @param {string|boolean} value

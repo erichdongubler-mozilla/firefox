@@ -2213,14 +2213,17 @@ theme_picker:
       - interaction
     notification_emails:
       - tgiles@mozilla.com
+      - mstriemer@mozilla.com
+      - athomas@mozilla.com
     expires: never
     extra_keys:
       session:
         type: string
         description: >
           An opaque identifier for one showing of the picker. It links a
-          `shown` event to the `change` events from that same showing. No
-          code emits `shown` yet, so nothing populates this key.
+          `shown` event to the `change` events from that same showing.
+          No call site supplies a session identifier yet, so this key is
+          absent from recorded events.
       source:
         type: string
         description: >
@@ -2248,8 +2251,9 @@ theme_picker:
         type: string
         description: >
           The `session` value of the picker showing this change came from. It
-          links this event back to the matching `shown` event. No code emits
-          `shown` yet, so nothing populates this key.
+          links this event back to the matching `shown` event. No call site
+          supplies a session identifier yet, so this key is absent from
+          recorded events.
       source:
         type: string
         description: >

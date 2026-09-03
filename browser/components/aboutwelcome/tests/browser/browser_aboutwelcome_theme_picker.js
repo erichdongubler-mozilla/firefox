@@ -38,6 +38,40 @@ add_task(async function test_aboutwelcome_theme_picker_screen_displays() {
     );
   });
 
+  await Services.fog.testFlushAllChildren();
+  Services.fog.testResetFOG();
+
+  await SpecialPowers.spawn(browser, [], async () => {
+    const themePicker = content.document.querySelector("theme-picker");
+    let actorEventCount = 0;
+    const countActorEvent = () => actorEventCount++;
+    content.document.addEventListener("ThemePickerShown", countActorEvent);
+
+    themePicker.wrappedJSObject.shown();
+    themePicker.wrappedJSObject.shown();
+
+    content.document.removeEventListener("ThemePickerShown", countActorEvent);
+    Assert.equal(
+      actorEventCount,
+      2,
+      "Both shown calls should be forwarded to the child actor"
+    );
+  });
+
+  await Services.fog.testFlushAllChildren();
+  const events = Glean.themePicker.shown.testGetValue();
+  Assert.equal(events?.length, 1, "The child actor should record shown once");
+  Assert.equal(
+    events?.[0].extra.source,
+    "unknown",
+    "The default source should be recorded"
+  );
+  Assert.equal(
+    events?.[0].extra.layout,
+    "full",
+    "The full picker layout should be recorded"
+  );
+
   await cleanup();
   await popPrefs();
 });

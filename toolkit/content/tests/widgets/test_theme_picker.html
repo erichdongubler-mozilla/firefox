@@ -56,12 +56,18 @@
         Services.prefs.setCharPref(PREF_ACTIVE_THEME_ID, activeThemeId);
       }
 
-      async function renderThemePicker({ layout = "full" } = {}) {
+      async function renderThemePicker({
+        layout = "full",
+        installsource,
+      } = {}) {
         await customElements.whenDefined("theme-picker");
         let content = document.getElementById("content");
         content.textContent = "";
         let picker = document.createElement("theme-picker");
         picker.layout = layout;
+        if (installsource) {
+          picker.setAttribute("installsource", installsource);
+        }
         content.append(picker);
         // The direct controller loads its theme list asynchronously, so wait for
         // it before asserting on rendered state.
@@ -408,6 +414,7 @@
             "ThemePickerUpdateTheme",
             "ThemePickerUpdateAppearance",
             "ThemePickerUpdateNativeTheme",
+            "ThemePickerShown",
           ]) {
             host.addEventListener(eventType, event => {
               details.set(eventType, event.detail);
@@ -446,7 +453,67 @@
             },
             "Native-theme updates carry the host source and layout."
           );
+          SimpleTest.isDeeply(
+            details.get("ThemePickerShown"),
+            { source: "test-source", layout: "compact" },
+            "Shown events carry the host source and layout."
+          );
+
           controller.hostDisconnected();
+        }
+      );
+
+      add_task(async function testThemePickerShownDispatchesSemanticEvent() {
+        useController(ThemePickerStorybookController);
+        let picker = await renderThemePicker();
+        let content = document.getElementById("content");
+        let receivedEvent;
+        content.addEventListener(
+          "themepickershown",
+          event => {
+            receivedEvent = event;
+          },
+          { once: true }
+        );
+
+        picker.shown();
+
+        ok(receivedEvent, "themepickershown bubbles to an ancestor.");
+        ok(receivedEvent?.bubbles, "themepickershown is configured to bubble.");
+        ok(receivedEvent?.composed, "themepickershown is composed.");
+        is(
+          receivedEvent?.detail,
+          null,
+          "themepickershown carries no telemetry detail."
+        );
+      });
+      add_task(
+        async function testDirectControllerRecordsShownOncePerDocument() {
+          useController(ThemePickerDirectController);
+          let picker = await renderThemePicker({
+            layout: "compact",
+            installsource: "test-source",
+          });
+          let secondPicker = document.createElement("theme-picker");
+          secondPicker.layout = "full";
+          secondPicker.setAttribute("installsource", "second-source");
+          document.getElementById("content").append(secondPicker);
+          await waitForCondition(
+            () => secondPicker.themes.length,
+            "The second theme picker is populated with themes."
+          );
+          await secondPicker.updateComplete;
+          await Services.fog.testFlushAllChildren();
+          Services.fog.testResetFOG();
+
+          picker.shown();
+          secondPicker.shown();
+
+          await Services.fog.testFlushAllChildren();
+          let events = Glean.themePicker.shown.testGetValue();
+          is(events?.length, 1, "theme_picker.shown is recorded once.");
+          is(events?.[0].extra.source, "test-source", "Source is recorded.");
+          is(events?.[0].extra.layout, "compact", "Layout is recorded.");
         }
       );
 

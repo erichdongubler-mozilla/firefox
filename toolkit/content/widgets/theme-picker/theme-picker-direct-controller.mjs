@@ -22,6 +22,8 @@ const PREF_SYSTEM_USES_DARK = "ui.systemUsesDarkTheme";
 const PREF_NATIVE_THEME = "browser.theme.native-theme";
 const PREF_ACTIVE_THEME_ID = "extensions.activeThemeID";
 
+const shownDocuments = new WeakSet();
+
 /**
  * @implements {ReactiveController}
  */
@@ -66,6 +68,20 @@ export class ThemePickerDirectController {
       /** @param {ThemechangeEvent} e */
       e => this.onThemechange(e.detail)
     );
+    this.host.addEventListener("themepickershown", () => this.shown());
+  }
+
+  shown() {
+    const document = this.host.ownerDocument;
+    if (shownDocuments.has(document)) {
+      return;
+    }
+
+    shownDocuments.add(document);
+    Glean.themePicker.shown.record({
+      source: this.host.getAttribute("installsource") || "unknown",
+      layout: this.host.layout || "unknown",
+    });
   }
 
   hostConnected() {

@@ -35,6 +35,9 @@ export class ThemePickerRemoteController {
     this.host.addController(this);
 
     this.host.addEventListener("ThemePickerInitialState", this);
+    this.host.addEventListener("themepickershown", () =>
+      this.onThemePickerShown()
+    );
 
     this.host.addEventListener(
       "themechange",
@@ -45,6 +48,16 @@ export class ThemePickerRemoteController {
     for (const eventType of WINDOW_EVENTS) {
       window.addEventListener(eventType, this);
     }
+  }
+
+  onThemePickerShown() {
+    this.dispatchActorEvent("ThemePickerShown", {
+      source:
+        this.installSource ||
+        this.host.getAttribute("installsource") ||
+        "unknown",
+      layout: this.host.layout || "unknown",
+    });
   }
 
   hostDisconnected() {
