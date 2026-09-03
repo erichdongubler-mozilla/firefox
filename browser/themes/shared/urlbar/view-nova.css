@@ -43,6 +43,10 @@
   --urlbarView-favicon-mask-size: 24px;
   --urlbarView-favicon-mask-position: calc((var(--urlbarview-favicon-size) - var(--urlbarView-favicon-mask-size)) / 2);
 
+  /* The flex-basis of the URL and no-wrap are set such that the title can take up
+     most of the space but the URL will remain at least partially visible. */
+  --urlbarView-url-flex-basis: 30%;
+
   --urlbarView-result-button-size: 24px;
   --urlbarView-result-button-background-opacity: 60%;
   --urlbarView-result-button-selected-color: var(--toolbar-field-text-color-focus);
@@ -218,14 +222,9 @@
 .urlbarView-row-body-top-no-wrap {
   display: flex;
   align-items: baseline;
-  max-width: 100%;
-
-  /* For rows with result explanations but no URL (e.g., "Visit" actions like
-     bookmark keywords), let the title start to overflow more quickly than usual
-     so there's room for the explanation. Normally the URL overflows instead. */
-  .urlbarView-row[has-explanation]:not([has-url]) & {
-    min-width: 0;
-  }
+  flex: 1 1 calc(100% - var(--urlbarView-url-flex-basis));
+  min-width: 0;
+  max-width: max-content;
 }
 
 .urlbarView-row-body-description,
@@ -247,17 +246,6 @@
 }
 
 /* For rows that show a URL: Row width and wrapping */
-
-.urlbarView-row-body-top-no-wrap {
-  /* When wrapping is not enabled, show the URL next to the title and give the
-     title and other elements in the no-wrap a max width to ensure the URL is at
-     least partially visible. */
-  .urlbarView[action-override] .urlbarView-row[has-url][type="switchtab"] &,
-  .urlbarView-row[has-url]:not([type$="tab"]) &,
-  .urlbarView-row[has-url]:is([type="remotetab"], [sponsored]):is(:hover, [selected]) & {
-    max-width: 70%;
-  }
-}
 
 @media screen and (min-height: 600px) {
   /* Enable wrapping when the window is narrow (the "wrap" attribute, set in JS)
@@ -845,7 +833,11 @@
 }
 
 .urlbarView-url {
-  flex: 1 1 auto;
+  /* The large flex-grow ensures the URL grows more quickly than the explanation
+     so that the explanation doesn't cause the URL to overflow unnecessarily. */
+  flex: 100 1 var(--urlbarView-url-flex-basis);
+  min-width: 0;
+  max-width: max-content;
 
   .urlbarView-row:not([has-url]) &,
   .urlbarView:not([action-override]) .urlbarView-row[type="switchtab"] &,
@@ -860,26 +852,27 @@
   display: flex;
   align-items: baseline;
   margin-inline: calc(var(--urlbarView-row-padding-inline) + var(--urlbarView-icon-margin-start));
-  flex: 1 0 auto;
+  flex: 1 0;
   justify-content: end;
-
-  /* For rows with no URL (e.g., "Visit" actions like bookmark keywords), add
-     plenty of space between the explanation and action or title. In this case
-     the separator character doesn't appear like it does when the explanation is
-     next to an overflowed URL. Even `--space-xxlarge` is too small, so we use a
-     larger literal value. */
-  .urlbarView-url:empty + & {
-    margin-inline-start: 3em;
-  }
 
   .urlbarView-row[has-menu-button] & {
     margin-inline-end: 0;
   }
 
-  .urlbarView-url[overflow] ~ &::before,
-  > .urlbarView-explanation-bookmarked:not(:empty) + .urlbarView-explanation-last-visited:not(:empty)::before {
+  /* Give both parts of the explanation a leading separator. Make it opaque if
+     it's next to an overflowed URL or both explanation parts are non-empty.
+     Otherwise, the first separator will be transparent, which ensures there
+     will be enough space between the explanation and the prior visible element,
+     whether that's a non-overflowed URL or action text. */
+  > .urlbarView-explanation-bookmarked:not(:empty)::before,
+  > .urlbarView-explanation-last-visited:not(:empty)::before {
     content: var(--urlbarView-separator-char);
     margin: 0 var(--urlbarView-separator-margin-inline);
+    opacity: 0;
+  }
+  .urlbarView-url[overflow] ~ & > .urlbarView-explanation-bookmarked::before,
+  .urlbarView-url[overflow] ~ & > .urlbarView-explanation-last-visited::before,
+  > .urlbarView-explanation-bookmarked:not(:empty) + .urlbarView-explanation-last-visited::before {
     opacity: var(--opacity-deemphasized-strong);
   }
 
