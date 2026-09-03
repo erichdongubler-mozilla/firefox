@@ -17081,3 +17081,27 @@ browser_thumbnails:
     metadata:
       tags:
         - Tabs
+  capture_result:
+    type: labeled_counter
+    description: |
+      Outcome of each capture attempt that reached the request path.
+      `succeeded` = engine returned a bitmap and the ContentAction.UpdateThumbnailAction
+      was dispatched. `null_bitmap` = engine returned no bitmap (typically the
+      compositor detach race). `low_memory` = the isLowOnMemory() gate skipped
+      the request before it reached the engine.
+    labels:
+      - succeeded
+      - null_bitmap
+      - low_memory
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2067066
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2067066
+    notification_emails:
+      - android-probes@mozilla.com
+    data_sensitivity:
+      - technical
+    expires: never
+    metadata:
+      tags:
+        - Tabs

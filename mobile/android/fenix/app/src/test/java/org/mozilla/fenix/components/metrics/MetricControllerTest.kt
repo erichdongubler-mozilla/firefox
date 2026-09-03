@@ -1227,6 +1227,56 @@ class MetricControllerTest {
             }
     }
 
+    @Test
+    fun `WHEN capture_result fact is processed THEN captureResult labeled counter is incremented for the outcome`() {
+        val controller = createReleaseMetricController()
+
+        listOf(
+                BrowserThumbnailsFacts.CaptureResults.SUCCEEDED,
+                BrowserThumbnailsFacts.CaptureResults.NULL_BITMAP,
+                BrowserThumbnailsFacts.CaptureResults.LOW_MEMORY,
+            )
+            .forEach { result ->
+                assertNull(BrowserThumbnails.captureResult[result].testGetValue())
+
+                controller.run {
+                    Fact(
+                            component = Component.BROWSER_THUMBNAILS,
+                            action = Action.IMPLEMENTATION_DETAIL,
+                            item = BrowserThumbnailsFacts.Items.CAPTURE_RESULT,
+                            value = result,
+                        )
+                        .process()
+                }
+
+                assertEquals(1, BrowserThumbnails.captureResult[result].testGetValue())
+            }
+    }
+
+    @Test
+    fun `WHEN capture_result fact has a null value THEN no captureResult label is incremented`() {
+        val controller = createReleaseMetricController()
+
+        controller.run {
+            Fact(
+                    component = Component.BROWSER_THUMBNAILS,
+                    action = Action.IMPLEMENTATION_DETAIL,
+                    item = BrowserThumbnailsFacts.Items.CAPTURE_RESULT,
+                    value = null,
+                )
+                .process()
+        }
+
+        listOf(
+                BrowserThumbnailsFacts.CaptureResults.SUCCEEDED,
+                BrowserThumbnailsFacts.CaptureResults.NULL_BITMAP,
+                BrowserThumbnailsFacts.CaptureResults.LOW_MEMORY,
+            )
+            .forEach { result ->
+                assertNull(BrowserThumbnails.captureResult[result].testGetValue())
+            }
+    }
+
     private fun createReleaseMetricController(
         services: List<MetricsService> = emptyList(),
         isDataTelemetryEnabled: () -> Boolean = { true },

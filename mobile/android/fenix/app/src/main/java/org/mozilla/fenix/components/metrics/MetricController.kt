@@ -515,6 +515,10 @@ internal class ReleaseMetricController(
                 value?.let { BrowserThumbnails.captureAttempted[it].add() } ?: Unit
             }
 
+            Component.BROWSER_THUMBNAILS to BrowserThumbnailsFacts.Items.CAPTURE_RESULT -> {
+                value?.let { BrowserThumbnails.captureResult[it].add() } ?: Unit
+            }
+
             else -> {
                 // no-op
             }
