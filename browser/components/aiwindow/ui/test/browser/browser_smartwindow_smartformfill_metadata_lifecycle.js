@@ -225,6 +225,58 @@ describe("Smart Form Fill metadata lifecycle", () => {
     );
   });
 
+  it("reclassifies a form after a field is removed", async () => {
+    const { browser } = await failFieldClassification(
+      win,
+      "#email",
+      mockEngineManager
+    );
+    await closeAutocomplete(browser);
+
+    await SpecialPowers.spawn(browser, [], () => {
+      content.document.querySelector("#email").closest("label").remove();
+    });
+
+    await waitForSmartFormFillProvider(browser, "#name", { focus: true });
+
+    const actor =
+      browser.browsingContext.currentWindowGlobal.getActor("SmartFormFill");
+    await TestUtils.waitForCondition(async () => {
+      const formData = await actor.sendQuery("SmartFormFill:GetFocusedForm");
+      return (
+        formData?.fields.length === 1 && formData.fields[0].name === "name"
+      );
+    }, "Waiting for Smart Form Fill to process the field removal");
+    await TestUtils.waitForTick();
+
+    const { browser: autocompleteBrowser, popup } =
+      await openLoadingAutocomplete(win, "#name");
+    let row;
+    const rowUpdated = BrowserTestUtils.waitForMutationCondition(
+      popup.richlistbox,
+      { attributes: true, childList: true, subtree: true },
+      () => {
+        row = popup
+          .querySelector('[originaltype="smartFormFill"]')
+          ?.querySelector("autocomplete-row-item");
+        return row && !row.loading;
+      }
+    );
+
+    const requests = await captureMetadataRequests(mockEngineManager);
+    await rowUpdated;
+    await row.updateComplete;
+
+    const classificationRequest = requests.get(FIELD_CLASSIFICATION_SCHEMA);
+    Assert.deepEqual(
+      classificationRequest.fields.map(field => field.name),
+      ["name"],
+      "The replacement classification should only contain the remaining field"
+    );
+
+    await closeAutocomplete(autocompleteBrowser);
+  });
+
   it("retries relevant tabs independently", async () => {
     const { popup } = await openLoadingAutocomplete(win, "#email");
     const retryableError = new Error("429 status code");

@@ -37,6 +37,12 @@ support-files = [
   "test_smartwindow_prompts.mjs",
   "test_smartwindow_panel_list_page.html",
   "test_smartwindow_panel_list.mjs",
+  "test_smartformfill.html",
+  "test_smartformfill_formless_fields.html",
+  "test_smartformfill_multiple_forms.html",
+  "test_smartformfill_populated_fields.html",
+  "test_smartformfill_shadow_dom.html",
+  "test_smartformfill_supported_fields.html",
   "test_website_chip_page.html",
   "test_website_chip.mjs",
   "test_website_select_page.html",
@@ -243,6 +249,12 @@ skip-if = [
 ["browser_smartformfill_form_review_filling.js"]
 
 ["browser_smartformfill_form_review_generation.js"]
+
+["browser_smartformfill_initialization.js"]
+
+["browser_smartformfill_mutations.js"]
+
+["browser_smartformfill_shadow_dom.js"]
 
 ["browser_smartformfill_tab_selector.js"]
 
