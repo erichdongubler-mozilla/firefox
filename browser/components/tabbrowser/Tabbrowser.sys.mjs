@@ -1236,7 +1236,8 @@ export class Tabbrowser {
    *   The tab to pin.
    * @param {object} [options]
    * @param {TabMetricsContext} [options.metricsContext]
-   *   The context for the operation for telemetry purposes, defaults to an unknown context.
+   *   The context for the operation for telemetry purposes. Defaults to an
+   *   unknown context.
    */
   pinTab(aTab, { metricsContext = this.TabMetrics.UNKNOWN_CONTEXT } = {}) {
     if (aTab.pinned || aTab == this.documentGlobal.FirefoxViewHandler.tab) {
@@ -1264,7 +1265,8 @@ export class Tabbrowser {
    *   The tab to pin.
    * @param {object} [options]
    * @param {TabMetricsContext} [options.metricsContext]
-   *   The context for the operation for telemetry purposes, defaults to an unknown context.
+   *   The context for the operation for telemetry purposes. Defaults to an
+   *   unknown context.
    */
   unpinTab(aTab, { metricsContext = this.TabMetrics.UNKNOWN_CONTEXT } = {}) {
     if (!aTab.pinned) {
@@ -3622,10 +3624,10 @@ export class Tabbrowser {
    *   The remoteType triggering this load.
    * @param {nsILoadInfo_SchemelessInputType} [options.schemelessInput]
    *   Whether the search/URL term was without an explicit scheme.
-   * @param {boolean} [options.hasValidUserGestureActivation=false]
+   * @param {boolean} [options.hasValidUserGestureActivation]
    *   Indicates if a valid user gesture caused this load. This informs
    *   e.g. popup blocker decisions.
-   * @param {boolean} [options.textDirectiveUserActivation=false]
+   * @param {boolean} [options.textDirectiveUserActivation]
    *   Whether a user gesture allows the load to scroll to a text fragment.
    * @returns {MozTabbrowserTab|null}
    *    The new tab. The return value will be null if the tab couldn't be
@@ -4404,7 +4406,7 @@ export class Tabbrowser {
    * @param {object} [options]
    * @param {boolean} [options.sortByLastSeenActive]
    *   Sort groups so that groups that have more recently seen and active
-   *   tabs appear first. Defaults to false.
+   *   tabs appear first.
    */
   getAllTabGroups({ sortByLastSeenActive = false } = {}) {
     let groups = lazy.BrowserWindowTracker.getOrderedWindows({
@@ -5649,7 +5651,7 @@ export class Tabbrowser {
    *   What the "closed N tabs" hint should point at. Callers outside the All
    *   Tabs menu need to pass their own button, since the All Tabs button is
    *   not necessarily on the toolbar and the hint lands in the window's
-   *   corner without an anchor.
+   *   corner without an anchor. Defaults to the All Tabs button.
    */
   removeAllDuplicateTabs({
     confirmationAnchor = this.document.getElementById("alltabs-button"),
@@ -5708,7 +5710,7 @@ export class Tabbrowser {
    * @param {object} [aParams]
    *   An optional set of parameters that will be passed to the
    *   `removeTabs` function.
-   * @param {boolean} [aParams.skipWarnAboutClosingTabs=false]
+   * @param {boolean} [aParams.skipWarnAboutClosingTabs]
    *   Skip showing the tab close warning prompt.
    * @param {boolean} [aParams.skipPinnedOrSelectedTabs=true]
    *   Skip closing tabs that are selected or pinned.
@@ -6015,14 +6017,14 @@ export class Tabbrowser {
    * @param {MozTabbrowserTab[]} tabs
    *   The set of tabs to remove.
    * @param {object} [options]
-   * @param {boolean} [options.animate]
-   *   Whether or not to animate closing, defaults to true.
+   * @param {boolean} [options.animate=true]
+   *   Whether or not to animate closing.
    * @param {boolean} [options.suppressWarnAboutClosingWindow]
    *   This will suppress the warning about closing a window with the last tab.
    * @param {boolean} [options.skipPermitUnload]
    *   Skips the before unload checks for the tabs. Only set this to true when
    *   using it in tandem with `runBeforeUnloadForTabs`.
-   * @param {boolean}  [options.skipSessionStore]
+   * @param {boolean} [options.skipSessionStore]
    *   If true, don't record the closed tabs in SessionStore.
    * @param {boolean} [options.skipGroupCheck]
    *   Skip separate processing of whole tab groups from the set of tabs.
@@ -6406,7 +6408,8 @@ export class Tabbrowser {
    * @param {boolean} [options.skipSessionStore]
    *   If true, don't record the closed tab in SessionStore.
    * @param {TabMetricsContext} [options.metricsContext]
-   *   The context for the operation for telemetry purposes.
+   *   The context for the operation for telemetry purposes. Defaults to an
+   *   unknown context.
    * @returns {boolean}
    *   Whether the caller should go on to finish removing the tab.
    * @see Tabbrowser.runBeforeUnloadForTabs
@@ -7809,7 +7812,7 @@ export class Tabbrowser {
    * @param {number} [options.elementIndex]
    *   The desired position, expressed as the index within the
    *   `MozTabbrowserTabs::dragAndDropElements` array.
-   * @param {boolean} [options.forceUngrouped=false]
+   * @param {boolean} [options.forceUngrouped]
    *   Force `element` to move into position as a standalone tab, overriding
    *   any possibility of entering a tab group. For example, setting `true`
    *   ensures that a pinned tab will not accidentally be placed inside of
@@ -8321,7 +8324,7 @@ export class Tabbrowser {
    *   `MozTabbrowserTabs::dragAndDropElements` array.
    * @param {number} [options.tabIndex]
    *   The desired position, expressed as the index within the `tabs` array.
-   * @param {boolean} [options.selectTab=false]
+   * @param {boolean} [options.selectTab]
    *   Whether to make the adopted tab the new active tab.
    * @returns {object}
    *    The new tab in the current window, null if the tab couldn't be adopted.
@@ -8887,7 +8890,8 @@ export class Tabbrowser {
    *
    * @param {object} [options]
    * @param {TabMetricsContext} [options.metricsContext]
-   *   The context for the operation for telemetry purposes.
+   *   The context for the operation for telemetry purposes. Defaults to an
+   *   unknown context.
    */
   pinMultiSelectedTabs({
     metricsContext = this.TabMetrics.UNKNOWN_CONTEXT,
