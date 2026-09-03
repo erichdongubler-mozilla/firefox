@@ -1826,8 +1826,6 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
       "about:blank"_ns,
       // about:srcdoc is a special about page -> no CSP
       "about:srcdoc"_ns,
-      // about:sync-log displays plain text only -> no CSP
-      "about:sync-log"_ns,
       // about:logo just displays the firefox logo -> no CSP
       "about:logo"_ns,
       // about:sync is a special mozilla-signed developer addon with low usage
@@ -2144,11 +2142,6 @@ bool nsContentSecurityUtils::ValidateScriptFilename(JSContext* cx,
   }
   if (StringBeginsWith(filename, "jar:file://"_ns)) {
     // We will temporarily allow all jar URIs through for now
-    return true;
-  }
-  if (filename.Equals("about:sync-log"_ns)) {
-    // about:sync-log runs in the parent process and displays a directory
-    // listing. The listing has inline javascript that executes on load.
     return true;
   }
 
