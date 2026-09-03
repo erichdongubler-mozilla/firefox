@@ -296,3 +296,15 @@ set_config(
 )
 
 set_config("MOZ_CHROME_LOCALE_ENTRIES", ["@BINPATH@/chrome/"])
+
+
+@depends(real_branding_directory)
+@imports(_import="mozpack.path", _as="mozpath")
+def l10n_chrome_roots(branding_directory):
+    return [
+        "mobile/android/locales",
+        mozpath.join(branding_directory, "locales"),
+    ]
+
+
+set_config("MOZ_L10N_CHROME_ROOTS", l10n_chrome_roots)

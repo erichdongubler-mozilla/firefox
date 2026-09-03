@@ -283,6 +283,19 @@ CONFIGS = defaultdict(
                 "OBJ_SUFFIX": "o",
             },
         },
+        "l10n-manifest-roots": {
+            "defines": {},
+            "substs": {
+                "OS_TARGET": "WINNT",
+                "MOZ_L10N_CHROME_ROOTS": ["app/locales"],
+            },
+        },
+        "l10n-manifest-roots-unfiltered": {
+            "defines": {},
+            "substs": {
+                "OS_TARGET": "WINNT",
+            },
+        },
     },
 )
 

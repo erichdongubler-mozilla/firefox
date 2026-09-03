@@ -134,5 +134,136 @@ class TestBuildL10nManifestFromSubsts(unittest.TestCase):
         self.assertEqual(manifest.contexts, [])
 
 
+class TestL10nManifestRoots(unittest.TestCase):
+    def _context(self, relsrcdir):
+        return L10nManifestContextData(
+            relsrcdir=relsrcdir,
+            install_subdir="",
+            defines={},
+            locale_pp_defines={},
+        )
+
+    def _relsrcdirs(self, roots, relsrcdirs):
+        substs = {} if roots is None else {"MOZ_L10N_CHROME_ROOTS": roots}
+        contexts = [self._context(relsrcdir) for relsrcdir in relsrcdirs]
+        manifest = build_l10n_manifest_from_substs(substs, contexts)
+        return [data.relsrcdir for data in manifest.contexts]
+
+    def test_subst_absent_retains_everything(self):
+        self.assertEqual(
+            self._relsrcdirs(None, ["netwerk/locales", "mobile/android/locales"]),
+            ["netwerk/locales", "mobile/android/locales"],
+        )
+
+    def test_empty_roots_retain_everything(self):
+        self.assertEqual(
+            self._relsrcdirs([], ["netwerk/locales", "mobile/android/locales"]),
+            ["netwerk/locales", "mobile/android/locales"],
+        )
+
+    def test_exact_root_and_descendant_match(self):
+        self.assertEqual(
+            self._relsrcdirs(
+                ["mobile/android/locales"],
+                [
+                    "mobile/android/locales",
+                    "mobile/android/locales/nested",
+                    "mobile/android/themes/geckoview",
+                    "netwerk/locales",
+                ],
+            ),
+            ["mobile/android/locales", "mobile/android/locales/nested"],
+        )
+
+    def test_similar_prefix_does_not_match(self):
+        self.assertEqual(
+            self._relsrcdirs(
+                ["mobile/android/locales"],
+                ["mobile/android/locales2", "mobile2/android/locales"],
+            ),
+            [],
+        )
+
+    def _scoped(self, roots, context):
+        manifest = build_l10n_manifest_from_substs(
+            {"MOZ_L10N_CHROME_ROOTS": roots}, [context]
+        )
+        return manifest.contexts
+
+    def _jar_section(self):
+        return JarSection(
+            name="chrome",
+            base="",
+            relativesrcdir="",
+            chrome_manifests=[],
+            pp_includes=[],
+            entries=[
+                JarEntry(
+                    source="en-US/necko.properties",
+                    output="locale/necko.properties",
+                    is_locale=True,
+                    preprocess=False,
+                )
+            ],
+        )
+
+    def _gen_script(self):
+        return LocalizedGenScript(
+            script="generate_default_locale.py",
+            method="main",
+            inputs=[],
+            outputs=["default.locale"],
+            flags=[],
+            force=False,
+        )
+
+    def test_out_of_root_context_keeps_its_generated_files(self):
+        context = self._context("toolkit/locales")
+        context.jar_sections = [self._jar_section()]
+        context.localized_generated_files = [self._gen_script()]
+        context.localized_files = [
+            LocalizedFileGroup(subpath="", sources=["!default.locale"])
+        ]
+
+        contexts = self._scoped(["mobile/android/locales"], context)
+
+        self.assertEqual(len(contexts), 1)
+        self.assertEqual(contexts[0].jar_sections, [])
+        self.assertEqual(contexts[0].localized_generated_files, [self._gen_script()])
+        self.assertEqual(
+            contexts[0].localized_files,
+            [LocalizedFileGroup(subpath="", sources=["!default.locale"])],
+        )
+
+    def test_out_of_root_context_with_only_chrome_is_dropped(self):
+        context = self._context("netwerk/locales")
+        context.jar_sections = [self._jar_section()]
+
+        self.assertEqual(self._scoped(["mobile/android/locales"], context), [])
+
+    def test_in_root_context_keeps_its_chrome(self):
+        context = self._context("mobile/android/locales")
+        context.jar_sections = [self._jar_section()]
+
+        contexts = self._scoped(["mobile/android/locales"], context)
+
+        self.assertEqual(len(contexts), 1)
+        self.assertEqual(contexts[0].jar_sections, [self._jar_section()])
+
+    def test_configured_branding_root_outside_app_dir(self):
+        roots = ["mobile/android/locales", "third_party/acme/branding/locales"]
+        self.assertEqual(
+            self._relsrcdirs(
+                roots,
+                [
+                    "third_party/acme/branding/locales",
+                    "third_party/acme/content",
+                    "mobile/android/locales",
+                ],
+            ),
+            ["third_party/acme/branding/locales", "mobile/android/locales"],
+        )
+
+
 if __name__ == "__main__":
     main()
