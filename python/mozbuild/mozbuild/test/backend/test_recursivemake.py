@@ -1561,7 +1561,7 @@ class TestRecursiveMakeBackend(BackendTester):
         with open(root_deps_path) as fh:
             lines = [l.strip() for l in fh.readlines()]
 
-        self.assertIn("rust/uniffi-target: archive/target", lines)
+        self.assertIn("rust/uniffi-target: archive/target middle/target-objects", lines)
         self.assertIn("archive/target: archive/target-objects", lines)
 
         backend_path = mozpath.join(env.topobjdir, "archive", "backend.mk")

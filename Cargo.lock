@@ -4484,15 +4484,13 @@ version = "0.1.0"
 dependencies = [
  "base64 0.21.999",
  "kvstore",
- "nserror",
+ "mozbuild",
  "nss-rs",
- "nsstring",
  "rusqlite 0.31.999",
  "serde",
  "serde_json",
  "tempfile",
  "thiserror 1.999.999",
- "xpcom",
  "zeroize",
 ]
 
