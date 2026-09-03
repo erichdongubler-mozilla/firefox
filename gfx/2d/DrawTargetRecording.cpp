@@ -319,6 +319,20 @@ void DrawTargetRecording::Fill(const Path* aPath, const Pattern& aPattern,
   RecordEventSelf(RecordedFill(pathRecording, aPattern, aOptions));
 }
 
+void DrawTargetRecording::FillCircle(const Point& aOrigin, float aRadius,
+                                     const Pattern& aPattern,
+                                     const DrawOptions& aOptions) {
+  if (aRadius > 0.0f) {
+    // For circles with valid, positive radii, generate FillCircle events.
+    MarkChanged();
+    EnsurePatternDependenciesStored(aPattern);
+    RecordEventSelf(RecordedFillCircle(Path::Circle{aOrigin, aRadius, true},
+                                       aPattern, aOptions));
+  } else {
+    DrawTarget::FillCircle(aOrigin, aRadius, aPattern, aOptions);
+  }
+}
+
 struct RecordingFontUserData {
   void* refPtr;
   void* unscaledFont;
