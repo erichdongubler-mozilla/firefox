@@ -55,6 +55,10 @@ const {
   "moz-src:///browser/components/aiwindow/models/ConversationSuggestions.sys.mjs"
 );
 
+const { _clearDismissedResumeMemoriesForTesting } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/ui/modules/ResumeActivityDismissals.sys.mjs"
+);
+
 /**
  * @import { SmartbarAction } from "chrome://browser/content/aiwindow/components/input-cta/input-cta.mjs"
  */
@@ -480,6 +484,21 @@ async function getPromptButtons(browser) {
   return promptsEl.shadowRoot.querySelectorAll(".sw-prompt-button");
 }
 
+async function getDismissButton(browser) {
+  const aiWindow = await TestUtils.waitForCondition(
+    () => browser.contentDocument?.querySelector("ai-window"),
+    "Wait for ai-window element"
+  );
+  const promptsEl = await TestUtils.waitForCondition(
+    () => aiWindow.shadowRoot.querySelector("smartwindow-prompts"),
+    "Wait for smartwindow-prompts element"
+  );
+  return TestUtils.waitForCondition(
+    () => promptsEl.shadowRoot.querySelector(".sw-prompt-dismiss"),
+    "Wait for the resume pill's dismiss button"
+  );
+}
+
 async function getConversationId(browser) {
   const aiWindow = await TestUtils.waitForCondition(
     () => browser.contentDocument?.querySelector("ai-window"),
@@ -529,8 +548,9 @@ async function stubResumeActivityGeneration(sb) {
     .resolves(memories);
   // Keep cached results from being filtered as deleted.
   sb.stub(MemoriesManager, "getAllMemories").resolves(memories);
-  // Prevent cached results from leaking between tests.
+  // Prevent cached results and dismissals from leaking between tests.
   _clearResumeActivityCacheForTesting();
+  _clearDismissedResumeMemoriesForTesting();
   _setGetConversationsByIdForTesting(async () => []);
   _setConversationSuggestionsLoadPromptForTesting(async () => ({
     prompt: "Test prompt",
@@ -568,6 +588,7 @@ async function stubResumeActivityGeneration(sb) {
       _setConversationSuggestionsLoadPromptForTesting(null);
       _setBuildConversationForTesting(null);
       _clearResumeActivityCacheForTesting();
+      _clearDismissedResumeMemoriesForTesting();
       for (const { url } of urls) {
         await PlacesUtils.history.remove(url);
       }

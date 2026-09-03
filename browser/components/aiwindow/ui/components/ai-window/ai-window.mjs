@@ -87,6 +87,10 @@ ChromeUtils.defineESModuleGetters(lazy, {
   UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
   SmartWindowTelemetry:
     "moz-src:///browser/components/aiwindow/ui/modules/SmartWindowTelemetry.sys.mjs",
+  isResumeActivityMemoryDismissed:
+    "moz-src:///browser/components/aiwindow/ui/modules/ResumeActivityDismissals.sys.mjs",
+  dismissResumeActivityMemory:
+    "moz-src:///browser/components/aiwindow/ui/modules/ResumeActivityDismissals.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "log", function () {
@@ -1396,7 +1400,10 @@ export class AIWindow extends MozLitElement {
 
   #resumeActivitiesToStarterPrompts(resumeActivities) {
     return resumeActivities.flatMap(({ memory, content }) => {
-      if (!content.headline.trim()) {
+      if (
+        !content.headline.trim() ||
+        lazy.isResumeActivityMemoryDismissed(memory.id)
+      ) {
         return [];
       }
 
@@ -2005,6 +2012,25 @@ export class AIWindow extends MozLitElement {
   }
 
   /**
+   * Dismisses the memory for the session and removes its pill from this tab.
+   *
+   * @param {CustomEvent} event - The prompt-dismissed event
+   * @private
+   */
+  #handlePromptDismissed = event => {
+    const { memory } = event.detail;
+    lazy.dismissResumeActivityMemory(memory.id);
+
+    const remaining = this.#conversation.transientStarters.filter(
+      starter => starter.memory?.id !== memory.id
+    );
+    this.#conversation.transientStarters = remaining;
+    this.#renderStarterPrompts(remaining, true, false);
+
+    this.#recordQuickPromptDismissed();
+  };
+
+  /**
    * Builds a conversation seeded with the selected resume-activity
    * suggestion and generates its first response, attaching an open_tabs
    * confirmation card built from the pill's preview tabs. Uses a plain
@@ -2139,6 +2165,15 @@ export class AIWindow extends MozLitElement {
       message_seq: this.#conversation?.messageCount ?? 0,
       starter: starterType !== "followup",
       starter_type: starterType,
+    });
+  }
+
+  /**
+   * Records a quick_prompt_dismissed Glean event.
+   */
+  #recordQuickPromptDismissed() {
+    Glean.smartWindow.quickPromptDismissed.record({
+      chat_id: this.conversationId,
     });
   }
 
@@ -3517,6 +3552,8 @@ export class AIWindow extends MozLitElement {
                     .mode=${this.mode}
                     @SmartWindowPrompt:prompt-selected=${this
                       .#handlePromptSelected}
+                    @SmartWindowPrompt:prompt-dismissed=${this
+                      .#handlePromptDismissed}
                   ></smartwindow-prompts>
                 `
               : ""}

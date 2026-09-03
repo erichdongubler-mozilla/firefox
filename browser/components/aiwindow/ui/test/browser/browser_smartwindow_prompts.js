@@ -614,6 +614,78 @@ add_task(
   }
 );
 
+add_task(async function test_dismiss_removes_pill_and_stays_dismissed() {
+  const sb = sinon.createSandbox();
+  let win, tab2;
+
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.smartwindow.memories.generateFromConversation", true],
+      ["browser.smartwindow.memories.generateFromHistory", true],
+    ],
+  });
+
+  let resumeActivityStubs;
+  try {
+    resumeActivityStubs = await stubResumeActivityGeneration(sb);
+    win = await openAIWindow();
+    const browser = win.gBrowser.selectedBrowser;
+    await getPromptButtons(browser);
+
+    const dismissButton = await getDismissButton(browser);
+    dismissButton.click();
+
+    await TestUtils.waitForCondition(async () => {
+      const remaining = await getPromptButtons(browser);
+      return remaining.length === 2;
+    }, "Dismissed pill should be removed");
+    const remaining = await getPromptButtons(browser);
+    Assert.ok(
+      Array.from(remaining).every(
+        button => button.ariaLabel !== "Pick up your research"
+      ),
+      "The dismissed resume pill should no longer render"
+    );
+
+    tab2 = await BrowserTestUtils.openNewForegroundTab({
+      gBrowser: win.gBrowser,
+      opening: AIWINDOW_URL,
+      waitForLoad: true,
+    });
+    await getPromptButtons(tab2.linkedBrowser);
+    const aiWindow2 =
+      tab2.linkedBrowser.contentDocument.querySelector("ai-window");
+
+    // Skeletons aren't type "resume" either, so wait past them first.
+    await TestUtils.waitForCondition(() => {
+      const promptsEl = aiWindow2.shadowRoot.querySelector(
+        "smartwindow-prompts"
+      );
+      return (
+        promptsEl?.prompts.length &&
+        promptsEl.prompts.every(prompt => prompt.type !== "skeleton")
+      );
+    }, "New tab's starters should resolve past the loading skeletons");
+
+    Assert.ok(
+      aiWindow2.shadowRoot
+        .querySelector("smartwindow-prompts")
+        .prompts.every(prompt => prompt.type !== "resume"),
+      "The dismissed memory's only candidate should not resurface on a new tab"
+    );
+  } finally {
+    if (tab2) {
+      BrowserTestUtils.removeTab(tab2);
+    }
+    if (win) {
+      await BrowserTestUtils.closeWindow(win);
+    }
+    sb.restore();
+    await resumeActivityStubs?.cleanup();
+    await SpecialPowers.popPrefEnv();
+  }
+});
+
 add_task(async function test_resume_prompt_click_shows_confirmation_card() {
   const sb = sinon.createSandbox();
   try {

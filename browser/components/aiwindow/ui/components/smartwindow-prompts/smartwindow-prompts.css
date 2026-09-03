@@ -147,6 +147,94 @@
   box-shadow: var(--smartwindow-shadow, var(--box-shadow-level-2));
 }
 
+/* Keeps the dismiss button beside, rather than inside, the moz-button. */
+.sw-prompt {
+  display: inline-flex;
+  position: relative;
+}
+
+.sw-prompt-dismiss {
+  align-items: center;
+  background-color: var(--button-background-color);
+  border: none;
+  border-radius: var(--border-radius-circle);
+  cursor: pointer;
+  display: flex;
+  height: var(--size-item-small);
+  inset-inline-end: var(--space-small);
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  padding: 0;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: var(--size-item-small);
+  /* Keep above the following fade overlay. */
+  z-index: 2;
+
+  &:hover {
+    /* Not the pill's own hover token: Nova sets that equal to the resting
+     * background. */
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    background-color: color-mix(in srgb, currentColor 14%, var(--button-background-color));
+  }
+
+  &:active {
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    background-color: color-mix(in srgb, currentColor 21%, var(--button-background-color));
+  }
+}
+
+@media not (prefers-reduced-motion) {
+  .sw-prompt-dismiss,
+  .sw-prompt::after {
+    transition: opacity ease 150ms;
+  }
+}
+
+.sw-prompt:is(:hover, :focus-within) .sw-prompt-dismiss {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Masking moz-button's slotted label doesn't paint, so use an overlay.
+ * Keep its background and mask separate because the background token doesn't
+ * resolve inside linear-gradient(). */
+.sw-prompt::after {
+  content: "";
+  position: absolute;
+  /* Stay inside the pill's gradient border. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  inset-block: var(--border-width);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  inset-inline-end: var(--border-width);
+  opacity: 0;
+  pointer-events: none;
+  width: calc(var(--size-item-large) - var(--border-width));
+  background-color: var(--button-background-color);
+  mask-image: linear-gradient(to left, black, transparent);
+  /* Round the overlay without clipping the pill's outer border. */
+  border-start-end-radius: var(--button-border-radius);
+  border-end-end-radius: var(--button-border-radius);
+  z-index: 1;
+}
+
+:host(:dir(rtl)) .sw-prompt::after {
+  mask-image: linear-gradient(to right, black, transparent);
+}
+
+.sw-prompt:is(:hover, :focus-within)::after {
+  opacity: 1;
+}
+
+.sw-prompt-dismiss-icon {
+  -moz-context-properties: fill;
+  fill: var(--icon-color);
+  height: var(--size-item-xsmall);
+  width: var(--size-item-xsmall);
+}
+
 .sw-prompt-favicons {
   align-items: center;
   display: inline-flex;
@@ -161,6 +249,12 @@
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   margin-inline-end: calc(-1 * var(--space-xxsmall));
   width: var(--size-item-small);
+}
+
+/* Themes the context-fill default-favicon fallback; real favicons ignore this. */
+.sw-prompt-favicon {
+  -moz-context-properties: fill;
+  fill: var(--icon-color);
 }
 
 .sw-prompt-favicons > :last-child {

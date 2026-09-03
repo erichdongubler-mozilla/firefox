@@ -153,6 +153,17 @@ export class SmartWindowPrompts extends MozLitElement {
     e.currentTarget.classList.add("has-interacted");
   }
 
+  #promptDismissed(e, swPrompt) {
+    e.stopPropagation();
+    this.dispatchEvent(
+      new CustomEvent("SmartWindowPrompt:prompt-dismissed", {
+        detail: { memory: swPrompt.memory },
+        bubbles: true,
+        composed: true,
+      })
+    );
+  }
+
   /**
    * Renders a decorative favicon cluster for a prompt's previewIcons, if
    * any. Shows up to MAX_VISIBLE_FAVICONS icons; beyond that, the last
@@ -241,6 +252,47 @@ export class SmartWindowPrompts extends MozLitElement {
     `;
   }
 
+  /**
+   * Renders a starter pill with a sibling dismiss button for resume pills.
+   *
+   * @param {object} swPrompt
+   */
+  #renderPrompt(swPrompt) {
+    const pillButton = html`
+      <moz-button
+        class="sw-prompt-button"
+        @click=${() => this.#promptSelected(swPrompt)}
+        @mouseenter=${this.#hasInteracted}
+        @focusin=${this.#hasInteracted}
+        aria-label=${swPrompt.text}
+      >
+        ${this.#renderFavicons(swPrompt.previewIcons)}${swPrompt.text}
+      </moz-button>
+    `;
+
+    if (swPrompt.type !== "resume" || this.mode !== "fullpage") {
+      return pillButton;
+    }
+
+    return html`
+      <span class="sw-prompt">
+        ${pillButton}
+        <button
+          class="sw-prompt-dismiss"
+          @click=${e => this.#promptDismissed(e, swPrompt)}
+          data-l10n-id="aiwindow-starter-dismiss"
+          data-l10n-args=${JSON.stringify({ text: swPrompt.text })}
+        >
+          <img
+            class="sw-prompt-dismiss-icon"
+            src="chrome://global/skin/icons/close.svg"
+            alt=""
+          />
+        </button>
+      </span>
+    `;
+  }
+
   render() {
     if (!this.prompts.length) {
       return html``;
@@ -265,19 +317,7 @@ export class SmartWindowPrompts extends MozLitElement {
           ${this.prompts.map(swPrompt =>
             swPrompt.type === "skeleton"
               ? this.#renderSkeletonPrompt()
-              : html`
-                  <moz-button
-                    class="sw-prompt-button"
-                    @click=${() => this.#promptSelected(swPrompt)}
-                    @mouseenter=${this.#hasInteracted}
-                    @focusin=${this.#hasInteracted}
-                    aria-label=${swPrompt.text}
-                  >
-                    ${this.#renderFavicons(
-                      swPrompt.previewIcons
-                    )}${swPrompt.text}
-                  </moz-button>
-                `
+              : this.#renderPrompt(swPrompt)
           )}
         </div>
         ${this.#renderScrollButtons()}
