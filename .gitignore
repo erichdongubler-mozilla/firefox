@@ -342,6 +342,10 @@ lextab.py
 .vscode/
 *.user
 
+# Sublime Text project config
+*.sublime-project
+*.sublime-workspace
+
 # Ignore Zed editor configuration files.
 .zed/
 
