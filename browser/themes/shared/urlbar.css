@@ -22,10 +22,17 @@
   --urlbar-input-container-border-width-breakout: calc(2 * var(--urlbar-input-container-border-width));
   --urlbar-input-container-padding: round(nearest, var(--space-xxsmall) + var(--urlbar-input-container-border-width-breakout), 1px);
 
+  /* How far the background reaches past the input while the view is open. */
+  --urlbar-background-overhang-breakout: 8px;
+
   @media not -moz-pref("browser.nova.enabled") {
     --urlbar-basic-component-size: calc(var(--urlbar-height) - 2 * (var(--urlbar-input-container-border-width) + var(--urlbar-input-container-padding)));
     --urlbar-icon-padding: calc((var(--urlbar-height) - 2px /* border */ - 2px /* padding */ - 16px /* icon */) / 2);
     --urlbar-input-container-padding: round(up, 1px, env(hairline));
+    --urlbar-background-overhang-breakout: 0px;
+  }
+  &[uidensity="compact"] {
+    --urlbar-background-overhang-breakout: 0px;
   }
   @media (max-width: 770px) {
     --urlbar-container-min-width: 240px;
@@ -98,11 +105,15 @@
   --urlbar-background-border-breakout: var(--urlbar-input-container-border-width) solid transparent;
   --urlbar-background-border-focused: var(--urlbar-input-container-border-width-breakout) solid var(--toolbar-field-border-color-focus);
   --urlbar-background-border-radius: var(--urlbarview-border-radius);
-  --urlbar-background-border-top-radius-breakout-compact: min(var(--urlbar-background-border-radius), calc(var(--urlbar-height) / 2));
+  /* The top corners take the input's radius plus however far the background
+     reaches past it, so the two stay concentric. The input's radius is capped
+     at its pill radius; the bottom corners keep the uncapped one, which the
+     results match. */
+  --urlbar-background-border-top-radius-breakout: calc(
+    min(var(--urlbar-background-border-radius), var(--urlbar-height) / 2) + var(--urlbar-background-overhang-breakout)
+  );
   --urlbar-background-box-shadow-breakout: 0 0 14px 0 var(--chrome-box-shadow);
   --urlbar-background-box-shadow-breakout-compact: none;
-  --urlbar-background-inset-breakout: calc(var(--urlbar-height) / 2 - var(--urlbarview-border-radius));
-  --urlbar-background-inset-breakout-compact: 0;
   --urlbar-background-outline-focused: none;
   --urlbar-input-container-border: var(--urlbar-input-container-border-width) solid var(--toolbar-field-border-color);
   --urlbar-input-container-outline-breakout: var(--urlbar-input-container-border-width-breakout) solid var(--toolbar-field-border-color);
@@ -115,10 +126,8 @@
     --urlbar-background-border: var(--urlbar-input-container-border-width) solid var(--toolbar-field-border-color);
     --urlbar-background-border-breakout: var(--urlbar-input-container-border-width) solid var(--panel-border-color);
     --urlbar-background-border-focused: var(--urlbar-background-border);
-    --urlbar-background-border-top-radius-breakout-compact: var(--urlbar-background-border-radius);
     --urlbar-background-box-shadow-breakout: 0 2px 14px var(--chrome-box-shadow);
     --urlbar-background-box-shadow-breakout-compact: var(--urlbar-background-box-shadow-breakout);
-    --urlbar-background-inset-breakout: 0;
     /* We want the focus outline with the theme's border-color when focused.
        --toolbar-field-border-color-focus is set equal to --focus-outline-color
        on :root, but LWT themes can override this value. */
@@ -251,8 +260,6 @@ toolbar[inactive="true"] .urlbar,
   --urlbar-input-container-padding: 10px;
   --urlbar-basic-component-size: calc(var(--urlbar-height) - 2 * var(--urlbar-input-container-padding));
   --urlbarview-border-radius: calc(var(--urlbar-height) / 2);
-  /* How far the open results panel reaches past the bar. */
-  --urlbar-background-inset-breakout: -8px;
 
   /* The element goes in the top layer anchored to the container it sits in,
      which the embedder names. A chrome window's own bars are popovers too, and
@@ -264,12 +271,11 @@ toolbar[inactive="true"] .urlbar,
     &:popover-open {
       /* The element takes the space below the input, bounded by a screenful so
          a long page doesn't give it one, and by the page itself minus the room
-         the background needs past the border box
-         (--urlbar-background-inset-breakout is negative, hence the addition). */
+         the background needs past the border box. */
       position-anchor: --urlbar-anchor;
       position-area: span-block-end center;
       inset-block-start: 0;
-      max-height: min(calc(100% + var(--urlbar-background-inset-breakout)), 100vh);
+      max-height: min(calc(100% - var(--urlbar-background-overhang-breakout)), 100vh);
       display: flex;
       flex-direction: column;
     }
@@ -297,20 +303,13 @@ toolbar[inactive="true"] .urlbar,
   .urlbar[breakout-extend] > & {
     border: var(--urlbar-background-border-breakout);
     box-shadow: var(--urlbar-background-box-shadow-breakout);
-    inset: var(--urlbar-background-inset-breakout);
+    inset: calc(-1 * var(--urlbar-background-overhang-breakout));
+    border-start-start-radius: var(--urlbar-background-border-top-radius-breakout);
+    border-start-end-radius: var(--urlbar-background-border-top-radius-breakout);
   }
 
-  :root[uidensity="compact"] .urlbar[breakout-extend] > & {
-    inset: var(--urlbar-background-inset-breakout-compact);
-
-    .urlbar:not([open]) > & {
-      box-shadow: var(--urlbar-background-box-shadow-breakout-compact);
-    }
-
-    .urlbar[open]:not([noresults]) > & {
-      border-top-left-radius: var(--urlbar-background-border-top-radius-breakout-compact);
-      border-top-right-radius: var(--urlbar-background-border-top-radius-breakout-compact);
-    }
+  :root[uidensity="compact"] .urlbar[breakout-extend]:not([open]) > & {
+    box-shadow: var(--urlbar-background-box-shadow-breakout-compact);
   }
 
   .urlbar[open] > & {
