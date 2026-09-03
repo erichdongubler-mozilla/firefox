@@ -616,6 +616,58 @@ auto HTMLSelectElement::ComputeNearestAncestors(const nsINode& aNode)
   return {nullptr, ancestorOptGroup};
 }
 
+/* static */
+bool HTMLSelectElement::IsOptionListItem(const Element& aElement,
+                                         const nsINode& aRoot) {
+  MOZ_ASSERT(aRoot.IsAnyOfHTMLElements(nsGkAtoms::optgroup, nsGkAtoms::select),
+             "Why are we providing a non-select/optgroup root?");
+  const bool isOptGroup = aElement.IsHTMLElement(nsGkAtoms::optgroup);
+  if (!isOptGroup &&
+      !aElement.IsAnyOfHTMLElements(nsGkAtoms::option, nsGkAtoms::hr)) {
+    return false;
+  }
+  const auto ancestors = ComputeNearestAncestors(aElement);
+  if (const auto* group = HTMLOptGroupElement::FromNode(&aRoot)) {
+    // The members of a group. An optgroup never groups another optgroup.
+    return !isOptGroup && ancestors.mOptGroup == group;
+  }
+  // The items of a select that no optgroup groups.
+  return ancestors.mSelect == &aRoot && !ancestors.mOptGroup;
+}
+
+// Calls `aCallback` for each item of the option list rooted at `aRoot`, in tree
+// order.
+template <typename Callback>
+static void ForEachOptionListItem(nsINode& aRoot, Callback&& aCallback) {
+  for (nsIContent* c = aRoot.GetFirstChild(); c; c = c->GetNextNode(&aRoot)) {
+    Element* element = Element::FromNode(c);
+    if (element && HTMLSelectElement::IsOptionListItem(*element, aRoot)) {
+      aCallback(*element);
+    }
+  }
+}
+
+uint32_t HTMLSelectElement::CountRenderedRows() {
+  uint32_t count = 0;
+  auto countOption = [&count](Element& aItem) {
+    if (auto* option = HTMLOptionElement::FromNode(&aItem)) {
+      count += !!option->GetPrimaryFrame();
+    }
+  };
+  ForEachOptionListItem(*this, [&](Element& aItem) {
+    if (auto* group = HTMLOptGroupElement::FromNode(&aItem)) {
+      nsAutoString label;
+      group->GetLabel(label);
+      // XXX bug 1499176: skip empty <optgroup> labels for now.
+      count += !label.IsEmpty();
+      ForEachOptionListItem(*group, countOption);
+      return;
+    }
+    countOption(aItem);
+  });
+  return count;
+}
+
 HTMLOptionElement* HTMLSelectElement::GetSelectedOption(
     IgnoredOptionList aIgnored) const {
   uint32_t len = Length();

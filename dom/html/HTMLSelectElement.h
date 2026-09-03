@@ -181,6 +181,19 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
   };
   static NearestAncestors ComputeNearestAncestors(const nsINode&);
 
+  /**
+   * Whether `aElement` is an item of the option list rooted at `aRoot`: the
+   * option, optgroup and hr elements of a select that no optgroup groups, or
+   * the option and hr members of an optgroup.
+   */
+  static bool IsOptionListItem(const Element& aElement, const nsINode& aRoot);
+
+  /**
+   * The number of rows the option list renders as: one per option with a frame,
+   * plus one per optgroup with a label.
+   */
+  uint32_t CountRenderedRows();
+
   int32_t SelectedIndex() const;
   // During removal handling we might need to ignore some options that are
   // getting removed.
