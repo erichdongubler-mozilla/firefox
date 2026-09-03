@@ -770,5 +770,23 @@ def test_general_perf_testing_selects_safari_video_playback_latency():
     assert _raptor_label(vpl_safari, _MACOS) in selected
 
 
+def test_perftest_applink_profiling_selects_only_the_applink_tasks():
+    """Only the applink startup tasks are selected, the perftest transforms
+    then run them with profiling enabled."""
+    labels = target_tasks.APPLINK_PROFILING_LABELS | {
+        "perftest-android-hw-a55-aarch64-shippable-startup-fenix-homeview-startup",
+        "test-linux1804-64/opt-mochitest-1",
+    }
+    tasks = {
+        label: Task(kind="perftest", label=label, attributes={}, task={})
+        for label in labels
+    }
+    graph = TaskGraph(tasks, Graph(nodes=set(tasks), edges=set()))
+
+    selected = set(get_method("perftest-applink-profiling")(graph, {}, {}))
+
+    assert selected == target_tasks.APPLINK_PROFILING_LABELS
+
+
 if __name__ == "__main__":
     main()

@@ -1800,6 +1800,19 @@ def target_tasks_perftest_autoland(full_task_graph, parameters, graph_config):
             yield name
 
 
+APPLINK_PROFILING_LABELS = {
+    "perftest-android-hw-a55-aarch64-shippable-startup-fenix-newssite-applink-startup",
+}
+
+
+@register_target_task("perftest-applink-profiling")
+def target_tasks_perftest_applink_profiling(full_task_graph, parameters, graph_config):
+    """
+    Select the applink startup tasks and run them with profiling
+    """
+    return [name for name in full_task_graph.tasks if name in APPLINK_PROFILING_LABELS]
+
+
 @register_target_task("retrigger-perftests-autoland")
 def retrigger_perftests_autoland_commits(full_task_graph, parameters, graph_config):
     """

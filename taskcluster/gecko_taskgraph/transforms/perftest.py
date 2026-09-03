@@ -18,6 +18,9 @@ from gecko_taskgraph.transforms.test import linux_perf_platform_restrictions
 
 transforms = TransformSequence()
 
+# Target tasks methods that only select tasks meant to be profiled.
+PROFILING_TARGET_TASKS_METHODS = {"perftest-applink-profiling"}
+
 
 class PerftestDescriptionSchema(Schema, forbid_unknown_fields=False, kw_only=True):
     # The test names and the symbols to use for them: [test-symbol, test-path]
@@ -273,12 +276,16 @@ def pass_perftest_options(config, jobs):
 
 @transforms.add
 def setup_gecko_profile_from_try_config(config, jobs):
-    """Apply gecko-profile settings when --gecko-profile is used with ./mach try fuzzy.
+    """Apply gecko-profile settings when --gecko-profile is used with ./mach try fuzzy,
+    or when a cron selects tasks through a profiling target tasks method.
 
     This mimics the logic from the gecko_profile action but applies it during
     task generation instead of as a post-hoc action.
     """
-    gecko_profile = config.params.get("try_task_config", {}).get("gecko-profile", False)
+    gecko_profile = (
+        config.params.get("try_task_config", {}).get("gecko-profile", False)
+        or config.params.get("target_tasks_method") in PROFILING_TARGET_TASKS_METHODS
+    )
     simpleperf_compatible_tests = ["-homeview-", "-applink-", "-restore-"]
 
     for job in jobs:
