@@ -5713,10 +5713,14 @@ export class Tabbrowser {
    * @param {boolean} [aParams.skipPinnedOrSelectedTabs=true]
    *   Skip closing tabs that are selected or pinned.
    */
-  removeAllTabsBut(aTab, aParams = {}) {
-    let { skipWarnAboutClosingTabs = false, skipPinnedOrSelectedTabs = true } =
-      aParams;
-
+  removeAllTabsBut(
+    aTab,
+    {
+      skipWarnAboutClosingTabs = false,
+      skipPinnedOrSelectedTabs = true,
+      ...removeTabsOptions
+    } = {}
+  ) {
     /** @type {function(MozTabbrowserTab):boolean} */
     let filterFn;
 
@@ -5745,7 +5749,7 @@ export class Tabbrowser {
       return;
     }
 
-    this.removeTabs(tabsToRemove, aParams);
+    this.removeTabs(tabsToRemove, removeTabsOptions);
   }
 
   /**
