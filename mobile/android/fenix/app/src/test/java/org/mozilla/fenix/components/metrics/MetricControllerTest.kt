@@ -1315,6 +1315,44 @@ class MetricControllerTest {
         assertNull(BrowserThumbnails.captureDuration.testGetValue())
     }
 
+    @Test
+    fun `WHEN disk_write_duration fact is processed THEN diskWriteDuration timing distribution accumulates the sample`() {
+        val controller = createReleaseMetricController()
+
+        assertNull(BrowserThumbnails.diskWriteDuration.testGetValue())
+
+        controller.run {
+            Fact(
+                    component = Component.BROWSER_THUMBNAILS,
+                    action = Action.IMPLEMENTATION_DETAIL,
+                    item = BrowserThumbnailsFacts.Items.DISK_WRITE_DURATION,
+                    metadata = mapOf(BrowserThumbnailsFacts.MetadataKeys.DURATION_MS to 128L),
+                )
+                .process()
+        }
+
+        val distribution = BrowserThumbnails.diskWriteDuration.testGetValue()
+        assertNotNull(distribution)
+        assertEquals(1L, distribution.count)
+    }
+
+    @Test
+    fun `WHEN disk_write_duration fact has missing duration metadata THEN nothing is accumulated`() {
+        val controller = createReleaseMetricController()
+
+        controller.run {
+            Fact(
+                    component = Component.BROWSER_THUMBNAILS,
+                    action = Action.IMPLEMENTATION_DETAIL,
+                    item = BrowserThumbnailsFacts.Items.DISK_WRITE_DURATION,
+                    metadata = null,
+                )
+                .process()
+        }
+
+        assertNull(BrowserThumbnails.diskWriteDuration.testGetValue())
+    }
+
     private fun createReleaseMetricController(
         services: List<MetricsService> = emptyList(),
         isDataTelemetryEnabled: () -> Boolean = { true },

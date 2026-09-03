@@ -17125,3 +17125,23 @@ browser_thumbnails:
     metadata:
       tags:
         - Tabs
+  disk_write_duration:
+    type: timing_distribution
+    time_unit: millisecond
+    description: |
+      Wall-clock time from ThumbnailsMiddleware dispatching a
+      ThumbnailStorage.saveThumbnail(...) job to that job's completion.
+      Includes any queue-wait on ThumbnailStorage's worker pool plus the
+      actual disk write. Reveals disk pressure and I/O queue length.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2067066
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2067066
+    notification_emails:
+      - android-probes@mozilla.com
+    data_sensitivity:
+      - technical
+    expires: never
+    metadata:
+      tags:
+        - Tabs

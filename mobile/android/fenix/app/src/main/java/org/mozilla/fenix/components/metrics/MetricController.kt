@@ -525,6 +525,12 @@ internal class ReleaseMetricController(
                 } ?: Unit
             }
 
+            Component.BROWSER_THUMBNAILS to BrowserThumbnailsFacts.Items.DISK_WRITE_DURATION -> {
+                (metadata?.get(BrowserThumbnailsFacts.MetadataKeys.DURATION_MS) as? Long)?.let {
+                    BrowserThumbnails.diskWriteDuration.accumulateSamples(listOf(it))
+                } ?: Unit
+            }
+
             else -> {
                 // no-op
             }
