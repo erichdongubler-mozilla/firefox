@@ -2445,9 +2445,11 @@ nsIFrame* nsCSSFrameConstructor::ConstructDocElementFrame(
         state, item, mDocElementContainingBlock, display, frameList));
   } else if (display->mDisplay == StyleDisplay::Flex ||
              display->mDisplay == StyleDisplay::WebkitBox ||
-             display->mDisplay == StyleDisplay::Grid) {
+             display->mDisplay == StyleDisplay::Grid ||
+             display->mDisplay == StyleDisplay::GridLanes) {
     auto func = [&] {
-      if (display->mDisplay == StyleDisplay::Grid) {
+      if (display->mDisplay == StyleDisplay::Grid ||
+          display->mDisplay == StyleDisplay::GridLanes) {
         return NS_NewGridContainerFrame;
       }
       return NS_NewFlexContainerFrame;
@@ -4242,7 +4244,8 @@ nsCSSFrameConstructor::FindDisplayData(const nsStyleDisplay& aDisplay,
       return MOZ_UNLIKELY(propagatedScrollToViewport) ? &nonScrollableData
                                                       : &data;
     }
-    case StyleDisplayInside::Grid: {
+    case StyleDisplayInside::Grid:
+    case StyleDisplayInside::GridLanes: {
       static constexpr FrameConstructionData nonScrollableData(
           ToCreationFunc(NS_NewGridContainerFrame));
       static constexpr FrameConstructionData data(
