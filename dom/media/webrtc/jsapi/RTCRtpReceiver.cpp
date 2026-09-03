@@ -801,6 +801,48 @@ void RTCRtpReceiver::UpdateTransport() {
   }
 }
 
+bool RTCRtpReceiver::CanReceiveEarlyMedia() const {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (!GetJsepTransceiver().mRecvTrack.GetReceptive()) {
+    // The local description we just applied isn't actually offering to
+    // receive right now ([[Receptive]] per WEBRTC-PC); defer entirely to
+    // IsReceiving(), which reflects the real negotiated outcome via
+    // mCurrentDirection. mTransceiver->Direction() is only the app's
+    // preferred direction and can disagree with what was actually applied.
+    return false;
+  }
+  if (GetJsepTransceiver().mRecvTrack.GetNegotiatedDetails()) {
+    // We have been negotiated for real (maybe not on this round, but at
+    // some point); defer entirely to IsReceiving(), which reflects that
+    // real negotiated outcome via mCurrentDirection.
+    return false;
+  }
+  // Only a bundle whose owner completed a prior negotiation round is
+  // actually live (has gone through ICE/DTLS); a fresh bundle (owner
+  // included) cannot have received anything yet.
+  return GetJsepTransceiver().HasBundleLevel() && HasNegotiatedBundleOwner();
+}
+
+bool RTCRtpReceiver::HasNegotiatedBundleOwner() const {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(GetJsepTransceiver().HasBundleLevel());
+  // mTransport.mIce is not a reliable proxy for this: CopyBundleTransports()
+  // copies the owner's mTransport (mIce included) onto every follower
+  // whenever bundle levels are (re)assigned, with no check that the owner
+  // was ever itself negotiated, so mIce can be set even when the whole
+  // bundle, owner included, is brand new.
+  nsTArray<RefPtr<RTCRtpTransceiver>> transceivers;
+  mPc->GetTransceivers(transceivers);
+  for (const auto& transceiver : transceivers) {
+    const JsepTransceiver& jsepTransceiver = transceiver->GetJsepTransceiver();
+    if (jsepTransceiver.HasLevel() &&
+        jsepTransceiver.GetLevel() == GetJsepTransceiver().BundleLevel()) {
+      return jsepTransceiver.IsNegotiated();
+    }
+  }
+  return false;
+}
+
 void RTCRtpReceiver::UpdateConduit() {
   if (mPipeline->mConduit->type() == MediaSessionConduit::VIDEO) {
     UpdateVideoConduit();
@@ -808,7 +850,7 @@ void RTCRtpReceiver::UpdateConduit() {
     UpdateAudioConduit();
   }
 
-  if ((mReceiving = mTransceiver->IsReceiving())) {
+  if ((mReceiving = mTransceiver->IsReceiving() || CanReceiveEarlyMedia())) {
     mHaveStartedReceiving = true;
   }
 }
@@ -878,6 +920,17 @@ void RTCRtpReceiver::UpdateVideoConduit() {
 
     mVideoCodecs = configs;
     mVideoRtpRtcpConfig = Some(details.GetRtpRtcpConfig());
+  } else if (CanReceiveEarlyMedia()) {
+    // Early media (bug 2019381): no real negotiation yet, but we can start
+    // receiving based on what we offered.
+    std::vector<VideoCodecConfig> configs;
+    RTCRtpTransceiver::EarlyRecvCodecsToVideoCodecConfigs(
+        GetJsepTransceiver().mRecvTrack, &configs);
+    if (!configs.empty()) {
+      mVideoCodecs = configs;
+      mVideoRtpRtcpConfig =
+          Some(RtpRtcpConfig(webrtc::RtcpMode::kCompound, true));
+    }
   }
 }
 
@@ -936,6 +989,15 @@ void RTCRtpReceiver::UpdateAudioConduit() {
     }
 
     mAudioCodecs = configs;
+  } else if (CanReceiveEarlyMedia()) {
+    // Early media (bug 2019381): no real negotiation yet, but we can start
+    // receiving based on what we offered.
+    std::vector<AudioCodecConfig> configs;
+    RTCRtpTransceiver::EarlyRecvCodecsToAudioCodecConfigs(
+        GetJsepTransceiver().mRecvTrack, &configs);
+    if (!configs.empty()) {
+      mAudioCodecs = configs;
+    }
   }
 }
 

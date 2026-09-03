@@ -129,6 +129,13 @@ void JsepTrack::AddToOffer(SsrcGenerator& ssrcGenerator,
     }
   }
 
+  if (mDirection == sdp::kRecv) {
+    mEarlyRecvCodecs.clear();
+    for (const auto& codec : mPrototypeCodecs) {
+      mEarlyRecvCodecs.emplace_back(codec->Clone());
+    }
+  }
+
   if (mDirection == sdp::kSend) {
     std::vector<std::string> rids;
     if (offer->IsSending()) {

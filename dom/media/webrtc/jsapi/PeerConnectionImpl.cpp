@@ -3089,12 +3089,17 @@ void PeerConnectionImpl::DoSetDescriptionSuccessPostProcessing(
           // We do this to ensure the mediaPipelineFilter is ready to receive
           // PTs in our offer. This is mainly used for when bundle is involved
           // but for whatever reason mid or SSRC is not signaled.
+          // We also update the conduit here to support early media
+          // (bug 2019381): if this transceiver is bundled onto a transport
+          // that was already negotiated (and is thus live), we can start
+          // receiving before this transceiver itself has an answer.
           for (const auto& transceiverImpl : mTransceivers) {
             if ((transceiverImpl->Direction() ==
                  RTCRtpTransceiverDirection::Sendrecv) ||
                 (transceiverImpl->Direction() ==
                  RTCRtpTransceiverDirection::Recvonly)) {
               transceiverImpl->Receiver()->UpdateTransport();
+              transceiverImpl->Receiver()->UpdateConduit();
             }
           }
         }
