@@ -4697,8 +4697,12 @@ void PeerConnectionImpl::GatherIfReady() {
     InitLocalAddrs();
   }
 
-  // If we had previously queued gathering or ICE start, unqueue them
-  mQueuedIceCtxOperations.clear();
+  // Unlike before bug 2019381, we don't clear mQueuedIceCtxOperations here:
+  // it can also hold an unrelated, still-pending StartIceChecks (eg; for a
+  // bundled transport that was already negotiated in an earlier round),
+  // which remains valid and must still run. A stale queued gather running
+  // alongside a fresh one is harmless -- EnsureIceGathering() is a no-op
+  // once gathering for the current round is already underway.
   nsCOMPtr<nsIRunnable> runnable(WrapRunnable(
       RefPtr<PeerConnectionImpl>(this), &PeerConnectionImpl::EnsureIceGathering,
       GetPrefDefaultAddressOnly(), GetPrefObfuscateHostAddresses()));
