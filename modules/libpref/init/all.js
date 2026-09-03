@@ -3030,7 +3030,9 @@ pref("signon.storage.rust.restoreEnabled", true);
 pref("signon.storage.rust.active", false);
 pref("signon.storage.rust.migrationAttempts", 0);
 pref("signon.storage.rust.restoreAttempts", 0);
-pref("signon.storage.rust.restoreDone", false);
+pref("signon.storage.rust.restoreAttemptsVersion", 0);
+pref("signon.storage.rust.restoreVersion", 0);
+pref("signon.storage.rust.restoreTargetVersion", 1);
 
 // Satchel (Form Manager) prefs
 pref("browser.formfill.debug",            false);
