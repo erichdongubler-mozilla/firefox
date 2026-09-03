@@ -633,6 +633,13 @@ void SessionAccessibility::SendAnnouncementEvent(Accessible* aAccessible,
       java::SessionAccessibility::CLASSNAME_WEBVIEW, eventInfo);
 }
 
+void SessionAccessibility::SendValueChangedEvent(Accessible* aAccessible) {
+  mSessionAccessibility->SendEvent(
+      java::sdk::AccessibilityEvent::TYPE_VIEW_SCROLLED,
+      AccessibleWrap::GetVirtualViewID(aAccessible),
+      AccessibleWrap::AndroidClass(aAccessible), nullptr);
+}
+
 void SessionAccessibility::PopulateNodeInfo(
     Accessible* aAccessible, mozilla::jni::Object::Param aNodeInfo) {
   nsAutoString name;

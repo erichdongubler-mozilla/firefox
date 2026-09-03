@@ -82,6 +82,7 @@ class SessionAccessibility final
   void SendAnnouncementEvent(Accessible* aAccessible,
                              const nsAString& aAnnouncement,
                              uint16_t aPriority);
+  void SendValueChangedEvent(Accessible* aAccessible);
 
   Accessible* GetAccessibleByID(int32_t aID) const;
 

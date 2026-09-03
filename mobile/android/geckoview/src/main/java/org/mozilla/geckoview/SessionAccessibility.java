@@ -580,6 +580,17 @@ public class SessionAccessibility {
       return;
     }
 
+    if (eventType == AccessibilityEvent.TYPE_VIEW_SCROLLED
+        && eventData == null
+        && (sourceId == mAccessibilityFocusedNode || sourceId == mFocusedNode)) {
+      // This is a scroll event that signifies a value change of a slider. We know this because
+      // there is no event data like scrollY.
+      // If the slider has focus or accessibility focus send a AccessibilityEvent.TYPE_VIEW_SELECTED
+      // instead.
+      sendEvent(AccessibilityEvent.TYPE_VIEW_SELECTED, sourceId, className, eventData);
+      return;
+    }
+
     final AccessibilityEvent event = AccessibilityEvent.obtain(eventType);
     event.setPackageName(GeckoAppShell.getApplicationContext().getPackageName());
     event.setSource(mView, sourceId);
