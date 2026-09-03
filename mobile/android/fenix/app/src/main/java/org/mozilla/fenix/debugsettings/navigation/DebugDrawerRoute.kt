@@ -11,6 +11,7 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.integrity.IntegrityClient
 import mozilla.components.concept.storage.CreditCardsAddressesStorage
 import mozilla.components.concept.storage.LoginsStorage
+import mozilla.components.feature.ipprotection.store.IPProtectionStore
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.ClientUUID
 import org.mozilla.fenix.debugsettings.addons.ui.AddonsDebugToolsScreen
@@ -26,6 +27,7 @@ import org.mozilla.fenix.debugsettings.distributions.DistributionTools
 import org.mozilla.fenix.debugsettings.gleandebugtools.GleanDebugToolsStore
 import org.mozilla.fenix.debugsettings.gleandebugtools.ui.GleanDebugToolsScreen
 import org.mozilla.fenix.debugsettings.integrity.IntegrityTools
+import org.mozilla.fenix.debugsettings.ipprotection.IPProtectionLocationTools as IPProtectionLocationToolsScreen
 import org.mozilla.fenix.debugsettings.logins.LoginsTools
 import org.mozilla.fenix.debugsettings.region.RegionTools
 import org.mozilla.fenix.debugsettings.store.DebugDrawerAction
@@ -102,6 +104,10 @@ enum class DebugDrawerRoute(
     DistributionTools(
         route = "distribution_tools",
         title = R.string.debug_drawer_distribution_tools_title,
+    ),
+    IPProtectionLocationTools(
+        route = "ip_protection_location_tools",
+        title = R.string.debug_drawer_ip_protection_location_tools_title,
     );
 
     companion object {
@@ -119,6 +125,8 @@ enum class DebugDrawerRoute(
          * @param integrityClient used to test an [IntegrityClient] in [IntegrityTools].
          * @param inactiveTabsEnabled Whether the inactive tabs feature is enabled.
          * @param tabGroupRepository [TabGroupRepository] used to access and modify tab groups for [TabGroupTools].
+         * @param lazyIPProtectionStore [IPProtectionStore] used to edit the country list in
+         *   [IPProtectionLocationToolsScreen]. Lazy so that opening the drawer does not build the store.
          */
         @Suppress("LongParameterList", "LongMethod")
         fun generateDebugDrawerDestinations(
@@ -133,6 +141,7 @@ enum class DebugDrawerRoute(
             integrityClient: IntegrityClient,
             inactiveTabsEnabled: Boolean,
             tabGroupRepository: TabGroupRepository,
+            lazyIPProtectionStore: Lazy<IPProtectionStore>,
         ): List<DebugDrawerDestination> = entries.map { debugDrawerRoute ->
             var isChildDestination: Boolean = false
             val onClick: () -> Unit
@@ -274,6 +283,15 @@ enum class DebugDrawerRoute(
                     }
                     content = {
                         DistributionTools()
+                    }
+                }
+
+                IPProtectionLocationTools -> {
+                    onClick = {
+                        debugDrawerStore.dispatch(DebugDrawerAction.NavigateTo.IPProtectionLocationTools)
+                    }
+                    content = {
+                        IPProtectionLocationToolsScreen(store = lazyIPProtectionStore.value)
                     }
                 }
             }

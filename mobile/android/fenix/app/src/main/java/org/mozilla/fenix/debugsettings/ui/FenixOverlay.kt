@@ -29,6 +29,7 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.integrity.IntegrityClient
 import mozilla.components.concept.storage.CreditCardsAddressesStorage
 import mozilla.components.concept.storage.LoginsStorage
+import mozilla.components.feature.ipprotection.store.IPProtectionStore
 import mozilla.telemetry.glean.Glean
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.ClientUUID
@@ -135,6 +136,7 @@ fun FenixOverlay(
         clientUUID = context.components.clientUUID,
         integrityClient = context.components.integrityClient,
         tabGroupRepository = tabGroupRepository,
+        lazyIPProtectionStore = remember { lazy { context.components.ipProtection.store } },
     )
 }
 
@@ -151,6 +153,7 @@ fun FenixOverlay(
  * @param integrityClient used to test an [IntegrityClient].
  * @param tabGroupRepository [TabGroupRepository] used to access and modify tab groups for [TabGroupTools].
  * @param inactiveTabsEnabled Whether the inactive tabs feature is enabled.
+ * @param lazyIPProtectionStore [IPProtectionStore] used by the IP protection location debug tools.
  */
 @Suppress("LongParameterList")
 @Composable
@@ -165,6 +168,7 @@ private fun FenixOverlay(
     integrityClient: IntegrityClient,
     tabGroupRepository: TabGroupRepository,
     inactiveTabsEnabled: Boolean,
+    lazyIPProtectionStore: Lazy<IPProtectionStore>,
 ) {
     val navController = rememberNavController()
     val coroutineScope = rememberCoroutineScope()
@@ -199,6 +203,7 @@ private fun FenixOverlay(
             clientUUID = clientUUID,
             integrityClient = integrityClient,
             tabGroupRepository = tabGroupRepository,
+            lazyIPProtectionStore = lazyIPProtectionStore,
         )
     }
     val drawerStatus by remember {
@@ -293,5 +298,6 @@ private fun FenixOverlayPreview() {
         clientUUID = FakeClientUUID(),
         integrityClient = IntegrityClient.testSuccess,
         tabGroupRepository = mockTabGroupRepository,
+        lazyIPProtectionStore = lazy { IPProtectionStore() },
     )
 }

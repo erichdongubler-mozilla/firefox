@@ -270,6 +270,20 @@
     <string name="debug_drawer_referral" translatable="false">Install referral</string>
     <string name="debug_drawer_run_query_provider_test" translatable="false">Run query provider test</string>
 
+    <!-- Debug drawer IP protection location tools -->
+    <string name="debug_drawer_ip_protection_location_tools_title" translatable="false">IP Protection Location Tools</string>
+    <string name="debug_drawer_ip_protection_location_tools_description" translatable="false">Edit the proxy country list. Every change is applied immediately, as if the engine had pushed it.</string>
+    <string name="debug_drawer_ip_protection_selected_location" translatable="false">Selected location</string>
+    <string name="debug_drawer_ip_protection_recommended" translatable="false">Recommended</string>
+    <string name="debug_drawer_ip_protection_country_list" translatable="false">Country list</string>
+    <string name="debug_drawer_ip_protection_hide_country" translatable="false">Hide</string>
+    <string name="debug_drawer_ip_protection_show_country" translatable="false">Show</string>
+    <string name="debug_drawer_ip_protection_empty_country_list" translatable="false">No countries yet. The list is fetched once IP protection is ready.</string>
+    <string name="debug_drawer_ip_protection_uninitialized" translatable="false">IP protection has not initialized yet. Open a tab and wait for the service to warm up.</string>
+    <string name="debug_drawer_ip_protection_unavailable" translatable="false">IP protection is not available here. Check the Nimbus configuration and the region.</string>
+    <string name="debug_drawer_ip_protection_signed_out" translatable="false">Sign in to your Mozilla account to use IP protection.</string>
+    <string name="debug_drawer_ip_protection_opted_out" translatable="false">IP protection is opted out.</string>
+
     <!-- Debug drawer "contextual feature recommendation" (CFR) tools -->
     <!-- The description of the reset CFR section in CFR Tools -->
     <string name="debug_drawer_cfr_tools_reset_cfr_description">Toggle off a CFR to reset it. Toggle on a CFR to mark it as shown.</string>
