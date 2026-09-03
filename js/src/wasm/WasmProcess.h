@@ -18,7 +18,13 @@
 #define wasm_process_h
 
 #include "mozilla/Atomics.h"
+#include "mozilla/Attributes.h"
 
+#include <stddef.h>
+
+#include "js/AllocPolicy.h"
+#include "js/Vector.h"
+#include "threading/Mutex.h"
 #include "wasm/WasmMemory.h"
 
 namespace js {
@@ -29,11 +35,55 @@ class CodeRange;
 class CodeBlock;
 class TagType;
 
+using RawCodeBlockVector = Vector<const CodeBlock*, 0, SystemAllocPolicy>;
+
 #ifdef ENABLE_WASM_JSPI
 extern const TagType* sJSPromiseTagType;
 #endif
 extern const TagType* sWrappedJSValueTagType;
 static constexpr uint32_t WrappedJSValueTagType_ValueOffset = 0;
+
+// Because of profiling, the thread running wasm might need to know to which
+// CodeBlock the current PC belongs, during a call to lookup(). A lookup
+// is a read-only operation, and we don't want to take a lock then
+// (otherwise, we could have a deadlock situation if an async lookup
+// happened on a given thread that was holding mutatorsMutex_ while getting
+// sampled). Since the writer could be modifying the data that is getting
+// looked up, the writer functions use spin-locks to know if there are any
+// observers (i.e. calls to lookup()) of the atomic data.
+
+class ThreadSafeCodeBlockMap {
+  // Since writes (insertions or removals) can happen on any background
+  // thread at the same time, we need a lock here.
+
+  Mutex mutatorsMutex_ MOZ_UNANNOTATED;
+
+  RawCodeBlockVector segments1_;
+  RawCodeBlockVector segments2_;
+
+  // Except during swapAndWait(), there are no lookup() observers of the
+  // vector pointed to by mutableCodeBlocks_
+
+  RawCodeBlockVector* mutableCodeBlocks_;
+  mozilla::Atomic<const RawCodeBlockVector*> readonlyCodeBlocks_;
+  mozilla::Atomic<size_t> numActiveLookups_;
+
+  struct CodeBlockPC;
+
+  void swapAndWait();
+
+ public:
+  ThreadSafeCodeBlockMap();
+  ~ThreadSafeCodeBlockMap();
+
+  size_t numActiveLookups() const { return numActiveLookups_; }
+
+  bool insert(const CodeBlock* cs);
+  size_t remove(const CodeBlock* cs);
+
+  const CodeBlock* lookup(const void* pc,
+                          const CodeRange** codeRange = nullptr);
+};
 
 // These methods return the wasm::CodeBlock (resp. wasm::Code) containing
 // the given pc, if any exist in the process. These methods do not take a lock,
