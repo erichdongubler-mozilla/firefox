@@ -61,3 +61,38 @@ TEST(AudioClock, RebaseToZero)
   EXPECT_EQ(clock.GetPosition(rate), 1000000)
       << "later servicing accumulates from the rebased zero";
 }
+
+// Only macOS routes callback info through a queue, so only there can an item
+// reach the history after a rebase. A seek stops the sink, so its callbacks are
+// pure underrun, and a seek longer than the queue holds strands the overflow on
+// the audio thread until a later callback flushes it. Those frames sit at or
+// below the rebase anchor, and an underrun-only append merges into the first
+// chunk, so applying them again would freeze the clock for the whole stranded
+// amount.
+//
+//   frames:  0 ... 150 silent callbacks ... 71,520 --- 72,000
+//                                          ^ rebase      ^ write cursor
+TEST(AudioClock, RebaseAfterQueueOverflowOfSilence)
+{
+  const uint32_t rate = 48000;
+  const uint32_t framesPerCallback = rate / 100;
+  const uint32_t callbacks = 150;
+  AudioClock clock(rate);
+
+  for (uint32_t i = 0; i < callbacks; ++i) {
+    clock.UpdateFrameHistory(0, framesPerCallback, false);
+  }
+  const int64_t written =
+      static_cast<int64_t>(callbacks) * static_cast<int64_t>(framesPerCallback);
+  const int64_t played = written - framesPerCallback;
+
+  clock.Rebase(played);
+  clock.UpdateFrameHistory(framesPerCallback, 0, false);
+  EXPECT_EQ(clock.GetPosition(written), 10000)
+      << "the post-seek callback advances the clock; the stranded silence was "
+         "already played and must not be counted again";
+
+  clock.UpdateFrameHistory(framesPerCallback, 0, false);
+  EXPECT_EQ(clock.GetPosition(written + framesPerCallback), 20000)
+      << "and it keeps advancing from there";
+}

@@ -817,6 +817,7 @@ AudioClock::~AudioClock() = default;
 void AudioClock::UpdateFrameHistory(uint32_t aServiced, uint32_t aUnderrun,
                                     bool aAudioThreadChanged) {
 #ifdef XP_MACOSX
+  mHandoff.mTotal += aServiced + aUnderrun;
   if (aAudioThreadChanged) {
     mCallbackInfoQueue.ResetProducerThreadId();
   }
@@ -845,20 +846,17 @@ void AudioClock::UpdateFrameHistory(uint32_t aServiced, uint32_t aUnderrun,
 
 void AudioClock::Rebase(int64_t aBaseOffset) {
 #ifdef XP_MACOSX
-  // The callback may still be running (the stream is reused, not stopped), so
-  // only touch owner/consumer-thread state. The queue is single-consumer and
-  // its Dequeue asserts this is that thread, which also guards the macOS
-  // owner-thread-only history. Discard the queued pre-seek callback info, then
-  // rebase. A stale item still held on the audio thread is applied later,
-  // adding at most a small bounded offset that the next rebase clears.
-  CallbackInfo info;
-  while (mCallbackInfoQueue.Dequeue(&info, 1)) {
-  }
-  mFrameHistory->Rebase(aBaseOffset);
+  ApplyQueuedCallbackInfo();
+  // Read after draining, so a callback racing this rebase is not missed. Every
+  // frame counted so far is behind the new anchor, so an item arriving later
+  // must be dropped rather than appended. Draining cannot do that on its own:
+  // it does not reach the items the audio thread is still holding.
+  mHandoff.mRebasedThrough = mHandoff.mTotal;
 #else
   MutexAutoLock lock(mMutex);
-  mFrameHistory->Rebase(aBaseOffset);
 #endif
+
+  mFrameHistory->Rebase(aBaseOffset);
 }
 
 int64_t AudioClock::GetPositionInFrames(int64_t aFrames) {
@@ -866,14 +864,28 @@ int64_t AudioClock::GetPositionInFrames(int64_t aFrames) {
   return v.isValid() ? v.value() : -1;
 }
 
-int64_t AudioClock::GetPosition(int64_t frames) {
 #ifdef XP_MACOSX
-  // Dequeue all history info, and apply them before returning the position
-  // based on frame history.
+void AudioClock::ApplyQueuedCallbackInfo() {
   CallbackInfo info;
   while (mCallbackInfoQueue.Dequeue(&info, 1)) {
+    // Count first, and count every item, including the ones dropped below: this
+    // running total is only comparable to the producer's if nothing is missed.
+    mHandoff.mSeen += info.TotalFrames();
+    if (mHandoff.mSeen <= mHandoff.mRebasedThrough) {
+      // Handed over before the last rebase, which already accounted for these
+      // frames. Appending them would count them twice, and an underrun-only
+      // item merges into the preceding chunk, extending a window that advances
+      // no media time by however long the seek took.
+      continue;
+    }
     mFrameHistory->Append(info.mServiced, info.mUnderrun, info.mOutputRate);
   }
+}
+#endif
+
+int64_t AudioClock::GetPosition(int64_t frames) {
+#ifdef XP_MACOSX
+  ApplyQueuedCallbackInfo();
 #else
   MutexAutoLock lock(mMutex);
 #endif

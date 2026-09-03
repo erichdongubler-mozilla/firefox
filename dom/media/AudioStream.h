@@ -40,6 +40,10 @@ struct CallbackInfo {
   CallbackInfo() = default;
   CallbackInfo(uint32_t aServiced, uint32_t aUnderrun, uint32_t aOutputRate)
       : mServiced(aServiced), mUnderrun(aUnderrun), mOutputRate(aOutputRate) {}
+
+  // Every frame this callback handed to the backend, serviced and underrun.
+  uint32_t TotalFrames() const { return mServiced + mUnderrun; }
+
   uint32_t mServiced = 0;
   uint32_t mUnderrun = 0;
   uint32_t mOutputRate = 0;
@@ -98,6 +102,40 @@ class AudioClock {
   uint32_t GetOutputRate() const { return mOutRate; }
 
  private:
+#  ifdef XP_MACOSX
+  // Apply the callback info the audio thread has queued to the frame history.
+  // Claims the single-consumer role on the queue, so owner thread only, which
+  // Dequeue asserts. A callback that found the queue full keeps its frames
+  // until a later call collects them, so the history can trail the write
+  // cursor by an unbounded amount while nothing drains the queue, and an item
+  // can arrive after a rebase has already accounted for its frames.
+  void ApplyQueuedCallbackInfo();
+#  endif
+
+  // Three positions on one axis, the count of frames handed to the backend.
+  // Comparing them is how a callback item that arrives after a rebase is
+  // recognised as describing frames the anchor has already moved past.
+  struct FrameHandoff {
+    // The write cursor: everything handed over, serviced and underrun alike.
+    // Counted here rather than summed from the callback items because a
+    // callback that finds the queue full keeps its item on the audio thread,
+    // so mSeen can trail this by an unbounded amount. Bumped on the audio
+    // thread, read on the owner thread.
+    Atomic<uint64_t> mTotal{0};
+#  ifdef XP_MACOSX
+    // How far the reader has got, counting every item it takes off the queue,
+    // including the ones it drops: the count is only comparable to mTotal if
+    // nothing is missed. Owner thread only.
+    uint64_t mSeen = 0;
+
+    // Where mTotal stood at the last rebase. An item landing at or below it
+    // was handed over earlier, so appending it would put frames the anchor has
+    // passed in front of it. Owner thread only.
+    uint64_t mRebasedThrough = 0;
+#  endif
+  };
+  FrameHandoff mHandoff;
+
   // Output rate in Hz (characteristic of the playback rate). Written on the
   // audio thread, read on either thread.
   Atomic<uint32_t> mOutRate;
@@ -236,9 +274,12 @@ class AudioBufferWriter : public AudioBufferCursor {
 // is driven by the ring buffer and the frame-counter clock, never by mState.
 //
 // Access to a single instance of this class must be synchronized by
-// callers, or made from a single thread.  One exception is that access to
-// GetPosition, GetPositionInFrames, SetVolume, and Get{Rate,Channels},
-// SetMicrophoneActive is thread-safe without external synchronization.
+// callers, or made from a single thread.  SetVolume, Get{Rate,Channels} and
+// SetMicrophoneActive are thread-safe without external synchronization.
+// GetPosition, GetPositionInFrames and RebaseLive are not: on macOS they claim
+// the single-consumer role on the clock's callback-info queue and drive
+// owner-thread-only state, so all three must run on one thread. Elsewhere a
+// mutex guards that state on both sides.
 class AudioStream final {
   virtual ~AudioStream();
 
@@ -293,9 +334,8 @@ class AudioStream final {
   // the audio stream alive and reusable instead of tearing it down.
   void SetKeepRunningMode(bool aKeepRunning);
 
-  // Rebase the clock of the still-running reused stream to its current
-  // position, so the reported playback time resumes from the seek target. Does
-  // not touch the ended promise.
+  // Rebase the clock of the reused stream so the reported time resumes from the
+  // seek target. Does not touch the ended promise.
   void RebaseLive();
 
   // Re-arm the ended promise for a reused stream: resolve any outstanding one
@@ -445,6 +485,11 @@ class AudioStream final {
   // not yet stopped. Only read and written on the owner thread, so it needs no
   // synchronization.
   bool mCubebStarted = false;
+
+  // Whether the last Resume() found the cubeb stream still running, so the
+  // frames handed over before the seek are still queued in the device. A
+  // restart discards them. Owner thread only.
+  bool mResumeKeptCubebRunning = false;
 };
 
 }  // namespace mozilla
