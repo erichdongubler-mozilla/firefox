@@ -6644,6 +6644,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "pushnotificationhelper"
+version = "0.1.0"
+dependencies = [
+ "mozilla-central-workspace-hack",
+]
+
+[[package]]
 name = "qcms"
 version = "0.3.0"
 dependencies = [

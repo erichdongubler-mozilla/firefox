@@ -73,6 +73,7 @@ members = [
   "toolkit/library/rust/",
   "toolkit/components/taskscheduler/rust",
   "toolkit/mozapps/msixcomserver-rust",
+  "toolkit/mozapps/pushnotificationhelper",
   "services/application-services/components/viaduct-necko",
   "js/src/builtin/normalizer_glue",
 ]
