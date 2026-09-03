@@ -60,6 +60,11 @@ function getToolsHeight({ SidebarController } = window) {
 }
 
 async function resetToolsHeight() {
+  // An expanded launcher lays the tools out as a row, where they overflow on
+  // the inline axis and no splitter drag can clear it.
+  await SidebarController.updateUIState({ launcherExpanded: false });
+  await SidebarController.sidebarMain.updateComplete;
+
   // Reset tools height
   await resizeTools(-500);
   await SidebarController.sidebarMain.requestUpdate();
