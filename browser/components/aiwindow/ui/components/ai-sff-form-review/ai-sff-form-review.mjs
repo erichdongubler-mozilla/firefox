@@ -54,7 +54,28 @@ export class AiSffFormReview extends MozLitElement {
     reviewFields: ".form-review-fields",
     stopButton: ".form-review-stop",
     closeButton: ".form-review-close",
+    jumpButton: ".form-review-jump-to-bottom-button",
+    retryButton: ".form-review-retry",
   };
+
+  /**
+   * Whether the single fill retry offered after a failure was already spent.
+   *
+   * @type {boolean}
+   */
+  #retryUsed = false;
+
+  /** @type {ResizeObserver | null} */
+  #overflowObserver = null;
+
+  /** @type {(() => void) | null} */
+  #scrollHandler = null;
+
+  /** @type {(() => void) | null} */
+  #jumpClickHandler = null;
+
+  /** @type {number | null} */
+  #scrollRafId = null;
 
   /**
    * Creates a form review component in progress state
@@ -103,15 +124,24 @@ export class AiSffFormReview extends MozLitElement {
       return;
     }
 
+    if (this.state === FORM_REVIEW_STATES.PROGRESS) {
+      this.#retryUsed = false;
+      this.#reviewedAllFields = false;
+    }
+
     this.#focusCurrentState();
+    this.#updateScrollListeners();
     this.#observeReviewFields();
   }
 
   #observeReviewFields() {
     this.#stopObservingReviewFields();
-    this.#reviewedAllFields = false;
 
-    if (this.state !== FORM_REVIEW_STATES.REVIEW || !this.reviewFields) {
+    if (
+      this.#reviewedAllFields ||
+      this.state !== FORM_REVIEW_STATES.REVIEW ||
+      !this.reviewFields
+    ) {
       return;
     }
 
@@ -154,6 +184,7 @@ export class AiSffFormReview extends MozLitElement {
   disconnectedCallback() {
     super.disconnectedCallback();
     this.#stopObservingReviewFields();
+    this.#teardownScrollListeners();
   }
 
   /**
@@ -171,7 +202,7 @@ export class AiSffFormReview extends MozLitElement {
         this.#focusFirstReviewField();
         break;
       case FORM_REVIEW_STATES.FINAL:
-        this.closeButton?.focus();
+        (this.retryButton ?? this.closeButton)?.focus();
         break;
     }
   }
@@ -192,6 +223,101 @@ export class AiSffFormReview extends MozLitElement {
     if (this.state === FORM_REVIEW_STATES.REVIEW && field.isConnected) {
       field.focus();
     }
+  }
+
+  /**
+   * Wires the jump-to-bottom button to the review list, which only exists
+   * while the component is in the review state.
+   *
+   * @returns {void}
+   */
+  #updateScrollListeners() {
+    this.#teardownScrollListeners();
+
+    if (this.state !== FORM_REVIEW_STATES.REVIEW) {
+      return;
+    }
+
+    const fields = this.reviewFields;
+    const jumpButton = this.jumpButton;
+    if (!fields || !jumpButton) {
+      return;
+    }
+
+    this.#scrollHandler = () => {
+      if (this.#scrollRafId) {
+        return;
+      }
+
+      this.#scrollRafId = requestAnimationFrame(() => {
+        this.#scrollRafId = null;
+        this.#updateJumpButtonState();
+      });
+    };
+
+    this.#jumpClickHandler = () => {
+      fields.scrollTop = fields.scrollHeight;
+    };
+
+    // The fields render asynchronously and the list resizes with the dialog,
+    // neither of which fires a scroll event, so recompute on resize too.
+    this.#overflowObserver = new ResizeObserver(() =>
+      this.#updateJumpButtonState()
+    );
+
+    fields.addEventListener("scroll", this.#scrollHandler);
+    jumpButton.addEventListener("click", this.#jumpClickHandler);
+    this.#overflowObserver.observe(fields);
+
+    this.#updateJumpButtonState();
+  }
+
+  /**
+   * Shows the jump-to-bottom button while the review list is scrolled well
+   * away from its end.
+   *
+   * @returns {void}
+   */
+  #updateJumpButtonState() {
+    const fields = this.reviewFields;
+    const jumpButton = this.jumpButton;
+    if (!fields || !jumpButton) {
+      return;
+    }
+
+    const distanceFromBottom =
+      fields.scrollHeight - fields.scrollTop - fields.clientHeight;
+    const show = distanceFromBottom > 1;
+
+    if (jumpButton.hasAttribute("visible") !== show) {
+      jumpButton.toggleAttribute("visible", show);
+      jumpButton.toggleAttribute("disabled", !show);
+    }
+  }
+
+  /**
+   * Releases the listeners and observer attached to the review list.
+   *
+   * @returns {void}
+   */
+  #teardownScrollListeners() {
+    if (this.#scrollRafId) {
+      cancelAnimationFrame(this.#scrollRafId);
+      this.#scrollRafId = null;
+    }
+
+    if (this.#scrollHandler) {
+      this.reviewFields?.removeEventListener("scroll", this.#scrollHandler);
+      this.#scrollHandler = null;
+    }
+
+    if (this.#jumpClickHandler) {
+      this.jumpButton?.removeEventListener("click", this.#jumpClickHandler);
+      this.#jumpClickHandler = null;
+    }
+
+    this.#overflowObserver?.disconnect();
+    this.#overflowObserver = null;
   }
 
   /**
@@ -251,6 +377,21 @@ export class AiSffFormReview extends MozLitElement {
     this.#dispatchAction(FORM_REVIEW_ACTIONS.FILL_FORM, {
       fields: this.fields.map(({ id, value }) => ({ id, value })),
     });
+  }
+
+  /**
+   * Fills the reviewed values again after a failed fill, without giving the
+   * user another chance to edit them. Only one retry is offered per review.
+   *
+   * @returns {void}
+   */
+  #handleRetry() {
+    if (this.filling || this.#retryUsed) {
+      return;
+    }
+
+    this.#retryUsed = true;
+    this.#handleFill();
   }
 
   /**
@@ -317,34 +458,51 @@ export class AiSffFormReview extends MozLitElement {
   #renderReview() {
     return html`
       <section
-        class="form-review-dialog"
+        class="form-review-dialog vertical-layout"
         aria-labelledby="form-review-heading"
         aria-describedby="form-review-description"
       >
         <h1
           id="form-review-heading"
+          class="form-review-heading"
           data-l10n-id="ai-smart-form-fill-review-heading"
         ></h1>
         <p
           id="form-review-description"
+          class="form-review-description"
           data-l10n-id="ai-smart-form-fill-review-description"
+          data-l10n-args=${JSON.stringify({
+            count: this.fields.length,
+          })}
         ></p>
-        <div class="form-review-fields">
-          ${repeat(
-            this.fields,
-            field => field.id,
-            field => this.#renderReviewField(field)
-          )}
+        <div class="form-review-fields-container">
+          <div class="form-review-fields">
+            ${repeat(
+              this.fields,
+              field => field.id,
+              field => this.#renderReviewField(field)
+            )}
+          </div>
+          <moz-button
+            class="form-review-jump-to-bottom-button"
+            data-l10n-id="ai-smart-form-fill-jump-to-bottom"
+            data-l10n-attrs="aria-label,tooltiptext"
+            iconsrc="chrome://global/skin/icons/shaft-arrow-down.svg"
+            disabled
+            type="ghost icon"
+          ></moz-button>
         </div>
         <moz-button-group class="form-review-actions">
           <moz-button
             .disabled=${this.filling}
+            size="large"
             data-l10n-id="ai-smart-form-fill-cancel-review"
             @click=${this.#handleCancel}
           ></moz-button>
           <moz-button
             type="primary"
             .disabled=${this.filling || !this.#reviewedAllFields}
+            size="large"
             data-l10n-id="ai-smart-form-fill-fill-form"
             @click=${this.#handleFill}
           ></moz-button>
@@ -361,22 +519,25 @@ export class AiSffFormReview extends MozLitElement {
   #renderProgress() {
     return html`
       <section
-        class="form-review-dialog form-review-progress"
+        class="form-review-progress form-review-dialog"
         aria-labelledby="form-review-progress-label"
       >
-        <img
-          class="form-review-progress-icon"
-          src="chrome://global/skin/icons/loading.svg"
-          alt=""
-        />
-        <span
-          id="form-review-progress-label"
-          class="form-review-progress-label"
-          data-l10n-id="ai-smart-form-fill-finding-suggestions"
-        ></span>
+        <div class="form-review-progress-group">
+          <img
+            class="form-review-icon form-review-progress-icon"
+            src="chrome://browser/content/aiwindow/assets/loader.svg"
+            alt=""
+          />
+          <span
+            id="form-review-progress-label"
+            class="form-review-progress-label"
+            data-l10n-id="ai-smart-form-fill-finding-suggestions"
+          ></span>
+        </div>
         <moz-button
+          type="ghost"
           class="form-review-stop"
-          icon-src="chrome://browser/content/aiwindow/assets/stop-generation.svg"
+          iconSrc="chrome://browser/content/aiwindow/assets/stop-generation.svg"
           data-l10n-id="ai-smart-form-fill-stop-finding-suggestions"
           @click=${this.#handleStop}
         ></moz-button>
@@ -391,40 +552,85 @@ export class AiSffFormReview extends MozLitElement {
    */
   #renderFinal() {
     const hasErrors = this.errorType !== null;
+    // Only a failed fill can be retried, and only once. Each variant renders
+    // its own button group because moz-button-group moves primary buttons to
+    // the end of the light DOM, out of the template part that created them,
+    // so a conditional primary button inside one group is never removed.
+    const offerRetry =
+      this.errorType === FORM_REVIEW_ERRORS.FILL_FAILED &&
+      (!this.#retryUsed || this.filling);
+
     let headingId = "ai-smart-form-fill-success-heading";
     let descriptionId = "ai-smart-form-fill-success-description";
 
     if (this.errorType === FORM_REVIEW_ERRORS.NO_SUGGESTIONS) {
       headingId = "ai-smart-form-fill-no-suggestions-heading";
       descriptionId = "ai-smart-form-fill-no-suggestions-description";
+    } else if (offerRetry) {
+      headingId = "ai-smart-form-fill-error-try-again-heading";
+      descriptionId = "ai-smart-form-fill-error-try-again-description";
     } else if (hasErrors) {
       headingId = "ai-smart-form-fill-error-heading";
       descriptionId = "ai-smart-form-fill-error-description";
     }
 
     const icon = hasErrors
-      ? "chrome://global/skin/icons/error.svg"
-      : "chrome://global/skin/icons/check-filled.svg";
+      ? "chrome://browser/content/aiwindow/assets/warning.svg"
+      : "chrome://browser/content/aiwindow/assets/applied-policy.svg";
 
     return html`
       <section
-        class="form-review-dialog"
+        class="form-review-dialog vertical-layout"
         aria-labelledby="form-review-final-heading"
         aria-describedby="form-review-final-description"
       >
-        <h1 id="form-review-final-heading" class="form-review-final-heading">
-          <img class="form-review-status-icon" src=${icon} alt="" />
+        <h1
+          id="form-review-final-heading"
+          class="form-review-final-heading form-review-heading"
+        >
+          <img
+            class="form-review-icon form-review-final-icon"
+            src=${icon}
+            alt=""
+          />
           <span data-l10n-id=${headingId}></span>
         </h1>
-        <p id="form-review-final-description" data-l10n-id=${descriptionId}></p>
-        <moz-button-group class="form-review-actions">
-          <moz-button
-            class="form-review-close"
-            type="primary"
-            data-l10n-id="ai-smart-form-fill-close-review"
-            @click=${this.#handleClose}
-          ></moz-button>
-        </moz-button-group>
+        <p
+          id="form-review-final-description"
+          class="form-review-description"
+          data-l10n-id=${descriptionId}
+        ></p>
+        ${offerRetry
+          ? html`
+              <moz-button-group class="form-review-actions">
+                <moz-button
+                  class="form-review-close"
+                  size="large"
+                  .disabled=${this.filling}
+                  data-l10n-id="ai-smart-form-fill-close-review"
+                  @click=${this.#handleClose}
+                ></moz-button>
+                <moz-button
+                  class="form-review-retry"
+                  type="primary"
+                  size="large"
+                  .disabled=${this.filling}
+                  data-l10n-id="ai-smart-form-fill-try-again"
+                  @click=${this.#handleRetry}
+                ></moz-button>
+              </moz-button-group>
+            `
+          : html`
+              <moz-button-group class="form-review-actions">
+                <moz-button
+                  class="form-review-close"
+                  type="primary"
+                  size="large"
+                  data-l10n-id="ai-smart-form-fill-close-review"
+                  @click=${this.#handleClose}
+                ></moz-button>
+              </moz-button-group>
+            `}
       </section>
     `;
   }

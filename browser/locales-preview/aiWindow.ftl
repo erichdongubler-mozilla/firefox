@@ -279,10 +279,21 @@ ai-smart-form-fill-fill-form =
     .label = Fill form
 
 ai-smart-form-fill-review-heading = Review suggestions
-ai-smart-form-fill-review-description = Edit or delete anything that’s not correct.
+
+# Variables:
+#   $count (number) - The number of generated form field suggestions
+ai-smart-form-fill-review-description =
+    { $count ->
+        [one] We found suggestions for { $count } field. Edit or delete anything that’s not correct.
+       *[other] We found suggestions for { $count } fields. Edit or delete anything that’s not correct.
+    }
 
 ai-smart-form-fill-field =
     .label = Field
+
+ai-smart-form-fill-jump-to-bottom =
+    .tooltiptext = Jump to bottom
+    .aria-label = Jump to bottom of suggestions
 
 ai-smart-form-fill-cancel-review =
     .label = Cancel
@@ -292,14 +303,20 @@ ai-smart-form-fill-finding-suggestions = Finding suggestions
 ai-smart-form-fill-stop-finding-suggestions =
     .aria-label = Stop finding suggestions
 
-ai-smart-form-fill-success-heading = Form filled with suggestions
-ai-smart-form-fill-success-description = Check the form. Review the filled fields and update anything that looks off or missing before submitting.
+ai-smart-form-fill-success-heading = Suggestions added to form
+ai-smart-form-fill-success-description = Review the form and fill any remaining fields before you submit.
 
 ai-smart-form-fill-no-suggestions-heading = No suggestions found
 ai-smart-form-fill-no-suggestions-description = Smart Form Fill wasn’t able to generate any suggestions for this form.
 
-ai-smart-form-fill-error-heading = Something happened catch-all headline
-ai-smart-form-fill-error-description = General explanation that maybe its the connection, or something else happened, and to try again
+ai-smart-form-fill-error-try-again-heading = Suggestions weren’t added to the form
+ai-smart-form-fill-error-try-again-description = Something went wrong. Try adding suggestions again.
+
+ai-smart-form-fill-error-heading = Suggestions weren’t added
+ai-smart-form-fill-error-description = Something went wrong. To try again, select a form field and choose Fill from sources.
+
+ai-smart-form-fill-try-again =
+    .label = Try again
 
 ai-smart-form-fill-close-review =
     .label = Close

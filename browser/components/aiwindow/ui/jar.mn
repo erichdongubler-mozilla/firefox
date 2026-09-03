@@ -126,3 +126,5 @@ browser.jar:
   content/browser/aiwindow/assets/agent-watch.svg                    (assets/agent-watch.svg)
   content/browser/aiwindow/components/aitab-page.mjs                 (components/aitab-page/aitab-page.mjs)
   content/browser/aiwindow/components/aitab-page.css                 (components/aitab-page/aitab-page.css)
+  content/browser/aiwindow/assets/applied-policy.svg                (assets/applied-policy.svg)
+  content/browser/aiwindow/assets/warning.svg                       (assets/warning.svg)

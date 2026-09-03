@@ -24,6 +24,41 @@ async function openGeneratedFormReview(context) {
   return review;
 }
 
+// Filling only reports an error when setUserInput() throws, which a test
+// cannot provoke through the page, so fail the parent's fill query instead.
+// The returned handle lets a test arm further failures for its own retry.
+function stubFillFailures(browser) {
+  const actor =
+    browser.browsingContext.currentWindowGlobal.getActor("SmartFormFill");
+  const originalSendQuery = actor.sendQuery.bind(actor);
+  let remaining = 0;
+
+  const stub = sinon.stub(actor, "sendQuery").callsFake((name, data) => {
+    if (name === "SmartFormFill:FillForm" && remaining > 0) {
+      remaining--;
+      return Promise.resolve({ hasErrors: true, cancelled: false });
+    }
+
+    return originalSendQuery(name, data);
+  });
+
+  return {
+    failNextFills(count) {
+      remaining = count;
+    },
+    restore: () => stub.restore(),
+  };
+}
+
+// A retry resolves without leaving the final state, so its outcome has to be
+// observed through the rendered strings rather than a state transition.
+async function waitForFormReviewL10nId(reviewBrowser, l10nId) {
+  await TestUtils.waitForCondition(async () => {
+    const { l10nIds } = await getFormReviewSnapshot(reviewBrowser);
+    return l10nIds.includes(l10nId);
+  }, `Waiting for the review dialog to render "${l10nId}"`);
+}
+
 describe("Smart Form Fill form review filling", () => {
   let context;
 
@@ -85,6 +120,106 @@ describe("Smart Form Fill form review filling", () => {
       "ai-smart-form-fill-close-review"
     );
     await dialogClosed;
+  });
+
+  describe("when filling the form fails", () => {
+    let dialog, reviewBrowser, formBrowser, fillStub;
+
+    beforeEach(async () => {
+      ({ dialog, reviewBrowser } = await openGeneratedFormReview(context));
+      formBrowser = context.win.gBrowser.selectedBrowser;
+      fillStub = stubFillFailures(formBrowser);
+      fillStub.failNextFills(1);
+
+      await activateFormReviewButton(
+        reviewBrowser,
+        "ai-smart-form-fill-fill-form"
+      );
+      await waitForFormReviewState(reviewBrowser, FORM_REVIEW_STATES.FINAL);
+    });
+
+    afterEach(async () => {
+      fillStub.restore();
+
+      const dialogClosed = waitForFormReviewClose(context.win, dialog);
+      await activateFormReviewButton(
+        reviewBrowser,
+        "ai-smart-form-fill-close-review"
+      );
+      await dialogClosed;
+    });
+
+    it("offers a retry that fills the form after a failed fill", async () => {
+      const failed = await getFormReviewSnapshot(reviewBrowser);
+      Assert.equal(
+        failed.errorType,
+        FORM_REVIEW_ERRORS.FILL_FAILED,
+        "The final state should identify a fill failure"
+      );
+      Assert.ok(
+        failed.l10nIds.includes("ai-smart-form-fill-error-try-again-heading"),
+        "The retry heading should be rendered after the first failure"
+      );
+      Assert.ok(
+        failed.l10nIds.includes("ai-smart-form-fill-try-again"),
+        "The retry button should be offered after the first failure"
+      );
+      Assert.equal(
+        await getFormFieldValue(formBrowser, "#email"),
+        "",
+        "A failed fill should leave the form field empty"
+      );
+
+      await activateFormReviewButton(
+        reviewBrowser,
+        "ai-smart-form-fill-try-again"
+      );
+      await waitForFormReviewL10nId(
+        reviewBrowser,
+        "ai-smart-form-fill-success-heading"
+      );
+
+      const retried = await getFormReviewSnapshot(reviewBrowser);
+      Assert.equal(
+        retried.errorType,
+        null,
+        "A successful retry should clear the error"
+      );
+      Assert.equal(
+        await getFormFieldValue(formBrowser, "#email"),
+        "generated@example.com",
+        "The retry should fill the generated suggestion into the form"
+      );
+    });
+
+    it("stops offering a retry once the retry also fails", async () => {
+      fillStub.failNextFills(1);
+
+      await activateFormReviewButton(
+        reviewBrowser,
+        "ai-smart-form-fill-try-again"
+      );
+      await waitForFormReviewL10nId(
+        reviewBrowser,
+        "ai-smart-form-fill-error-heading"
+      );
+
+      const snapshot = await getFormReviewSnapshot(reviewBrowser);
+      Assert.equal(
+        snapshot.errorType,
+        FORM_REVIEW_ERRORS.FILL_FAILED,
+        "The final state should still identify a fill failure"
+      );
+      Assert.ok(
+        !snapshot.l10nIds.includes("ai-smart-form-fill-try-again"),
+        "Only one retry should be offered per review"
+      );
+      Assert.equal(
+        await getFormFieldValue(formBrowser, "#email"),
+        "",
+        "A failed retry should leave the form field empty"
+      );
+    });
   });
 
   it("leaves the form unchanged when generation is stopped", async () => {

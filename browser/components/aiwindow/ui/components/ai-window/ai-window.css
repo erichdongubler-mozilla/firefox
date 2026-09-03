@@ -206,7 +206,7 @@ moz-button.close-sidebar-button {
     --button-background-color-ghost: var(--smartwindow-ghost-button-background);
     --button-background-color-ghost-hover: var(--smartwindow-ghost-button-background-hover);
     --button-background-color-ghost-active: var(--smartwindow-ghost-button-background-active);
-    --button-text-color-ghost: var(--smartwindow-ghost-button-text);
+    --button-text-color-ghost: var(--smartwindow-text-color);
 
     @media -moz-pref("browser.nova.enabled") {
       --button-icon-fill: light-dark(var(--color-violet-desaturated-60), var(--color-violet-desaturated-40));

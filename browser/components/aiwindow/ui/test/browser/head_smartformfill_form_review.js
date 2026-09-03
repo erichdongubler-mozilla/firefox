@@ -475,7 +475,14 @@ async function scrollFormReviewFieldsToBottom(reviewBrowser) {
       throw new Error("Could not find form review fields");
     }
 
+    // The list sets scroll-behavior: smooth, so the position animates and only
+    // lands a few frames later.
     fields.scrollTop = fields.scrollHeight;
+    await ContentTaskUtils.waitForCondition(
+      () => fields.scrollHeight - fields.scrollTop - fields.clientHeight <= 1,
+      "Waiting for the review fields to reach their maximum scroll position"
+    );
+
     fields.dispatchEvent(new content.Event("scroll"));
     await review.updateComplete;
   });
