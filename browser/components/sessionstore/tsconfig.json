@@ -1,7 +1,6 @@
 {
   "include": ["*.sys.mjs", "types/*.ts"],
   "exclude": [
-    "RecentlyClosedTabsAndWindowsMenuUtils.sys.mjs",
     "SessionLogger.sys.mjs",
     "SessionStore.sys.mjs",
     "TabGroupState.sys.mjs"
