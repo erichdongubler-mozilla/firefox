@@ -65,13 +65,7 @@ class GroupInfo final {
 
   GroupInfoPair* mGroupInfoPair;
   PersistenceType mPersistenceType;
-
-  // Signed for the same reason as QuotaManager::mTemporaryStorageUsage: though
-  // it shouldn't go negative, in case that happens (transient state or bug
-  // elsewhere) don't let the value underflow, which would result in a huge
-  // number, making all integers comparisons to become buggy. See bug 2066923
-  // and bug 1585978 for details.
-  int64_t mUsage;
+  uint64_t mUsage;
 };
 
 }  // namespace mozilla::dom::quota

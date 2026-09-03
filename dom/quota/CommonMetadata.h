@@ -20,7 +20,7 @@ namespace mozilla::dom::quota {
 
 #if defined(NIGHTLY_BUILD) || defined(DEBUG)
 bool CheckClientUsagesConsistency(const ClientUsageArray& aClientUsages,
-                                  int64_t aUsage, const nsACString& aContext);
+                                  uint64_t aUsage, const nsACString& aContext);
 #endif  // defined(NIGHTLY_BUILD) || defined(DEBUG)
 
 struct PrincipalMetadata {
@@ -153,19 +153,14 @@ struct OriginStateMetadata {
 
 struct FullOriginMetadata : OriginMetadata, OriginStateMetadata {
   ClientUsageArray mClientUsages;
-
-  // Signed for the same reason as OriginInfo::mUsage, which this is normally
-  // populated from: it can transiently (or due to a bug elsewhere) go
-  // negative, and an unsigned type would turn that into a huge value that
-  // corrupts every quota check that reads it (see bug 2066923, bug 1585978).
-  int64_t mOriginUsage;
+  uint64_t mOriginUsage;
   uint32_t mQuotaVersion;
 
   FullOriginMetadata() = default;
 
   FullOriginMetadata(OriginMetadata aOriginMetadata,
                      OriginStateMetadata aOriginStateMetadata,
-                     const ClientUsageArray& aClientUsages, int64_t aUsage,
+                     const ClientUsageArray& aClientUsages, uint64_t aUsage,
                      uint32_t aQuotaVersion)
       : OriginMetadata(std::move(aOriginMetadata)),
         OriginStateMetadata(aOriginStateMetadata),
