@@ -3079,11 +3079,11 @@
       },
       "border": {
         "color": {
-          "Light": "{color/gray/10}",
-          "Dark": "{color/gray/65}",
-          "HCM": "{border/color}",
-          "Private": "{color/violet-desaturated/60}",
-          "Smart Light (WIP)": "{color/gray/10}"
+          "Light": "{border/color/deemphasized}",
+          "Dark": "{border/color/deemphasized}",
+          "HCM": "{border/color/deemphasized}",
+          "Private": "{border/color/deemphasized}",
+          "Smart Light (WIP)": "{border/color/deemphasized}"
         }
       }
     },

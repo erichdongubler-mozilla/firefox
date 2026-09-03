@@ -495,9 +495,9 @@
     "forcedColors": "{Theme$text/color}"
   },
   "popup/border/color": {
-    "light": "{Colors$color/gray/10}",
-    "dark": "{Colors$color/gray/65}",
-    "forcedColors": "{Theme$border/color}"
+    "light": "{Theme$border/color/deemphasized}",
+    "dark": "{Theme$border/color/deemphasized}",
+    "forcedColors": "{Theme$border/color/deemphasized}"
   },
   "table/row/background/color/alternate": {
     "light": "{Colors$color/gray/20}",

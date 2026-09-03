@@ -272,7 +272,7 @@
   --panel-text-color: var(--text-color);
 
   /** popup **/
-  --popup-border-color: light-dark(var(--color-gray-10), var(--color-gray-65));
+  --popup-border-color: var(--border-color-deemphasized);
   --popup-border-radius: var(--border-radius-xlarge);
 
   /** table **/
@@ -397,9 +397,6 @@
 
     /** icon **/
     --icon-color-accent-primary-desaturated: CanvasText;
-
-    /** popup **/
-    --popup-border-color: var(--border-color);
 
     /** text-color **/
     --text-color-accent-primary-selected: SelectedItemText;

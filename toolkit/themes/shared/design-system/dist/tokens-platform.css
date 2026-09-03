@@ -256,7 +256,7 @@
         --panel-text-color: var(--text-color);
 
         /** popup **/
-        --popup-border-color: light-dark(var(--color-gray-10), var(--color-gray-65));
+        --popup-border-color: var(--border-color-deemphasized);
 
         /** text-color **/
         --text-color: light-dark(var(--color-violet-desaturated-90), var(--color-violet-desaturated-0));
