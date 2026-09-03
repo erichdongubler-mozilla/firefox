@@ -6,6 +6,7 @@ package org.mozilla.fenix.components
 
 import android.content.Context
 import android.content.res.Configuration
+import androidx.annotation.VisibleForTesting
 import androidx.core.content.ContextCompat
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineScope
@@ -130,6 +131,8 @@ import org.mozilla.fenix.historymetadata.HistoryMetadataMiddleware
 import org.mozilla.fenix.historymetadata.HistoryMetadataService
 import org.mozilla.fenix.longfox.LongFoxFeature
 import org.mozilla.fenix.media.MediaSessionService
+import org.mozilla.fenix.nimbus.BaselineFpp
+import org.mozilla.fenix.nimbus.FingerprintingProtection
 import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.perf.StrictModeManager
 import org.mozilla.fenix.perf.lazyMonitored
@@ -218,19 +221,15 @@ class Core(
                 useContentBlockingDatabase = true,
             )
 
-        // Apply fingerprinting protection overrides if the feature is enabled in Nimbus
-        if (FxNimbus.features.fingerprintingProtection.value().enabled) {
-            defaultSettings.fingerprintingProtectionOverrides =
-                FxNimbus.features.fingerprintingProtection.value().overrides
-            defaultSettings.fingerprintingProtection = FxNimbus.features.fingerprintingProtection.value().enabledNormal
-            defaultSettings.fingerprintingProtectionPrivateBrowsing =
-                FxNimbus.features.fingerprintingProtection.value().enabledPrivate
-        }
+        applyFingerprintingProtectionFeature(
+            defaultSettings,
+            FxNimbus.features.fingerprintingProtection.value(),
+        )
 
-        if (FxNimbus.features.baselineFpp.value().featEnabled) {
-            defaultSettings.baselineFingerprintingProtection = FxNimbus.features.baselineFpp.value().enabled
-            defaultSettings.baselineFingerprintingProtectionOverrides = FxNimbus.features.baselineFpp.value().overrides
-        }
+        applyBaselineFingerprintingProtectionFeature(
+            defaultSettings,
+            FxNimbus.features.baselineFpp.value(),
+        )
 
         // Apply third-party cookie blocking settings if the Nimbus feature is
         // enabled.
@@ -752,4 +751,42 @@ class Core(
         internal const val REMOTE_STAGE_ENDPOINT_URL = "https://firefox.settings.services.allizom.org"
         internal const val REMOTE_DEV_ENDPOINT_URL = "https://remote-settings-dev.allizom.org"
     }
+}
+
+/**
+ * Applies the Nimbus `fingerprinting-protection` feature to [settings].
+ *
+ * Each value is optional. A `null` means the recipe did not supply that value, so the existing setting is left
+ * untouched rather than being reset to a manifest default. This lets a recipe change one field (for example
+ * `fdlibm-math`) without silently overwriting the user's choices for the others.
+ *
+ * @param settings the engine settings to update in place.
+ * @param feature the Nimbus feature value to apply.
+ */
+@VisibleForTesting
+internal fun applyFingerprintingProtectionFeature(
+    settings: DefaultSettings,
+    feature: FingerprintingProtection,
+) {
+    feature.overrides?.let { settings.fingerprintingProtectionOverrides = it }
+    feature.enabledNormal?.let { settings.fingerprintingProtection = it }
+    feature.enabledPrivate?.let { settings.fingerprintingProtectionPrivateBrowsing = it }
+}
+
+/**
+ * Applies the Nimbus `baseline-fpp` feature to [settings].
+ *
+ * Each value is optional. A `null` means the recipe did not supply that value, so the existing setting is left
+ * untouched rather than being reset to a manifest default.
+ *
+ * @param settings the engine settings to update in place.
+ * @param feature the Nimbus feature value to apply.
+ */
+@VisibleForTesting
+internal fun applyBaselineFingerprintingProtectionFeature(
+    settings: DefaultSettings,
+    feature: BaselineFpp,
+) {
+    feature.enabled?.let { settings.baselineFingerprintingProtection = it }
+    feature.overrides?.let { settings.baselineFingerprintingProtectionOverrides = it }
 }
