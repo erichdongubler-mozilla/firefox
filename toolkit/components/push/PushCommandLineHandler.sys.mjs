@@ -13,6 +13,10 @@ XPCOMUtils.defineLazyServiceGetter(
   Ci.nsIPushService
 );
 
+ChromeUtils.defineLazyGetter(lazy, "Timer", () =>
+  ChromeUtils.importESModule("resource://gre/modules/Timer.sys.mjs")
+);
+
 /**
  * Command-line handler for the --receive-push-messages argument.
  */
@@ -74,9 +78,73 @@ export class CommandLineHandler {
   /**
    * Receive push messages.
    *
+   * Nothing tells us how many push messages are pending, so we cannot wait for
+   * the last one. Instead we listen and stop once they stop arriving.
+   *
+   * The per message timeout restarts on every push message, so a steady
+   * stream keeps receiving. The total timeout never restarts, so a stream that
+   * never ends cannot keep Firefox alive forever. Both come from prefs under
+   * app.backgroundNotifications.receivePushMessages.
+   *
+   * Does nothing if push is disabled.
+   *
+   * TODO: A push message arriving isn't the same as its service worker having
+   * finished processing it. Ideally, we'd wait until the service worker is
+   * triggered and its event resolves. We can't do that yet (Bug 2068913), so
+   * this can still shut down before a service worker has responded properly.
+   *
    * @returns {Promise<void>} Resolves when receiving stops.
    */
   async receivePushMessages() {
-    await this.ensurePushServiceReady();
+    if (!(await this.ensurePushServiceReady())) {
+      return;
+    }
+
+    await new Promise(resolve => {
+      let receiving = true;
+      let pushTopicObserver = null;
+      const pushTopic = lazy.PushService.pushTopic;
+      let perMessageTimer = null;
+      let totalTimer = null;
+
+      const stopReceiving = () => {
+        if (!receiving) {
+          return;
+        }
+        receiving = false;
+        Services.obs.removeObserver(pushTopicObserver, pushTopic);
+        lazy.Timer.clearTimeout(perMessageTimer);
+        lazy.Timer.clearTimeout(totalTimer);
+        resolve();
+      };
+
+      const perMessageTimeoutMs = Services.prefs.getIntPref(
+        "app.backgroundNotifications.receivePushMessages.perMessageTimeoutMs",
+        5000
+      );
+
+      const startPerMessageTimer = () => {
+        lazy.Timer.clearTimeout(perMessageTimer);
+        perMessageTimer = lazy.Timer.setTimeout(
+          stopReceiving,
+          perMessageTimeoutMs
+        );
+      };
+
+      const totalTimeoutMs = Services.prefs.getIntPref(
+        "app.backgroundNotifications.receivePushMessages.totalTimeoutMs",
+        60000
+      );
+
+      const startTotalTimer = () => {
+        totalTimer = lazy.Timer.setTimeout(stopReceiving, totalTimeoutMs);
+      };
+
+      pushTopicObserver = () => startPerMessageTimer();
+
+      Services.obs.addObserver(pushTopicObserver, pushTopic);
+      startPerMessageTimer();
+      startTotalTimer();
+    });
   }
 }

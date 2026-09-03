@@ -3535,6 +3535,12 @@ pref("first-startup.category-tasks-enabled", true);
   pref("default-browser-agent.enabled", true);
 #endif
 
+#ifdef XP_WIN
+  // Timeouts used to receive push messages with --receive-push-messages
+  pref("app.backgroundNotifications.receivePushMessages.perMessageTimeoutMs", 5000);
+  pref("app.backgroundNotifications.receivePushMessages.totalTimeoutMs", 60000);
+#endif
+
 // Shows 'View Image Info' item in the image context menu
 #ifdef MOZ_DEV_EDITION
   pref("browser.menu.showViewImageInfo", true);

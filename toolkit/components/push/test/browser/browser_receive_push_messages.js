@@ -30,9 +30,17 @@ add_task(async function test_argument_is_handled() {
     "The argument is present"
   );
 
-  Cc[RECEIVE_PUSH_MESSAGES_CONTRACT_ID].getService(
-    Ci.nsICommandLineHandler
-  ).handle(cmdLine);
+  let receivePushMessages = sinon
+    .stub(CommandLineHandler.prototype, "receivePushMessages")
+    .resolves();
+
+  try {
+    Cc[RECEIVE_PUSH_MESSAGES_CONTRACT_ID].getService(
+      Ci.nsICommandLineHandler
+    ).handle(cmdLine);
+  } finally {
+    receivePushMessages.restore();
+  }
 
   is(
     cmdLine.findFlag("receive-push-messages", false),
@@ -172,6 +180,10 @@ async function survivalAreaUsage(commandLineState) {
     exitLastWindowClosingSurvivalArea,
   });
 
+  let receivePushMessages = sinon
+    .stub(CommandLineHandler.prototype, "receivePushMessages")
+    .resolves();
+
   try {
     Cc[RECEIVE_PUSH_MESSAGES_CONTRACT_ID].getService(
       Ci.nsICommandLineHandler
@@ -184,6 +196,7 @@ async function survivalAreaUsage(commandLineState) {
       await survivalAreaExited.promise;
     }
   } finally {
+    receivePushMessages.restore();
     startup.restore();
   }
 
@@ -248,5 +261,169 @@ add_task(async function test_push_service_broken() {
     startsPushService(pushServiceError),
     e => e == pushServiceError,
     "The Push Service is broken"
+  );
+});
+
+function countPushTopicObservers() {
+  return [...Services.obs.enumerateObservers(PUSH_SERVICE.pushTopic)].length;
+}
+
+add_task(async function test_push_messages_not_observed_without_push_service() {
+  let pushService = sinon
+    .stub(CommandLineHandler.prototype, "ensurePushServiceReady")
+    .resolves(false);
+
+  try {
+    let receiving = CommandLineHandler.prototype.receivePushMessages();
+    is(countPushTopicObservers(), 0, "No observer while receiving");
+    await receiving;
+  } finally {
+    pushService.restore();
+  }
+});
+
+const OBSERVED_TIMEOUT_MS = 100;
+
+add_task(async function test_push_messages_observed_with_push_service() {
+  let pushService = sinon
+    .stub(CommandLineHandler.prototype, "ensurePushServiceReady")
+    .resolves(true);
+
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [
+        "app.backgroundNotifications.receivePushMessages.perMessageTimeoutMs",
+        OBSERVED_TIMEOUT_MS,
+      ],
+      [
+        "app.backgroundNotifications.receivePushMessages.totalTimeoutMs",
+        OBSERVED_TIMEOUT_MS,
+      ],
+    ],
+  });
+
+  try {
+    is(countPushTopicObservers(), 0, "No observer before receiving");
+
+    let receiving = CommandLineHandler.prototype.receivePushMessages();
+
+    // The observer is added after the Push Service check resolves
+    await TestUtils.waitForCondition(
+      () => countPushTopicObservers() == 1,
+      "One observer while receiving",
+      10
+    );
+
+    await receiving;
+
+    is(countPushTopicObservers(), 0, "No observer after receiving");
+  } finally {
+    pushService.restore();
+    await SpecialPowers.popPrefEnv();
+  }
+});
+
+function sendPushMessage() {
+  Cc["@mozilla.org/push/Notifier;1"]
+    .getService(Ci.nsIPushNotifier)
+    .notifyPush(
+      "chrome://push-receive-push-messages",
+      Services.scriptSecurityManager.getSystemPrincipal(),
+      ""
+    );
+}
+
+const INTERVAL_MS = 20;
+
+async function receivePushMessagesDurationMs({
+  perMessageTimeoutMs,
+  totalTimeoutMs,
+  messagesToSend,
+}) {
+  let pushService = sinon
+    .stub(CommandLineHandler.prototype, "ensurePushServiceReady")
+    .resolves(true);
+
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [
+        "app.backgroundNotifications.receivePushMessages.perMessageTimeoutMs",
+        perMessageTimeoutMs,
+      ],
+      [
+        "app.backgroundNotifications.receivePushMessages.totalTimeoutMs",
+        totalTimeoutMs,
+      ],
+    ],
+  });
+
+  let sending = setInterval(() => {
+    if (messagesToSend > 0) {
+      sendPushMessage();
+      messagesToSend--;
+    }
+  }, INTERVAL_MS);
+  registerCleanupFunction(() => clearInterval(sending));
+
+  let startedAt = ChromeUtils.now();
+
+  try {
+    await CommandLineHandler.prototype.receivePushMessages();
+
+    return ChromeUtils.now() - startedAt;
+  } finally {
+    clearInterval(sending);
+    pushService.restore();
+    await SpecialPowers.popPrefEnv();
+  }
+}
+
+const PER_MESSAGE_TIMEOUT_MS = 100;
+const TOTAL_TIMEOUT_MS = 500;
+const MESSAGES_TO_SEND = 10;
+const TOLERANCE_MS = 100;
+
+add_task(async function test_receive_push_messages_when_none_arrive() {
+  let durationMs = await receivePushMessagesDurationMs({
+    perMessageTimeoutMs: PER_MESSAGE_TIMEOUT_MS,
+    totalTimeoutMs: TOTAL_TIMEOUT_MS,
+    messagesToSend: 0,
+  });
+
+  isfuzzy(
+    durationMs,
+    PER_MESSAGE_TIMEOUT_MS,
+    TOLERANCE_MS,
+    "Push messages are received until the per message timeout"
+  );
+});
+
+add_task(async function test_receive_push_messages_until_all_arrive() {
+  let durationMs = await receivePushMessagesDurationMs({
+    perMessageTimeoutMs: PER_MESSAGE_TIMEOUT_MS,
+    totalTimeoutMs: TOTAL_TIMEOUT_MS,
+    messagesToSend: MESSAGES_TO_SEND,
+  });
+
+  isfuzzy(
+    durationMs,
+    (MESSAGES_TO_SEND - 1) * INTERVAL_MS + PER_MESSAGE_TIMEOUT_MS,
+    TOLERANCE_MS,
+    "Push messages are received until all arrive"
+  );
+});
+
+add_task(async function test_receive_push_messages_until_total_timeout() {
+  let durationMs = await receivePushMessagesDurationMs({
+    perMessageTimeoutMs: PER_MESSAGE_TIMEOUT_MS,
+    totalTimeoutMs: TOTAL_TIMEOUT_MS,
+    messagesToSend: Infinity,
+  });
+
+  isfuzzy(
+    durationMs,
+    TOTAL_TIMEOUT_MS,
+    TOLERANCE_MS,
+    "Push messages are received until the total timeout"
   );
 });
