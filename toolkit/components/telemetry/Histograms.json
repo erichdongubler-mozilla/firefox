@@ -3237,16 +3237,6 @@
     "releaseChannelCollection": "opt-out",
     "description": "Number of mobile devices associated with this Sync account. Recorded each time Sync successfully completes the 'clients' engine."
   },
-  "PUSH_API_NOTIFY": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "releaseChannelCollection": "opt-out",
-    "alert_emails": ["push@mozilla.com"],
-    "bug_numbers": [1429286],
-    "expires_in_version": "never",
-    "kind": "count",
-    "description": "Number of push messages that were successfully decrypted and delivered to a ServiceWorker."
-  },
   "GFX_CONTENT_FAILED_TO_ACQUIRE_DEVICE": {
     "record_in_processes": ["main", "content"],
     "products": ["firefox", "fennec"],
