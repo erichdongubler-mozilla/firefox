@@ -17055,3 +17055,29 @@ pdf_viewer:
     data_sensitivity:
       - interaction
     expires: never
+
+browser_thumbnails:
+  capture_attempted:
+    type: labeled_counter
+    description: |
+      Increments on every BrowserThumbnails.requestScreenshot() call,
+      labeled by the trigger that fired it. Total gives the per-session
+      capture rate; the label breakdown shows where the pressure originates
+      so regressions can be attributed to a specific trigger source.
+    labels:
+      - load_completed
+      - tab_counter_click
+      - swipe_to_switch_tabs
+      - external_request
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2067066
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2067066
+    notification_emails:
+      - android-probes@mozilla.com
+    data_sensitivity:
+      - technical
+    expires: never
+    metadata:
+      tags:
+        - Tabs

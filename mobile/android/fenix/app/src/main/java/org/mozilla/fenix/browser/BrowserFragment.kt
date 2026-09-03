@@ -30,6 +30,7 @@ import mozilla.components.browser.state.state.SessionState
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.state.selectedOrDefaultSearchEngine
 import mozilla.components.browser.thumbnails.BrowserThumbnails
+import mozilla.components.browser.thumbnails.facts.BrowserThumbnailsFacts
 import mozilla.components.concept.engine.HitResult
 import mozilla.components.concept.engine.permission.SitePermissions
 import mozilla.components.concept.engine.prompt.ShareData
@@ -215,7 +216,11 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler, SystemIns
                     store = components.core.store,
                     selectTabUseCase = components.useCases.tabsUseCases.selectTab,
                     onSwipeStarted = {
-                        thumbnailsFeature.get()?.requestScreenshot()
+                        thumbnailsFeature
+                            .get()
+                            ?.requestScreenshot(
+                                trigger = BrowserThumbnailsFacts.CaptureAttemptedTriggers.SWIPE_TO_SWITCH_TABS
+                            )
                     },
                 )
             )

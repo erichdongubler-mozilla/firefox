@@ -52,6 +52,7 @@ import mozilla.components.browser.state.state.content.ShareResourceState
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.browser.thumbnails.BrowserThumbnails
+import mozilla.components.browser.thumbnails.facts.BrowserThumbnailsFacts
 import mozilla.components.browser.toolbar.R as toolbarR
 import mozilla.components.compose.browser.toolbar.concept.Action
 import mozilla.components.compose.browser.toolbar.concept.Action.ActionButton
@@ -581,7 +582,9 @@ class BrowserToolbarMiddlewareTest {
             )
         }
         verify {
-            thumbnailsFeature.requestScreenshot()
+            thumbnailsFeature.requestScreenshot(
+                trigger = BrowserThumbnailsFacts.CaptureAttemptedTriggers.TAB_COUNTER_CLICK
+            )
         }
     }
 
@@ -615,7 +618,9 @@ class BrowserToolbarMiddlewareTest {
             )
         }
         verify {
-            thumbnailsFeature.requestScreenshot()
+            thumbnailsFeature.requestScreenshot(
+                trigger = BrowserThumbnailsFacts.CaptureAttemptedTriggers.TAB_COUNTER_CLICK
+            )
         }
     }
 
