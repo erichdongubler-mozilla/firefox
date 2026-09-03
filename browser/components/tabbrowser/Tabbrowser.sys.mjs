@@ -5209,7 +5209,7 @@ export class Tabbrowser {
         null,
         null,
         null,
-        {}
+        { value: false }
       );
       return buttonPressed == 0;
     }
