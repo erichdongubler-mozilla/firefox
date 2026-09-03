@@ -435,9 +435,6 @@ contentblocking:
     description: >
       The number of query parameters removed, if any, when strip on share is
       used
-
-      This metric was generated to correspond to the Legacy Telemetry linear
-      histogram STRIP_ON_SHARE_PARAMS_REMOVED.
     range_min: 1
     range_max: 100
     bucket_count: 50
@@ -445,21 +442,18 @@ contentblocking:
     unit: query parameters
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1833105
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2061367
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1833105
     notification_emails:
       - emz@mozilla.com
     expires: never
-    telemetry_mirror: STRIP_ON_SHARE_PARAMS_REMOVED
 
   strip_on_share_length_decrease:
     type: custom_distribution
     description: >
       The decrease in the length of the URL when strip on share is used, only if
       at least one parameter is stripped
-
-      This metric was generated to correspond to the Legacy Telemetry
-      exponential histogram STRIP_ON_SHARE_LENGTH_DECREASE.
     range_min: 1
     range_max: 1000
     bucket_count: 100
@@ -467,12 +461,12 @@ contentblocking:
     unit: characters
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1833105
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2061367
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1833105
     notification_emails:
       - emz@mozilla.com
     expires: never
-    telemetry_mirror: STRIP_ON_SHARE_LENGTH_DECREASE
 
   cookie_behavior:
     type: custom_distribution
