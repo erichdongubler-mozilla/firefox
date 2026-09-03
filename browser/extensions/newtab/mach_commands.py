@@ -94,12 +94,12 @@ LOCAL_PREFERENCES_EN_US_PATH = Path(
 # We query whattrainisitnow.com to get some key dates for both beta and
 # release in order to compute whether or not strings have been available on
 # the beta channel long enough to consider falling back (currently, that's
-# 3 weeks of time on the beta channel).
+# 2 weeks of time on the beta channel).
 BETA_SCHEDULE_QUERY = "https://whattrainisitnow.com/api/release/schedule/?version=beta"
 RELEASE_SCHEDULE_QUERY = (
     "https://whattrainisitnow.com/api/release/schedule/?version=release"
 )
-BETA_FALLBACK_THRESHOLD = timedelta(weeks=3)
+BETA_FALLBACK_THRESHOLD = timedelta(weeks=2)
 TASKCLUSTER_ROOT_URL = "https://firefox-ci-tc.services.mozilla.com"
 BEETMOVER_TASK_NAME = "beetmover-newtab"
 SIGNING_TASK_NAME = "release-signing-newtab"
@@ -496,8 +496,8 @@ def display_report(report, details=None):
 
     # These two dates will be used later on when we start calculating which
     # untranslated strings should be considered "pending" (we're still waiting
-    # for them to be on beta for at least 3 weeks), and which should be
-    # considered "missing" (they've been on beta for more than 3 weeks and
+    # for them to be on beta for at least 2 weeks), and which should be
+    # considered "missing" (they've been on beta for more than 2 weeks and
     # still aren't translated).
 
     meta = report["meta"]
