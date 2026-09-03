@@ -1421,6 +1421,21 @@ static nsCString CopyStrippingTrailingDot(const nsACString& aDomain) {
   return nsCString(aDomain);
 }
 
+// A single trailing dot is normalized away; more than one is rejected since
+// only one would be stripped, leaving an empty trailing segment.
+static bool DomainEndsWithMultipleDots(const nsACString& aDomain) {
+  return StringEndsWith(aDomain, ".."_ns);
+}
+
+static bool DomainEndsWithMultipleDots(const char* const* aDomains) {
+  for (const char* const* p = aDomains; *p; ++p) {
+    if (DomainEndsWithMultipleDots(nsDependentCString(*p))) {
+      return true;
+    }
+  }
+  return false;
+}
+
 // The fire-time payload of a pref-change callback: the function and its
 // closure. Shared base of the trie's refcounted CallbackNode and the mirror
 // list's inline entries (see MirrorCallbackList), so the notify, sweep and
@@ -3484,30 +3499,37 @@ nsPrefBranch::AddObserverImpl(const nsACString& aDomain, nsIObserver* aObserver,
       mozilla::UniquePtr<PrefCallback> existing;
       mObservers.Remove(&weakKey, &existing);
       if (existing) {
-        Preferences::UnregisterCallback(NotifyObserver, prefName,
-                                        existing.get(),
-                                        /* aPrefixMatch */ true);
+        nsresult rv = Preferences::UnregisterCallback(NotifyObserver, prefName,
+                                                      existing.get(),
+                                                      /* aPrefixMatch */ true);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          // The trie still points at the weak PrefCallback; keep it alive and
+          // leave the weak registration in place.
+          mObservers.InsertOrUpdate(&weakKey, std::move(existing));
+          return rv;
+        }
       }
     }
   }
 
+  nsresult rv = NS_OK;
   mObservers.WithEntryHandle(pCallback.get(), [&](auto&& p) {
     if (p) {
       NS_WARNING(
           nsPrintfCString("Ignoring duplicate observer: %s", prefName.get())
               .get());
     } else {
-      // We must pass a fully qualified preference name to the callback
-      // aDomain == nullptr is the only possible failure, and we trapped it with
-      // NS_ENSURE_ARG above.
-      Preferences::RegisterCallback(NotifyObserver, prefName, pCallback.get(),
-                                    /* aPrefixMatch */ true);
-
-      p.Insert(std::move(pCallback));
+      // We must pass a fully qualified preference name to the callback.
+      rv = Preferences::RegisterCallback(NotifyObserver, prefName,
+                                         pCallback.get(),
+                                         /* aPrefixMatch */ true);
+      if (NS_SUCCEEDED(rv)) {
+        p.Insert(std::move(pCallback));
+      }
     }
   });
 
-  return NS_OK;
+  return rv;
 }
 
 NS_IMETHODIMP
@@ -3529,8 +3551,9 @@ nsPrefBranch::RemoveObserverImpl(const nsACString& aDomain,
   }
 
   // Remove the relevant PrefCallback from mObservers and get an owning pointer
-  // to it. Unregister the callback first, and then let the owning pointer go
-  // out of scope and destroy the callback.
+  // to it. If unregistering the trie callback fails (e.g. because mObservers
+  // and the trie have drifted out of sync), the CallbackNode in the trie still
+  // holds Data() == this PrefCallback, so put it back.
   const nsCString& prefName = GetPrefName(aDomain);
   PrefCallback key(prefName, aObserver, this);
   mozilla::UniquePtr<PrefCallback> pCallback;
@@ -3551,6 +3574,10 @@ nsPrefBranch::RemoveObserverImpl(const nsACString& aDomain,
     rv = Preferences::UnregisterCallback(NotifyObserver, prefName,
                                          pCallback.get(),
                                          /* aPrefixMatch */ true);
+    if (NS_FAILED(rv)) {
+      PrefCallback* raw = pCallback.get();
+      mObservers.InsertOrUpdate(raw, std::move(pCallback));
+    }
   }
 
   return rv;
@@ -5940,6 +5967,7 @@ nsresult PreferencesImpl::RegisterCallbackImpl(PrefChangedFunc aCallback,
                                                bool aIsPrefix) {
   MOZ_ASSERT(NS_IsMainThread());
   NS_ENSURE_ARG(aCallback);
+  NS_ENSURE_FALSE(DomainEndsWithMultipleDots(aPrefNode), NS_ERROR_INVALID_ARG);
   NS_ENSURE_TRUE(Preferences::InitStaticMembers(), NS_ERROR_NOT_AVAILABLE);
 
   RefPtr<CallbackNode> node =
@@ -5969,6 +5997,7 @@ nsresult PreferencesImpl::UnregisterCallbackImpl(PrefChangedFunc aCallback,
                                                  bool aIsPrefix) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aCallback);
+  NS_ENSURE_FALSE(DomainEndsWithMultipleDots(aPrefNode), NS_ERROR_INVALID_ARG);
   if (Preferences::sShutdown) {
     MOZ_ASSERT(!Preferences::sPreferences);
     return NS_OK;
