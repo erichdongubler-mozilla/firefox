@@ -18,6 +18,7 @@
 #include "js/loader/ScriptKind.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/CORSMode.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/PreloaderBase.h"
@@ -75,39 +76,65 @@ class Element;
  *
  */
 
+class ScriptDecodeTask;
 class StencilCompileOrDecodeTask;
 class WasmCompileTask;
 
 // Base class for tasks which perform off-thread compilation.
 class CompileOrDecodeTask : public mozilla::Task {
  protected:
-  enum class Type : uint8_t { Stencil, Wasm };
+  enum class Type : uint8_t { Compile, Decode, Wasm };
 
   explicit CompileOrDecodeTask(Type aType);
   virtual ~CompileOrDecodeTask() = default;
 
-  bool IsCancelled(const MutexAutoLock& aProofOfLock) const {
-    return mIsCancelled;
-  }
+  // Performs the compilation or decode. Not called if already cancelled.
+  virtual TaskResult RunTask() MOZ_REQUIRES(mMutex) = 0;
 
  public:
-  // Cancel the task.
-  // If the task is already running, this waits for the task to finish.
-  void Cancel();
+  TaskResult Run() final;
 
-  bool IsStencilTask() const { return mType == Type::Stencil; }
+  // Cancel the task, discarding its result. One that has already started runs
+  // to completion off-thread, so this only blocks once threads shut down.
+  //
+  // Called on the main thread by MaybeCancelOffThreadScript, at most once per
+  // task, after which the result must not be taken.
+  void Cancel() MOZ_EXCLUDES(mMutex);
+
+  // Releases cancelled tasks which have since finished, ahead of shutdown.
+  static void ForgetFinishedCancelledTasks();
+
+  bool IsStencilTask() const {
+    return mType == Type::Compile || mType == Type::Decode;
+  }
+  bool IsDecodeTask() const { return mType == Type::Decode; }
   bool IsWasmTask() const { return mType == Type::Wasm; }
 
   inline StencilCompileOrDecodeTask* AsStencilCompileOrDecodeTask();
   inline WasmCompileTask* AsWasmCompileTask();
+  ScriptDecodeTask* AsScriptDecodeTask();
 
  protected:
-  // This mutex is locked during running the task or cancelling task.
+  // Held while the task is running, so that a cancelled task can be waited for.
   mozilla::Mutex mMutex;
 
-  bool mIsCancelled = false;
+  mozilla::Atomic<bool> mIsCancelled{false};
 
  private:
+  // Remembers this task so that it is waited for at shutdown.
+  void TrackCancelled() MOZ_EXCLUDES(mMutex);
+
+  // Creates the list on first use, and registers the wait at shutdown.
+  static void EnsureCancelledTasksList();
+
+  // Blocks until a running task has finished.
+  void WaitForRunningTask() MOZ_EXCLUDES(mMutex);
+
+  // False once the task has run to completion, or been skipped as cancelled.
+  bool MayStillRun() const { return mMayStillRun; }
+
+  mozilla::Atomic<bool> mMayStillRun{true};
+
   const Type mType;
 };
 
@@ -115,13 +142,12 @@ class CompileOrDecodeTask : public mozilla::Task {
 // produce a JS::Stencil.
 class StencilCompileOrDecodeTask : public CompileOrDecodeTask {
  protected:
-  StencilCompileOrDecodeTask();
+  explicit StencilCompileOrDecodeTask(Type aType);
   virtual ~StencilCompileOrDecodeTask();
 
   nsresult InitFrontendContext();
 
-  void DidRunTask(const MutexAutoLock& aProofOfLock,
-                  RefPtr<JS::Stencil>&& aStencil);
+  void DidRunTask(RefPtr<JS::Stencil>&& aStencil) MOZ_REQUIRES(mMutex);
 
  public:
   // Returns the result of the compilation or decode if it was successful.
@@ -131,6 +157,10 @@ class StencilCompileOrDecodeTask : public CompileOrDecodeTask {
   // on successful case.
   already_AddRefed<JS::Stencil> StealResult(
       JSContext* aCx, JS::InstantiationStorage* aInstantiationStorage);
+
+  // The bytes a decode task was given, to hand back to the LoadedScript.
+  // Not on ScriptDecodeTask, which is local to ScriptLoader.cpp.
+  JS::TranscodeBuffer TakeSRIAndSerializedStencil();
 
  protected:
   // The result of decode task, to distinguish throwing case and decode error.
@@ -163,7 +193,7 @@ class WasmCompileTask final : public CompileOrDecodeTask {
 
   nsresult Init(JSContext* aCx, JS::CompileOptions& aOptions);
 
-  TaskResult Run() override;
+  TaskResult RunTask() override MOZ_REQUIRES(mMutex);
 
   // Sets aModuleOut to the module record for the compiled module.
   // Returns false otherwise, and sets pending exception on JSContext.

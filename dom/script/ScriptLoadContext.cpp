@@ -130,7 +130,7 @@ void ScriptLoadContext::MaybeCancelOffThreadScript() {
     return;
   }
 
-  // Cancel the task if it hasn't been started yet or wait for it to finish.
+  // Nulling the task makes OffThreadCompilationCompleteTask discard the result.
   mCompileOrDecodeTask->Cancel();
   mCompileOrDecodeTask = nullptr;
 
@@ -284,8 +284,16 @@ already_AddRefed<JS::Stencil> ScriptLoadContext::StealOffThreadResult(
   RefPtr<CompileOrDecodeTask> compileOrDecodeTask =
       mCompileOrDecodeTask.forget();
 
-  return compileOrDecodeTask->AsStencilCompileOrDecodeTask()->StealResult(
-      aCx, aInstantiationStorage);
+  StencilCompileOrDecodeTask* task =
+      compileOrDecodeTask->AsStencilCompileOrDecodeTask();
+  RefPtr<JS::Stencil> stencil = task->StealResult(aCx, aInstantiationStorage);
+
+  if (mRequest->IsRetrievedAsSerializedStencil()) {
+    mRequest->RestoreSRIAndSerializedStencil(
+        task->TakeSRIAndSerializedStencil());
+  }
+
+  return stencil.forget();
 }
 
 bool ScriptLoadContext::StealOffThreadWasmResult(
