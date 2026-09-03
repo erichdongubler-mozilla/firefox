@@ -71,6 +71,8 @@ support-files = [
   "blank_iframe.html",
 ]
 
+["browser_UIDensityTelemetry.js"]
+
 ["browser_URILoadingHelper_chromeless.js"]
 
 ["browser_UnsubmittedCrashHandler.js"]
