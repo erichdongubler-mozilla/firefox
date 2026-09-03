@@ -182,5 +182,3 @@ fuzzy(0-102,0-2811) fuzzy-if(winWidget,147-153,2866-2866) == background-clip-tex
 random-if(Android) == background-clip-text-scale.html background-clip-text-scale-ref.html # bug 1733942
 != background-clip-text-translate.html about:blank
 != text-clip-and-stroke.html text-clip-and-no-stroke.html
-
-== sprite-sampling-clamp-1.html sprite-sampling-clamp-1-ref.html
