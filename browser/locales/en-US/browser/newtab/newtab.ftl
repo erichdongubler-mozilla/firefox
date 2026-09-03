@@ -1542,19 +1542,6 @@ home-prefs-sections-rows-option-srd =
            *[other] { $num } rows
         }
 
-home-restore-defaults-srd =
-    .label = Restore Defaults
-    .accesskey = R
-
-home-mode-choice-default-fx-srd =
-    .label = { -firefox-home-brand-name } (Default)
-
-home-mode-choice-custom-srd =
-    .label = Custom URLs…
-
-home-mode-choice-blank-srd =
-    .label = Blank Page
-
 home-prefs-shortcuts-header-srd =
     .label = Shortcuts
 

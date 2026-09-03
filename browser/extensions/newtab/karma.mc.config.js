@@ -945,13 +945,6 @@ module.exports = function (config) {
             "../../../toolkit/content/vendor/react/react-redux.js"
           )
         ),
-        // AppConstants is imported eagerly in AboutPreferences.sys.mjs, but
-        // karma's webpack bundler can't resolve resource:// URIs.
-        // Redirect to a test stub.
-        new webpack.NormalModuleReplacementPlugin(
-          /^resource:\/\/gre\/modules\/AppConstants\.sys\.mjs$/,
-          path.resolve(__dirname, "test/unit/stubs/AppConstants.sys.mjs")
-        ),
       ],
       externals: [
         // Use React 16 from toolkit vendor files for enzyme compatibility
