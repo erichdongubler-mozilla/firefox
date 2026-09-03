@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<meta charset=utf-8>
+<title>Test modules created while script is disabled</title>
+<script src="/tests/SimpleTest/SimpleTest.js"></script>
+<link rel="stylesheet" href="/tests/SimpleTest/test.css"/>
+<script>
+"use strict";
+
+const SIMPLE_MODULE = "./scriptDisabled_module.mjs";
+
+function addFrame() {
+  return new Promise(resolve => {
+    const frame = document.createElement("iframe");
+    frame.src = "scriptDisabled_frame.html";
+    frame.addEventListener("load", () => resolve(frame), { once: true });
+    document.body.appendChild(frame);
+  });
+}
+
+function importInFrame(frame, url) {
+  return SpecialPowers.spawn(frame, [url], async moduleUrl => {
+    const ns = await content.wrappedJSObject.importModule(moduleUrl);
+    return ns.wrappedJSObject.marker;
+  });
+}
+
+// https://html.spec.whatwg.org/#fetch-a-single-module-script
+// Step 5. If moduleMap[(url, moduleType)] is a module script, run onComplete
+//         given moduleMap[(url, moduleType)], and return.
+//
+// If the module is loaded before, the same module should return even if the
+// scripting is disabled.
+add_task(async function importAlreadyLoadedModule() {
+  const frame = await addFrame();
+
+  is(await importInFrame(frame, SIMPLE_MODULE), "module", "the module loads");
+
+  // The import completes from a task the ScriptLoader dispatches, so script
+  // stays blocked until the next spawn.
+  await SpecialPowers.spawn(frame, [SIMPLE_MODULE], url => {
+    Cu.blockScriptForGlobal(content);
+    content.wrappedJSObject.importModule(url);
+  });
+
+  await SpecialPowers.spawn(frame, [], () => {
+    Cu.unblockScriptForGlobal(content);
+  });
+
+  is(
+    await importInFrame(frame, SIMPLE_MODULE),
+    "module",
+    "the module still loads once script is enabled again"
+  );
+
+  frame.remove();
+});
+</script>
+<body></body>
