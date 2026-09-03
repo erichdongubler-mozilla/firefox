@@ -1438,7 +1438,10 @@ bool HTMLSelectElement::IsValueMissing(IgnoredOptionList aIgnored) const {
         continue;
       }
       first = false;
-      if (!Multiple() && Size() <= 1 && option->GetParent() == this) {
+      // https://html.spec.whatwg.org/#placeholder-label-option
+      // The option must be in our option list directly, rather than via an
+      // optgroup. Wrapper elements are transparent.
+      if (IsCombobox() && !ComputeNearestAncestors(*option).mOptGroup) {
         nsAutoString value;
         option->GetValue(value);
         if (value.IsEmpty()) {
