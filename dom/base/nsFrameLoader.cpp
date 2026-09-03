@@ -1110,8 +1110,11 @@ bool nsFrameLoader::ShowRemoteFrame(nsSubDocumentFrame* aFrame) {
     baseWindow->GetMainWidget(getter_AddRefs(mainWidget));
     nsSizeMode sizeMode =
         mainWidget ? mainWidget->SizeMode() : nsSizeMode_Normal;
-    const auto size =
-        hasSize ? aFrame->GetSubdocumentSize() : LayoutDeviceIntSize();
+    const auto size = aFrame
+                          ? aFrame->GetSubdocumentSize()
+                          : LayoutDeviceIntSize::Round(
+                                CSSSize::FromAppUnits(kFallbackIntrinsicSize) *
+                                widget->GetDefaultScale());
     OwnerShowInfo info(size, GetScrollbarPreference(mOwnerContent), sizeMode);
     if (!mRemoteBrowser->Show(info)) {
       return false;

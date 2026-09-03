@@ -282,27 +282,22 @@ LayoutDeviceIntSize nsSubDocumentFrame::GetInitialSubdocumentSize() const {
     for (const auto& detachedShell : frameloader->GetDetachedSubdocs()) {
       if (RefPtr<mozilla::PresShell> ps = do_QueryReferent(detachedShell)) {
         if (nsPresContext* pc = ps->GetPresContext()) {
-          return LayoutDeviceIntSize(
-              pc->AppUnitsToDevPixels(pc->GetVisibleArea().width),
-              pc->AppUnitsToDevPixels(pc->GetVisibleArea().height));
+          return LayoutDeviceIntSize::FromAppUnitsRounded(
+              pc->GetVisibleArea().Size(), pc->AppUnitsPerDevPixel());
         }
       }
     }
   }
-  // Pick some default size for now.  Using 10x10 because that's what the
-  // code used to do.
-  return LayoutDeviceIntSize(10, 10);
+  return LayoutDeviceIntSize::FromAppUnitsRounded(
+      kFallbackIntrinsicSize, PresContext()->AppUnitsPerDevPixel());
 }
 
 LayoutDeviceIntSize nsSubDocumentFrame::GetSubdocumentSize() const {
   if (HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
     return GetInitialSubdocumentSize();
   }
-
-  nsSize docSizeAppUnits = GetDestRect().Size();
-  nsPresContext* pc = PresContext();
-  return LayoutDeviceIntSize(pc->AppUnitsToDevPixels(docSizeAppUnits.width),
-                             pc->AppUnitsToDevPixels(docSizeAppUnits.height));
+  return LayoutDeviceIntSize::FromAppUnitsRounded(
+      GetDestRect().Size(), PresContext()->AppUnitsPerDevPixel());
 }
 
 static void WrapBackgroundColorInOwnLayer(nsDisplayListBuilder* aBuilder,
