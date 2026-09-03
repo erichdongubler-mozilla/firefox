@@ -51,6 +51,10 @@ struct CallbackInfo {
 
 class AudioClock {
  public:
+  // Whether a rebase should carry the audio the backend has been handed but has
+  // not played yet. It must not when that audio will never be played.
+  enum class CarryUnplayed { No, Yes };
+
   explicit AudioClock(uint32_t aInRate);
   // Out-of-line so FrameHistory only needs to be a complete type in
   // AudioStream.cpp; this lets other translation units construct and destroy an
@@ -62,13 +66,16 @@ class AudioClock {
   void UpdateFrameHistory(uint32_t aServiced, uint32_t aUnderrun,
                           bool aAudioThreadChanged);
 
-  // Rebase the clock for a stream reused across a seek so the reported playback
-  // position resumes from zero. |aBaseOffset| is the current raw engine frame
-  // count. Safe to call while the audio callback is still running (the stream
-  // is reused, not stopped): on macOS it only touches owner/consumer-thread
-  // state, elsewhere it takes mMutex. Must be called on the same
-  // (owner/consumer) thread as GetPosition.
-  void Rebase(int64_t aBaseOffset);
+  // Rebase the clock for a stream reused across a seek so the reported position
+  // resumes from zero. |aBaseOffset| is the current raw engine frame count.
+  // With |aCarry| set, audio handed over but not yet played is carried across
+  // as worth no media time; pass No when that audio will never be played.
+  //
+  // Safe to call with the audio callback still running. On macOS it must run on
+  // the same thread as GetPosition; elsewhere mMutex makes the thread
+  // immaterial. Must run before any post-seek audio reaches the data source, or
+  // that audio loses its media time permanently.
+  void Rebase(int64_t aBaseOffset, CarryUnplayed aCarry);
 
   /**
    * @param aFrames The playback position in frames of the audio engine.
