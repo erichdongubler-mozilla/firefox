@@ -138,14 +138,26 @@
         "value": {
           "default": "transparent",
           "prefersContrast": "currentColor",
-          "forcedColors": "SelectedItem"
+          "forcedColors": "SelectedItem",
+          "nova": {
+            "comment": "Preserve the base prefersContrast value",
+            "value": {
+              "forcedColors": "{button.border.color.hover}"
+            }
+          }
         }
       },
       "active": {
         "value": {
           "default": "transparent",
           "prefersContrast": "currentColor",
-          "forcedColors": "ButtonText"
+          "forcedColors": "ButtonText",
+          "nova": {
+            "comment": "Preserve the base prefersContrast value",
+            "value": {
+              "forcedColors": "{button.border.color.active}"
+            }
+          }
         }
       },
       "selected": {

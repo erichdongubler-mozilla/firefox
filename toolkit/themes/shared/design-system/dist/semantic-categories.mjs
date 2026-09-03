@@ -471,7 +471,7 @@ export const tokensTable = {
       name: "--table-header-background-color",
     },
     {
-      value: { default: "var(--background-color-canvas)" },
+      value: "var(--background-color-canvas)",
       name: "--table-row-background-color",
     },
     {
@@ -4699,7 +4699,7 @@ export const variableLookupTable = {
     },
     platform: { default: "AccentColorText" },
   },
-  "table-row-background-color": { default: "var(--background-color-canvas)" },
+  "table-row-background-color": "var(--background-color-canvas)",
   "table-row-background-color-alternate": {
     forcedColors: "var(--background-color-canvas)",
     brand: {

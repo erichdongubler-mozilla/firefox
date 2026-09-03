@@ -4,6 +4,7 @@
 
 import {
   existsSync,
+  mkdirSync,
   readdirSync,
   readFileSync,
   unlinkSync,
@@ -414,6 +415,84 @@ export function computeNovaValues(exportData) {
 // `figma-variables-all.json` is only a full mirror it diffs against.
 export const IMPORTED_VARIABLES_FILENAME = "nova-export-clean-variables.json";
 
+/**
+ * Compare tokens from Figma to tokens defined in code, and
+ * write their definitions in files for three cases:
+ * - tokens that only exist in Figma
+ * - tokens that only exist in code
+ * - tokens that are overridden in code due to incorrect values in Figma or limitations in Figma
+ *
+ * @param {object} figmaTokens
+ * @param {object} codeTokens
+ */
+const writeTokenAuditData = (figmaTokens, codeTokens) => {
+  const unusedFigmaTokens = {};
+  const codeOnlyTokens = {};
+  const codeOverrideTokens = {};
+
+  for (const [tokenName, tokenValue] of Object.entries(figmaTokens)) {
+    const normalizedTokenName = tokenName.replace("/@base", "");
+    if (!codeTokens[normalizedTokenName]) {
+      unusedFigmaTokens[normalizedTokenName] = tokenValue;
+    } else {
+      codeOverrideTokens[normalizedTokenName] = {
+        figma: tokenValue,
+        code: codeTokens[normalizedTokenName],
+      };
+    }
+  }
+
+  for (const [tokenName, tokenValue] of Object.entries(codeTokens)) {
+    const normalizedTokenName = tokenName.replace("/@base", "");
+    if (!figmaTokens[normalizedTokenName]) {
+      codeOnlyTokens[normalizedTokenName] = tokenValue;
+    }
+
+    const normalizedTokenValue = {
+      light: figmaTokens[`${normalizedTokenName}/light`],
+      dark: figmaTokens[`${normalizedTokenName}/dark`],
+      forcedColors: figmaTokens[`${normalizedTokenName}/forcedColors`],
+    };
+
+    if (
+      normalizedTokenValue.light ||
+      normalizedTokenValue.dark ||
+      normalizedTokenValue.forcedColors
+    ) {
+      codeOverrideTokens[normalizedTokenName] = {
+        figma: normalizedTokenValue,
+        code: tokenValue,
+      };
+
+      delete codeOnlyTokens[normalizedTokenName];
+      delete unusedFigmaTokens[`${normalizedTokenName}/light`];
+      delete unusedFigmaTokens[`${normalizedTokenName}/dark`];
+      delete unusedFigmaTokens[`${normalizedTokenName}/forcedColors`];
+    }
+  }
+
+  const OUTPUT_PATH = "../dist/token-audit";
+  if (!existsSync(joinRelativePath(OUTPUT_PATH))) {
+    mkdirSync(joinRelativePath(OUTPUT_PATH));
+  }
+
+  writeFileSync(
+    joinRelativePath(OUTPUT_PATH, "unused-figma-tokens.json"),
+    JSON.stringify(unusedFigmaTokens, null, 2),
+    "utf8"
+  );
+  writeFileSync(
+    joinRelativePath(OUTPUT_PATH, "code-only-tokens.json"),
+    JSON.stringify(codeOnlyTokens, null, 2),
+    "utf8"
+  );
+  writeFileSync(
+    joinRelativePath(OUTPUT_PATH, "code-override-tokens.json"),
+    JSON.stringify(codeOverrideTokens, null, 2),
+    "utf8"
+  );
+};
+
 const isMain = process.argv[1] === fileURLToPath(import.meta.url);
 if (isMain) {
   const exportData = JSON.parse(
@@ -428,11 +507,5 @@ if (isMain) {
   }
   writeTokens();
 
-  // eslint-disable-next-line no-console
-  console.log("Remaining Figma vars:", figmaVars);
-  // eslint-disable-next-line no-console
-  console.log(
-    "Tokens in code that take precedence over Figma:",
-    localOverrides
-  );
+  writeTokenAuditData(figmaVars, localOverrides);
 }

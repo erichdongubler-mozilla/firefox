@@ -26,6 +26,11 @@ def _pick_variant(resolved, variant):
             return resolved[variant]
         if "default" in resolved:
             return resolved["default"]
+        if "brand" in resolved:
+            if variant in resolved["brand"]:
+                return resolved["brand"][variant]
+            else:
+                return resolved["brand"]
     return resolved
 
 

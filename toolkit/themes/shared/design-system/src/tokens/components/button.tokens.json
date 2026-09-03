@@ -145,6 +145,7 @@
           "value": "{button.background.color.active}"
         },
         "disabled": {
+          "ignoreFigma": "Preserve token structure that can't be replicated in Figma",
           "value": {
             "default": "{button.background.color.ghost.@base}",
             "brand": {
@@ -265,7 +266,13 @@
         "value": {
           "default": "transparent",
           "prefersContrast": "{button.text.color.@base}",
-          "forcedColors": "{border.color.interactive.@base}"
+          "forcedColors": "{border.color.interactive.@base}",
+          "nova": {
+            "comment": "Preserve prefersContrast value",
+            "value": {
+              "default": "{color.accent.primary.@base}"
+            }
+          }
         }
       },
       "active": {
@@ -614,6 +621,14 @@
             "brand": {
               "prefersContrast": "{button.text.color.@base}",
               "forcedColors": "{button.text.color.@base}"
+            },
+            "nova": {
+              "comment": "Preserve token structure that can't be replicated in Figma",
+              "value": {
+                "brand": {
+                  "forcedColors": "ButtonText"
+                }
+              }
             }
           }
         },
@@ -621,7 +636,13 @@
           "value": {
             "default": "inherit",
             "prefersContrast": "{button.text.color.active}",
-            "forcedColors": "{button.text.color.active}"
+            "forcedColors": "{button.text.color.active}",
+            "nova": {
+              "comment": "Preserve prefersContrast value",
+              "value": {
+                "default": "{button.text.color.ghost.@base}"
+              }
+            }
           }
         },
         "disabled": {
@@ -630,6 +651,15 @@
             "brand": {
               "prefersContrast": "{button.text.color.disabled}",
               "forcedColors": "{button.text.color.disabled}"
+            },
+            "nova": {
+              "comment": "Preserve token structure that can't be replicated in Figma",
+              "value": {
+                "brand": {
+                  "default": "{button.text.color.ghost.@base}",
+                  "forcedColors": "GrayText"
+                }
+              }
             }
           }
         },
@@ -637,7 +667,14 @@
           "value": {
             "default": "inherit",
             "prefersContrast": "{button.text.color.hover}",
-            "forcedColors": "{button.text.color.hover}"
+            "forcedColors": "{button.text.color.hover}",
+            "nova": {
+              "comment": "Preserve prefersContrast value",
+              "value": {
+                "default": "{button.text.color.ghost.@base}",
+                "forcedColors": "{button.text.color.ghost.active}"
+              }
+            }
           }
         },
         "selected": {

@@ -32,18 +32,6 @@
           "forcedColors": "{button.border.color.@base}"
         }
       },
-      "hover": {
-        "value": {
-          "default": "transparent",
-          "forcedColors": "{button.border.color.hover}"
-        }
-      },
-      "active": {
-        "value": {
-          "default": "transparent",
-          "forcedColors": "{button.border.color.active}"
-        }
-      },
       "selected": {
         "value": "{toolbarbutton.outline.color.active}"
       }

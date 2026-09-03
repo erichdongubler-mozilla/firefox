@@ -10,7 +10,7 @@ export const createNovaNewtabFormat =
   () =>
   ({ dictionary }) => {
     let content = newtabFileHeader();
-    content += getNewtabTokenCSS({ dictionary, overrideIdentifier: "nova" });
+    content += getNewtabTokenCSS({ dictionary });
 
     return postProcessNovaNewtab(`${content}\n`);
   };

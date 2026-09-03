@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { sep } from "node:path";
 import { getLayerString } from "../desktop-format/get-layer-string.mjs";
 
 const getFileName = file => {
@@ -9,7 +10,8 @@ const getFileName = file => {
     return "the relevant *.tokens.json file";
   }
 
-  const cssFileName = file.destination.split("/").at(-1);
+  // Windows file separators can end up mixed with forward slashes in these paths, so we check for them as well
+  const cssFileName = file.destination.split("/").at(-1).split(sep).at(-1);
   return cssFileName.replace(".css", ".json");
 };
 

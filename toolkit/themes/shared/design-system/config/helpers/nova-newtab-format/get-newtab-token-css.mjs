@@ -2,15 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { getTokensByLayer } from "../desktop-format/get-tokens-by-layer.mjs";
+import { getNewtabTokensByLayer } from "./get-newtab-tokens-by-layer.mjs";
 
-export const getNewtabTokenCSS = ({ dictionary, overrideIdentifier }) => {
+export const getNewtabTokenCSS = ({ dictionary }) => {
   let content = "";
 
-  const { foundation, forcedColors } = getTokensByLayer({
-    dictionary,
-    overrideIdentifier,
-  });
+  const { foundation, forcedColors } = getNewtabTokensByLayer(dictionary);
 
   if (foundation.length) {
     content += `:root.nova-tokens {${foundation.join("\n  ").replaceAll("  \n", "\n")}
