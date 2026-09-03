@@ -10,9 +10,7 @@
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
-const lazy = {};
-
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   CleanupManager: "resource://normandy/lib/CleanupManager.sys.mjs",
   ExperimentManager: "resource://nimbus/lib/ExperimentManager.sys.mjs",
   FeatureManifest: "resource://nimbus/FeatureManifest.sys.mjs",
@@ -23,13 +21,18 @@ ChromeUtils.defineESModuleGetters(lazy, {
   RemoteSettingsExperimentLoader:
     "resource://nimbus/lib/RemoteSettingsExperimentLoader.sys.mjs",
   UnenrollmentCause: "resource://nimbus/lib/ExperimentManager.sys.mjs",
-});
 
-ChromeUtils.defineLazyGetter(lazy, "log", () => {
-  const { Logger } = ChromeUtils.importESModule(
-    "resource://messaging-system/lib/Logger.sys.mjs"
-  );
-  return new Logger("ExperimentAPI");
+  log: () => {
+    const { Logger } = ChromeUtils.importESModule(
+      "resource://messaging-system/lib/Logger.sys.mjs"
+    );
+    return new Logger("ExperimentAPI");
+  },
+
+  COLLECTION_ID: {
+    pref: "messaging-system.rsexperimentloader.collection_id",
+    default: "nimbus-desktop-experiments",
+  },
 });
 
 const CRASHREPORTER_ENABLED =
@@ -43,16 +46,8 @@ const Prefs = Object.freeze({
   ROLLOUTS_ENABLED: "nimbus.rollouts.enabled",
   TELEMETRY_ENABLED: "datareporting.healthreport.uploadEnabled",
   STUDIES_ENABLED: "app.shield.optoutstudies.enabled",
-  COLLECTION_ID: "messaging-system.rsexperimentloader.collection_id",
   NIMBUS_PROFILE_ID: "nimbus.profileId",
 });
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "COLLECTION_ID",
-  Prefs.COLLECTION_ID,
-  "nimbus-desktop-experiments"
-);
 
 function parseJSON(value) {
   if (value) {

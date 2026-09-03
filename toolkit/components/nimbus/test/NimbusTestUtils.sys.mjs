@@ -14,10 +14,9 @@ import { ExperimentStore } from "resource://nimbus/lib/ExperimentStore.sys.mjs";
 import { FileTestUtils } from "resource://testing-common/FileTestUtils.sys.mjs";
 import enrollmentSchema from "resource://testing-common/nimbus/schemas/NimbusEnrollment.schema.json" with { type: "json" };
 import featureSchema from "resource://testing-common/nimbus/schemas/ExperimentFeature.schema.json" with { type: "json" };
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-const lazy = {};
-
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   FeatureManifest: "resource://nimbus/FeatureManifest.sys.mjs",
   JsonSchema: "resource://gre/modules/JsonSchema.sys.mjs",
   NimbusEnrollments: "resource://nimbus/lib/Enrollments.sys.mjs",

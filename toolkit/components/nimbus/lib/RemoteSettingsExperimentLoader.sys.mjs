@@ -6,9 +6,7 @@
 
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-const lazy = {};
-
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   _ExperimentFeature: "resource://nimbus/ExperimentAPI.sys.mjs",
   ASRouterTargeting:
     // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
@@ -25,26 +23,38 @@ ChromeUtils.defineESModuleGetters(lazy, {
   TargetingContext: "resource://messaging-system/targeting/Targeting.sys.mjs",
   recordTargetingContext:
     "resource://nimbus/lib/TargetingContextRecorder.sys.mjs",
+
+  log: () => {
+    const { Logger } = ChromeUtils.importESModule(
+      "resource://messaging-system/lib/Logger.sys.mjs"
+    );
+    return new Logger("RSLoader");
+  },
+
+  timerManager: {
+    service: "@mozilla.org/updates/timer-manager;1",
+    iid: Ci.nsIUpdateTimerManager,
+  },
+
+  COLLECTION_ID: {
+    pref: "messaging-system.rsexperimentloader.collection_id",
+    default: "nimbus-desktop-experiments",
+  },
+
+  NIMBUS_DEBUG: {
+    pref: "nimbus.debug",
+    default: false,
+  },
+
+  APP_ID: {
+    pref: "nimbus.appId",
+    default: "firefox-desktop",
+  },
+
+  TARGETING_CONTEXT_TELEMETRY_ENABLED: {
+    pref: "nimbus.telemetry.targetingContextEnabled",
+  },
 });
-
-ChromeUtils.defineLazyGetter(lazy, "log", () => {
-  const { Logger } = ChromeUtils.importESModule(
-    "resource://messaging-system/lib/Logger.sys.mjs"
-  );
-  return new Logger("RSLoader");
-});
-
-XPCOMUtils.defineLazyServiceGetter(
-  lazy,
-  "timerManager",
-  "@mozilla.org/updates/timer-manager;1",
-  Ci.nsIUpdateTimerManager
-);
-
-const COLLECTION_ID_PREF = "messaging-system.rsexperimentloader.collection_id";
-const COLLECTION_ID_FALLBACK = "nimbus-desktop-experiments";
-const TARGETING_CONTEXT_TELEMETRY_ENABLED_PREF =
-  "nimbus.telemetry.targetingContextEnabled";
 
 const TIMER_NAME = "rs-experiment-loader-timer";
 const TIMER_LAST_UPDATE_PREF = `app.update.lastUpdateTime.${TIMER_NAME}`;
@@ -52,7 +62,6 @@ const TIMER_LAST_UPDATE_PREF = `app.update.lastUpdateTime.${TIMER_NAME}`;
 const RUN_INTERVAL_PREF = "app.normandy.run_interval_seconds";
 const NIMBUS_DEBUG_PREF = "nimbus.debug";
 const NIMBUS_VALIDATION_PREF = "nimbus.validation.enabled";
-const NIMBUS_APPID_PREF = "nimbus.appId";
 
 const SECURE_EXPERIMENTS_COLLECTION_ID = "nimbus-secure-experiments";
 
@@ -87,30 +96,6 @@ const RS_COLLECTION_OPTIONS = {
     requiredFeatureIds: SECURE_FEATURE_IDS,
   },
 };
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "COLLECTION_ID",
-  COLLECTION_ID_PREF,
-  COLLECTION_ID_FALLBACK
-);
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "NIMBUS_DEBUG",
-  NIMBUS_DEBUG_PREF,
-  false
-);
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "APP_ID",
-  NIMBUS_APPID_PREF,
-  "firefox-desktop"
-);
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "TARGETING_CONTEXT_TELEMETRY_ENABLED",
-  TARGETING_CONTEXT_TELEMETRY_ENABLED_PREF
-);
 
 const SCHEMAS = {
   get NimbusExperiment() {

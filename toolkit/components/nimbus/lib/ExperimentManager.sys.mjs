@@ -2,9 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const lazy = {};
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   ClientEnvironment: "resource://normandy/lib/ClientEnvironment.sys.mjs",
   ClientID: "resource://gre/modules/ClientID.sys.mjs",
   ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
@@ -20,13 +20,13 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "resource://nimbus/lib/RemoteSettingsExperimentLoader.sys.mjs",
   MatchStatus: "resource://nimbus/lib/RemoteSettingsExperimentLoader.sys.mjs",
   Sampling: "resource://gre/modules/components-utils/Sampling.sys.mjs",
-});
 
-ChromeUtils.defineLazyGetter(lazy, "log", () => {
-  const { Logger } = ChromeUtils.importESModule(
-    "resource://messaging-system/lib/Logger.sys.mjs"
-  );
-  return new Logger("ExperimentManager");
+  log: () => {
+    const { Logger } = ChromeUtils.importESModule(
+      "resource://messaging-system/lib/Logger.sys.mjs"
+    );
+    return new Logger("ExperimentManager");
+  },
 });
 
 /** @typedef {import("./PrefFlipsFeature.sys.mjs").PrefBranch} PrefBranch */
