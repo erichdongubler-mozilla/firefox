@@ -16770,10 +16770,43 @@ vpn:
         description:
           The error code or number associated with the error, if available.
         type: string
+      operation:
+        description: >
+          Which engine request failed: "activate" or "deactivate". Both are
+          reported through the same action, so error_code alone cannot tell
+          them apart.
+        type: string
+      service_state:
+        description: >
+          Service state when the engine reported the failure. Not the state that
+          issued the request: the reply is asynchronous, so the two can differ.
+          One of "uninitialized", "unavailable", "unauthenticated", "opted_out",
+          "ready".
+        type: string
+      proxy_state:
+        description: >
+          Proxy state when the engine reported the failure. Not the state that
+          issued the request: the reply is asynchronous, so the two can differ.
+          One of "uninitialized", "idle", "activating", "active",
+          "data_limit_reached", "connection_error".
+        type: string
+      account_state:
+        description: >
+          Account status when the engine reported the failure. Not the status
+          that issued the request: the reply is asynchronous, so the two can
+          differ. One of "uninitialized", "warming_up", "no_account",
+          "needs_authentication", "requesting_authentication",
+          "needs_authorization", "requesting_authorization",
+          "awaiting_authentication", "awaiting_authorization",
+          "awaiting_enrollment", "auth_failed", "authenticated",
+          "enrolled_and_entitled", "try_again".
+        type: string
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2031198
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2068852
     data_reviews:
       - https://phabricator.services.mozilla.com/D293774
+      - https://phabricator.services.mozilla.com/D323162
     data_sensitivity:
       - technical
     notification_emails:

@@ -9,6 +9,7 @@ package org.mozilla.fenix.components.ipprotection
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.components.ExperimentalAndroidComponentsApi
+import mozilla.components.feature.ipprotection.store.ActivationOperation
 import mozilla.components.feature.ipprotection.store.IPProtectionAction
 import mozilla.components.feature.ipprotection.store.IPProtectionStore
 import mozilla.components.feature.ipprotection.store.state.EligibilityStatus
@@ -49,7 +50,7 @@ class IPProtectionSnackbarMiddlewareTest {
 
     @Test
     fun `WHEN ActivationFailed is dispatched THEN ShowSnackbar action is dispatched`() {
-        ipProtectionStore.dispatch(IPProtectionAction.ToggleFailed())
+        ipProtectionStore.dispatch(IPProtectionAction.ToggleFailed(ActivationOperation.Activate))
 
         captureMiddleware.assertLastAction(AppAction.IPProtectionSnackbarAction.ShowSnackbar::class) { action ->
             assertEquals(connectionError, action.title)
@@ -78,7 +79,7 @@ class IPProtectionSnackbarMiddlewareTest {
             // Simulates HomeActivity recreation: the same process-scoped IPProtectionStore now has
             // a new observer (a freshly-instantiated IPProtectionInfoPrompter). With the snackbar
             // owned by middleware, the new observer does not re-fire on already-set state.
-            ipProtectionStore.dispatch(IPProtectionAction.ToggleFailed())
+            ipProtectionStore.dispatch(IPProtectionAction.ToggleFailed(ActivationOperation.Activate))
             captureMiddleware.assertLastAction(AppAction.IPProtectionSnackbarAction.ShowSnackbar::class)
             captureMiddleware.reset()
 
