@@ -4610,8 +4610,9 @@ void nsTextFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
     aContent->UnsetFlags(NS_HAS_FLOWLENGTH_PROPERTY);
   }
 
-  // Since our content has a frame now, this flag is no longer needed.
-  aContent->UnsetFlags(NS_CREATE_FRAME_IF_NON_WHITESPACE);
+  // Since our content has a frame now, these flags are no longer needed.
+  aContent->UnsetFlags(NS_CREATE_FRAME_IF_NON_WHITESPACE |
+                       NS_REFRAME_IF_WHITESPACE);
 
   // We're not a continuing frame.
   // mContentOffset = 0; not necessary since we get zeroed out at init
