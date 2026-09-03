@@ -347,8 +347,8 @@ AST_MATCHER(CXXRecordDecl, hasRefCntMember) {
   return isClassRefCounted(&Node) && getClassRefCntMember(&Node);
 }
 
-/// This matcher will select classes which are refcounted.
-AST_MATCHER(CXXRecordDecl, isRefCounted) { return isClassRefCounted(&Node); }
+/// This matcher will select types which are refcounted.
+AST_MATCHER(QualType, isRefCounted) { return isClassRefCounted(Node); }
 
 AST_MATCHER(QualType, hasVTable) { return typeHasVTable(Node); }
 
@@ -561,6 +561,11 @@ AST_MATCHER(MemberExpr, hasKnownLiveAnnotation) {
   ValueDecl *Member = Node.getMemberDecl();
   FieldDecl *Field = dyn_cast<FieldDecl>(Member);
   return Field && hasCustomAttribute<moz_known_live>(Field);
+}
+
+AST_MATCHER(CXXMethodDecl, methodHasKnownLiveAnnotation) {
+  const CXXMethodDecl *Decl = Node.getCanonicalDecl();
+  return Decl && hasCustomAttribute<moz_known_live>(Decl);
 }
 
 #define GENERATE_JSTYPEDEF_PAIR(templateName)                                  \
