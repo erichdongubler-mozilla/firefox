@@ -134,6 +134,9 @@ export class UrlbarParent extends JSWindowActorParent {
       case "RecordSearchInOpenedTab":
         controller.recordSearchInOpenedTab(message.data.searchData);
         break;
+      case "RecordZeroPrefix":
+        controller.recordZeroPrefix(message.data.kind);
+        break;
       case "CheckKeywordURIFixup":
         controller.checkKeywordURIFixup(
           message.data.searchString,

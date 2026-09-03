@@ -1590,10 +1590,10 @@ interface GleanImpl {
     picked: Record<string, GleanCounter>;
   }
 
-  urlbarZeroprefix: {
-    abandonment: GleanCounter;
-    engagement: GleanCounter;
-    exposure: GleanCounter;
+  urlbarZeroprefix2: {
+    abandonment: Record<"newtab_searchbar"|"searchbar"|"smartbar"|"urlbar", GleanCounter>;
+    engagement: Record<"newtab_searchbar"|"searchbar"|"smartbar"|"urlbar", GleanCounter>;
+    exposure: Record<"newtab_searchbar"|"searchbar"|"smartbar"|"urlbar", GleanCounter>;
   }
 
   addonsSearchDetection: {

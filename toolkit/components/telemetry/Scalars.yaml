@@ -4070,52 +4070,6 @@ urlbar.searchmode:
     record_in_processes:
       - main
 
-urlbar.zeroprefix:
-  abandonment:
-    bug_numbers:
-      - 1806765
-    description: >
-      Counts how many times the zero-prefix urlbar results panel was abandoned.
-    expires: never
-    kind: uint
-    notification_emails:
-      - fx-search-telemetry@mozilla.com
-    release_channel_collection: opt-out
-    products:
-      - 'firefox'
-    record_in_processes:
-      - main
-  engagement:
-    bug_numbers:
-      - 1806765
-    description: >
-      Counts how many times a result was picked in the zero-prefix urlbar
-      results panel.
-    expires: never
-    kind: uint
-    notification_emails:
-      - fx-search-telemetry@mozilla.com
-    release_channel_collection: opt-out
-    products:
-      - 'firefox'
-    record_in_processes:
-      - main
-  exposure:
-    bug_numbers:
-      - 1806765
-    description: >
-      Counts how many times the zero-prefix urlbar results panel was shown to
-      the user.
-    expires: never
-    kind: uint
-    notification_emails:
-      - fx-search-telemetry@mozilla.com
-    release_channel_collection: opt-out
-    products:
-      - 'firefox'
-    record_in_processes:
-      - main
-
 quickaction:
   picked:
     bug_numbers:

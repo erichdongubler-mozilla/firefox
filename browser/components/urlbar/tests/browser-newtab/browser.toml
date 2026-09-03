@@ -47,3 +47,5 @@ support-files = [
 ["browser_topLayer.js"]
 
 ["browser_viewBounds.js"]
+
+["browser_zeroPrefixTelemetry.js"]

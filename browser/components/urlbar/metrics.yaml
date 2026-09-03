@@ -1556,54 +1556,72 @@ urlbar.persistedsearchterms:
     expires: never
     telemetry_mirror: URLBAR_PERSISTEDSEARCHTERMS_VIEW_COUNT
 
-urlbar.zeroprefix:
+urlbar.zeroprefix2:
   abandonment:
-    type: counter
+    type: labeled_counter
     description: >
-      Counts how many times the zero-prefix urlbar results panel was
-      abandoned.
-      This metric was generated to correspond to the Legacy Telemetry
-      scalar urlbar.zeroprefix.abandonment.
+      Counts how many times the zero-prefix results view was abandoned,
+      labeled by the search access point it was shown for.
+    labels:
+      - urlbar
+      - searchbar
+      - newtab_searchbar
+      - smartbar
     bugs:
-      - https://bugzil.la/1806765
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1806765
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2066165
     data_reviews:
-      - https://bugzil.la/1806765
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1806765
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2066165
     notification_emails:
       - fx-search-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: URLBAR_ZEROPREFIX_ABANDONMENT
+    data_sensitivity:
+      - interaction
 
   engagement:
-    type: counter
+    type: labeled_counter
     description: >
-      Counts how many times a result was picked in the zero-prefix urlbar
-      results panel.
-      This metric was generated to correspond to the Legacy Telemetry
-      scalar urlbar.zeroprefix.engagement.
+      Counts how many times a result was picked in the zero-prefix results
+      view, labeled by the search access point it was shown for.
+    labels:
+      - urlbar
+      - searchbar
+      - newtab_searchbar
+      - smartbar
     bugs:
-      - https://bugzil.la/1806765
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1806765
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2066165
     data_reviews:
-      - https://bugzil.la/1806765
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1806765
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2066165
     notification_emails:
       - fx-search-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: URLBAR_ZEROPREFIX_ENGAGEMENT
+    data_sensitivity:
+      - interaction
 
   exposure:
-    type: counter
+    type: labeled_counter
     description: >
-      Counts how many times the zero-prefix urlbar results panel was shown
-      to the user.
-      This metric was generated to correspond to the Legacy Telemetry
-      scalar urlbar.zeroprefix.exposure.
+      Counts how many times the zero-prefix results view was shown to the
+      user, labeled by the search access point it was shown for.
+    labels:
+      - urlbar
+      - searchbar
+      - newtab_searchbar
+      - smartbar
     bugs:
-      - https://bugzil.la/1806765
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1806765
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2066165
     data_reviews:
-      - https://bugzil.la/1806765
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1806765
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2066165
     notification_emails:
       - fx-search-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: URLBAR_ZEROPREFIX_EXPOSURE
+    data_sensitivity:
+      - interaction
 
 urlbar.quickaction:
   picked:

@@ -712,6 +712,16 @@ export class UrlbarParentController {
   }
 
   /**
+   * Counts a zero-prefix view event under this input's SAP.
+   *
+   * @param {"abandonment"|"engagement"|"exposure"} kind
+   *   The zero-prefix event to count.
+   */
+  recordZeroPrefix(kind) {
+    Glean.urlbarZeroprefix2[kind][this.sapName].add(1);
+  }
+
+  /**
    * Runs the single-word keyword URI fixup DNS check for a search picked in the
    * address bar. When a single word is turned directly into a search (bypassing
    * the docShell), this reproduces the docShell's DNS lookup that offers to

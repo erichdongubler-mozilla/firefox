@@ -222,6 +222,20 @@ export class UrlbarParentControllerProxy {
   }
 
   /**
+   * Ships a zero-prefix view event to the parent recorder. The counterpart to
+   * the controller's `recordZeroPrefix()`.
+   *
+   * @param {Parameters<UrlbarParentController["recordZeroPrefix"]>[0]} kind
+   *   The zero-prefix event to count.
+   */
+  recordZeroPrefix(kind) {
+    this.#port.sendAsyncMessage("RecordZeroPrefix", {
+      instanceId: this.#instanceId,
+      kind,
+    });
+  }
+
+  /**
    * Runs the address bar's single-word keyword URI fixup DNS check parent-side.
    * The counterpart to the controller's `checkKeywordURIFixup()`.
    *
