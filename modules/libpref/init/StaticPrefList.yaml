@@ -12239,6 +12239,16 @@
   value: @IS_NIGHTLY_BUILD@
   mirror: always
 
+# When true, MediaCapabilities answers non-WebRTC decoding support queries from
+# the cached codec-support snapshot (PDMFactorySupport), waiting asynchronously
+# for remote processes to report their support. When false, it falls back to
+# the original behaviour of creating a decoder and querying it (video) or a
+# synchronous PDMFactorySupport query (audio).
+- name: media.mediacapabilities.codec-support-cache.enabled
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+
 # Enable WebRTC type support in Media Capabilities API.
 - name: media.mediacapabilities.webrtc.enabled
   type: RelaxedAtomicBool
