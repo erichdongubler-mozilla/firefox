@@ -62,11 +62,9 @@ void ReportToConsoleInvalidAllowValue(Document* aDocument,
 }  // namespace
 
 /* static */
-bool FeaturePolicyParser::ParseString(const nsAString& aPolicy,
-                                      Document* aDocument,
-                                      nsIPrincipal* aSelfOrigin,
-                                      nsIPrincipal* aSrcOrigin,
-                                      nsTArray<Feature>& aParsedFeatures) {
+bool FeaturePolicyParser::ParsePolicyFromAttribute(
+    const nsAString& aPolicy, Document* aDocument, nsIPrincipal* aSelfOrigin,
+    nsIPrincipal* aSrcOrigin, nsTArray<Feature>& aParsedFeatures) {
   MOZ_ASSERT(aSelfOrigin);
 
   nsTArray<CopyableTArray<nsString>> tokens;
