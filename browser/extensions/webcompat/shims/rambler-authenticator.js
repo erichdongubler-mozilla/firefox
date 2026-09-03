@@ -21,7 +21,7 @@ if (!window.ramblerIdHelper) {
       if (
         (protocol === "http:" || protocol === "https:") &&
         hostname === "id.rambler.ru" &&
-        pathname === "rambler-id-helper/auth_events.js"
+        pathname === "/rambler-id-helper/auth_events.js"
       ) {
         return href;
       }
@@ -71,9 +71,8 @@ if (!window.ramblerIdHelper) {
     getProfileInfo: (successCallback, _errorCallback) => {
       successCallback({});
     },
-    openAuth: () => {
-      sendMessageToAddon("optIn").then(function () {
-        const openAuthArgs = arguments;
+    openAuth: (...openAuthArgs) => {
+      sendMessageToAddon("optIn").then(() => {
         window.ramblerIdHelper = undefined;
         const s = document.createElement("script");
         s.src = originalScript;
@@ -91,8 +90,8 @@ if (!window.ramblerIdHelper) {
 
   const callLog = [];
   function addLoggedCall(fn) {
-    ramblerIdHelper[fn] = () => {
-      callLog.push({ fn, args: arguments });
+    ramblerIdHelper[fn] = (...args) => {
+      callLog.push({ fn, args });
     };
   }
 
