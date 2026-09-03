@@ -136,7 +136,7 @@ describe("<Lists>", () => {
 
   it("should toggle task completion", () => {
     const taskItem = wrapper.find(".task-item").at(0);
-    const checkbox = wrapper.find("input[type='checkbox']").at(0);
+    const checkbox = wrapper.find("moz-checkbox").at(0);
     checkbox.simulate("change", { target: { checked: true } });
     // dispatch not called until transition has ended
     assert.equal(dispatch.callCount, 0);
@@ -158,6 +158,55 @@ describe("<Lists>", () => {
     assert.equal(newTelemetryEvent.data.widget_source, "widget");
     assert.equal(newTelemetryEvent.data.user_action, "task_complete");
     assert.equal(newTelemetryEvent.data.widget_size, "medium");
+  });
+
+  it("names the task checkbox after the task it belongs to", () => {
+    // moz-checkbox keeps its input in the shadow DOM, so the task label cannot
+    // name it through htmlFor -- the name has to be forwarded via aria-label.
+    assert.equal(wrapper.find("moz-checkbox").at(0).prop("aria-label"), "task");
+  });
+
+  it("should un-complete a task when its completed label is clicked", () => {
+    const state = {
+      ...mockState,
+      ListsWidget: {
+        ...mockState.ListsWidget,
+        lists: {
+          "test-list": {
+            label: "Checklist",
+            tasks: [],
+            completed: [
+              { id: "done", value: "done", completed: true, isUrl: false },
+            ],
+          },
+        },
+      },
+    };
+
+    const localWrapper = mount(
+      <WrapWithProvider state={state}>
+        <Lists
+          dispatch={dispatch}
+          handleUserInteraction={handleUserInteraction}
+        />
+      </WrapWithProvider>
+    );
+
+    localWrapper.find(".task-type-completed .task-label").simulate("click");
+
+    const [action] = dispatch.getCall(0).args;
+    assert.equal(action.type, at.WIDGETS_LISTS_UPDATE);
+    assert.equal(action.data.lists["test-list"].completed.length, 0);
+    assert.equal(action.data.lists["test-list"].tasks.length, 1);
+    assert.isFalse(action.data.lists["test-list"].tasks[0].completed);
+  });
+
+  it("should edit rather than complete a task when its label is clicked", () => {
+    wrapper.find(".task-type-tasks .task-label").simulate("click");
+    wrapper.update();
+
+    assert.equal(wrapper.find("input.edit-task").length, 1);
+    assert.equal(dispatch.callCount, 0);
   });
 
   it("should not dispatch an action when input is empty and Enter is pressed", () => {
@@ -381,7 +430,7 @@ describe("<Lists>", () => {
       0
     );
     assert.equal(localWrapper.find(".lists-completed-button").length, 0);
-    assert.equal(localWrapper.find("input[type='checkbox']").length, 4);
+    assert.equal(localWrapper.find("moz-checkbox").length, 4);
     assert.equal(localWrapper.find(".task-item").length, 4);
     assert.equal(localWrapper.find(".completed-task-wrapper").length, 0);
   });

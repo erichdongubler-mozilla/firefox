@@ -1020,14 +1020,16 @@ function ListItem({
     typeof window.matchMedia === "function" &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  function handleCheckboxChange(e) {
-    const { checked } = e.target;
-    const updatedTask = { ...task, completed: checked };
-    if (checked && !prefersReducedMotion) {
+  function toggleCompleted(completed) {
+    if (completed && !prefersReducedMotion) {
       setExiting(true);
     } else {
-      updateTask(updatedTask, type);
+      updateTask({ ...task, completed }, type);
     }
+  }
+
+  function handleCheckboxChange(e) {
+    toggleCompleted(e.target.checked);
   }
 
   // When the CSS transition finishes, dispatch the real “completed = true”
@@ -1068,8 +1070,9 @@ function ListItem({
     <label
       className="task-label"
       title={task.value}
-      htmlFor={`task-${task.id}`}
-      onClick={() => setIsEditing(true)}
+      onClick={() =>
+        isCompleted ? toggleCompleted(false) : setIsEditing(true)
+      }
     >
       {task.value}
     </label>
@@ -1083,11 +1086,10 @@ function ListItem({
       onTransitionEnd={handleTransitionEnd}
     >
       <div className="checkbox-wrapper" key={isEditing}>
-        <input
-          type="checkbox"
+        <moz-checkbox
           onChange={handleCheckboxChange}
-          checked={task.completed || exiting}
-          id={`task-${task.id}`}
+          checked={task.completed || exiting || undefined}
+          aria-label={task.value}
         />
         {isCompleted ? (
           taskLabel
