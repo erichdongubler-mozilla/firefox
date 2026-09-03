@@ -1,6 +1,63 @@
 {
   "data": [
     {
+      "hash": "c944e753f298bbdf6506388de7257fb48cbd12c83e2807e2c284fc323771895b",
+      "name": "lex.50.50.ruen.s2t.bin",
+      "schema": 1788296459453,
+      "toLang": "en",
+      "version": "2.1",
+      "fileType": "lex",
+      "fromLang": "ru",
+      "attachment": {
+        "hash": "c944e753f298bbdf6506388de7257fb48cbd12c83e2807e2c284fc323771895b",
+        "size": 4397908,
+        "filename": "lex.50.50.ruen.s2t.bin",
+        "location": "main-workspace/translations-models/20260901210100--fd808a7b-0081-427d-83a5-7043bdd97a87--215ca362-0436-495d-b89d-542187b696cb.bin",
+        "mimetype": "application/octet-stream"
+      },
+      "filter_expression": "",
+      "id": "fd808a7b-0081-427d-83a5-7043bdd97a87",
+      "last_modified": 1788296824409
+    },
+    {
+      "hash": "aa0efa194b3dbd2da129ba0b8db8ef139126cb0914e57072f62061294746f1e2",
+      "name": "model.ruen.intgemm.alphas.bin",
+      "schema": 1788296448109,
+      "toLang": "en",
+      "version": "2.1",
+      "fileType": "model",
+      "fromLang": "ru",
+      "attachment": {
+        "hash": "aa0efa194b3dbd2da129ba0b8db8ef139126cb0914e57072f62061294746f1e2",
+        "size": 31561787,
+        "filename": "model.ruen.intgemm.alphas.bin",
+        "location": "main-workspace/translations-models/20260901210056--9781ee2a-d15e-4fe8-893d-687193373fff--37b65106-c6cd-4ed2-a28e-3acd72725429.bin",
+        "mimetype": "application/octet-stream"
+      },
+      "filter_expression": "",
+      "id": "9781ee2a-d15e-4fe8-893d-687193373fff",
+      "last_modified": 1788296824407
+    },
+    {
+      "hash": "de8af5f87e231ee4016cec4bb482e6b584cb1ca34dcb624fc7b8398f25bb35df",
+      "name": "vocab.ruen.spm",
+      "schema": 1788296457743,
+      "toLang": "en",
+      "version": "2.1",
+      "fileType": "vocab",
+      "fromLang": "ru",
+      "attachment": {
+        "hash": "de8af5f87e231ee4016cec4bb482e6b584cb1ca34dcb624fc7b8398f25bb35df",
+        "size": 952371,
+        "filename": "vocab.ruen.spm",
+        "location": "main-workspace/translations-models/20260901210058--222363ca-4a98-48a9-9162-65acdffc2572--ba370dc8-709d-42cd-b68c-83b912bd3e38.spm",
+        "mimetype": "application/octet-stream"
+      },
+      "filter_expression": "",
+      "id": "222363ca-4a98-48a9-9162-65acdffc2572",
+      "last_modified": 1788296824404
+    },
+    {
       "hash": "4915518d1699fb72c390603605d3ead9fb87a8c2f70092089a27df22a7c540d0",
       "name": "model.uren.intgemm.alphas.bin",
       "schema": 1788186990803,
@@ -13022,5 +13079,5 @@
       "last_modified": 1701186751412
     }
   ],
-  "timestamp": 1788284825862
+  "timestamp": 1788296824409
 }
