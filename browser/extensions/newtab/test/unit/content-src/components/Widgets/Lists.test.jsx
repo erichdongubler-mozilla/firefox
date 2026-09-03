@@ -495,6 +495,43 @@ describe("<Lists>", () => {
     assert.equal(localWrapper.find(".lists-add-button.icon-only").length, 1);
   });
 
+  it("adds an explicit accessible name to the list switcher button", () => {
+    const state = {
+      ...mockState,
+      ListsWidget: {
+        ...mockState.ListsWidget,
+        lists: {
+          "test-list": {
+            label: "Checklist",
+            tasks: [],
+            completed: [],
+          },
+          "other-list": {
+            label: "Shopping",
+            tasks: [],
+            completed: [],
+          },
+        },
+      },
+    };
+
+    const localWrapper = mount(
+      <WrapWithProvider state={state}>
+        <Lists
+          dispatch={dispatch}
+          handleUserInteraction={handleUserInteraction}
+        />
+      </WrapWithProvider>
+    );
+
+    assert.equal(
+      localWrapper
+        .find("moz-button.lists-switcher-button")
+        .prop("data-l10n-id"),
+      "newtab-widget-lists-change-list"
+    );
+  });
+
   it("uses the Checklist fallback title in the switcher for an unnamed selected list", () => {
     const state = {
       ...mockState,

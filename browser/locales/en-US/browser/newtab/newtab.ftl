@@ -539,6 +539,9 @@ newtab-weather-menu-change-location = Change location
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = Search location
     .aria-label = Search location
+newtab-weather-cancel-input =
+    .title = Cancel
+    .aria-label = Cancel
 # "Current" refers to the user's physical/geographic location detected via geolocation.
 newtab-weather-change-location-search-use-current =
     .label = Use current location
@@ -846,6 +849,10 @@ newtab-widget-lists-menu-create = Create a new list
 newtab-widget-lists-menu-delete = Delete this list
 newtab-widget-lists-menu-copy = Copy list to clipboard
 newtab-widget-lists-menu-learn-more = Learn more
+# "Change" is a verb here: the button switches which list is shown
+newtab-widget-lists-change-list =
+    .title = Change list
+    .aria-label = Change list
 newtab-widget-lists-button-add-item = Add an item
 newtab-widget-lists-input-add-an-item2 =
     .placeholder = Add an item

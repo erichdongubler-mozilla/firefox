@@ -103,7 +103,6 @@ const renderListSwitcherOrTitle = ({
       <div className="lists-switcher">
         <span
           className="lists-title"
-          id="lists-switcher-label"
           {...(selectedLabel
             ? {}
             : {
@@ -114,7 +113,7 @@ const renderListSwitcherOrTitle = ({
         </span>
         <moz-button
           aria-haspopup="true"
-          aria-labelledby="lists-switcher-label"
+          data-l10n-id="newtab-widget-lists-change-list"
           className="lists-switcher-button"
           iconSrc="chrome://global/skin/icons/arrow-down-12.svg"
           menuId="lists-switcher-panel"
