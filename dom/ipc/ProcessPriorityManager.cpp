@@ -804,7 +804,7 @@ void ParticularProcessPriorityManager::SetPriorityNow(
 
   mPriority = aPriority;
 
-  // We skip incrementing the DOM_CONTENTPROCESS_OS_PRIORITY_RAISED if we're
+  // We skip incrementing the dom.contentprocess.os_priority_raised if we're
   // transitioning from the PROCESS_PRIORITY_UNKNOWN level, which is where
   // we initialize at.
   if (oldPriority < mPriority && oldPriority != PROCESS_PRIORITY_UNKNOWN) {
