@@ -761,6 +761,10 @@ split-view-footer {
   right: max(anchor(--browser-with-dialog right), anchor(--devtools-right-host left, 0));
   bottom: max(anchor(--browser-with-dialog bottom), anchor(--devtools-bottom-host top, 0));
 
+  &.content-prompt-dialog {
+    color-scheme: env(-moz-content-preferred-color-scheme);
+  }
+
   /* Hide tab-modal dialogs when a window-modal one is up. */
   :root[window-modal-open] .browserStack > &,
   /* For some printing use cases we need to visually hide the dialog before
