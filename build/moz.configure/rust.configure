@@ -942,3 +942,17 @@ def rust_pgo_ldflags(profile_generate, profile_use, gen_ldflags, use_ldflags):
 
 
 set_config("RUST_PGO_LDFLAGS", rust_pgo_ldflags)
+
+
+@depends(
+    build_environment,
+    host_variables.HOST_OS_ARCH,
+)
+@imports("os")
+def clippy_wrapper(build_env, host_os_arch):
+    if host_os_arch == "WINNT":
+        return os.path.join(build_env.topsrcdir, "build/cargo-clippy-wrapper.bat")
+    return os.path.join(build_env.topsrcdir, "build/cargo-clippy-wrapper")
+
+
+set_config("MOZ_CARGO_CLIPPY_WRAPPER", clippy_wrapper)

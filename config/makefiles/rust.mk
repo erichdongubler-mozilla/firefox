@@ -136,6 +136,10 @@ ifneq (,$(or $(MOZ_USING_SCCACHE),$(MOZ_USING_BUILDCACHE)))
 export RUSTC_WRAPPER=$(CCACHE)
 endif
 
+# `cargo clippy` only lints workspace members, which leaves out every crate the
+# top-level Cargo.toml excludes from the workspace. See build/cargo-clippy-wrapper.
+force-cargo-%-clippy: export RUSTC_WRAPPER := $(MOZ_CARGO_CLIPPY_WRAPPER)
+
 ifeq (WINNT,$(HOST_OS_ARCH))
 # //?/ is the long path prefix which seems to confuse make, so we remove it
 # (things should work without it).
