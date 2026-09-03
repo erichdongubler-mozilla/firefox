@@ -146,6 +146,7 @@ class JsepTrack {
       for (const auto& codec : rhs.mEarlyRecvCodecs) {
         mEarlyRecvCodecs.emplace_back(codec->Clone());
       }
+      mEarlyRtpExtensions = rhs.mEarlyRtpExtensions;
       if (rhs.mNegotiatedDetails) {
         mNegotiatedDetails.reset(
             new JsepTrackNegotiatedDetails(*rhs.mNegotiatedDetails));
@@ -197,6 +198,15 @@ class JsepTrack {
   template <class UnaryFunction>
   void ForEachEarlyRecvCodec(UnaryFunction func) {
     std::for_each(mEarlyRecvCodecs.begin(), mEarlyRecvCodecs.end(), func);
+  }
+
+  // For a receive track, the recv-usable RTP header extensions from the
+  // local m-section last passed to RecvTrackSetLocal(). Used for early
+  // media (bug 2019381) instead of GetNegotiatedDetails(), which is stale
+  // during a pending offer.
+  const std::vector<SdpExtmapAttributeList::Extmap>& GetEarlyRtpExtensions()
+      const {
+    return mEarlyRtpExtensions;
   }
 
   template <class BinaryPredicate>
@@ -308,6 +318,8 @@ class JsepTrack {
   // they were last written into an offer (see AddToOffer()). Used for early
   // media (bug 2019381) instead of mPrototypeCodecs directly.
   std::vector<UniquePtr<JsepCodecDescription>> mEarlyRecvCodecs;
+  // For a receive track, see GetEarlyRtpExtensions().
+  std::vector<SdpExtmapAttributeList::Extmap> mEarlyRtpExtensions;
   // List of rids. May be initially populated from JS, or from a remote SDP.
   // Can be updated by remote SDP. If no negotiation has taken place at all,
   // this will be empty. If negotiation has taken place, but no simulcast

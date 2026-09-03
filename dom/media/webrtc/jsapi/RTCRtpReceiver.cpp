@@ -6,6 +6,7 @@
 
 #include <stdint.h>
 
+#include <map>
 #include <set>
 #include <string>
 #include <vector>
@@ -753,14 +754,37 @@ void RTCRtpReceiver::UpdateTransport() {
       (mPc->GetSignalingState() == RTCSignalingState::Stable);
 
   auto const& details = GetJsepTransceiver().mRecvTrack.GetNegotiatedDetails();
-  std::vector<webrtc::RtpExtension> extmaps;
+  std::map<std::string, webrtc::RtpExtension> extmapsByUri;
   if (GetJsepTransceiver().HasBundleLevel()) {
     if (details) {
       details->ForEachRTPHeaderExtension(
-          [&extmaps](const SdpExtmapAttributeList::Extmap& extmap) {
-            extmaps.emplace_back(extmap.extensionname,
-                                 webrtc::RtpHeaderExtensionId(extmap.entry));
+          [&extmapsByUri](const SdpExtmapAttributeList::Extmap& extmap) {
+            extmapsByUri.insert_or_assign(
+                extmap.extensionname.get(),
+                webrtc::RtpExtension(
+                    extmap.extensionname,
+                    webrtc::RtpHeaderExtensionId(extmap.entry)));
           });
+    }
+    if (!signalingStable) {
+      // Early media (bug 2019381): the negotiated details above only
+      // reflect the last completed offer/answer round, which can be stale
+      // during a pending local offer -- e.g. an extension the offer just
+      // (re)added wouldn't be recognized yet, since Negotiate() hasn't run
+      // for this round. Layer in whatever the pending offer itself
+      // declares, so the demux filter built below already knows about it.
+      for (const auto& extmap :
+           GetJsepTransceiver().mRecvTrack.GetEarlyRtpExtensions()) {
+        extmapsByUri.insert_or_assign(
+            extmap.extensionname.get(),
+            webrtc::RtpExtension(extmap.extensionname,
+                                 webrtc::RtpHeaderExtensionId(extmap.entry)));
+      }
+    }
+    std::vector<webrtc::RtpExtension> extmaps;
+    extmaps.reserve(extmapsByUri.size());
+    for (auto& [uri, extmap] : extmapsByUri) {
+      extmaps.push_back(extmap);
     }
 
     filter = MakeUnique<MediaPipelineFilter>(extmaps);
