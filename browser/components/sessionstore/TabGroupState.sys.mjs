@@ -145,9 +145,10 @@ class _TabGroupState {
    * using the `TabState` class.
    *
    * @param {TabGroupStateData} tabGroupState
-   * @param {number} windowClosedId
+   * @param {number} [windowClosedId]
    *   `WindowStateData.closedId` of the closed window from which this tab group
-   *   should be automatically saved.
+   *   should be automatically saved. Left out when the group is saved out of a
+   *   state that has no closed window to point at, as in session migration.
    */
   savedInClosedWindow(tabGroupState, windowClosedId) {
     let savedData = tabGroupState;

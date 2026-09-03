@@ -3963,6 +3963,9 @@ class _SessionStore {
    * Get the closed tab data associated with this window
    *
    * @param {Window} aWindow
+   * @returns {ClosedTabStateData[]}
+   *          An array of tabData for closed tabs from this window and its
+   *          closed tab groups
    */
   getClosedTabDataForWindow(aWindow) {
     return this.#getClonedDataForWindow(

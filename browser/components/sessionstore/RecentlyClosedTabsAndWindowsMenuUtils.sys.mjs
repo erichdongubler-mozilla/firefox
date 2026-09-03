@@ -4,9 +4,14 @@
 
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-const lazy = {};
-
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
+  closedTabsFromAllWindowsEnabled: {
+    pref: "browser.sessionstore.closedTabsFromAllWindows",
+  },
+  closedTabsFromClosedWindowsEnabled: {
+    pref: "browser.sessionstore.closedTabsFromClosedWindows",
+  },
+  l10n: () => new Localization(["browser/recentlyClosed.ftl"], true),
   PlacesUIUtils: "moz-src:///browser/components/places/PlacesUIUtils.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   SessionStore:
@@ -14,22 +19,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   SessionWindowUI:
     "moz-src:///browser/components/sessionstore/SessionWindowUI.sys.mjs",
 });
-
-ChromeUtils.defineLazyGetter(lazy, "l10n", () => {
-  return new Localization(["browser/recentlyClosed.ftl"], true);
-});
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "closedTabsFromAllWindowsEnabled",
-  "browser.sessionstore.closedTabsFromAllWindows"
-);
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "closedTabsFromClosedWindowsEnabled",
-  "browser.sessionstore.closedTabsFromClosedWindows"
-);
 
 /**
  * @returns {Map<TabGroupId, ClosedTabGroupStateData>}
