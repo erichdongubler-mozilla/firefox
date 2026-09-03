@@ -6,8 +6,7 @@ import { UrlbarQueryContext } from "chrome://browser/content/urlbar/UrlbarQueryC
 import { UrlbarResult } from "chrome://browser/content/urlbar/UrlbarResult.mjs";
 
 /**
- * @import {UrlbarChild} from "moz-src:///browser/components/urlbar/actors/UrlbarChild.sys.mjs"
- * @import {UrlbarParentController} from "moz-src:///browser/components/urlbar/UrlbarParentController.sys.mjs"
+ * @import {UrlbarActorPort} from "moz-src:///browser/components/urlbar/actors/UrlbarChild.sys.mjs"
  */
 
 /**
@@ -20,8 +19,8 @@ import { UrlbarResult } from "chrome://browser/content/urlbar/UrlbarResult.mjs";
  * them to the real controller keyed by `instanceId`.
  */
 export class UrlbarParentControllerProxy {
-  /** @type {UrlbarChild} */
-  #actor;
+  /** @type {UrlbarActorPort} */
+  #port = window.UrlbarActorPort;
 
   /** @type {number} */
   #instanceId;
@@ -32,21 +31,17 @@ export class UrlbarParentControllerProxy {
   #lastQueryContextWrapper = null;
 
   /**
-   * @param {UrlbarChild} actor
-   *   The child actor used to message the parent process.
-   * @param {number} instanceId
+   * @param {UrlbarInput} input
    *   Identifies the paired parent-side controller in `UrlbarParent`'s map.
-   * @param {object} options
-   *   The data the parent controller is constructed from.
-   * @param {string} options.sapName
-   *   The search access point name.
-   * @param {boolean} options.isPrivate
-   *   Whether the controller serves a private-browsing input.
    */
-  constructor(actor, instanceId, { sapName, isPrivate }) {
-    this.#actor = actor;
-    this.#instanceId = instanceId;
-    this.#actor.sendAsyncMessage("Init", { instanceId, sapName, isPrivate });
+  constructor(input) {
+    this.#instanceId = this.#port.registerMessagePathInput(input);
+
+    this.#port.sendAsyncMessage("Init", {
+      instanceId: this.#instanceId,
+      sapName: input.sapName,
+      isPrivate: input.isPrivate,
+    });
   }
 
   /**
@@ -59,7 +54,7 @@ export class UrlbarParentControllerProxy {
    *   The paired `UrlbarChildController`.
    */
   setChild(child) {
-    this.#actor.registerChildController(this.#instanceId, child);
+    this.#port.registerChildController(this.#instanceId, child);
   }
 
   /**
@@ -70,7 +65,7 @@ export class UrlbarParentControllerProxy {
    * @param {object} wire The serialized engagement payload.
    */
   recordEngagement(wire) {
-    this.#actor.sendAsyncMessage("RecordEngagement", {
+    this.#port.sendAsyncMessage("RecordEngagement", {
       instanceId: this.#instanceId,
       wire,
     });
@@ -80,7 +75,7 @@ export class UrlbarParentControllerProxy {
    * Resets the parent recorder's cross-session telemetry state.
    */
   resetEngagement() {
-    this.#actor.sendAsyncMessage("ResetEngagement", {
+    this.#port.sendAsyncMessage("ResetEngagement", {
       instanceId: this.#instanceId,
     });
   }
@@ -93,7 +88,7 @@ export class UrlbarParentControllerProxy {
    *   `{snapshot, startTime, browsingContextId, contentData}`.
    */
   handleBounceTrigger(payload) {
-    this.#actor.sendAsyncMessage("HandleBounceTrigger", {
+    this.#port.sendAsyncMessage("HandleBounceTrigger", {
       instanceId: this.#instanceId,
       payload,
     });
@@ -108,7 +103,7 @@ export class UrlbarParentControllerProxy {
    *   The bounce browser's stable browser id.
    */
   trackBounceBrowser(browserId) {
-    this.#actor.sendAsyncMessage("TrackBounceBrowser", {
+    this.#port.sendAsyncMessage("TrackBounceBrowser", {
       instanceId: this.#instanceId,
       browserId,
     });
@@ -121,7 +116,7 @@ export class UrlbarParentControllerProxy {
    * @param {object} searchMode The search mode being entered.
    */
   recordSearchMode(searchMode) {
-    this.#actor.sendAsyncMessage("RecordSearchMode", {
+    this.#port.sendAsyncMessage("RecordSearchMode", {
       instanceId: this.#instanceId,
       searchMode,
     });
@@ -134,7 +129,7 @@ export class UrlbarParentControllerProxy {
    * @param {string} url The autofill result URL that was backspaced over.
    */
   recordAutofillBackspace(url) {
-    this.#actor.sendAsyncMessage("RecordAutofillBackspace", {
+    this.#port.sendAsyncMessage("RecordAutofillBackspace", {
       instanceId: this.#instanceId,
       url,
     });
@@ -145,14 +140,14 @@ export class UrlbarParentControllerProxy {
    * controller's `recordAutofillDeletion()`.
    */
   recordAutofillDeletion() {
-    this.#actor.sendAsyncMessage("RecordAutofillDeletion", {
+    this.#port.sendAsyncMessage("RecordAutofillDeletion", {
       instanceId: this.#instanceId,
     });
   }
 
   /** @type {UrlbarParentController["dismissAutofill"]} */
   dismissAutofill(url, action) {
-    return this.#actor.sendQuery("DismissAutofill", {
+    return this.#port.sendQuery("DismissAutofill", {
       instanceId: this.#instanceId,
       url,
       action,
@@ -167,7 +162,7 @@ export class UrlbarParentControllerProxy {
    * @param {string} url The accepted autofill result's URL.
    */
   clearAutofillBackspaceEntryForUrl(url) {
-    this.#actor.sendAsyncMessage("ClearAutofillBackspaceEntryForUrl", {
+    this.#port.sendAsyncMessage("ClearAutofillBackspaceEntryForUrl", {
       instanceId: this.#instanceId,
       url,
     });
@@ -180,7 +175,7 @@ export class UrlbarParentControllerProxy {
    * @param {string} url The URL being re-integrated.
    */
   handleAutofillReintegration(url) {
-    this.#actor.sendAsyncMessage("HandleAutofillReintegration", {
+    this.#port.sendAsyncMessage("HandleAutofillReintegration", {
       instanceId: this.#instanceId,
       url,
     });
@@ -193,7 +188,7 @@ export class UrlbarParentControllerProxy {
    * @param {string} engineName The name of the engine whose form was visited.
    */
   recordSearchForm(engineName) {
-    this.#actor.sendAsyncMessage("RecordSearchForm", {
+    this.#port.sendAsyncMessage("RecordSearchForm", {
       instanceId: this.#instanceId,
       engineName,
     });
@@ -206,7 +201,7 @@ export class UrlbarParentControllerProxy {
    * @param {Parameters<UrlbarParentController["recordSearch"]>[0]} options
    */
   recordSearch(options) {
-    this.#actor.sendAsyncMessage("RecordSearch", {
+    this.#port.sendAsyncMessage("RecordSearch", {
       instanceId: this.#instanceId,
       ...options,
     });
@@ -220,7 +215,7 @@ export class UrlbarParentControllerProxy {
    *   The data for `recordSearch`.
    */
   recordSearchInOpenedTab(searchData) {
-    this.#actor.sendAsyncMessage("RecordSearchInOpenedTab", {
+    this.#port.sendAsyncMessage("RecordSearchInOpenedTab", {
       instanceId: this.#instanceId,
       searchData,
     });
@@ -236,7 +231,7 @@ export class UrlbarParentControllerProxy {
    *   The browser the search loads into, or null for the selected browser.
    */
   checkKeywordURIFixup(searchString, browserId) {
-    this.#actor.sendAsyncMessage("CheckKeywordURIFixup", {
+    this.#port.sendAsyncMessage("CheckKeywordURIFixup", {
       instanceId: this.#instanceId,
       searchString,
       browserId,
@@ -260,7 +255,7 @@ export class UrlbarParentControllerProxy {
    */
   startQuery(queryContext) {
     this.#lastQueryContextWrapper = { queryContext };
-    return this.#actor
+    return this.#port
       .sendQuery("StartQuery", {
         instanceId: this.#instanceId,
         queryContext: queryContext.toWire(),
@@ -288,7 +283,7 @@ export class UrlbarParentControllerProxy {
    * @returns {Promise<?object>} The heuristic result, or null.
    */
   async getHeuristicResult(queryContext) {
-    let wire = await this.#actor.sendQuery("GetHeuristicResult", {
+    let wire = await this.#port.sendQuery("GetHeuristicResult", {
       instanceId: this.#instanceId,
       queryContext: queryContext.toWire(),
     });
@@ -303,7 +298,7 @@ export class UrlbarParentControllerProxy {
    * @returns {Promise<object>} `{ heuristicResult }`, `{ fixup }`, or `{}`.
    */
   async resolveFallbackNavigation(details) {
-    let outcome = await this.#actor.sendQuery("ResolveFallbackNavigation", {
+    let outcome = await this.#port.sendQuery("ResolveFallbackNavigation", {
       instanceId: this.#instanceId,
       details,
     });
@@ -313,7 +308,7 @@ export class UrlbarParentControllerProxy {
   }
 
   cancelQuery() {
-    this.#actor.sendAsyncMessage("CancelQuery", {
+    this.#port.sendAsyncMessage("CancelQuery", {
       instanceId: this.#instanceId,
     });
   }
@@ -328,7 +323,7 @@ export class UrlbarParentControllerProxy {
    * @param {string} reason The speculative-connect reason.
    */
   speculativeConnect(result, context, reason) {
-    this.#actor.sendAsyncMessage("SpeculativeConnect", {
+    this.#port.sendAsyncMessage("SpeculativeConnect", {
       instanceId: this.#instanceId,
       result: result.toWire(),
       queryContext: context.toWire(),
@@ -344,7 +339,7 @@ export class UrlbarParentControllerProxy {
    * @returns {Promise<{reverted: boolean}>} Whether the input should revert.
    */
   loadURL(loadData) {
-    return this.#actor.sendQuery("LoadURL", {
+    return this.#port.sendQuery("LoadURL", {
       instanceId: this.#instanceId,
       loadData,
     });
@@ -358,7 +353,7 @@ export class UrlbarParentControllerProxy {
    * @returns {Promise<{focused: boolean}>} Whether the browser was focused.
    */
   focusBrowser(browserId) {
-    return this.#actor.sendQuery("FocusBrowser", {
+    return this.#port.sendQuery("FocusBrowser", {
       instanceId: this.#instanceId,
       browserId,
     });
@@ -371,7 +366,7 @@ export class UrlbarParentControllerProxy {
    * @param {object} loadData The serializable switch parameters.
    */
   switchToTab(loadData) {
-    this.#actor.sendAsyncMessage("SwitchToTab", {
+    this.#port.sendAsyncMessage("SwitchToTab", {
       instanceId: this.#instanceId,
       loadData,
     });
@@ -387,7 +382,7 @@ export class UrlbarParentControllerProxy {
    *   Whether to defer the write until the URL lands in moz_places.
    */
   addToInputHistory(url, input, { whenReady = false } = {}) {
-    this.#actor.sendAsyncMessage("AddToInputHistory", {
+    this.#port.sendAsyncMessage("AddToInputHistory", {
       instanceId: this.#instanceId,
       url,
       input,
@@ -404,7 +399,7 @@ export class UrlbarParentControllerProxy {
    *   that replaces its row.
    */
   removeResult(result, options) {
-    this.#actor.sendAsyncMessage("RemoveResult", {
+    this.#port.sendAsyncMessage("RemoveResult", {
       instanceId: this.#instanceId,
       result: result.toWire(),
       options,
@@ -416,7 +411,7 @@ export class UrlbarParentControllerProxy {
    */
   setLastQueryContextCache(queryContext) {
     this.#lastQueryContextWrapper = { queryContext, done: true };
-    this.#actor.sendAsyncMessage("SetLastQueryContextCache", {
+    this.#port.sendAsyncMessage("SetLastQueryContextCache", {
       instanceId: this.#instanceId,
       queryContext: queryContext.toWire(),
     });
@@ -424,7 +419,7 @@ export class UrlbarParentControllerProxy {
 
   clearLastQueryContextCache() {
     this.#lastQueryContextWrapper = null;
-    this.#actor.sendAsyncMessage("ClearLastQueryContextCache", {
+    this.#port.sendAsyncMessage("ClearLastQueryContextCache", {
       instanceId: this.#instanceId,
     });
   }
@@ -433,7 +428,7 @@ export class UrlbarParentControllerProxy {
    * @param {UrlbarResult} result The result about to be selected.
    */
   onBeforeSelection(result) {
-    this.#actor.sendAsyncMessage("OnBeforeSelection", {
+    this.#port.sendAsyncMessage("OnBeforeSelection", {
       instanceId: this.#instanceId,
       result: result.toWire(),
     });
@@ -443,7 +438,7 @@ export class UrlbarParentControllerProxy {
    * @param {UrlbarResult} result The selected result.
    */
   onSelection(result) {
-    this.#actor.sendAsyncMessage("OnSelection", {
+    this.#port.sendAsyncMessage("OnSelection", {
       instanceId: this.#instanceId,
       result: result.toWire(),
     });
@@ -453,7 +448,7 @@ export class UrlbarParentControllerProxy {
    * {@link UrlbarParentController#initEngineStore}
    */
   initEngineStore() {
-    return this.#actor.sendAsyncMessage("InitEngineStore", {
+    return this.#port.sendAsyncMessage("InitEngineStore", {
       instanceId: this.#instanceId,
     });
   }
@@ -462,7 +457,7 @@ export class UrlbarParentControllerProxy {
    * @type {UrlbarParentController["getEngineIconURL"]}
    */
   getEngineIconURL(engineId) {
-    return this.#actor.sendQuery("GetEngineIconURL", {
+    return this.#port.sendQuery("GetEngineIconURL", {
       instanceId: this.#instanceId,
       engineId,
     });
@@ -470,7 +465,7 @@ export class UrlbarParentControllerProxy {
 
   /** @type {UrlbarParentController["markEngineAsUsed"]} */
   markEngineAsUsed(engineId) {
-    this.#actor.sendAsyncMessage("MarkEngineAsUsed", {
+    this.#port.sendAsyncMessage("MarkEngineAsUsed", {
       instanceId: this.#instanceId,
       engineId,
     });
@@ -478,7 +473,7 @@ export class UrlbarParentControllerProxy {
 
   /** @type {UrlbarParentController["openSERP"]} */
   openSERP(engineId, searchTerms, where, inBackground, browserId) {
-    this.#actor.sendAsyncMessage("OpenSERP", {
+    this.#port.sendAsyncMessage("OpenSERP", {
       instanceId: this.#instanceId,
       engineId,
       searchTerms,
@@ -490,7 +485,7 @@ export class UrlbarParentControllerProxy {
 
   /** @type {UrlbarParentController["openSearchForm"]} */
   openSearchForm(engineId, where, inBackground, browserId) {
-    this.#actor.sendAsyncMessage("OpenSearchForm", {
+    this.#port.sendAsyncMessage("OpenSearchForm", {
       instanceId: this.#instanceId,
       engineId,
       where,
@@ -501,7 +496,7 @@ export class UrlbarParentControllerProxy {
 
   /** @type {UrlbarParentController["openPreferences"]} */
   openPreferences(paneID) {
-    this.#actor.sendAsyncMessage("OpenPreferences", {
+    this.#port.sendAsyncMessage("OpenPreferences", {
       instanceId: this.#instanceId,
       paneID,
     });

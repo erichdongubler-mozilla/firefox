@@ -1638,7 +1638,6 @@ export class UrlbarInputBaseTestUtils {
     // chrome window). It is exposed as `controller.parentController`.
     parentOptions.input.window.windowGlobalChild = {
       getActor: () => ({
-        usesMessagePath: false,
         browsingContext: { topChromeWindow: browserWindow },
       }),
     };

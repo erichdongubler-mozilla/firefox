@@ -20,9 +20,7 @@ if (lazy) {
 }
 
 /**
- * @import {UrlbarChild} from "moz-src:///browser/components/urlbar/actors/UrlbarChild.sys.mjs"
- * @import {UrlbarInput} from "chrome://browser/content/urlbar/UrlbarInput.mjs"
- * @import {UrlbarParentController, TelemetryEvent} from "moz-src:///browser/components/urlbar/UrlbarParentController.sys.mjs"
+ * @import {TelemetryEvent} from "moz-src:///browser/components/urlbar/UrlbarParentController.sys.mjs"
  * @import {UrlbarView} from "chrome://browser/content/urlbar/UrlbarView.mjs"
  * @import {SmartbarInput} from "moz-src:///browser/components/urlbar/content/SmartbarInput.mjs"
  */
@@ -109,34 +107,14 @@ export class UrlbarChildController {
       throw new Error("Missing options: input");
     }
     this.#input = options.input;
-    // A privileged (parent-process/chrome) input reaches the actor directly. A
-    // content-realm input can't: `windowGlobalChild.getActor` is `[ChromeOnly]`
-    // and the actor is a system-principal object it can't hold, so it uses the
-    // stand-in the actor exposes on the window (see `UrlbarChild.exposePort`).
-    // `ChromeUtils` is the same discriminator `UrlbarContentPrefs.mjs` uses:
-    // defined in a privileged realm, absent in content.
-    let inChromeRealm = typeof ChromeUtils != "undefined";
-    let actor = inChromeRealm
-      ? /** @type {UrlbarChild} */ (
-          /** @type {unknown} */ (
-            options.input.window.windowGlobalChild.getActor("Urlbar")
-          )
-        )
-      : /** @type {UrlbarChild} */ (options.input.window.UrlbarActorPort);
-    let { sapName, isPrivate } = options.input;
-    // A content-realm input has no in-process parent, so it always takes the
-    // message path; a privileged one asks the actor (it honors the
-    // chrome-message-passing pref). The message path builds a proxy that trades
-    // actor messages with the parent-side controller; the direct path builds
-    // the real controller in place.
-    let usesMessagePath = !inChromeRealm || actor.usesMessagePath;
-    this.#parentController = usesMessagePath
-      ? new UrlbarParentControllerProxy(
-          actor,
-          actor.registerMessagePathInput(options.input),
-          { sapName, isPrivate }
-        )
-      : new lazy.UrlbarParentController({ sapName, isPrivate, actor });
+
+    this.#parentController = UrlbarContentUtils.usesMessagePath()
+      ? new UrlbarParentControllerProxy(options.input)
+      : new lazy.UrlbarParentController({
+          sapName: options.input.sapName,
+          isPrivate: options.input.isPrivate,
+          actor: options.input.window.windowGlobalChild.getActor("Urlbar"),
+        });
     this.#parentController.setChild(this);
 
     this.engineStore = new SearchEngineStore(this);
