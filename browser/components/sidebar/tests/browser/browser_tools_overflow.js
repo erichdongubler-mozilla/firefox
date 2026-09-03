@@ -126,6 +126,8 @@ add_task(async function test_resize_of_tools() {
   while (gBrowser.tabs.length > 1) {
     BrowserTestUtils.removeTab(gBrowser.tabs.at(-1));
   }
+
+  SidebarTestUtils.restoreToolsHeights(window);
 });
 
 add_task(async function test_overflow_menu() {
@@ -198,6 +200,8 @@ add_task(async function test_overflow_menu() {
   while (gBrowser.tabs.length > 1) {
     BrowserTestUtils.removeTab(gBrowser.tabs.at(-1));
   }
+
+  SidebarTestUtils.restoreToolsHeights(window);
 });
 
 add_task(async function test_overflow_menu_with_keyboard() {
@@ -299,6 +303,8 @@ add_task(async function test_overflow_menu_with_keyboard() {
   while (gBrowser.tabs.length > 1) {
     BrowserTestUtils.removeTab(gBrowser.tabs.at(-1));
   }
+
+  SidebarTestUtils.restoreToolsHeights(window);
 });
 
 add_task(
@@ -379,6 +385,8 @@ add_task(
     while (gBrowser.tabs.length > 1) {
       BrowserTestUtils.removeTab(gBrowser.tabs.at(-1));
     }
+
+    SidebarTestUtils.restoreToolsHeights(window);
   }
 );
 

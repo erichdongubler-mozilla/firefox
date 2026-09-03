@@ -62,6 +62,19 @@ class _SidebarTestUtils {
   }
 
   /**
+   * Drop the user-preferred tools heights, so that a test which resized the
+   * tools container does not leak its height into the tests that follow.
+   *
+   * @param {ChromeWindow} win
+   */
+  restoreToolsHeights(win) {
+    const state = win.SidebarController._state;
+    state.expandedToolsHeight = undefined;
+    state.collapsedToolsHeight = undefined;
+    state.updateToolsHeight();
+  }
+
+  /**
    * Clean up and restore any sidebar state captured by restoreStateAtCleanup.
    *
    * @param {ChromeWindow} win
