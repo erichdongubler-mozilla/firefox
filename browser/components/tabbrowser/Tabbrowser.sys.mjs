@@ -2931,7 +2931,7 @@ export class Tabbrowser {
 
     aOptions.remoteType = ChromeUtils.predictRemoteTypeForURI(aURL, {
       window: this.documentGlobal,
-      userContextId: aBrowser.getAttribute("usercontextid") ?? 0,
+      userContextId: this.getTabForBrowser(aBrowser).userContextId,
       preferredRemoteType: oldRemoteType,
     });
 
@@ -4497,7 +4497,7 @@ export class Tabbrowser {
     // Related tab inherits current tab's user context unless a different
     // usercontextid is specified
     if (userContextId == null && openerTab) {
-      userContextId = openerTab.getAttribute("usercontextid") || 0;
+      userContextId = openerTab.userContextId;
     }
 
     if (!noInitialLabel) {
@@ -7139,7 +7139,7 @@ export class Tabbrowser {
       modifiedAttrs.push("soundplaying");
     }
     if (aOtherTab.hasAttribute("usercontextid")) {
-      aOurTab.setUserContextId(aOtherTab.getAttribute("usercontextid"));
+      aOurTab.setUserContextId(aOtherTab.userContextId);
       modifiedAttrs.push("usercontextid");
     }
     if (aOtherTab.hasAttribute("sharing")) {
