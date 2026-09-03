@@ -780,8 +780,8 @@ bool BaseCompiler::endFunction() {
 
   offsets_.end = masm.currentOffset();
 
-  if (!fr.checkStackHeight()) {
-    return decoder_.fail(decoder_.beginOffset(), "stack frame is too large");
+  if (!checkStackHeight()) {
+    return false;
   }
 
   perfSpewer_.endRecording();
