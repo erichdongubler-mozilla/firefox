@@ -48,6 +48,7 @@ interface MozTabbrowserTab extends XULElement {
   _fullyOpen: boolean;
   _fullLabel: string;
   _labelIsContentTitle: boolean;
+  _labelIsInitialTitle: boolean;
   _pinnedUnscrollable: boolean;
   _pendingPermitUnload: boolean;
   _closedInMultiselection: boolean;

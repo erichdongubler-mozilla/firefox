@@ -2373,9 +2373,33 @@ export class Tabbrowser {
     };
   }
 
-  setInitialTabTitle(aTab, aTitle, options = {}) {
+  /**
+   * Labels a tab before it has loaded anything, as when restoring a session.
+   * A tab that had no label keeps this one until it has a content title of its
+   * own, rather than showing its URL while it loads.
+   *
+   * @param {MozTabbrowserTab} aTab
+   *   The tab to label.
+   * @param {string} aTitle
+   *   The label. A blank page's URL is replaced with the empty tab title.
+   * @param {object} [options]
+   * @param {boolean} [options.beforeTabOpen]
+   *   Whether the tab is yet to dispatch TabOpen, in which case no
+   *   TabAttrModified event is dispatched for the label.
+   * @param {boolean} [options.isContentTitle]
+   *   Whether the label is the content's title. Anything else has its
+   *   protocol and leading "www." stripped.
+   * @param {boolean} [options.isURL]
+   *   Whether the label is a URL, which truncates a long base64 `data:` URL
+   *   and leaves an `about:reader` URL unset.
+   */
+  setInitialTabTitle(
+    aTab,
+    aTitle,
+    { beforeTabOpen, isContentTitle, isURL } = {}
+  ) {
     // Convert some non-content title (actually a url) to human readable title
-    if (!options.isContentTitle && this.documentGlobal.isBlankPageURL(aTitle)) {
+    if (!isContentTitle && this.documentGlobal.isBlankPageURL(aTitle)) {
       aTitle = this.tabContainer.emptyTabTitle;
     }
 
@@ -2384,7 +2408,11 @@ export class Tabbrowser {
         aTab._labelIsInitialTitle = true;
       }
 
-      this.#setTabLabel(aTab, aTitle, options);
+      this.#setTabLabel(aTab, aTitle, {
+        beforeTabOpen,
+        isContentTitle,
+        isURL,
+      });
     }
   }
 
@@ -2919,6 +2947,23 @@ export class Tabbrowser {
     return true;
   }
 
+  /**
+   * Moves a browser to the content process a URL needs, unless it is already
+   * in that one.
+   *
+   * @param {MozBrowser} aBrowser
+   *   The browser to switch.
+   * @param {string} aURL
+   *   The URL the browser is about to load.
+   * @param {object} [options]
+   *   Passed on to `updateBrowserRemoteness`.
+   * @param {boolean} [options.newFrameloader]
+   *   Replace the frameloader even if the remote type stays the same.
+   * @param {string} [options.remoteType]
+   *   Overwritten with the remote type predicted for the URL.
+   * @returns {boolean}
+   *   Whether the browser changed.
+   */
   updateBrowserRemotenessByURL(aBrowser, aURL, options = {}) {
     if (!this.documentGlobal.gMultiProcessBrowser) {
       return this.updateBrowserRemoteness(aBrowser, {
@@ -6167,6 +6212,12 @@ export class Tabbrowser {
     this.#avoidSingleSelectedTab();
   }
 
+  /**
+   * Removes the selected tab.
+   *
+   * @param {object} [options]
+   *   Passed on to `removeTab`.
+   */
   removeCurrentTab(options) {
     this.removeTab(this.selectedTab, options);
   }
