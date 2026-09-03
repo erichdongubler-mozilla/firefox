@@ -729,6 +729,15 @@ export class PipelineOptions {
   extraHeaders = null;
 
   /**
+   * How many times an OpenAI-API-compatable backend retries a failed request
+   * before giving up. Null leaves the library default in place; set 0 when the
+   * caller does its own retrying.
+   *
+   * @type {?number}
+   */
+  maxRetries = null;
+
+  /**
    * Create a PipelineOptions instance.
    *
    * @param {object} options - The options for the pipeline. Must include mandatory fields.
@@ -938,6 +947,7 @@ export class PipelineOptions {
       "serviceType",
       "purpose",
       "extraHeaders",
+      "maxRetries",
     ];
 
     if (options instanceof PipelineOptions) {
@@ -1087,6 +1097,7 @@ export class PipelineOptions {
       serviceType: this.serviceType,
       purpose: this.purpose,
       extraHeaders: this.extraHeaders,
+      maxRetries: this.maxRetries,
     };
   }
 
