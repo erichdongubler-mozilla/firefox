@@ -7,6 +7,8 @@
 "use strict";
 
 const SIMPLE_MODULE = "./scriptDisabled_module.mjs";
+const CACHEABLE_MODULE = "./scriptDisabledDiskCache_module.sjs";
+const LARGE_MODULE = "./module_large1.mjs";
 
 function addFrame() {
   return new Promise(resolve => {
@@ -53,6 +55,173 @@ add_task(async function importAlreadyLoadedModule() {
   );
 
   frame.remove();
+});
+
+add_task(async function moduleWithDiskCacheReference() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["dom.script_loader.experimental.navigation_cache", false],
+      ["dom.script_loader.bytecode_cache.enabled", true],
+      // Enables the ScriptLoaderTest notifications checked below.
+      ["dom.expose_test_interfaces", true],
+    ],
+  });
+
+  const frame = await addFrame();
+
+  // The import is started and script blocked in the same task, so the fetch is
+  // necessarily still in flight when the realm becomes unscriptable.
+  await SpecialPowers.spawn(frame, [CACHEABLE_MODULE], async url => {
+    const fileName = url.split("/").pop();
+    const traces = [];
+    const observer = (subject, topic, data) => traces.push(data);
+    Services.obs.addObserver(observer, "ScriptLoaderTest");
+
+    content.wrappedJSObject.importModule(url);
+    Cu.blockScriptForGlobal(content);
+    try {
+      // The empty module must not keep its disk cache reference.
+      await ContentTaskUtils.waitForCondition(
+        () =>
+          traces.some(
+            data =>
+              data.includes("event:diskcache:disabled") &&
+              data.includes(fileName)
+          ),
+        "the empty module reached the disk cache bookkeeping"
+      );
+    } finally {
+      Cu.unblockScriptForGlobal(content);
+      Services.obs.removeObserver(observer, "ScriptLoaderTest");
+    }
+
+    // The empty module is in this realm's module map, so importing again
+    // returns it rather than fetching.
+    const ns = await content.wrappedJSObject.importModule(url);
+    is(ns.wrappedJSObject.marker, undefined, "the module was created empty");
+  });
+
+  frame.remove();
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function moduleCompiledOffMainThread() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["javascript.options.parallel_parsing", true],
+      // Enables the ScriptLoaderTest notifications checked below.
+      ["dom.expose_test_interfaces", true],
+    ],
+  });
+
+  const frame = await addFrame();
+
+  await SpecialPowers.spawn(frame, [LARGE_MODULE], async url => {
+    const fileName = url.split("/").pop();
+    const traces = [];
+    const observer = (subject, topic, data) => traces.push(data);
+    Services.obs.addObserver(observer, "ScriptLoaderTest");
+
+    // The script element is inserted and script blocked in the same task, so
+    // the module is necessarily compiled and created while this realm is
+    // unscriptable.
+    const script = content.wrappedJSObject.startModuleScript(url);
+    const processed = new Promise(resolve => {
+      script.addEventListener("load", () => resolve("load"), { once: true });
+      script.addEventListener("error", () => resolve("error"), { once: true });
+    });
+    Cu.blockScriptForGlobal(content);
+
+    try {
+      is(await processed, "load", "the empty module was created and evaluated");
+    } finally {
+      Cu.unblockScriptForGlobal(content);
+      Services.obs.removeObserver(observer, "ScriptLoaderTest");
+    }
+
+    is(
+      content.wrappedJSObject.results.length,
+      0,
+      "the module's source did not run"
+    );
+    ok(
+      !traces.some(
+        data =>
+          data.includes("event:compile:main thread") && data.includes(fileName)
+      ),
+      "the module was compiled off the main thread"
+    );
+  });
+
+  frame.remove();
+  await SpecialPowers.popPrefEnv();
+});
+
+// The LoadedScript mutated by the scripting-disabled path is the in-memory
+// cache entry shared with the later loads of the same URL.
+add_task(async function moduleWithMemoryCacheEntry() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["dom.script_loader.experimental.navigation_cache", true],
+      // Enables the ScriptLoaderTest notifications checked below.
+      ["dom.expose_test_interfaces", true],
+    ],
+  });
+
+  const populatingFrame = await addFrame();
+  is(
+    await importInFrame(populatingFrame, CACHEABLE_MODULE),
+    "module",
+    "the module loads and is inserted into the in-memory cache"
+  );
+  populatingFrame.remove();
+
+  const disabledFrame = await addFrame();
+  await SpecialPowers.spawn(disabledFrame, [CACHEABLE_MODULE], async url => {
+    // The module is served from the in-memory cache, so the whole load,
+    // including creating the empty module, happens synchronously here.
+    Cu.blockScriptForGlobal(content);
+    content.wrappedJSObject.importModule(url);
+    Cu.unblockScriptForGlobal(content);
+
+    const ns = await content.wrappedJSObject.importModule(url);
+    is(
+      ns.wrappedJSObject.marker,
+      undefined,
+      "the module was created empty in the realm where script was disabled"
+    );
+  });
+  disabledFrame.remove();
+
+  const frame = await addFrame();
+  await SpecialPowers.spawn(frame, [CACHEABLE_MODULE], async url => {
+    const fileName = url.split("/").pop();
+    const traces = [];
+    const observer = (subject, topic, data) => traces.push(data);
+    Services.obs.addObserver(observer, "ScriptLoaderTest");
+
+    try {
+      const ns = await content.wrappedJSObject.importModule(url);
+      is(
+        ns.wrappedJSObject.marker,
+        "module",
+        "the module still loads in a realm where script is enabled"
+      );
+    } finally {
+      Services.obs.removeObserver(observer, "ScriptLoaderTest");
+    }
+
+    ok(
+      traces.some(
+        data =>
+          data.includes("event:load:memorycache") && data.includes(fileName)
+      ),
+      "the in-memory cache entry survived the empty module"
+    );
+  });
+
+  frame.remove();
+  await SpecialPowers.popPrefEnv();
 });
 </script>
 <body></body>

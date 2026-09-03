@@ -278,6 +278,8 @@ nsresult ModuleLoader::CompileEmptyJavaScriptModule(
 nsresult ModuleLoader::CompileJavaScriptOrWasmModule(
     JSContext* aCx, JS::Handle<JSObject*> aGlobal, JS::CompileOptions& aOptions,
     ModuleLoadRequest* aRequest, JS::MutableHandle<JSObject*> aModuleOut) {
+  GetScriptLoader()->CalculateCacheFlag(aRequest);
+
   if (!nsJSUtils::IsScriptable(aGlobal)) {
 #ifdef NIGHTLY_BUILD
     // TODO: Bug 2067200, Creating an empty WebAssembly module if scripting is
@@ -288,10 +290,9 @@ nsresult ModuleLoader::CompileJavaScriptOrWasmModule(
     }
 #endif
 
+    aRequest->GetScriptLoadContext()->MaybeCancelOffThreadScript();
     return CompileEmptyJavaScriptModule(aCx, aOptions, aRequest, aModuleOut);
   }
-
-  GetScriptLoader()->CalculateCacheFlag(aRequest);
 
 #ifdef NIGHTLY_BUILD
   if (aRequest->HasWasmMimeTypeEssence()) {

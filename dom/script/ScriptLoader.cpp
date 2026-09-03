@@ -3064,6 +3064,18 @@ ScriptLoader::DiskCacheStrategy ScriptLoader::GetDiskCacheStrategy() {
   return strategy;
 }
 
+// https://html.spec.whatwg.org/#creating-a-javascript-module-script
+// Step 1: If scripting is disabled, the module script is created from the
+// empty source instead of the fetched source.
+static bool IsScriptingDisabled(ModuleLoadRequest* aRequest) {
+  // ModuleLoaderBase::CreateModuleScript fails before compiling anything if
+  // AutoJSAPI cannot be initialized with the global, so it is alive here.
+  nsIGlobalObject* global = aRequest->mLoader->GetGlobalObject();
+  MOZ_ASSERT(global && global->GetGlobalJSObject());
+
+  return !xpc::Scriptability::AllowedIfExists(global->GetGlobalJSObject());
+}
+
 void ScriptLoader::CalculateCacheFlag(ScriptLoadRequest* aRequest) {
   using mozilla::TimeDuration;
   using mozilla::TimeStamp;
@@ -3117,6 +3129,18 @@ void ScriptLoader::CalculateCacheFlag(ScriptLoadRequest* aRequest) {
         return;
       }
 #endif
+
+      if (IsScriptingDisabled(moduleLoadRequest)) {
+        LOG(("ScriptLoadRequest (%p): Bytecode-cache: Skip all: empty module",
+             aRequest));
+        aRequest->MarkNotCacheable();
+        // Without the in-memory cache, the LoadedScript is used only by this
+        // request, so drop its disk cache reference and the SRI data here.
+        if (!UsesMemoryCache()) {
+          aRequest->getLoadedScript()->DropDiskCacheReferenceAndSRI();
+        }
+        return;
+      }
     } else {
       LOG(("ScriptLoadRequest (%p): Bytecode-cache: Skip all: synthetic module",
            aRequest));
