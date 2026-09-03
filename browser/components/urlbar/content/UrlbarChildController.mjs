@@ -8,6 +8,7 @@ import { UrlbarChildTelemetry } from "chrome://browser/content/urlbar/UrlbarChil
 import { UrlbarParentControllerProxy } from "chrome://browser/content/urlbar/UrlbarParentControllerProxy.mjs";
 import * as UrlbarContentUtils from "chrome://browser/content/urlbar/UrlbarContentUtils.mjs";
 import UrlbarPrefs from "chrome://browser/content/urlbar/UrlbarContentPrefs.mjs";
+import { SearchEngineStore } from "chrome://browser/content/urlbar/SearchEngineStore.mjs";
 
 const lazy = typeof ChromeUtils != "undefined" ? {} : null;
 
@@ -25,8 +26,6 @@ if (lazy) {
  * @import {UrlbarView} from "chrome://browser/content/urlbar/UrlbarView.mjs"
  * @import {SmartbarInput} from "moz-src:///browser/components/urlbar/content/SmartbarInput.mjs"
  */
-
-import { SearchEngineStore } from "chrome://browser/content/urlbar/SearchEngineStore.mjs";
 
 /**
  * The in-process face of the address bar controller. Lives next to the
@@ -69,26 +68,36 @@ export class UrlbarChildController {
   /** @type {UrlbarView} */
   #view = null;
 
-  // Listeners (the view, the event bufferer, the search one-offs) live here, on
-  // the child's side; the parent delegates its notifications to us via
-  // setChild(). Keeping dispatch where the listeners are is what lets
-  // `<moz-urlbar>` run in a content process.
+  /**
+   * Listeners (the view, the event bufferer, the search one-offs) live here, on
+   * the child's side; the parent delegates its notifications to us via
+   * setChild(). Keeping dispatch where the listeners are is what lets
+   * `<moz-urlbar>` run in a content process.
+   */
   #listeners = new Set();
 
   #userSelectionBehavior = /** @type {"arrow"|"tab"|"none"} */ ("none");
 
-  // The id of the query the listeners are still hearing about. Notifications
-  // carrying an older id belong to a query nobody is waiting for anymore.
+  /**
+   * The id of the query the listeners are still hearing about. Notifications
+   * carrying an older id belong to a query nobody is waiting for anymore.
+   */
   #queryId = 0;
 
-  // Whether the query identified by `#queryId` was cancelled. Only meaningful
-  // while it's held back waiting for the engine store; a cancel can't be taken
-  // as a statement about in-flight results, since the view cancels for reasons
-  // of its own (freezing the list, closing on a stale query's completion).
+  /**
+   * Whether the query identified by `#queryId` was cancelled. Only meaningful
+   * while it's held back waiting for the engine store; a cancel can't be taken
+   * as a statement about in-flight results, since the view cancels for reasons
+   * of its own (freezing the list, closing on a stale query's completion).
+   */
   #queryCancelled = false;
 
-  // The content-side engagement-telemetry collector, created lazily on the
-  // message path (where the parent stand-in has no `engagementEvent`).
+  /**
+   * The content-side engagement-telemetry collector, created lazily on the
+   * message path (where the parent stand-in has no `engagementEvent`).
+   *
+   * @type {UrlbarChildTelemetry}
+   */
   #childTelemetry = null;
 
   /**
@@ -133,21 +142,18 @@ export class UrlbarChildController {
     this.engineStore = new SearchEngineStore(this);
   }
 
-  /**
-   * @type {typeof SearchEngineStore.prototype.receive}
-   */
-  updateEngineStore(...args) {
-    this.engineStore.receive(...args);
-  }
-
   get input() {
     return this.#input;
   }
-  // The window the input lives in. For a chrome `<moz-urlbar>` this is the
-  // browser window; for a content-process one it's the content window.
+
+  /**
+   * The window the input lives in. For a chrome `<moz-urlbar>` this is the
+   * browser window; for a content-process one it's the content window.
+   */
   get window() {
     return this.#input.window;
   }
+
   get view() {
     return this.#view;
   }
@@ -174,6 +180,7 @@ export class UrlbarChildController {
       ? (this.#childTelemetry ??= new UrlbarChildTelemetry(this))
       : this.#parentController.engagementEvent;
   }
+
   /**
    * The selection behavior that the user has used to select a result. The
    * setter ignores a change to "arrow" once "tab" has been recorded, since we
@@ -193,24 +200,29 @@ export class UrlbarChildController {
     }
     this.#userSelectionBehavior = behavior;
   }
+
   setView(view) {
     this.#view = view;
   }
+
   async resolveFallbackNavigation(details) {
     // The result this hands back is picked like a query's, and paste-and-go
     // suppresses the query that would otherwise have waited for the store.
     await this.#engineStoreReady();
     return this.#parentController.resolveFallbackNavigation(details);
   }
+
   addListener(listener) {
     if (!listener || typeof listener != "object") {
       throw new TypeError("Expected listener to be an object");
     }
     this.#listeners.add(listener);
   }
+
   removeListener(listener) {
     this.#listeners.delete(listener);
   }
+
   /**
    * Takes a notification off the wire, building the query context in this realm
    * before anything reads it.
@@ -230,6 +242,7 @@ export class UrlbarChildController {
       )
     );
   }
+
   /**
    * Hands a notification to the listeners, dropping the results and the end of
    * a query they have moved on from.
@@ -278,6 +291,7 @@ export class UrlbarChildController {
       }
     }
   }
+
   /**
    * Starts a query and returns the parent controller's promise so callers (the
    * input's `lastQueryContextPromise`, which tests await) can track completion.
@@ -314,6 +328,7 @@ export class UrlbarChildController {
         : queryContext
     );
   }
+
   /**
    * Hands a query to the parent controller.
    *
@@ -330,6 +345,7 @@ export class UrlbarChildController {
     this.#input.eventBufferer.queryStarting(queryContext);
     return queryContextPromise;
   }
+
   /**
    * Waits for the engine store to be populated.
    *
@@ -349,11 +365,13 @@ export class UrlbarChildController {
       // The search service failed.
     }
   }
+
   cancelQuery() {
     // A query still waiting for the engine store must not be dispatched at all.
     this.#queryCancelled = true;
     return this.#parentController.cancelQuery();
   }
+
   /**
    * Takes the running query away from the listeners, reporting it to them as
    * cancelled: nothing more of it reaches them, results or end. The input calls
@@ -369,6 +387,7 @@ export class UrlbarChildController {
     this.#queryId++;
     this.notify(UrlbarShared.NOTIFICATIONS.QUERY_CANCELLED, queryContext);
   }
+
   /**
    * Receives keyboard events from the input and handles those that should
    * navigate within the view or pick the currently selected item.
@@ -881,5 +900,12 @@ export class UrlbarChildController {
       return false;
     }
     return this.#parentController.maybeInitEngineStore();
+  }
+
+  /**
+   * @type {typeof SearchEngineStore.prototype.receive}
+   */
+  updateEngineStore(...args) {
+    this.engineStore.receive(...args);
   }
 }
