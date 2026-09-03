@@ -13539,7 +13539,7 @@ gCSSProperties["overscroll-behavior-x"] = {
   inherited: false,
   type: CSS_TYPE_LONGHAND,
   initial_values: ["auto"],
-  other_values: ["contain", "none"],
+  other_values: ["contain", "chain", "none"],
   invalid_values: ["left", "1px"],
 };
 gCSSProperties["overscroll-behavior-y"] = {
@@ -13547,7 +13547,7 @@ gCSSProperties["overscroll-behavior-y"] = {
   inherited: false,
   type: CSS_TYPE_LONGHAND,
   initial_values: ["auto"],
-  other_values: ["contain", "none"],
+  other_values: ["contain", "chain", "none"],
   invalid_values: ["left", "1px"],
 };
 gCSSProperties["overscroll-behavior-inline"] = {
@@ -13556,7 +13556,7 @@ gCSSProperties["overscroll-behavior-inline"] = {
   logical: true,
   type: CSS_TYPE_LONGHAND,
   initial_values: ["auto"],
-  other_values: ["contain", "none"],
+  other_values: ["contain", "chain", "none"],
   invalid_values: ["left", "1px"],
 };
 gCSSProperties["overscroll-behavior-block"] = {
@@ -13565,7 +13565,7 @@ gCSSProperties["overscroll-behavior-block"] = {
   logical: true,
   type: CSS_TYPE_LONGHAND,
   initial_values: ["auto"],
-  other_values: ["contain", "none"],
+  other_values: ["contain", "chain", "none"],
   invalid_values: ["left", "1px"],
 };
 gCSSProperties["overscroll-behavior"] = {
@@ -13576,9 +13576,12 @@ gCSSProperties["overscroll-behavior"] = {
   initial_values: ["auto"],
   other_values: [
     "contain",
+    "chain",
     "none",
     "contain contain",
     "contain auto",
+    "chain chain",
+    "chain auto",
     "none contain",
   ],
   invalid_values: ["left", "1px", "contain auto none", "contain nonsense"],
