@@ -540,7 +540,7 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
   /** https://html.spec.whatwg.org/#user-interacted */
   bool mUserInteracted : 1 = false;
   /** True if the default selected option has been set. */
-  bool mDefaultSelectionSet : 1 = false;
+  bool mDefaultSelectionSet : 1;
   /** True if we're open in the parent process */
   bool mIsOpenInParentProcess : 1 = false;
   bool mButtonDown : 1 = false;
