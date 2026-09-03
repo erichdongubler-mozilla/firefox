@@ -8,7 +8,7 @@ from pathlib import Path
 
 from mozunit import main
 
-from mozbuild.action.l10n_stage import stage_locale
+from mozbuild.action.l10n_stage import MissingJarSource, stage_locale
 from mozbuild.frontend.l10n_manifest import (
     MANIFEST_VERSION,
     MOZ_L10N_AB_CD_PLACEHOLDER,
@@ -18,6 +18,44 @@ from mozbuild.frontend.l10n_manifest import (
     L10nManifestContextData,
     write_l10n_manifest,
 )
+
+
+def _necko_manifest():
+    return L10nManifest(
+        version=MANIFEST_VERSION,
+        moz_app_id="{abcd}",
+        moz_app_version="121.0",
+        moz_app_displayname="Firefox",
+        moz_build_app="mobile/android",
+        contexts=[
+            L10nManifestContextData(
+                relsrcdir="netwerk/locales",
+                install_subdir="",
+                defines={},
+                locale_pp_defines={},
+                jar_sections=[
+                    JarSection(
+                        name=f"chrome/{MOZ_L10N_AB_CD_PLACEHOLDER}",
+                        base="",
+                        relativesrcdir="dom/locales",
+                        chrome_manifests=[],
+                        pp_includes=[],
+                        entries=[
+                            JarEntry(
+                                source="necko.properties",
+                                output=(
+                                    f"locale/{MOZ_L10N_AB_CD_PLACEHOLDER}"
+                                    "/necko/necko.properties"
+                                ),
+                                is_locale=True,
+                                preprocess=False,
+                            )
+                        ],
+                    )
+                ],
+            )
+        ],
+    )
 
 
 def _two_section_manifest():
@@ -117,6 +155,41 @@ class TestChromeManifestOrdering(unittest.TestCase):
                     "locale zulu fr zeta/locale/fr/zulu/",
                 ],
             )
+
+
+class TestMissingJarSource(unittest.TestCase):
+    def _stage(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            manifest_path = root / "l10n-manifest.json"
+            write_l10n_manifest(_necko_manifest(), manifest_path)
+            merge_tree = root / "merge-dir" / "de"
+            merge_tree.mkdir(parents=True)
+            stage_locale(
+                locale="de",
+                manifest_path=manifest_path,
+                merge_tree=merge_tree,
+                dest_xpi_stage=root / "xpi-stage" / "locale-de",
+                topsrcdir=root / "src",
+                topobjdir=root / "obj",
+            )
+
+    def test_error_names_locale_context_and_resolved_path(self):
+        with self.assertRaises(MissingJarSource) as raised:
+            self._stage()
+
+        error = raised.exception
+        self.assertEqual(error.locale, "de")
+        self.assertEqual(error.context_relsrcdir, "netwerk/locales")
+        self.assertEqual(error.relsrcdir, "dom/locales")
+        self.assertEqual(error.source, "necko.properties")
+        self.assertTrue(error.is_locale)
+        # A locale entry resolves under the section's relativesrcdir in the
+        # merge tree, not under the context it was declared in.
+        self.assertTrue(
+            error.resolved.endswith("merge-dir/de/dom/necko.properties"),
+            error.resolved,
+        )
 
 
 if __name__ == "__main__":

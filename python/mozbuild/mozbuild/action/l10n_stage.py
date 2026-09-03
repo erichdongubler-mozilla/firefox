@@ -38,6 +38,31 @@ from mozbuild.preprocessor import Preprocessor
 from mozbuild.util import FileAvoidWrite
 
 
+class MissingJarSource(Exception):
+    def __init__(
+        self,
+        locale: str,
+        context_relsrcdir: str,
+        relsrcdir: str,
+        source: str,
+        is_locale: bool,
+        resolved: str,
+    ) -> None:
+        self.locale = locale
+        self.context_relsrcdir = context_relsrcdir
+        self.relsrcdir = relsrcdir
+        self.source = source
+        self.is_locale = is_locale
+        self.resolved = resolved
+        origin = "merge tree" if is_locale else "source tree"
+        super().__init__(
+            f"No {origin} source for locale {locale}: {resolved}\n"
+            f"  manifest context: {context_relsrcdir}\n"
+            f"  jar.mn relativesrcdir: {relsrcdir or '(none)'}\n"
+            f"  jar.mn source: {source}"
+        )
+
+
 def stage_locale(
     locale: str,
     manifest_path: Path,
@@ -397,6 +422,15 @@ def _stage_jar_section(
                 _stage_entry(match_src, dest_path, entry.preprocess, defines)
             continue
         src = _resolve_jar_source(state, src_relsrcdir, entry_source, entry.is_locale)
+        if not Path(src).is_file():
+            raise MissingJarSource(
+                locale=state.locale,
+                context_relsrcdir=context.relsrcdir,
+                relsrcdir=src_relsrcdir,
+                source=entry_source,
+                is_locale=entry.is_locale,
+                resolved=src,
+            )
         dest_rel = mozpath.join(install_target, section_name, entry_output)
         dest_path = mozpath.join(state.dest, dest_rel)
         _stage_entry(src, dest_path, entry.preprocess, defines)
