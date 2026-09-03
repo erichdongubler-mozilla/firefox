@@ -181,6 +181,13 @@ describe("Privacy widget", () => {
     expect(container.querySelector("article.privacy").className).toContain(
       "is-empty"
     );
+    const messages = container.querySelectorAll(
+      ".privacy-empty-message-wrapper p"
+    );
+    expect([...messages].map(p => p.getAttribute("data-l10n-id"))).toEqual([
+      "newtab-privacy-empty-state",
+      "newtab-privacy-empty-state-tally",
+    ]);
     expect(container.querySelector(".privacy-empty-message")).toBeTruthy();
     expect(container.querySelector(".privacy-count")).toBeFalsy();
   });
@@ -737,9 +744,9 @@ describe("Privacy widget", () => {
     });
 
     it("does not log a message impression in the empty state", () => {
-      // The selector sets messageId to "newtab-privacy-empty" in the empty
-      // state, so the fixture mirrors that — otherwise this passes vacuously and
-      // wouldn't catch a spurious empty-state impression (Dré).
+      // The selector sets messageId to "newtab-privacy-empty-state" in the
+      // empty state, so the fixture mirrors that — otherwise this passes
+      // vacuously and wouldn't catch a spurious empty-state impression (Dré).
       const dispatch = jest.fn();
       renderPrivacy(
         dispatch,
@@ -747,7 +754,7 @@ describe("Privacy widget", () => {
         stateWithMessage(
           {
             variant: "empty",
-            messageId: "newtab-privacy-empty",
+            messageId: "newtab-privacy-empty-state",
             icon: "shield",
           },
           0

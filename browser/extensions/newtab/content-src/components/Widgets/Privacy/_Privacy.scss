@@ -163,7 +163,6 @@
   .privacy-empty-details,
   .privacy-etp-off-details {
     color: inherit;
-    max-width: 75%;
     text-decoration: none;
 
     &:hover {
@@ -180,9 +179,21 @@
     }
   }
 
-  .privacy-empty-message {
-    margin: 0;
+  .privacy-etp-off-details {
+    max-width: 85%;
+  }
 
+  .privacy-empty-message-wrapper {
+    p {
+      margin: 0;
+    }
+
+    .large-widget & {
+      font-size: var(--font-size-root);
+    }
+  }
+
+  .privacy-empty-message {
     &::after {
       content: '';
       display: inline-block;

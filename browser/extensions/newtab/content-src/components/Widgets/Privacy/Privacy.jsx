@@ -426,7 +426,7 @@ function Privacy({ dispatch, widgetsMayBeMaximized, widgetEnabledMap }) {
     });
     // Impression of the secondary message, keyed by ctaMessageId (blank ->
     // "newtab-privacy-blank"). Gated on !isEmptyState: the selector sets
-    // messageId to "newtab-privacy-empty" in the empty state, so a bare
+    // messageId to "newtab-privacy-empty-state" in the empty state, so a bare
     // ctaMessageId check would log a spurious impression for a state that shows
     // no message/CTA. The blank state still logs, keeping its URL-valued CTA
     // click attributable by joining to this impression on newtab_visit_id.
@@ -694,10 +694,13 @@ function Privacy({ dispatch, widgetsMayBeMaximized, widgetEnabledMap }) {
                 href="about:protections"
                 onClick={handleViewProtections}
               >
-                <p
-                  className="privacy-empty-message"
-                  data-l10n-id="newtab-privacy-empty"
-                />
+                <div className="privacy-empty-message-wrapper">
+                  <p data-l10n-id="newtab-privacy-empty-state" />
+                  <p
+                    className="privacy-empty-message"
+                    data-l10n-id="newtab-privacy-empty-state-tally"
+                  />
+                </div>
               </a>
             </div>
           ) : (
