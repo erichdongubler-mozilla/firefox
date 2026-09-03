@@ -832,22 +832,71 @@ export class ExperimentManager {
    * @param {string} source
    * The source associated with the enrollment.
    *
-   * @param {object} properties
-   * Additional properties to overwrite on the enrollment.
-   *
-   * @param {boolean} options.active
-   * Whether or not the enrollment should be active (enrolled).
+   * @param {object} extra
+   * Additional properties to set on the enrollment.
    *
    * @returns {CreateEnrollmentResult}
+   * The resulting enrollment and the prefs that should be set.
    *
-   * @throws If the branch does not exist.
+   * @throws {Error}
+   * If the branch does not exist.
    */
-  createEnrollment(
-    recipe,
-    branchSlug,
-    source,
-    { active = true, ...extra } = {}
-  ) {
+  createEnrollment(recipe, branchSlug, source, extra = {}) {
+    const enrollment = ExperimentManager.createIncompleteEnrollment(
+      recipe,
+      branchSlug,
+      source,
+      extra
+    );
+
+    let prefsToSet = null;
+    if (enrollment.active) {
+      this._prefFlips._annotateEnrollment(enrollment);
+
+      const result = this._getPrefsForBranch(
+        enrollment.branch,
+        recipe.isRollout
+      );
+
+      enrollment.prefs = result.prefs;
+      prefsToSet = result.prefsToSet;
+    }
+
+    return { enrollment, prefsToSet };
+  }
+
+  /**
+   * Create an incomplete enrollment.
+   *
+   * The enrollment will not be annotated with correct values for the `prefs` or
+   * `prefFlips` fields.
+   *
+   * This function exists to provide a common implementation for creating
+   * enrollments in {@link ExperimentManager.createEnrollment} and tests.
+   *
+   * @param {object} recipe
+   * The recipe.
+   *
+   * @param {string} branchSlug
+   * The slug of the branch to enroll in. This must exist in the recipe.
+   *
+   * @param {string} source
+   * The source associated with the enrollment.
+   *
+   * @param {object} extra
+   * Additional properties to set on the enrollment.
+   *
+   * @returns {object}
+   * An incomplete enrollment.
+   */
+  static createIncompleteEnrollment(recipe, branchSlug, source, extra = {}) {
+    const branch = recipe.branches.find(b => b.slug === branchSlug);
+    if (typeof branch === "undefined") {
+      throw new Error(`${recipe.slug}: no such branch ${branchSlug}`);
+    }
+
+    const { active = true, ...rest } = extra;
+
     const {
       slug,
       userFacingName,
@@ -863,49 +912,40 @@ export class ExperimentManager {
       requiresRestart,
     } = recipe;
 
-    const branch = recipe.branches.find(b => b.slug === branchSlug);
-    if (typeof branch === "undefined") {
-      throw new Error(`${recipe.slug}: no such branch ${branchSlug}`);
+    const enrollment = Object.assign(
+      {
+        slug,
+        source,
+        userFacingName,
+        userFacingDescription,
+        lastSeen: new Date().toJSON(),
+        featureIds,
+        isRollout,
+        active,
+        branch,
+        localizations,
+      },
+      typeof isFirefoxLabsOptIn !== "undefined"
+        ? {
+            isFirefoxLabsOptIn,
+            firefoxLabsTitle,
+            firefoxLabsDescription,
+            firefoxLabsDescriptionLinks,
+            firefoxLabsGroup,
+            requiresRestart,
+          }
+        : {},
+      rest
+    );
+
+    if (
+      !enrollment.active &&
+      typeof enrollment.unenrollReason === "undefined"
+    ) {
+      enrollment.unenrollReason = lazy.NimbusTelemetry.UnenrollReason.UNKNOWN;
     }
 
-    const enrollment = {
-      slug,
-      source,
-      userFacingName,
-      userFacingDescription,
-      lastSeen: new Date().toJSON(),
-      featureIds,
-      isRollout,
-      prefs: [],
-      active,
-      branch,
-      localizations,
-    };
-
-    if (typeof isFirefoxLabsOptIn !== "undefined") {
-      Object.assign(enrollment, {
-        isFirefoxLabsOptIn,
-        firefoxLabsTitle,
-        firefoxLabsDescription,
-        firefoxLabsDescriptionLinks,
-        firefoxLabsGroup,
-        requiresRestart,
-      });
-    }
-
-    let prefsToSet = null;
-    if (active) {
-      this._prefFlips._annotateEnrollment(enrollment);
-
-      const result = this._getPrefsForBranch(enrollment.branch, isRollout);
-
-      enrollment.prefs = result.prefs;
-      prefsToSet = result.prefsToSet;
-    }
-
-    Object.assign(enrollment, extra);
-
-    return { enrollment, prefsToSet };
+    return enrollment;
   }
 
   /**

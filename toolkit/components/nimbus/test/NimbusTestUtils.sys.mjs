@@ -333,68 +333,44 @@ export const NimbusTestUtils = {
 
   factories: {
     /**
-     * Create a experiment enrollment for an `ExperimentStore`.
+     * Create an enrollment from a recipe.
      *
-     * @param {string} slug
-     *        The slug for the created enrollment.
+     * @param {object} recipe
+     * The recipe to create an enrollment from.
      *
-     * @param {object?} props
-     *        Additional properties to splat into the created enrollment.
+     * @param {object} options
+     *
+     * @param {string} options.branchSlug
+     * The slug of the branch to enroll in. Must be provdied if there is more
+     * than one branch.
+     *
+     * @param {object} options.extra
+     * Extra properties to override on the enrollment object.
+     *
+     * @returns {object}
+     * The enrollment.
      */
-    experiment(slug, props = {}) {
-      const { isRollout = false } = props;
+    enrollment(recipe, { branchSlug, extra = {} } = {}) {
+      let branch;
+      if (branchSlug) {
+        branch = recipe.branches.find(b => b.slug === branchSlug);
+      } else if (recipe.branches.length === 1) {
+        branch = recipe.branches[0];
+      } else {
+        throw new Error("branchSlug required for recipes with > 1 branch");
+      }
 
-      const experimentType = isRollout ? "rollout" : "experiment";
-      const userFacingName = `NimbusTestUtils ${experimentType}`;
-      const userFacingDescription = `NimbusTestUtils ${experimentType}`;
+      const {
+        source = lazy.NimbusTelemetry.EnrollmentSource.RS_LOADER,
+        ...rest
+      } = extra;
 
-      return {
-        slug,
-        active: true,
-        branch: {
-          slug: "treatment",
-          ratio: 1,
-          features: [
-            {
-              featureId: "testFeature",
-              value: { testInt: 123, enabled: true },
-            },
-          ],
-          firefoxLabsTitle: null,
-        },
-        source: lazy.NimbusTelemetry.EnrollmentSource.RS_LOADER,
-        userFacingName,
-        userFacingDescription,
-        lastSeen: new Date().toJSON(),
-        featureIds: props?.branch?.features?.map(f => f.featureId) ?? [
-          "testFeature",
-        ],
-        isRollout: false,
-        isFirefoxLabsOptIn: false,
-        firefoxLabsTitle: null,
-        firefoxLabsDescription: null,
-        firefoxLabsDescriptionLinks: null,
-        firefoxLabsGroup: null,
-        requiresRestart: false,
-        localizations: null,
-        ...props,
-      };
-    },
-
-    /**
-     * Create a rollout enrollment for an `ExperimentStore`.
-     *
-     * @param {string} slug
-     *        The slug for the created enrollment.
-     *
-     * @param {object?} props
-     *        Additional properties to splat into the created enrollment.
-     */
-    rollout(slug, props = {}) {
-      return NimbusTestUtils.factories.experiment(slug, {
-        ...props,
-        isRollout: true,
-      });
+      return lazy.ExperimentManager.createIncompleteEnrollment(
+        recipe,
+        branch.slug,
+        source,
+        rest
+      );
     },
 
     /**
@@ -610,50 +586,30 @@ export const NimbusTestUtils = {
    * NimbusEnrollments table. You must call {@link NimbusTestUtils.saveStore} or
    * wait for it to save on its own.
    *
-   * @param {object} recipe The recipe to add an enrollment for.
-   * @param {object} options
-   * @param {ExperimentStore} options.store The store to add the enrollment to.
-   * Defaults to the global ExperimentStore (`ExperimentAPI.manager.store`).
-   * @param {string} options.branchSlug The slug of the branch to enroll in.
-   * Must be provided if there is more than once branch.
-   * @param {object} options.extra Extra properties to override on the
-   * enrollment object.
+   * @param {object} recipe
+   * The recipe to add an enrollment for.
    *
-   * @returns {object} The enrollment.
+   * @param {object} options
+   *
+   * @param {ExperimentStore} options.store
+   * The store to add the enrollment to. Defaults to the global ExperimentStore
+   * (`ExperimentAPI.manager.store`).
+   *
+   * @param {string} options.branchSlug
+   * The slug of the branch to enroll in. Must be provided if there is more
+   * than once branch.
+   *
+   * @param {object} options.extra
+   * Extra properties to override on the enrollment object.
+   *
+   * @returns {object}
+   * The enrollment.
    */
   addEnrollmentForRecipe(recipe, { store, branchSlug, extra = {} } = {}) {
-    let branch;
-    if (branchSlug) {
-      branch = recipe.branches.find(b => b.slug === branchSlug);
-    } else if (recipe.branches.length === 1) {
-      branch = recipe.branches[0];
-    } else {
-      throw new Error("branchSlug required for recipes with > 1 branch");
-    }
-
-    if (!branch) {
-      throw new Error("No branch");
-    }
-
-    const enrollment = {
-      slug: recipe.slug,
-      branch,
-      active: true,
-      source: lazy.NimbusTelemetry.EnrollmentSource.RS_LOADER,
-      userFacingName: recipe.userFacingName,
-      userFacingDescription: recipe.userFacingDescription,
-      lastSeen: new Date().toJSON(),
-      featureIds: recipe.featureIds,
-      isRollout: recipe.isRollout,
-      isFirefoxLabsOptIn: recipe.isFirefoxLabsOptIn,
-      firefoxLabsTitle: recipe.firefoxLabsTitle,
-      firefoxLabsDescription: recipe.firefoxLabsDescription,
-      firefoxLabsDescriptionLinks: recipe.firefoxLabsDescriptionLinks,
-      firefoxLabsGroup: recipe.firefoxLabsGroup,
-      requiresRestart: recipe.requiresRestart,
-      localizations: recipe.localizations ?? null,
-      ...extra,
-    };
+    const enrollment = NimbusTestUtils.factories.enrollment(recipe, {
+      branchSlug,
+      extra,
+    });
 
     (store ?? ExperimentAPI.manager.store).addEnrollment(enrollment, recipe);
 
@@ -1464,56 +1420,6 @@ export const NimbusTestUtils = {
     };
   },
 };
-
-Object.defineProperties(NimbusTestUtils.factories.experiment, {
-  withFeatureConfig: {
-    value: function NimbusTestUtils_factories_experiment_withFeatureConfig(
-      slug,
-      { branchSlug = "control", featureId, value = {} } = {},
-      props = {}
-    ) {
-      return NimbusTestUtils.factories.experiment(slug, {
-        branch: {
-          slug: branchSlug,
-          ratio: 1,
-          features: [
-            {
-              featureId,
-              value,
-            },
-          ],
-          firefoxLabsTitle: null,
-        },
-        ...props,
-      });
-    },
-  },
-});
-
-Object.defineProperties(NimbusTestUtils.factories.rollout, {
-  withFeatureConfig: {
-    value: function NimbusTestUtils_factories_rollout_withFeatureConfig(
-      slug,
-      { branchSlug = "control", featureId, value = {} } = {},
-      props = {}
-    ) {
-      return NimbusTestUtils.factories.rollout(slug, {
-        branch: {
-          slug: branchSlug,
-          ratio: 1,
-          features: [
-            {
-              featureId,
-              value,
-            },
-          ],
-          firefoxLabsTitle: null,
-        },
-        ...props,
-      });
-    },
-  },
-});
 
 Object.defineProperties(NimbusTestUtils.factories.recipe, {
   bucketConfig: {

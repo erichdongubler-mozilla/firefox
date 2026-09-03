@@ -63,19 +63,9 @@ add_task(async function test_add_to_store() {
 add_task(async function test_add_rollout_to_store() {
   const { manager, cleanup } = await setupTest();
 
-  const recipe = {
-    ...NimbusTestUtils.factories.recipe("rollout-slug"),
-    branches: [NimbusTestUtils.factories.rollout("rollout").branch],
+  const recipe = NimbusTestUtils.factories.recipe("rollout-slug", {
     isRollout: true,
-    active: true,
-    bucketConfig: {
-      namespace: "nimbus-test-utils",
-      randomizationUnit: "normandy_id",
-      start: 0,
-      count: 1000,
-      total: 1000,
-    },
-  };
+  });
 
   await manager.enroll(recipe, "test_add_rollout_to_store");
   const experiment = manager.store.get("rollout-slug");
