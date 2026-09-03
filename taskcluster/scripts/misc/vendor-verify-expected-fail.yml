@@ -26,4 +26,3 @@ expected-fail:
     toolkit/components/pdfjs/moz.yaml: "TODO bug: re-vendoring fails in CI"
     toolkit/components/protobuf/moz.yaml: "TODO bug: re-vendoring fails"
     toolkit/content/vendor/lit/moz.yaml: "Bug 2065242: re-vendoring fails"
-    tools/fuzzing/libfuzzer/moz.yaml: "TODO bug: re-vendoring fails"
