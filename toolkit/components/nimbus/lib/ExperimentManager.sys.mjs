@@ -202,8 +202,7 @@ export class ExperimentManager {
   /** @type AboutConfigObserver */
   #aboutConfigObserver;
 
-  constructor({ id = "experimentmanager", store } = {}) {
-    this.id = id;
+  constructor({ store } = {}) {
     this.store = store || new lazy.ExperimentStore();
 
     /** @type {OptInEntry[]} */
@@ -1449,7 +1448,7 @@ export class ExperimentManager {
     // - Differs from the input used for sampling the recipe (otherwise only
     //   branches that contain the same buckets as the recipe sampling will
     //   receive users)
-    const input = `${this.id}-${userId}-${slug}-branch`;
+    const input = `experimentmanager-${userId}-${slug}-branch`;
 
     const index = await lazy.Sampling.ratioSample(input, ratios);
     return branches[index];
