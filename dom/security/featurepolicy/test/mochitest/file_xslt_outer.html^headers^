@@ -1,1 +1,1 @@
-Permissions-Policy: camera=(self), fullscreen=*, geolocation=*, microphone=*, storage-access=()
+Feature-Policy: camera 'self'; fullscreen *; geolocation *; microphone *; storage-access 'none'

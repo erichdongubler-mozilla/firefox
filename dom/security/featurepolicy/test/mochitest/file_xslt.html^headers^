@@ -1,1 +1,1 @@
-Permissions-Policy: camera=*, fullscreen=(), storage-access=(self)
+Feature-Policy: camera *; fullscreen 'none'; storage-access 'self'
