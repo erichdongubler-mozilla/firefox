@@ -402,7 +402,7 @@ static int
 WriteNewControlFile(const std::string &CFPath,
                     const std::vector<SizedFile> &OldCorpus,
                     const std::vector<SizedFile> &NewCorpus,
-                    const std::vector<MergeFileInfo> &KnownFiles) {
+                    const std::vector<MergeFileInfo> &KnownFiles,
                     size_t &NumFiles) {
   std::unordered_set<std::string> FilesToSkip;
   for (auto &SF: KnownFiles)
