@@ -2,6 +2,89 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/**
+ * @typedef {string} WindowID
+ *   `window.__SSi` ID of a window, unique within the session.
+ */
+
+/**
+ * @typedef {object} WindowStateData
+ *   State of a window, validated in the session file by the `openWindow` and
+ *   `closedWindow` definitions in `session.schema.json`.
+ * @property {TabStateData[]} tabs
+ *   State of the window's tabs.
+ * @property {number} [selected]
+ *   1-based index of the selected tab in `tabs`.
+ * @property {TabGroupStateData[]} [groups]
+ *   State of the window's tab groups.
+ * @property {TabSplitViewStateData[]} [splitViews]
+ *   State of the window's split views.
+ * @property {ClosedTabStateData[]} [_closedTabs]
+ *   Tabs closed in this window, most recently closed first.
+ * @property {ClosedTabGroupStateData[]} [closedGroups]
+ *   Tab groups closed in this window, most recently closed first.
+ * @property {number} [_lastClosedTabGroupCount]
+ *   Number of tabs the most recent close closed at once, -1 if it closed a
+ *   single tab. Despite the name, this counts tabs, not tab groups; the name
+ *   predates the Tab Groups feature.
+ * @property {TabGroupId} [lastClosedTabGroupId]
+ *   Tab group the most recently closed tab was closed with, null if it wasn't
+ *   closed with one.
+ * @property {number} [closedId]
+ *   ID identifying the window once it has closed, unique across windows.
+ * @property {number} [closedAt]
+ *   Timestamp from `Date.now()` of when the window closed.
+ * @property {boolean} [isPrivate]
+ *   Whether this is a private window. Private windows aren't written to the
+ *   session file.
+ * @property {boolean} [isPopup]
+ *   Whether the window is a popup, i.e. one without browser chrome.
+ * @property {boolean} [isTaskbarTab]
+ *   Whether the window is a taskbar tab.
+ * @property {boolean} [isAIWindow]
+ *   Whether the window is an AI window.
+ * @property {string} [title]
+ *   Title of the window's selected tab.
+ * @property {string} [hidden]
+ *   Comma-separated list of the window's hidden toolbars.
+ * @property {"normal"|"maximized"|"minimized"|"fullscreen"} [sizemode]
+ *   Size mode of the window.
+ * @property {"normal"|"maximized"|"minimized"|"fullscreen"} [sizemodeBeforeMinimized]
+ *   Size mode to return to when the window is unminimized.
+ * @property {number} [width]
+ *   Outer width of the window in CSS pixels.
+ * @property {number} [height]
+ *   Outer height of the window in CSS pixels.
+ * @property {number} [screenX]
+ *   Distance of the window's left edge from the left edge of the screen, in
+ *   CSS pixels.
+ * @property {number} [screenY]
+ *   Distance of the window's top edge from the top edge of the screen, in CSS
+ *   pixels.
+ * @property {number} [zIndex]
+ *   Position of the window in the most-recently-used order, starting at 1.
+ * @property {number} [chromeFlags]
+ *   `nsIWebBrowserChrome` flags the window was opened with.
+ * @property {string} [workspaceID]
+ *   Virtual desktop the window is on.
+ * @property {object} [sidebar]
+ *   State of the window's sidebar, matching the schema's `sidebar` definition.
+ * @property {object[]} [cookies]
+ *   Cookies of the window's tabs, kept for closed windows so that restoring
+ *   one restores its cookies.
+ * @property {Record<string, string>} [extData]
+ *   Values set through `SessionStore.setCustomWindowValue`.
+ * @property {boolean} [busy]
+ *   Whether the window is still restoring tabs.
+ * @property {WindowID} [__lastSessionWindowID]
+ *   ID the window had in the session being restored, used to map that
+ *   session's windows onto the windows they are restored into.
+ * @property {boolean} [_shouldRestore]
+ *   Whether the closed window is to be reopened when the session is restored.
+ * @property {boolean} [_maybeDontRestoreTabs]
+ *   Whether the window's tabs are to be left out when the session is restored.
+ */
+
 // Current version of the format used by Session Restore.
 const FORMAT_VERSION = 1;
 
@@ -2126,7 +2209,10 @@ class _SessionStore {
    * Convert tab state into a saved group tab state. Used to convert a
    * closed tab group into a saved tab group.
    *
-   * @param {TabState} tabState closed tab state
+   * @param {Partial<TabStateData>} tabState
+   *        State of the tab as it was open, of which only the session history
+   *        entries and the active index are read. Session migration passes a
+   *        reduced state that carries no more than those.
    */
   formatTabStateForSavedGroup(tabState) {
     // Ensure the index is in bounds.
@@ -2814,7 +2900,7 @@ class _SessionStore {
    * @param {TabStateData} tabState
    *        Tab state.
    * @param {object} [options]
-   * @param {TabStateData[]} [options.closedTabsArray]
+   * @param {ClosedTabStateData[]} [options.closedTabsArray]
    *        The array of closed tabs to save to. This could be a
    *        window's _closedTabs array or the tab list of a
    *        closed tab group.
@@ -4052,7 +4138,7 @@ class _SessionStore {
    * @param {number} [aIndex]
    *   If not supplied, returns all closed tabs and tabs from closed tab groups.
    *   If supplied, returns the single closed tab with the given index.
-   * @returns {TabStateData|TabStateData[]}
+   * @returns {ClosedTabStateData|ClosedTabStateData[]}
    */
   #getStateForClosedTabsAndClosedGroupTabs(winData, aIndex) {
     const closedGroups = winData.closedGroups ?? [];
@@ -4108,9 +4194,9 @@ class _SessionStore {
    * from all contexts vs. callers that want a specific list of closed tabs from a
    * specific context (e.g. only closed tabs from a specific closed tab group).
    *
-   * @param {WindowState} sourceWinData
-   * @param {TabStateData} tabState
-   * @returns {{closedTabSet: TabStateData[], closedTabIndex: number}}
+   * @param {WindowStateData} sourceWinData
+   * @param {ClosedTabStateData} tabState
+   * @returns {{closedTabSet: ClosedTabStateData[], closedTabIndex: number}}
    */
   #getClosedTabStateFromUnifiedIndex(sourceWinData, tabState) {
     let closedTabSet, closedTabIndex;

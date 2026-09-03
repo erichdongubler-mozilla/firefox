@@ -32,7 +32,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
 );
 
 /**
- * @returns {Map<string, TabGroupStateData>}
+ * @returns {Map<TabGroupId, ClosedTabGroupStateData>}
  *   Map of closed tab groups keyed by tab group ID
  */
 function getClosedTabGroupsById() {
@@ -343,7 +343,7 @@ function setTabGroupColorProperties(element, tabGroup) {
  * Creates a `menuitem` for the tab group that will expand to a newly
  * created submenu of the tab group's tab contents when selected.
  *
- * @param {TabGroupStateData} aTabGroup
+ * @param {ClosedTabGroupStateData} aTabGroup
  *        Session store state for the closed tab group.
  * @param {number} aIndex
  *        The index of the first tab in the tab group, relative to the tab strip.
@@ -406,7 +406,7 @@ function createTabGroupSubmenu(
  * Creates a `toolbarbutton` for the tab group that will navigate to a newly
  * created subpanel of the tab group's tab contents when selected.
  *
- * @param {TabGroupStateData} aTabGroup
+ * @param {ClosedTabGroupStateData} aTabGroup
  *        Session store state for the closed tab group.
  * @param {number} aIndex
  *        The index of the first tab in the tab group, relative to the tab strip.
@@ -503,8 +503,9 @@ function createTabGroupSubpanel(
  *        whether or not this entry will represent a closed window
  * @param {number} aIndex
  *        the index of the closed tab
- * @param {TabStateData} aClosedTab
- *        the closed tab
+ * @param {ClosedTabStateData|TabStateData} aClosedTab
+ *        the closed tab, or the selected tab of the closed window when
+ *        `aIsWindowsFragment` is set
  * @param {Document} aDocument
  *        a document that can be used to create the entry
  * @param {string} aMenuLabel

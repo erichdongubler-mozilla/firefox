@@ -4,8 +4,7 @@
     "RecentlyClosedTabsAndWindowsMenuUtils.sys.mjs",
     "SessionLogger.sys.mjs",
     "SessionStore.sys.mjs",
-    "TabGroupState.sys.mjs",
-    "TabState.sys.mjs"
+    "TabGroupState.sys.mjs"
   ],
   "extends": "../../../tools/@types/tsconfig.json",
 
