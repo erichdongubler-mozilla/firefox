@@ -34,6 +34,7 @@ class FormData;
 class HTMLButtonElement;
 class HTMLCollection;
 class HTMLElementOrLong;
+class HTMLOptGroupElement;
 class HTMLOptionElementOrHTMLOptGroupElement;
 class HTMLSelectElement;
 class HTMLSelectedContentElement;
@@ -155,6 +156,30 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
   static bool MatchSelectedOptions(Element* aElement, int32_t, nsAtom*, void*);
 
   HTMLCollection* SelectedOptions();
+
+  /**
+   * https://html.spec.whatwg.org/#concept-select-option-list
+   * Elements whose children are excluded from a select's option list. Callers
+   * handle optgroup separately, since that is context-dependent.
+   */
+  static bool IsOptionListBoundary(const nsINode& aNode) {
+    return aNode.IsAnyOfHTMLElements(nsGkAtoms::select, nsGkAtoms::hr,
+                                     nsGkAtoms::option, nsGkAtoms::datalist);
+  }
+
+  /**
+   * The nearest ancestor `select` and `optgroup` of `aNode`, as computed by
+   * https://html.spec.whatwg.org/#concept-option-nearest-ancestor-select
+   * `mSelect` is the select whose option list `aNode` takes part in, or null.
+   * `mOptGroup` is the optgroup that groups `aNode` and provides its inherited
+   * disabled state, or null. Wrapper elements are transparent, so this walks
+   * past them.
+   */
+  struct NearestAncestors {
+    HTMLSelectElement* mSelect = nullptr;
+    HTMLOptGroupElement* mOptGroup = nullptr;
+  };
+  static NearestAncestors ComputeNearestAncestors(const nsINode&);
 
   int32_t SelectedIndex() const;
   // During removal handling we might need to ignore some options that are

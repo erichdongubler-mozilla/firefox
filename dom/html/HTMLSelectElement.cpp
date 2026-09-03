@@ -582,6 +582,40 @@ HTMLCollection* HTMLSelectElement::SelectedOptions() {
   return mSelectedOptions;
 }
 
+// https://html.spec.whatwg.org/#option-element-nearest-ancestor-select
+// Generalised to any node, so that the same walk decides the option, optgroup
+// and hr membership of a select's option list.
+/* static */
+auto HTMLSelectElement::ComputeNearestAncestors(const nsINode& aNode)
+    -> NearestAncestors {
+  // 1. Let ancestorOptgroup be null.
+  HTMLOptGroupElement* ancestorOptGroup = nullptr;
+  // 2. For each ancestor of element's ancestors, in reverse tree order:
+  for (nsINode* ancestor : Ancestors(aNode)) {
+    // 2.1. If ancestor is a datalist, hr, or option element, return null.
+    if (ancestor->IsAnyOfHTMLElements(nsGkAtoms::datalist, nsGkAtoms::hr,
+                                      nsGkAtoms::option)) {
+      return {nullptr, ancestorOptGroup};
+    }
+    // 2.2. If ancestor is an optgroup element:
+    if (auto* optgroup = HTMLOptGroupElement::FromNode(ancestor)) {
+      // 2.2.1. If ancestorOptgroup is not null, return null.
+      if (ancestorOptGroup) {
+        return {nullptr, ancestorOptGroup};
+      }
+      // 2.2.2. Set ancestorOptgroup to ancestor.
+      ancestorOptGroup = optgroup;
+      continue;
+    }
+    // 2.3. If ancestor is a select element, return ancestor.
+    if (auto* select = FromNode(ancestor)) {
+      return {select, ancestorOptGroup};
+    }
+  }
+  // 3. Return null.
+  return {nullptr, ancestorOptGroup};
+}
+
 HTMLOptionElement* HTMLSelectElement::GetSelectedOption(
     IgnoredOptionList aIgnored) const {
   uint32_t len = Length();
@@ -863,20 +897,9 @@ bool HTMLSelectElement::IsOptionDisabled(HTMLOptionElement* aOption) const {
   if (aOption->Disabled()) {
     return true;
   }
-
   // https://html.spec.whatwg.org/#concept-option-disabled
-  // Walk ancestors looking for a disabled optgroup. Wrapper elements (div,
-  // span, etc.) are transparent; only boundary elements stop the walk.
-  for (Element* node = aOption->GetParentElement(); node;
-       node = node->GetParentElement()) {
-    if (HTMLOptionElement::IsOptionListBoundary(*node)) {
-      return false;
-    }
-    if (auto* optGroupElement = HTMLOptGroupElement::FromNode(node)) {
-      return optGroupElement->Disabled();
-    }
-  }
-  return false;
+  auto* optgroup = ComputeNearestAncestors(*aOption).mOptGroup;
+  return optgroup && optgroup->Disabled();
 }
 
 void HTMLSelectElement::GetValue(nsAString& aValue) const {
