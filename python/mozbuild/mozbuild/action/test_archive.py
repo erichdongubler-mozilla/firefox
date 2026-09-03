@@ -355,6 +355,11 @@ ARCHIVE_FILES = {
         },
         {
             "source": buildconfig.topsrcdir,
+            "base": "third_party/python/pyyaml/lib",
+            "pattern": "yaml/**",
+        },
+        {
+            "source": buildconfig.topsrcdir,
             "base": "third_party/python/six",
             "pattern": "six.py",
         },
