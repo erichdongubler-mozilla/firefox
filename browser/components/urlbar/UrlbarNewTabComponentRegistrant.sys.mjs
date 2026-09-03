@@ -9,6 +9,7 @@ import {
 import { UrlbarPrefs } from "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs";
 
 const FEATURE_GATE = "newtabFeatureGate";
+const NOVA_PREF = "browser.nova.enabled";
 
 /**
  * A registrant that adds `<moz-urlbar>` to about:newtab / about:home while the
@@ -29,6 +30,12 @@ export class UrlbarNewTabComponentRegistrant extends BaseAboutNewTabComponentReg
 
   onNimbusChanged(variable) {
     if (variable == FEATURE_GATE) {
+      this.updated();
+    }
+  }
+
+  onPrefChanged(pref) {
+    if (pref == NOVA_PREF) {
       this.updated();
     }
   }

@@ -1397,6 +1397,9 @@ class Preferences {
 
     // Some prefs may influence others.
     switch (pref) {
+      case "browser.nova.enabled":
+        this._map.delete("newtabFeatureGate");
+        return;
       case "autoFill.adaptiveHistory.useCountThreshold":
         this._map.delete("autoFillAdaptiveHistoryUseCountThreshold");
         return;
@@ -1495,6 +1498,10 @@ class Preferences {
     switch (pref) {
       case "shortcuts.actions": {
         return this.get("scotchBonnet.enableOverride") && this._readPref(pref);
+      }
+      case "newtabFeatureGate": {
+        // The New Tab search bar is only themed for Nova.
+        return this.get("browser.nova.enabled") && this._readPref(pref);
       }
       case "defaultBehavior": {
         let val = 0;

@@ -6,7 +6,7 @@ support-files = [
   "head.js",
   "richSuggestionEngine.sjs",
 ]
-prefs = ["browser.urlbar.newtab.featureGate=true"]
+prefs = ["browser.nova.enabled=true", "browser.urlbar.newtab.featureGate=true"]
 # Painting the results view, anchored inside New Tab's sticky search
 # wrapper, asserts in a debug build. Bug 2065180.
 skip-if = ["debug"]
