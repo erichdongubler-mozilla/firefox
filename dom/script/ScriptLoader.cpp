@@ -1878,12 +1878,7 @@ bool ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
 
     // This calls OnFetchComplete directly since there's no need to start
     // fetching an inline script.
-    nsresult rv = modReq->OnFetchComplete(NS_OK);
-    if (NS_FAILED(rv)) {
-      ReportErrorToConsole(modReq, rv);
-      HandleLoadError(MOZ_KnownLive(modReq), rv);
-    }
-
+    modReq->OnFetchComplete(NS_OK);
     return false;
   }
 
@@ -2725,7 +2720,8 @@ nsresult ScriptLoader::ProcessOffThreadRequest(ScriptLoadRequest* aRequest) {
   if (aRequest->IsModuleRequest()) {
     MOZ_ASSERT(aRequest->GetScriptLoadContext()->mCompileOrDecodeTask);
     ModuleLoadRequest* request = aRequest->AsModuleRequest();
-    return request->OnFetchComplete(NS_OK);
+    request->OnFetchComplete(NS_OK);
+    return NS_OK;
   }
 
   // Element may not be ready yet if speculatively compiling, so process the
@@ -5341,7 +5337,8 @@ nsresult ScriptLoader::PrepareLoadedRequest(ScriptLoadRequest* aRequest,
     }
 
     // Otherwise compile it right away and start fetching descendents.
-    return request->OnFetchComplete(NS_OK);
+    request->OnFetchComplete(NS_OK);
+    return NS_OK;
   }
 
   // The script is now loaded and ready to run.

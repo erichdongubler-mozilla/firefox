@@ -123,7 +123,8 @@ nsresult ModuleLoader::StartFetch(ModuleLoadRequest* aRequest) {
     DisallowImportMapsForModuleFetch(aRequest);
     GetScriptLoader()->EmulateNetworkEvents(aRequest, Nothing());
     SetModuleFetchStarted(aRequest);
-    return aRequest->OnFetchComplete(NS_OK);
+    aRequest->OnFetchComplete(NS_OK);
+    return NS_OK;
   }
 
   // Module scripts normally require CORS. Disable it for non-linkable about:

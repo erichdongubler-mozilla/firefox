@@ -118,23 +118,6 @@ void ModuleLoadRequest::ModuleLoaded() {
   }
 }
 
-void ModuleLoadRequest::LoadFailed() {
-  // We failed to load the source text or an error occurred unrelated to the
-  // content of the module (e.g. OOM).
-
-  LOG(("ScriptLoadRequest (%p): Module load failed", this));
-
-  if (IsCanceled()) {
-    return;
-  }
-
-  MOZ_ASSERT(IsFetching());
-  MOZ_ASSERT(!mModuleScript);
-
-  Cancel();
-  LoadFinished();
-}
-
 void ModuleLoadRequest::ModuleErrored() {
   // Parse error, failure to resolve imported modules or error loading import.
 

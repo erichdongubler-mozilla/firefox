@@ -676,8 +676,8 @@ ModuleLoaderBase::SetModuleFetchFinishedAndGetWaitingRequests(
     ModuleLoadRequest* aRequest, nsresult aResult) {
   // Update module map with the result of fetching a single module script.
   //
-  // If any requests for the same URL are waiting on this one to complete, call
-  // ModuleLoaded or LoadFailed to resume or fail them as appropriate.
+  // If any requests for the same URL are waiting on this one to complete, they
+  // are returned so they can be resumed or failed as appropriate.
 
   MOZ_ASSERT(aRequest->mLoader == this);
 
@@ -785,8 +785,8 @@ ModuleScript* ModuleLoaderBase::GetFetchedModule(
   return ms;
 }
 
-nsresult ModuleLoaderBase::OnFetchComplete(ModuleLoadRequest* aRequest,
-                                           nsresult aRv) {
+void ModuleLoaderBase::OnFetchComplete(ModuleLoadRequest* aRequest,
+                                       nsresult aRv) {
   LOG(("ScriptLoadRequest (%p): OnFetchComplete result %x", aRequest,
        (unsigned)aRv));
   MOZ_ASSERT(aRequest->mLoader == this);
@@ -809,8 +809,11 @@ nsresult ModuleLoaderBase::OnFetchComplete(ModuleLoadRequest* aRequest,
     }
 
     if (NS_FAILED(rv)) {
-      aRequest->LoadFailed();
-      return rv;
+      // Failing to create a module script leaves the request errored (its
+      // module script is null), which the shared error path below handles the
+      // same way as a failed fetch. A failed fetch is reported to the console
+      // by the caller, so report this failure here.
+      mLoader->ReportErrorToConsole(aRequest, rv);
     }
   }
 
@@ -837,11 +840,10 @@ nsresult ModuleLoaderBase::OnFetchComplete(ModuleLoadRequest* aRequest,
   }
 
   if (!waitingRequests) {
-    return NS_OK;
+    return;
   }
 
   ResumeWaitingRequests(waitingRequests, success);
-  return NS_OK;
 }
 
 void ModuleLoaderBase::OnFetchSucceeded(ModuleLoadRequest* aRequest) {
