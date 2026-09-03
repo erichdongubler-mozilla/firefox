@@ -251,6 +251,8 @@ typescript:
             - 'browser/components/places/**/*.ts'
             - 'browser/components/search/**/*.*js'
             - 'browser/components/search/**/*.ts'
+            - 'browser/components/sessionstore/**/*.*js'
+            - 'browser/components/sessionstore/**/*.ts'
             - 'browser/components/tabbrowser/**/*.*js'
             - 'browser/components/tabbrowser/**/*.ts'
             - 'browser/components/urlbar/**/*.*js'

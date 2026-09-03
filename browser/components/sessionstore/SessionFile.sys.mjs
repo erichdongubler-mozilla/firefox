@@ -387,9 +387,7 @@ var SessionFileInternal = {
     }
     this._readOrigin = result.origin;
 
-    result.noFilesFound = noFilesFound;
-
-    return result;
+    return { ...result, noFilesFound };
   },
 
   // Initialize SessionWriter and return it as a resolved promise.
@@ -444,10 +442,10 @@ var SessionFileInternal = {
 
     this._attempts++;
     let options = { isFinalWrite, performShutdownCleanup };
-    let promise = this.getWriter().then(writer => writer.write(aData, options));
+    let write = this.getWriter().then(writer => writer.write(aData, options));
 
     // Wait until the write is done.
-    promise = promise.then(
+    let promise = write.then(
       msg => {
         // Record how long the write took.
         if (msg.telemetry.writeFileMs) {

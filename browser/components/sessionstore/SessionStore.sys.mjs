@@ -388,7 +388,7 @@ class _SessionStore {
    *
    * @param {string} closedAction
    *        Either LAST_ACTION_CLOSED_TAB or LAST_ACTION_CLOSED_WINDOW
-   * @param {integer} closedId
+   * @param {number} closedId
    *        The closedId of a tab or window
    */
   #removeClosedAction(closedAction, closedId) {
@@ -406,7 +406,7 @@ class _SessionStore {
    *
    * @param {string} closedAction
    *        Either LAST_ACTION_CLOSED_TAB or LAST_ACTION_CLOSED_WINDOW
-   * @param {integer} closedId
+   * @param {number} closedId
    *        The closedId of a tab or window
    */
   #addClosedAction(closedAction, closedId) {
@@ -3513,7 +3513,7 @@ class _SessionStore {
   /**
    * Look up the object type ("tab" or "window") for a given closedId
    *
-   * @param {integer} aClosedId
+   * @param {number} aClosedId
    */
   getObjectTypeForClosedId(aClosedId) {
     // check if matches a window first
@@ -3710,7 +3710,7 @@ class _SessionStore {
   /**
    * Get window a given closed tab belongs to
    *
-   * @param {integer} aClosedId The closedId of the tab whose window we want to find
+   * @param {number} aClosedId The closedId of the tab whose window we want to find
    * @param {boolean} [aIncludePrivate] Optionally include private windows when searching for the closed tab
    */
   getWindowForTabClosedId(aClosedId, aIncludePrivate) {
@@ -4135,7 +4135,7 @@ class _SessionStore {
             A SessionStore window id used to look up the window where the tab was closed
    * @param {number} aSource.sourceClosedId
             The closedId used to look up the closed window where the tab was closed
-   * @param {Integer} [aIndex = 0]
+   * @param {number} [aIndex = 0]
    *        The index of the tab in the closedTabs array (via SessionStore.getClosedTabData), where 0 is most recent.
    * @param {Window} [aTargetWindow = aWindow] Optional window to open the tab into, defaults to current (topWindow).
    * @returns {MozTabbrowserTab}
@@ -4231,7 +4231,7 @@ class _SessionStore {
             A SessionStore window id used to look up the window where the tab was closed
    * @param {number} aSource.sourceClosedId
             The closedId used to look up the closed window where the tab was closed
-   * @param {integer} aClosedId
+   * @param {number} aClosedId
    *        The closedId of the tab or window
    * @param {Window} [aTargetWindow = aWindow] Optional window to open the tab into, defaults to current (topWindow).
    * @returns {MozTabbrowserTab}
@@ -4302,7 +4302,7 @@ class _SessionStore {
             A SessionStore window id used to look up the window where the tab was closed
    * @param {number} aSource.sourceClosedId
             The closedId used to look up the closed window where the tab was closed
-   * @param {Integer} [aIndex = 0]
+   * @param {number} [aIndex = 0]
    *        The index into the window's list of closed tabs
    * @throws {InvalidArgumentError} if the window is not tracked by SessionStore, or index is out of bounds
    */
@@ -4398,7 +4398,7 @@ class _SessionStore {
    * Removes the record with this closedId so it cannot be un-closed or appear
    * in a list of recently-closed windows
    *
-   * @param {integer} aClosedId
+   * @param {number} aClosedId
    *        The closedId of the window
    * @throws {InvalidArgumentError} if the closedId doesnt match a closed window
    */
@@ -4421,7 +4421,7 @@ class _SessionStore {
    * Removes the record with this closedId so it cannot be un-closed or appear
    * in a list of recently-closed tabs
    *
-   * @param {integer} aClosedId
+   * @param {number} aClosedId
    *        The closedId of the tab
    * @param {Window | object} aSourceOptions
    *        Either a DOMWindow or an object with properties to resolve to the window
@@ -4811,7 +4811,7 @@ class _SessionStore {
    * Undoes the closing of a tab or window which corresponds
    * to the closedId passed in.
    *
-   * @param {integer} aClosedId
+   * @param {number} aClosedId
    *        The closedId of the tab or window
    * @param {boolean} [aIncludePrivate = true]
    *        Whether to restore private tabs or windows. Defaults to true
