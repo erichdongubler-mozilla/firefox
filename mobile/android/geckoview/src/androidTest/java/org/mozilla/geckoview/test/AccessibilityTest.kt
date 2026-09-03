@@ -829,6 +829,55 @@ class AccessibilityTest : BaseSessionTest() {
     }
 
     @Test
+    fun testSummary() {
+        var nodeId = AccessibilityNodeProvider.HOST_VIEW_ID
+        mainSession.loadUri("data:text/html;charset=utf-8,<details><summary>Question</summary><p>Answer</p></details>")
+        waitForInitialFocus(true)
+
+        sessionRule.waitUntilCalled(
+            object : EventDelegate {
+                @AssertCalled(count = 1)
+                override fun onAccessibilityFocused(event: AccessibilityEvent) {
+                    nodeId = getSourceId(event)
+                    val node = createNodeInfo(nodeId)
+                    assertThat("Accessibility focus on summary", node.text.toString(), equalTo("Question"))
+                    assertThat(
+                        "Summary has role description",
+                        node.extras.getCharSequence("AccessibilityNodeInfo.roleDescription")!!.toString(),
+                        equalTo("summary"),
+                    )
+                    assertThat(
+                        "summary is expandable",
+                        node.actionList,
+                        hasItem(AccessibilityNodeInfo.AccessibilityAction.ACTION_EXPAND),
+                    )
+                }
+            }
+        )
+
+        provider.performAction(nodeId, AccessibilityNodeInfo.ACTION_EXPAND, null)
+        sessionRule.waitUntilCalled(
+            object : EventDelegate {
+                @AssertCalled(count = 1)
+                override fun onClicked(event: AccessibilityEvent) {
+                    assertThat("Clicked event is from same node", getSourceId(event), equalTo(nodeId))
+                    val node = createNodeInfo(nodeId)
+                    assertThat(
+                        "summary is collapsable",
+                        node.actionList,
+                        hasItem(AccessibilityNodeInfo.AccessibilityAction.ACTION_COLLAPSE),
+                    )
+                    assertThat(
+                        "node is not expandable",
+                        node.actionList,
+                        not(hasItem(AccessibilityNodeInfo.AccessibilityAction.ACTION_EXPAND)),
+                    )
+                }
+            }
+        )
+    }
+
+    @Test
     fun testMoveByCharacter() {
         var nodeId = AccessibilityNodeProvider.HOST_VIEW_ID
         mainSession.loadUri("data:text/html;charset=utf-8,<p>🤦‍♂️ Peanut</p>")
