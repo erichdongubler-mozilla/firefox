@@ -2172,21 +2172,11 @@ bool nsContentSecurityUtils::ValidateScriptFilename(JSContext* cx,
     }
   }
 
-  auto kAllowedFilenamesPrefix = {
-      // Until 371900 is fixed, we need to do something about about:downloads
-      // and this is the most reasonable. See 1727770
-      "about:downloads"_ns,
-      // We think this is the same problem as about:downloads
-      "about:preferences"_ns, "about:settings"_ns,
-      // Browser console will give a filename of 'debugger' See 1763943
-      // Sometimes it's 'debugger eager eval code', other times just 'debugger
-      // eval code'
-      "debugger"_ns};
-
-  for (auto allowedFilenamePrefix : kAllowedFilenamesPrefix) {
-    if (StringBeginsWith(filename, allowedFilenamePrefix)) {
-      return true;
-    }
+  // Browser console will give a filename of 'debugger' See 1763943
+  // Sometimes it's 'debugger eager eval code', other times just 'debugger
+  // eval code'
+  if (StringBeginsWith(filename, "debugger"_ns)) {
+    return true;
   }
 
   // Log to MOZ_LOG
