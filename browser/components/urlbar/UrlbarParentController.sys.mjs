@@ -19,6 +19,7 @@ import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  AboutNewTab: "resource:///modules/AboutNewTab.sys.mjs",
   AppProvidedConfigEngine:
     "moz-src:///toolkit/components/search/ConfigSearchEngine.sys.mjs",
   ASRouter: "resource:///modules/asrouter/ASRouter.sys.mjs",
@@ -603,34 +604,38 @@ export class UrlbarParentController {
    * to form history. The parent-side counterpart to the content-side
    * `_recordSearch()`.
    *
-   * @param {object} options
-   * @param {string} options.engineId
+   * @param {object} searchData
+   * @param {string} searchData.engineId
    *   The id of the engine handling the search.
-   * @param {string} options.query
-   * @param {string} options.searchSource
+   * @param {string} searchData.query
+   * @param {string} searchData.searchSource
    *   Where the search originated from.
-   * @param {object} options.details
+   * @param {object} searchData.details
    *   The search action details, per `BrowserSearchTelemetry.recordSearch()`.
-   * @param {number} [options.browserId]
-   *   The id of the browser where the search is being opened; defaults to the
-   *   selected browser.
-   * @param {boolean} [options.opensInPrivateWindow]
+   * @param {boolean} [searchData.opensInPrivateWindow]
    *   Whether the search opens in a new private window, in which case it's
    *   not added to form history. If this is false but the current window
    *   is private, it's not added either.
    */
-  recordSearch({
+  recordSearch(searchData) {
+    let browser = this.browserWindow.gBrowser.selectedBrowser;
+    this.#recordSearchForBrowser({ ...searchData, browser });
+  }
+
+  /**
+   * See this.recordSearch().
+   *
+   * @param {Parameters<typeof this.recordSearch>[0] & {browser: MozBrowser}} searchData
+   *   The data for `recordSearch` and the browser where the search is loading.
+   */
+  #recordSearchForBrowser({
+    browser,
     engineId,
     query,
     searchSource,
     details,
-    browserId,
     opensInPrivateWindow,
   }) {
-    let browser =
-      this.resolveTargetBrowser(browserId) ||
-      this.browserWindow.gBrowser.selectedBrowser;
-
     // Record when the user uses the search bar to be used for message
     // targeting. This is arbitrarily capped at 100, only to prevent the number
     // from growing infinitely.
@@ -651,6 +656,11 @@ export class UrlbarParentController {
         "browser.search.widget.lastUsed",
         new Date().toISOString()
       );
+    }
+
+    if (this.sapName == "newtab_searchbar") {
+      let newtabBrowser = this.#actor.browsingContext.top.embedderElement;
+      details.newtabSessionId = lazy.AboutNewTab.getVisitId(newtabBrowser);
     }
 
     lazy.ASRouter.sendTriggerMessage({
@@ -686,15 +696,15 @@ export class UrlbarParentController {
    * the next-opened tab is the search tab. Reaching its browser is parent-only.
    *
    * @param {Parameters<typeof this.recordSearch>[0]} searchData
-   *   The data for `recordSearch`; its `browserId` is filled in here.
+   *   The data for `recordSearch`.
    */
   recordSearchInOpenedTab(searchData) {
     this.browserWindow.gBrowser.tabContainer.addEventListener(
       "TabOpen",
       tabEvent => {
-        this.recordSearch({
+        this.#recordSearchForBrowser({
           ...searchData,
-          browserId: tabEvent.target.linkedBrowser.browserId,
+          browser: tabEvent.target.linkedBrowser,
         });
       },
       { once: true }

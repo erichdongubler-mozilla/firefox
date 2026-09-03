@@ -5,7 +5,6 @@
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = XPCOMUtils.declareLazy({
-  AboutNewTab: "resource:///modules/AboutNewTab.sys.mjs",
   ConfigSearchEngine:
     "moz-src:///toolkit/components/search/ConfigSearchEngine.sys.mjs",
   ContextId: "moz-src:///browser/modules/ContextId.sys.mjs",
@@ -279,21 +278,14 @@ class BrowserSearchTelemetryHandler {
           "urlbar_handoff",
         ].includes(source)
       ) {
-        // The New Tab search bar is part of the page rather than a handoff
-        // target, so no visit id was handed to it: the visit is the one the
-        // browser is showing.
-        let newtabVisitId =
-          source == "newtab_searchbar"
-            ? lazy.AboutNewTab.getVisitId(browser)
-            : details.newtabSessionId;
         Glean.newtabSearch.issued.record({
-          newtab_visit_id: newtabVisitId,
+          newtab_visit_id: details.newtabSessionId,
           search_access_point: source,
           telemetry_id: legacyTelemetryId,
         });
         lazy.SearchSERPTelemetry.recordBrowserNewtabSession(
           browser,
-          newtabVisitId
+          details.newtabSessionId
         );
       }
     } catch (ex) {

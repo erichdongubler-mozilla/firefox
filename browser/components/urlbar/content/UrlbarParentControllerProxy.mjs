@@ -200,8 +200,8 @@ export class UrlbarParentControllerProxy {
   }
 
   /**
-   * Ships a search to the parent recorder, which resolves the engine by name
-   * and the browser by id. The counterpart to the controller's `recordSearch()`.
+   * Ships a search to the parent recorder, which resolves the engine by name.
+   * The counterpart to the controller's `recordSearch()`.
    *
    * @param {Parameters<UrlbarParentController["recordSearch"]>[0]} options
    */
