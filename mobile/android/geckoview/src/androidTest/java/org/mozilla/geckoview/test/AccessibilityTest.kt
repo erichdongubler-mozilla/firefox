@@ -2191,27 +2191,47 @@ class AccessibilityTest : BaseSessionTest() {
             firstRange.rangeInfo.type,
             equalTo(AccessibilityNodeInfo.RangeInfo.RANGE_TYPE_INT),
         )
+        assertThat(
+            "'Rating' has scroll forward",
+            AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_FORWARD in firstRange.actionList,
+            equalTo(true),
+        )
+        assertThat(
+            "'Rating' has scroll backward",
+            AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_BACKWARD in firstRange.actionList,
+            equalTo(true),
+        )
 
         val secondRange = createNodeInfo(rootNode.getChildId(1))
         assertThat("Range has right label", secondRange.text.toString(), equalTo("Stars"))
-        assertThat("'Rating' has rangeInfo", secondRange.rangeInfo, notNullValue())
-        assertThat("'Rating' has correct value", secondRange.rangeInfo.current, equalTo(4.5f))
-        assertThat("'Rating' has correct max", secondRange.rangeInfo.max, equalTo(5f))
-        assertThat("'Rating' has correct min", secondRange.rangeInfo.min, equalTo(1f))
+        assertThat("'Stars' has rangeInfo", secondRange.rangeInfo, notNullValue())
+        assertThat("'Stars' has correct value", secondRange.rangeInfo.current, equalTo(5f))
+        assertThat("'Stars' has correct max", secondRange.rangeInfo.max, equalTo(5f))
+        assertThat("'Stars' has correct min", secondRange.rangeInfo.min, equalTo(1f))
         assertThat(
-            "'Rating' has correct range type",
+            "'Stars' has correct range type",
             secondRange.rangeInfo.type,
             equalTo(AccessibilityNodeInfo.RangeInfo.RANGE_TYPE_FLOAT),
+        )
+        assertThat(
+            "'Stars' has scroll forward",
+            AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_FORWARD in secondRange.actionList,
+            equalTo(true),
+        )
+        assertThat(
+            "'Stars' does not have scroll backward because it is at the max",
+            AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_BACKWARD in secondRange.actionList,
+            equalTo(false),
         )
 
         val thirdRange = createNodeInfo(rootNode.getChildId(2))
         assertThat("Range has right label", thirdRange.text.toString(), equalTo("Percent"))
-        assertThat("'Rating' has rangeInfo", thirdRange.rangeInfo, notNullValue())
-        assertThat("'Rating' has correct value", thirdRange.rangeInfo.current, equalTo(0.83f))
-        assertThat("'Rating' has correct max", thirdRange.rangeInfo.max, equalTo(1f))
-        assertThat("'Rating' has correct min", thirdRange.rangeInfo.min, equalTo(0f))
+        assertThat("'Percent' has rangeInfo", thirdRange.rangeInfo, notNullValue())
+        assertThat("'Percent' has correct value", thirdRange.rangeInfo.current, equalTo(0.83f))
+        assertThat("'Percent' has correct max", thirdRange.rangeInfo.max, equalTo(1f))
+        assertThat("'Percent' has correct min", thirdRange.rangeInfo.min, equalTo(0f))
         assertThat(
-            "'Rating' has correct range type",
+            "'Percent' has correct range type",
             thirdRange.rangeInfo.type,
             equalTo(AccessibilityNodeInfo.RangeInfo.RANGE_TYPE_PERCENT),
         )

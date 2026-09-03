@@ -152,6 +152,15 @@ void SessionAccessibility::Click(int32_t aID) {
   }
 }
 
+void SessionAccessibility::ChangeValueBySteps(int32_t aID, double aSteps) {
+  MOZ_ASSERT(NS_IsMainThread());
+  MonitorAutoLock mal(nsAccessibilityService::GetAndroidMonitor());
+  if (Accessible* acc = GetAccessibleByID(aID)) {
+    double newValue = acc->CurValue() + (acc->Step() * aSteps);
+    acc->SetCurValue(newValue);
+  }
+}
+
 bool SessionAccessibility::Pivot(int32_t aID, int32_t aGranularity,
                                  bool aForward, bool aInclusive) {
   MOZ_ASSERT(AndroidBridge::IsJavaUiThread());
@@ -755,6 +764,12 @@ void SessionAccessibility::PopulateNodeInfo(
     double maxValue = aAccessible->MaxValue();
     double step = aAccessible->Step();
 
+    // XXX: Currently, the only two accessibles that support SetCurValue are
+    // native ranges and spinners.
+    bool isSettable =
+        (aAccessible->IsHTMLSpinner() || aAccessible->IsHTMLRange()) &&
+        (state & (states::READONLY | states::UNAVAILABLE)) == 0;
+
     int32_t rangeType = 0;  // integer
     if (maxValue == 1 && minValue == 0) {
       rangeType = 2;  // percent
@@ -764,7 +779,7 @@ void SessionAccessibility::PopulateNodeInfo(
 
     mSessionAccessibility->PopulateNodeRangeInfo(
         aNodeInfo, rangeType, static_cast<float>(minValue),
-        static_cast<float>(maxValue), static_cast<float>(curValue));
+        static_cast<float>(maxValue), static_cast<float>(curValue), isSettable);
   }
 
   if (attributes) {

@@ -240,8 +240,7 @@ public class SessionAccessibility {
                     ScreenLength.fromVisualViewportHeight(0.8),
                     PanZoomController.SCROLL_BEHAVIOR_AUTO);
           } else {
-            // XXX: It looks like we never call scroll on virtual views.
-            // If we did, we should synthesize a wheel event on it's center coordinate.
+            nativeProvider.changeValueBySteps(virtualViewId, 1.0);
           }
           return true;
         case AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD:
@@ -254,8 +253,7 @@ public class SessionAccessibility {
                     ScreenLength.fromVisualViewportHeight(-0.8),
                     PanZoomController.SCROLL_BEHAVIOR_AUTO);
           } else {
-            // XXX: It looks like we never call scroll on virtual views.
-            // If we did, we should synthesize a wheel event on it's center coordinate.
+            nativeProvider.changeValueBySteps(virtualViewId, -1.0);
           }
           return true;
         case AccessibilityNodeInfo.ACTION_SELECT:
@@ -688,6 +686,9 @@ public class SessionAccessibility {
     @WrapForJNI(dispatchTo = "gecko")
     public native void click(int id);
 
+    @WrapForJNI(dispatchTo = "gecko")
+    public native void changeValueBySteps(int id, double steps);
+
     @WrapForJNI(dispatchTo = "current", stubName = "Pivot")
     public native boolean pivotNative(int id, int granularity, boolean forward, boolean inclusive);
 
@@ -931,9 +932,20 @@ public class SessionAccessibility {
         final int rangeType,
         final float min,
         final float max,
-        final float current) {
+        final float current,
+        final boolean makeSettable) {
       final RangeInfo rangeInfo = RangeInfo.obtain(rangeType, min, max, current);
       node.setRangeInfo(rangeInfo);
+
+      if (makeSettable) {
+        // Give it extra actions for adjusting its value.
+        if (current > min) {
+          node.addAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD);
+        }
+        if (current < max) {
+          node.addAction(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD);
+        }
+      }
     }
   }
 }
