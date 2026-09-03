@@ -851,6 +851,24 @@ class Shims {
     url: dstUrl,
     tabId,
   }) {
+    try {
+      const tab = await browser.tabs.get(tabId);
+      const currentTabUrlOrigin = new URL(tab.url).origin;
+      const dstOrigin = new URL(dstUrl).origin;
+      if (
+        currentTabUrlOrigin &&
+        dstOrigin &&
+        currentTabUrlOrigin == dstOrigin
+      ) {
+        debugLog(
+          `Already at dst page ${dstUrl}. Not running storage access shim`
+        );
+        return;
+      }
+    } catch (err) {
+      console.error(`Error getting active tab: ${err}`);
+    }
+
     debugLog("Detected redirect", { srcUrl, dstUrl, tabId });
 
     // Check if a shim needs to request storage access for this redirect. This
