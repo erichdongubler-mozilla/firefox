@@ -161,10 +161,6 @@ RTCRtpSender::RTCRtpSender(nsPIDOMWindowInner* aWindow, PeerConnectionImpl* aPc,
   mParameters.mCodecs.Construct();
   UpdateParametersRtcp();
   mParameters.mHeaderExtensions.Construct();
-
-  if (mDtmf) {
-    mWatchManager.Watch(mTransmitting, &RTCRtpSender::UpdateDtmfSender);
-  }
 }
 
 #undef INIT_CANONICAL
@@ -2304,18 +2300,6 @@ std::string RTCRtpSender::GetMid() const { return mTransceiver->GetMidAscii(); }
 
 JsepTransceiver& RTCRtpSender::GetJsepTransceiver() {
   return mTransceiver->GetJsepTransceiver();
-}
-
-void RTCRtpSender::UpdateDtmfSender() {
-  if (!mDtmf) {
-    return;
-  }
-
-  if (mTransmitting) {
-    return;
-  }
-
-  mDtmf->StopPlayout();
 }
 
 void RTCRtpSender::SetTransform(RTCRtpScriptTransform* aTransform,
