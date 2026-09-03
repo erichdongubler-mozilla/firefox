@@ -481,58 +481,109 @@ export const NimbusTestUtils = {
       );
     },
 
-    /**
-     * Create a recipe.
-     *
-     * @param {string} slug
-     *        The slug for the created recipe.
-     *
-     * @param {object?} props
-     *        Additional properties to splat into to the
-     */
-    recipe(
-      slug,
-      { isFirefoxLabsOptIn = false, isRollout = false, ...props } = {}
-    ) {
-      if (isFirefoxLabsOptIn && !isRollout) {
-        throw new Error("isFirefoxLabsOptIn requires isRollout");
-      }
+    recipe: Object.assign(
+      /**
+       * Create a recipe.
+       *
+       * The recipe will always enroll due to true targeting and 100% bucketing.
+       *
+       * @param {string} slug
+       * The slug for the created recipe.
+       *
+       * @param {object} props
+       * Additional properties to splat into to the recipe.
+       *
+       * @returns {object}
+       * The recipe.
+       */
+      function recipe(slug, props = {}) {
+        const {
+          isFirefoxLabsOptIn = false,
+          isRollout = false,
+          ...restProps
+        } = props;
 
-      return {
-        id: slug,
-        schemaVersion: "1.7.0",
-        appName: "firefox_desktop",
-        appId: "firefox-desktop",
-        channel: "nightly",
-        slug,
-        isEnrollmentPaused: false,
-        probeSets: [],
-        startDate: null,
-        endDate: null,
-        proposedEnrollment: 7,
-        referenceBranch: "control",
-        application: "firefox-desktop",
-        branches: NimbusTestUtils.factories.branches(isRollout),
-        bucketConfig: NimbusTestUtils.factories.bucketConfig(),
-        userFacingName: "NimbusTestUtils recipe",
-        userFacingDescription: "NimbusTestUtils recipe",
-        featureIds: props?.branches?.[0].features?.map(f => f.featureId) || [
-          "testFeature",
-        ],
-        targeting: "true",
-        isRollout,
-        isFirefoxLabsOptIn,
-        firefoxLabsTitle: isFirefoxLabsOptIn ? "placeholder-title" : null,
-        firefoxLabsDescription: isFirefoxLabsOptIn
-          ? "placeholder-description"
-          : null,
-        firefoxLabsDescriptionLinks: null,
-        firefoxLabsGroup: isFirefoxLabsOptIn ? "placeholder-group" : null,
-        requiresRestart: false,
-        localizations: null,
-        ...props,
-      };
-    },
+        if (isFirefoxLabsOptIn && !isRollout) {
+          throw new Error("isFirefoxLabsOptIn requires isRollout");
+        }
+
+        return {
+          id: slug,
+          schemaVersion: "1.7.0",
+          appName: "firefox_desktop",
+          appId: "firefox-desktop",
+          channel: "nightly",
+          slug,
+          isEnrollmentPaused: false,
+          probeSets: [],
+          startDate: null,
+          endDate: null,
+          proposedEnrollment: 7,
+          referenceBranch: "control",
+          application: "firefox-desktop",
+          branches: NimbusTestUtils.factories.branches(isRollout),
+          bucketConfig: NimbusTestUtils.factories.bucketConfig(),
+          userFacingName: "NimbusTestUtils recipe",
+          userFacingDescription: "NimbusTestUtils recipe",
+          featureIds: props?.branches?.[0].features?.map(f => f.featureId) || [
+            "testFeature",
+          ],
+          targeting: "true",
+          isRollout,
+          isFirefoxLabsOptIn,
+          firefoxLabsTitle: isFirefoxLabsOptIn ? "placeholder-title" : null,
+          firefoxLabsDescription: isFirefoxLabsOptIn
+            ? "placeholder-description"
+            : null,
+          firefoxLabsDescriptionLinks: null,
+          firefoxLabsGroup: isFirefoxLabsOptIn ? "placeholder-group" : null,
+          requiresRestart: false,
+          localizations: null,
+          ...restProps,
+        };
+      },
+
+      {
+        /**
+         * Create a recipe that has a single branch with the given feature config.
+         *
+         * @param {string} slug
+         * The recipe slug.
+         *
+         * @param {object} options
+         *
+         * @param {string} options.branchSlug
+         * The name of the branch. Defaults to "control".
+         *
+         * @param {string} options.featureId
+         * The feature ID to configure.
+         *
+         * @param {object} options.value
+         * The value for the feature.
+         *
+         * @param {object} props
+         * Additional properties to splat into the recipe.
+         *
+         * @returns {object}
+         * The recipe.
+         */
+        withFeatureConfig: function recipeWithFeatureConfig(
+          slug,
+          { branchSlug = "control", featureId, value = {} } = {},
+          props = {}
+        ) {
+          return NimbusTestUtils.factories.recipe(slug, {
+            branches: [
+              NimbusTestUtils.factories.branch(branchSlug, {
+                featureId,
+                value,
+              }),
+            ],
+            ...props,
+          });
+        },
+      }
+    ),
   },
 
   stubs: {
@@ -1518,24 +1569,3 @@ export const NimbusTestUtils = {
     };
   },
 };
-
-Object.defineProperties(NimbusTestUtils.factories.recipe, {
-  /**
-   * A helper for generating a recipe that has a single branch with the given
-   * feature config.
-   */
-  withFeatureConfig: {
-    value: function NimbusTestUtils_factories_recipe_withFeatureConfig(
-      slug,
-      { branchSlug = "control", featureId, value = {} } = {},
-      props = {}
-    ) {
-      return NimbusTestUtils.factories.recipe(slug, {
-        branches: [
-          NimbusTestUtils.factories.branch(branchSlug, { featureId, value }),
-        ],
-        ...props,
-      });
-    },
-  },
-});
