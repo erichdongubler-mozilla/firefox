@@ -18,6 +18,22 @@ export class CommandLineHandler {
    * @param {nsICommandLine} cmdLine The command line to handle.
    */
   handle(cmdLine) {
-    cmdLine.handleFlag("receive-push-messages", false);
+    if (!cmdLine.handleFlag("receive-push-messages", false)) {
+      return;
+    }
+
+    // Firefox is already running and receiving push messages
+    if (cmdLine.state != Ci.nsICommandLine.STATE_INITIAL_LAUNCH) {
+      return;
+    }
+
+    this.receivePushMessages();
   }
+
+  /**
+   * Receive push messages.
+   *
+   * @returns {Promise<void>} Resolves when receiving stops.
+   */
+  async receivePushMessages() {}
 }
