@@ -292,6 +292,18 @@ nsresult Http3Session::Init(const nsHttpConnectionInfo* aConnInfo,
   return NS_OK;
 }
 
+void Http3Session::RekeyAfterHttp3OnlyHandOff(nsHttpConnectionInfo* aConnInfo) {
+  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+  MOZ_ASSERT(aConnInfo);
+  MOZ_ASSERT(mConnInfo);
+  MOZ_ASSERT(!aConnInfo->GetHttp3Only(),
+             "hand-off must relax the policy to Allowed");
+
+  LOG(("Http3Session::RekeyAfterHttp3OnlyHandOff [this=%p] %s -> %s", this,
+       mConnInfo->HashKey().get(), aConnInfo->HashKey().get()));
+  mConnInfo = aConnInfo->Clone();
+}
+
 void Http3Session::DoSetEchConfig(const nsACString& aEchConfig) {
   LOG(("Http3Session::DoSetEchConfig %p of length %zu", this,
        aEchConfig.Length()));

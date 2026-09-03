@@ -934,7 +934,7 @@ void AltSvcCache::UpdateAltServiceMapping(
     // Validating an h3 alternate must establish an h3 connection; don't let
     // Happy Eyeballs race h1/h2 and settle on a non-h3 connection.
     if (map->IsHttp3()) {
-      ci->SetHttp3Only(true);
+      ci->SetHttp3Policy(Http3Policy::Only);
     }
   }
 

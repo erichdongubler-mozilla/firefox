@@ -1243,7 +1243,9 @@ nsresult nsHttpChannel::ContinueOnBeforeConnect(bool aShouldUpgrade,
   mConnectionInfo->SetTRRMode(nsIRequest::GetTRRMode());
   mConnectionInfo->SetIPv4Disabled(mCaps & NS_HTTP_DISABLE_IPV4);
   mConnectionInfo->SetIPv6Disabled(mCaps & NS_HTTP_DISABLE_IPV6);
-  mConnectionInfo->SetHttp3Disabled(mCaps & NS_HTTP_DISALLOW_HTTP3);
+  mConnectionInfo->SetHttp3Policy((mCaps & NS_HTTP_DISALLOW_HTTP3)
+                                      ? Http3Policy::Disabled
+                                      : Http3Policy::Allowed);
   mConnectionInfo->SetAnonymousAllowClientCert(
       (mLoadFlags & LOAD_ANONYMOUS_ALLOW_CLIENT_CERT) != 0);
 

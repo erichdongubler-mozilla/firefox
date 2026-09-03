@@ -473,13 +473,12 @@ struct HttpConnectionInfoCloneArgs
   uint8_t trrMode;
   bool isIPv4Disabled;
   bool isIPv6Disabled;
-  bool isHttp3Disabled;
+  uint8_t http3Policy;
   nsCString topWindowOrigin;
   bool isHttp3;
   bool webTransport;
   uint64_t webTransportId;
   bool hasIPHintAddress;
-  bool http3Only;
   nsCString echConfig;
   bool happyEyeballsEnabled;
   ProxyInfoCloneArgs[] proxyInfo;

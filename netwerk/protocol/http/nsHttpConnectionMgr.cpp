@@ -1048,6 +1048,58 @@ void nsHttpConnectionMgr::ReportSpdyConnection(nsHttpConnection* conn,
   }
 }
 
+already_AddRefed<ConnectionEntry>
+nsHttpConnectionMgr::HandOffHttp3OnlyConnection(HttpConnectionBase* aConn,
+                                                ConnectionEntry* aFromEnt) {
+  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+  if (!aConn || !aConn->ConnectionInfo() || !aFromEnt) {
+    return nullptr;
+  }
+
+  RefPtr<HttpConnectionUDP> connUDP = do_QueryObject(aConn);
+  if (!connUDP) {
+    return nullptr;
+  }
+
+  RefPtr<nsHttpConnectionInfo> allowedCI = aConn->ConnectionInfo()->Clone();
+  allowedCI->SetHttp3Policy(Http3Policy::Allowed);
+
+  bool unused = false;
+  RefPtr<ConnectionEntry> originEnt =
+      GetOrCreateConnectionEntry(allowedCI, true, false, false, &unused);
+  if (!originEnt || originEnt == aFromEnt) {
+    return nullptr;
+  }
+
+  // The origin can already have its own h3 connection, because its Happy
+  // Eyeballs race runs an h3 leg too. Handing this one over would only add a
+  // second, which UpdateCoalescingForNewConn retires again straight away --
+  // after CloseIdleConnections() below has thrown away the entry's idle
+  // connections for nothing. Leave it here to be reclaimed instead. A merely
+  // in-flight h3 attempt is not a reason to bail: this connection is already
+  // established, and that attempt may still fail.
+  if (originEnt->HasUsableH3Connection()) {
+    LOG(
+        ("nsHttpConnectionMgr::HandOffHttp3OnlyConnection conn %p not handed "
+         "off, ent %p already has a usable h3 connection\n",
+         aConn, originEnt.get()));
+    return nullptr;
+  }
+
+  LOG(
+      ("nsHttpConnectionMgr::HandOffHttp3OnlyConnection conn %p from ent %p to "
+       "ent %p, CI %s -> %s\n",
+       aConn, aFromEnt, originEnt.get(),
+       aConn->ConnectionInfo()->HashKey().get(), allowedCI->HashKey().get()));
+
+  aFromEnt->MoveConnection(aConn, originEnt);
+  connUDP->RekeyAfterHttp3OnlyHandOff(allowedCI);
+
+  originEnt->CloseIdleConnections();
+
+  return originEnt.forget();
+}
+
 void nsHttpConnectionMgr::ReportHttp3Connection(HttpConnectionBase* conn,
                                                 ConnectionEntry* entry) {
   LOG(("nsHttpConnectionMgr::ReportHttp3Connection conn=%p", conn));

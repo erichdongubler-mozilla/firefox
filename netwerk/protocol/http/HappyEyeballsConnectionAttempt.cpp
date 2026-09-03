@@ -98,6 +98,10 @@ class DefaultHappyEyeballsConnMgrDelegate final
   void ProcessSpdyPendingQ(ConnectionEntry* aEntry) override {
     gHttpHandler->ConnMgr()->ProcessSpdyPendingQ(aEntry);
   }
+  already_AddRefed<ConnectionEntry> HandOffHttp3OnlyConnection(
+      HttpConnectionBase* aConn, ConnectionEntry* aFromEnt) override {
+    return gHttpHandler->ConnMgr()->HandOffHttp3OnlyConnection(aConn, aFromEnt);
+  }
   void InsertIntoActiveConns(ConnectionEntry* aEntry,
                              HttpConnectionBase* aConn) override {
     aEntry->InsertIntoActiveConns(aConn);
@@ -1482,8 +1486,21 @@ void HappyEyeballsConnectionAttempt::ProcessUDPConn(
     }
   }
 
+  // An h3-only attempt (eager Alt-Svc h3 validation) deliberately runs in its
+  // own connection entry so the speculative, TCP-less race cannot be claimed
+  // by normal transactions to the origin. What it produces is an ordinary h3
+  // connection to the origin though, so once it is established hand it over to
+  // the origin's entry.
+  RefPtr<ConnectionEntry> reportEntry = entry;
+  if (entry->mConnInfo->GetHttp3Only()) {
+    if (RefPtr<ConnectionEntry> originEntry =
+            mConnMgrDelegate->HandOffHttp3OnlyConnection(aConn, entry)) {
+      reportEntry = originEntry;
+    }
+  }
+
   aConn->SetIsRacing(false);
-  mConnMgrDelegate->ReportHttp3Connection(aConn, entry);
+  mConnMgrDelegate->ReportHttp3Connection(aConn, reportEntry);
 }
 
 void HappyEyeballsConnectionAttempt::EnterSucceeded() {
