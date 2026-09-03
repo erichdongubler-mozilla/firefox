@@ -182,7 +182,7 @@ add_task(function test_recordFromChild_records_engagement() {
   let controller = UrlbarTestUtils.mockChildController();
 
   // Hand the controller the payload exactly as the actor message would.
-  controller.recordEngagement(
+  controller.parentController.recordEngagement(
     structuredClone(toWire(makeRecordedEngagement()))
   );
 
@@ -261,7 +261,9 @@ add_task(function test_recordFromChild_records_exposures() {
       { resultType: "search_suggest", keyword: null, terminal: false },
     ],
   });
-  controller.recordEngagement(structuredClone(toWire(engagement)));
+  controller.parentController.recordEngagement(
+    structuredClone(toWire(engagement))
+  );
 
   let events = Glean.urlbar.exposure.testGetValue();
   Assert.equal(events?.length, 1, "recorded one exposure event over the wire");

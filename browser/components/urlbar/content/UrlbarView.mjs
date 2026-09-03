@@ -3302,7 +3302,7 @@ export class UrlbarView {
 
     let result = row?.result;
     if (result) {
-      this.controller.onBeforeSelection(result, element);
+      this.controller.parentController.onBeforeSelection(result, element);
     }
 
     this.#setAccessibleFocus(setAccessibleFocus && element);
@@ -3320,7 +3320,7 @@ export class UrlbarView {
     }
 
     if (result) {
-      this.controller.onSelection(result);
+      this.controller.parentController.onSelection(result);
     }
   }
 
@@ -4422,7 +4422,7 @@ export class UrlbarView {
     if (!element.classList.contains("urlbarView-button")) {
       this.#mousedownSelectedElement = element;
       this.#selectElement(element, { updateInput: false });
-      this.controller.speculativeConnect(
+      this.controller.parentController.speculativeConnect(
         this.selectedResult,
         this.#queryContext,
         "mousedown"

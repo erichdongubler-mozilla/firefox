@@ -907,6 +907,10 @@ ${
     return UrlbarShared.isSearchbarSAP(this.#sapName);
   }
 
+  get parentController() {
+    return this.controller.parentController;
+  }
+
   get smartbarAction() {
     return /** @type {SmartbarAction} */ (
       this.getAttribute("smartbar-action") || this.#smartbarAction
@@ -1824,7 +1828,7 @@ ${
       where,
       query: value,
     });
-    this.controller.openSERP(
+    this.parentController.openSERP(
       engine.id,
       value,
       where,
@@ -1989,7 +1993,7 @@ ${
       query: searchString,
       where,
     });
-    this.controller.openSERP(
+    this.parentController.openSERP(
       engine.id,
       searchString,
       where,
@@ -2539,7 +2543,7 @@ ${
           windowMode: this.windowMode,
         });
 
-        this.controller.switchToTab({
+        this.parentController.switchToTab({
           url: result.payload.url,
           searchString,
           userContextId: result.payload.userContext?.id,
@@ -2586,7 +2590,7 @@ ${
           // Because we are directly asking for a search here, bypassing the
           // docShell, we need to do the same ourselves.
           // See also keyword-uri-fixup.
-          this.controller.checkKeywordURIFixup(
+          this.parentController.checkKeywordURIFixup(
             originalUntrimmedValue.trim(),
             browserId
           );
@@ -2731,7 +2735,7 @@ ${
       }
       // `input` may be an empty string, so do a strict comparison here.
       if (input !== undefined) {
-        this.controller.addToInputHistory(url, input);
+        this.parentController.addToInputHistory(url, input);
       }
     }
 
@@ -3399,7 +3403,7 @@ ${
           this.window.gBrowser.selectedBrowser
         );
       }
-      this.controller.openSERP(
+      this.parentController.openSERP(
         searchEngine.id,
         trimmedValue,
         where,
@@ -3408,7 +3412,7 @@ ${
       );
     } else {
       // Telemetry is handled by the function.
-      this.controller.openSearchForm(
+      this.parentController.openSearchForm(
         searchEngine.id,
         where,
         inBackground,
@@ -3591,7 +3595,7 @@ ${
         this.userTypedValue = this.untrimmedValue;
         this.valueIsTyped = true;
         if (!searchMode.isPreview && !areSearchModesSame) {
-          this.controller.recordSearchMode(searchMode);
+          this.parentController.recordSearchMode(searchMode);
         }
       }
     }
@@ -4853,9 +4857,9 @@ ${
       },
     };
     if (where.startsWith("tab")) {
-      this.controller.recordSearchInOpenedTab(searchData);
+      this.parentController.recordSearchInOpenedTab(searchData);
     } else {
-      this.controller.recordSearch(searchData);
+      this.parentController.recordSearch(searchData);
     }
   }
 
@@ -5169,7 +5173,7 @@ ${
     // Notify about the start of navigation.
     this.#notifyStartNavigation(resultDetails);
 
-    let loadStatus = await this.controller.loadURL({
+    let loadStatus = await this.parentController.loadURL({
       loadRequest,
       where,
       params,
@@ -5477,7 +5481,7 @@ ${
       this.#pasteForPasteAndGo();
       this.setResultForCurrentValue(null);
       this.handleCommand();
-      this.controller.clearLastQueryContextCache();
+      this.parentController.clearLastQueryContextCache();
 
       if (!this._permanentlySuppressStartQuery) {
         this.unsuppressStartQuery();
@@ -5595,7 +5599,7 @@ ${
       return;
     }
 
-    await this.controller
+    await this.parentController
       .dismissAutofill(result.payload.url, action)
       .catch(console.error);
 
@@ -6405,7 +6409,7 @@ ${
         event.inputType === "deleteContentForward")
     ) {
       // Take a telemetry if user deleted whole autofilled value.
-      this.controller.recordAutofillDeletion();
+      this.parentController.recordAutofillDeletion();
     }
 
     let value = this.value;
@@ -6947,7 +6951,7 @@ ${
           const browserId = await keyDownEnterDeferred.promise;
           // The parent focuses the loading browser if it's still selected,
           // since only it can reach the browser element and the chrome window.
-          let { focused } = await this.controller.focusBrowser(browserId);
+          let { focused } = await this.parentController.focusBrowser(browserId);
           // focusBrowser resolves asynchronously; if the user began a fresh
           // search since this Enter (a later input bumped the epoch), its
           // caret must be left alone -- only keep the domain visible for our load.
@@ -7101,7 +7105,7 @@ ${
       // To simplify tracking of events, register an initial event for event
       // telemetry, to replace the missing input event.
       let queryContext = this.#makeQueryContext({ searchString: droppedURL });
-      this.controller.setLastQueryContextCache(queryContext);
+      this.parentController.setLastQueryContextCache(queryContext);
       this.controller.engagementEvent.start(event, queryContext);
       this.handleNavigation({ triggeringPrincipal: principal });
       if (this.#isAddressbar) {

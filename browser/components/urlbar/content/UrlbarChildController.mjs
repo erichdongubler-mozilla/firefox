@@ -193,21 +193,8 @@ export class UrlbarChildController {
     }
     this.#userSelectionBehavior = behavior;
   }
-  get _lastQueryContextWrapper() {
-    return this.#parentController._lastQueryContextWrapper;
-  }
-
   setView(view) {
     this.#view = view;
-  }
-  onBeforeSelection(result, element) {
-    return this.#parentController.onBeforeSelection(result, element);
-  }
-  onSelection(result) {
-    return this.#parentController.onSelection(result);
-  }
-  getHeuristicResult(queryContext) {
-    return this.#parentController.getHeuristicResult(queryContext);
   }
   async resolveFallbackNavigation(details) {
     // The result this hands back is picked like a query's, and paste-and-go
@@ -274,7 +261,11 @@ export class UrlbarChildController {
       notification === UrlbarShared.NOTIFICATIONS.QUERY_RESULTS &&
       params[0].firstResultChanged
     ) {
-      this.speculativeConnect(params[0].results[0], params[0], "resultsadded");
+      this.#parentController.speculativeConnect(
+        params[0].results[0],
+        params[0],
+        "resultsadded"
+      );
     }
     for (let listener of this.#listeners) {
       // Can't use "in" because some tests proxify these.
@@ -286,49 +277,6 @@ export class UrlbarChildController {
         }
       }
     }
-  }
-  recordEngagement(wire) {
-    return this.#parentController.recordEngagement(wire);
-  }
-  resetEngagement() {
-    return this.#parentController.resetEngagement();
-  }
-  handleBounceTrigger(payload) {
-    return this.#parentController.handleBounceTrigger(payload);
-  }
-  trackBounceBrowser(browserId) {
-    return this.#parentController.trackBounceBrowser(browserId);
-  }
-  recordAutofillBackspace(url) {
-    return this.#parentController.recordAutofillBackspace(url);
-  }
-  clearAutofillBackspaceEntryForUrl(url) {
-    return this.#parentController.clearAutofillBackspaceEntryForUrl(url);
-  }
-  dismissAutofill(url, action) {
-    return this.#parentController.dismissAutofill(url, action);
-  }
-  recordAutofillDeletion() {
-    return this.#parentController.recordAutofillDeletion();
-  }
-  handleAutofillReintegration(url) {
-    return this.#parentController.handleAutofillReintegration(url);
-  }
-  recordSearchMode(searchMode) {
-    return this.#parentController.recordSearchMode(searchMode);
-  }
-  recordSearchForm(engineName) {
-    return this.#parentController.recordSearchForm(engineName);
-  }
-  recordSearch(options) {
-    return this.#parentController.recordSearch(options);
-  }
-  recordSearchInOpenedTab(searchData) {
-    return this.#parentController.recordSearchInOpenedTab(searchData);
-  }
-
-  checkKeywordURIFixup(searchString, browserId) {
-    return this.#parentController.checkKeywordURIFixup(searchString, browserId);
   }
   /**
    * Starts a query and returns the parent controller's promise so callers (the
@@ -421,15 +369,6 @@ export class UrlbarChildController {
     this.#queryId++;
     this.notify(UrlbarShared.NOTIFICATIONS.QUERY_CANCELLED, queryContext);
   }
-  removeResult(result, options) {
-    return this.#parentController.removeResult(result, options);
-  }
-  setLastQueryContextCache(queryContext) {
-    return this.#parentController.setLastQueryContextCache(queryContext);
-  }
-  clearLastQueryContextCache() {
-    return this.#parentController.clearLastQueryContextCache();
-  }
   /**
    * Receives keyboard events from the input and handles those that should
    * navigate within the view or pick the currently selected item.
@@ -479,8 +418,11 @@ export class UrlbarChildController {
       let handled = false;
       if (UrlbarPrefs.get("scotchBonnet.enableOverride")) {
         handled = this.input.searchModeSwitcher.handleKeyDown(event);
-      } else if (this.view.isOpen && this._lastQueryContextWrapper) {
-        let { queryContext } = this._lastQueryContextWrapper;
+      } else if (
+        this.view.isOpen &&
+        this.#parentController._lastQueryContextWrapper
+      ) {
+        let { queryContext } = this.#parentController._lastQueryContextWrapper;
         handled = this.view.oneOffSearchButtons?.handleKeyDown(
           event,
           this.view.visibleRowCount,
@@ -749,11 +691,11 @@ export class UrlbarChildController {
    *   heuristic, since the heuristic result cannot be dismissed.
    */
   #dismissSelectedResult(event) {
-    if (!this._lastQueryContextWrapper) {
+    if (!this.#parentController._lastQueryContextWrapper) {
       console.error("Cannot dismiss selected result, last query not present");
       return false;
     }
-    let { queryContext } = this._lastQueryContextWrapper;
+    let { queryContext } = this.#parentController._lastQueryContextWrapper;
 
     let { selectedElement } = this.input.view;
     if (selectedElement?.classList.contains("urlbarView-button")) {
@@ -818,30 +760,6 @@ export class UrlbarChildController {
       return true;
     }
     return false;
-  }
-
-  speculativeConnect(result, context, reason) {
-    return this.#parentController.speculativeConnect(result, context, reason);
-  }
-
-  loadURL(loadData) {
-    return this.#parentController.loadURL(loadData);
-  }
-
-  /**
-   * @param {number} [browserId] The browser the load resolved to, as returned by `loadURL`.
-   * @returns {Promise<{focused: boolean}> | {focused: boolean}} Whether the browser was focused.
-   */
-  focusBrowser(browserId) {
-    return this.#parentController.focusBrowser(browserId);
-  }
-
-  switchToTab(loadData) {
-    return this.#parentController.switchToTab(loadData);
-  }
-
-  addToInputHistory(url, input, options) {
-    return this.#parentController.addToInputHistory(url, input, options);
   }
 
   /**
@@ -957,51 +875,11 @@ export class UrlbarChildController {
     );
   }
 
-  initEngineStore() {
-    this.#parentController.initEngineStore();
-  }
-
   maybeInitEngineStore() {
     if (this.#parentController instanceof UrlbarParentControllerProxy) {
       // Synchronous initialization isn't supported in the message path.
       return false;
     }
     return this.#parentController.maybeInitEngineStore();
-  }
-
-  /** @type {typeof UrlbarParentController.prototype.openSERP} */
-  openSERP(engineId, searchTerms, where, inBackground, browserId) {
-    this.#parentController.openSERP(
-      engineId,
-      searchTerms,
-      where,
-      inBackground,
-      browserId
-    );
-  }
-
-  /** @type {typeof UrlbarParentController.prototype.openSearchForm} */
-  openSearchForm(engineId, where, inBackground, browserId) {
-    this.#parentController.openSearchForm(
-      engineId,
-      where,
-      inBackground,
-      browserId
-    );
-  }
-
-  /** @type {typeof UrlbarParentController.prototype.openPreferences} */
-  openPreferences(paneID) {
-    this.#parentController.openPreferences(paneID);
-  }
-
-  /** @type {typeof UrlbarParentController.prototype.getEngineIconURL} */
-  getEngineIconURL(engineId) {
-    return this.#parentController.getEngineIconURL(engineId);
-  }
-
-  /** @type {typeof UrlbarParentController.prototype.markEngineAsUsed} */
-  markEngineAsUsed(engineId) {
-    this.#parentController.markEngineAsUsed(engineId);
   }
 }

@@ -835,6 +835,10 @@ ${
       : "classic";
   }
 
+  get parentController() {
+    return this.controller.parentController;
+  }
+
   blur() {
     this.inputField.blur();
   }
@@ -1423,7 +1427,7 @@ ${
       where,
       query: searchString,
     });
-    this.controller.openSERP(
+    this.parentController.openSERP(
       engine.id,
       searchString,
       where,
@@ -1787,7 +1791,9 @@ ${
       result.payload?.url &&
       !this.isPrivate
     ) {
-      this.controller.clearAutofillBackspaceEntryForUrl(result.payload.url);
+      this.parentController.clearAutofillBackspaceEntryForUrl(
+        result.payload.url
+      );
     }
 
     if (
@@ -2003,7 +2009,7 @@ ${
           windowMode: this.windowMode,
         });
 
-        this.controller.switchToTab({
+        this.parentController.switchToTab({
           url: result.payload.url,
           searchString,
           userContextId: result.payload.userContext?.id,
@@ -2049,7 +2055,7 @@ ${
           // Because we are directly asking for a search here, bypassing the
           // docShell, we need to do the same ourselves.
           // See also keyword-uri-fixup.
-          this.controller.checkKeywordURIFixup(
+          this.parentController.checkKeywordURIFixup(
             originalUntrimmedValue.trim(),
             browserId
           );
@@ -2241,14 +2247,14 @@ ${
         // The origin root URL (e.g. http://example.com/) may not be in
         // moz_places yet. It's derived from a deep-link visit. Defer the
         // write until the navigation records the visit.
-        this.controller.addToInputHistory(url, this._lastSearchString, {
+        this.parentController.addToInputHistory(url, this._lastSearchString, {
           whenReady: true,
         });
       }
 
       // `input` may be an empty string, so do a strict comparison here.
       if (input !== undefined) {
-        this.controller.addToInputHistory(url, input);
+        this.parentController.addToInputHistory(url, input);
       }
 
       // Re-integration: If the user picks a non-autofill result, or a "url"
@@ -2259,7 +2265,7 @@ ${
         (!result.autofill || result.autofill.type == "url") &&
         result.type == UrlbarShared.RESULT_TYPE.URL
       ) {
-        this.controller.handleAutofillReintegration(url);
+        this.parentController.handleAutofillReintegration(url);
       }
     }
 
@@ -2809,7 +2815,7 @@ ${
           this.window.gBrowser?.selectedBrowser
         );
       }
-      this.controller.openSERP(
+      this.parentController.openSERP(
         searchEngine.id,
         trimmedValue,
         where,
@@ -2818,7 +2824,7 @@ ${
       );
     } else {
       // Telemetry is handled by the function.
-      this.controller.openSearchForm(
+      this.parentController.openSearchForm(
         searchEngine.id,
         where,
         inBackground,
@@ -3003,7 +3009,7 @@ ${
         this.userTypedValue = this.untrimmedValue;
         this.valueIsTyped = true;
         if (!searchMode.isPreview && !areSearchModesSame) {
-          this.controller.recordSearchMode(searchMode);
+          this.parentController.recordSearchMode(searchMode);
         }
       }
     }
@@ -4225,9 +4231,9 @@ ${
       },
     };
     if (where.startsWith("tab")) {
-      this.controller.recordSearchInOpenedTab(searchData);
+      this.parentController.recordSearchInOpenedTab(searchData);
     } else {
-      this.controller.recordSearch(searchData);
+      this.parentController.recordSearch(searchData);
     }
   }
 
@@ -4357,7 +4363,7 @@ ${
     });
 
     if (element.dataset.command == "manage") {
-      this.controller.openPreferences("search-locationBar");
+      this.parentController.openPreferences("search-locationBar");
       return;
     }
 
@@ -4510,7 +4516,7 @@ ${
     // Notify about the start of navigation.
     this.#notifyStartNavigation(resultDetails);
 
-    let loadStatus = await this.controller.loadURL({
+    let loadStatus = await this.parentController.loadURL({
       loadRequest,
       where,
       params,
@@ -4767,7 +4773,7 @@ ${
           this.window.goDoCommand("cmd_paste");
           this.setResultForCurrentValue(null);
           this.handleCommand();
-          this.controller.clearLastQueryContextCache();
+          this.parentController.clearLastQueryContextCache();
 
           this._suppressStartQuery = false;
         });
@@ -4893,7 +4899,7 @@ ${
       return;
     }
 
-    await this.controller
+    await this.parentController
       .dismissAutofill(result.payload.url, action)
       .catch(console.error);
 
@@ -5733,7 +5739,7 @@ ${
         event.inputType === "deleteContentForward")
     ) {
       // Take a telemetry if user deleted whole autofilled value.
-      this.controller.recordAutofillDeletion();
+      this.parentController.recordAutofillDeletion();
     }
 
     if (
@@ -5744,7 +5750,7 @@ ${
       this.value === this.userTypedValue &&
       this._resultForCurrentValue?.payload?.url
     ) {
-      this.controller.recordAutofillBackspace(
+      this.parentController.recordAutofillBackspace(
         this._resultForCurrentValue.payload.url
       );
     }
@@ -6173,7 +6179,7 @@ ${
           const browserId = await keyDownEnterDeferred.promise;
           // The parent focuses the loading browser if it's still selected,
           // since only it can reach the browser element and the chrome window.
-          let { focused } = await this.controller.focusBrowser(browserId);
+          let { focused } = await this.parentController.focusBrowser(browserId);
           // focusBrowser resolves asynchronously; if the user began a fresh
           // search since this Enter (a later input bumped the epoch), its
           // caret must be left alone -- only keep the domain visible for our load.
@@ -6366,7 +6372,7 @@ ${
     let queryContext = this.#makeQueryContext({
       searchString: droppedString,
     });
-    this.controller.setLastQueryContextCache(queryContext);
+    this.parentController.setLastQueryContextCache(queryContext);
     this.controller.engagementEvent.start(event, queryContext);
     this.handleNavigation({ triggeringPrincipal: principal });
     // For safety reasons, in the drop case we don't want to immediately show

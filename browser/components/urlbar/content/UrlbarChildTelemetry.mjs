@@ -117,8 +117,8 @@ export class UrlbarChildTelemetry {
 
     // Engagements that run no query would otherwise reach the provider
     // notifications with no context at all.
-    if (!this.#controller._lastQueryContextWrapper) {
-      this.#controller.setLastQueryContextCache(queryContext);
+    if (!this.#controller.parentController._lastQueryContextWrapper) {
+      this.#controller.parentController.setLastQueryContextCache(queryContext);
     }
   }
 
@@ -184,7 +184,7 @@ export class UrlbarChildTelemetry {
               engagementData.visibleResults
             );
 
-        this.#controller.recordEngagement(
+        this.#controller.parentController.recordEngagement(
           UrlbarTelemetryUtils.recordedEngagementToWire({
             built,
             disableBuilt,
@@ -219,7 +219,7 @@ export class UrlbarChildTelemetry {
    */
   reset() {
     this.#previousSearchWords = null;
-    this.#controller.resetEngagement();
+    this.#controller.parentController.resetEngagement();
   }
 
   /**
@@ -387,7 +387,7 @@ export class UrlbarChildTelemetry {
     // The bounce records parent-side at trigger time, by which point a closing
     // tab's browser is gone. Hand the parent the live browser now so it can
     // still resolve it then.
-    this.#controller.trackBounceBrowser(browserId);
+    this.#controller.parentController.trackBounceBrowser(browserId);
   }
 
   /**
@@ -407,7 +407,7 @@ export class UrlbarChildTelemetry {
     this.#bounceStates.delete(browserId);
     let { built, searchSource, startTime } = state;
 
-    this.#controller.handleBounceTrigger({
+    this.#controller.parentController.handleBounceTrigger({
       built,
       searchSource,
       startTime,

@@ -1061,7 +1061,7 @@ async function waitForSmartbarAction(browser, expectedAction) {
 
 /**
  * Stub the smartbar's load path to prevent navigation. The load funnels through
- * the private #loadURL into controller.loadURL, so the controller is the seam.
+ * the private #loadURL into the parent controller's loadURL, which is the seam.
  *
  * @param {MozBrowser} browser - The browser element
  * @param {object} [options] - Options for the stub
@@ -1079,13 +1079,13 @@ async function stubLoadURL(browser, { captureURL = false } = {}) {
     if (capture) {
       content._stubLoadURLCalled = false;
       content._stubLoadedURL = null;
-      smartbar.controller.loadURL = ({ loadRequest }) => {
+      smartbar.parentController.loadURL = ({ loadRequest }) => {
         content._stubLoadURLCalled = true;
         content._stubLoadedURL = loadRequest.urlLoad?.url ?? null;
         return {};
       };
     } else {
-      smartbar.controller.loadURL = () => ({});
+      smartbar.parentController.loadURL = () => ({});
     }
   });
 }
@@ -1120,7 +1120,7 @@ async function stubOpenSERP(browser) {
     content._stubOpenSERPCalled = false;
     content._stubOpenSERPTerms = null;
     content._stubOpenSERPEngine = null;
-    smartbar.controller.openSERP = (engineId, searchTerms) => {
+    smartbar.parentController.openSERP = (engineId, searchTerms) => {
       content._stubOpenSERPCalled = true;
       content._stubOpenSERPTerms = searchTerms;
       content._stubOpenSERPEngine = engineId;
