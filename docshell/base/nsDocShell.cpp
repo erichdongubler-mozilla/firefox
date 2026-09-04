@@ -11245,10 +11245,10 @@ void nsDocShell::SetCacheKeyOnHistoryEntry(uint32_t aCacheKey) {
 
 void nsDocShell::UpdateActiveEntry(
     bool aReplace, const Maybe<nsPoint>& aPreviousScrollPos, nsIURI* aURI,
-    nsIReferrerInfo* aReferrerInfo,
-    nsIPrincipal* aTriggeringPrincipal, nsIPolicyContainer* aPolicyContainer,
-    const nsAString& aTitle, bool aScrollRestorationIsManual,
-    nsIStructuredCloneContainer* aData, bool aURIWasModified) {
+    nsIReferrerInfo* aReferrerInfo, nsIPrincipal* aTriggeringPrincipal,
+    nsIPolicyContainer* aPolicyContainer, const nsAString& aTitle,
+    bool aScrollRestorationIsManual, nsIStructuredCloneContainer* aData,
+    bool aURIWasModified) {
   MOZ_ASSERT(aURI, "uri is null");
   MOZ_ASSERT(mLoadType == LOAD_PUSHSTATE,
              "This code only deals with pushState");
