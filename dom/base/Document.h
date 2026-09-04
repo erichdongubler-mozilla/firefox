@@ -1351,6 +1351,21 @@ class Document : public nsINode,
       const nsAString& aThirdPartyOrigin, const bool aRequireUserInteraction,
       ErrorResult& aRv);
 
+ private:
+  // Consumes transient user gesture activation and rejects aPromise with a
+  // NotAllowedError, as done whenever requestStorageAccess (or
+  // requestStorageAccessForOrigin) is denied.
+  void ConsumeUserGestureAndRejectRequestStorageAccessPromise(
+      Promise* aPromise);
+
+  // If aMaybeResult has a value, resolves or rejects aPromise accordingly and
+  // returns true so the caller can return early. Returns false if
+  // aMaybeResult is empty, meaning the caller should continue on to its next
+  // check.
+  bool MaybeResolveOrRejectRequestStorageAccessPromise(
+      const Maybe<bool>& aMaybeResult, Promise* aPromise);
+
+ public:
   bool UseRegularPrincipal() const;
 
   /**
