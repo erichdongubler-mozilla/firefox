@@ -39,8 +39,12 @@ case ${target_platform} in
     Linux)
         prefix=lib
         extension=so
-        EXTRA_CXX_FLAGS="-Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now -fstack-clash-protection -fstack-protector-strong"
-
+        # This library is shipped to users, so build it against the same sysroot
+        # Firefox itself uses rather than the build machine's system headers and
+        # libraries, which are much newer than what Firefox supports.
+        sysroot="$MOZ_FETCHES_DIR/sysroot-x86_64-linux-gnu"
+        extra_args="--cmake_extra_defines CMAKE_C_FLAGS=--sysroot=$sysroot"
+        EXTRA_CXX_FLAGS="--sysroot=$sysroot -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now -fstack-clash-protection -fstack-protector-strong"
         ;;
     Android)
         extra_args="--android --android_ndk_path=$MOZ_FETCHES_DIR/android-ndk --android_sdk_path=$MOZ_FETCHES_DIR/android-sdk-linux --android_abi=$target_arch"

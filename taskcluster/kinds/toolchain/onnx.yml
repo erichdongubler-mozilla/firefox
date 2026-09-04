@@ -30,6 +30,7 @@ onnxruntime-x86_64-linux-gnu:
     fetches:
         toolchain:
             - linux64-clang-toolchain
+            - sysroot-x86_64-linux-gnu
 
 # onnxruntime-i686-linux-gnu: requires more work upstream
 # onnxruntime-aarch64-linux-gnu: requires more work upstream
