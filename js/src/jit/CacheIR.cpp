@@ -6342,9 +6342,7 @@ ObjOperandId InlinableNativeIRGenerator::emitLoadArgsArray() {
   MOZ_ASSERT(!hasBoundArguments());
 
   if (flags_.getArgFormat() == CallFlags::Spread) {
-    ObjOperandId result = writer.loadSpreadArgs();
-    writer.guardArrayIsPacked(result);
-    return result;
+    return writer.loadSpreadArgs();
   }
 
   MOZ_ASSERT(flags_.getArgFormat() == CallFlags::FunApplyArray);
