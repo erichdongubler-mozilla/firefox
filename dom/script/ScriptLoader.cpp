@@ -2700,6 +2700,8 @@ Task::TaskResult WasmCompileTask::RunTask() {
 bool WasmCompileTask::StealResult(JSContext* aCx,
                                   JS::MutableHandle<JSObject*> aModuleOut) {
   JS::Rooted<JSObject*> wasmModuleObject(aCx);
+
+  MutexAutoLock lock(mMutex);
   if (!JS::FinishCompileForESM(aCx, *mCompileArgs, mCompileResult,
                                &wasmModuleObject)) {
     return false;
