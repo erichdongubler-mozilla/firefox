@@ -37,6 +37,85 @@ ChromeUtils.defineLazyGetter(lazy, "log", () => {
 
 const ABOUT_CONTRACT = "@mozilla.org/network/protocol/about;1?what=";
 
+/**
+ * Records the operations that failed while a policy was being applied, so that
+ * about:policies can report that policy as only partially applied.
+ *
+ * A policy whose operation failed stays in getActivePolicies(): those are the
+ * parameters the administrator asked for, and most of the policy may well have
+ * been applied. What failed is recorded here instead.
+ */
+export const PolicyFailures = {
+  /** @type {Map<string, string[]>} */
+  _failures: new Map(),
+
+  /**
+   * Records a failed operation of a policy. Callers log the message
+   * themselves, with their own logger.
+   *
+   * @param {string} policyName
+   *        The policy the failed operation belongs to.
+   * @param {string} message
+   *        A description of what failed.
+   */
+  report(policyName, message) {
+    let messages = this._failures.get(policyName);
+    if (!messages) {
+      messages = [];
+      this._failures.set(policyName, messages);
+    }
+    if (!messages.includes(message)) {
+      messages.push(message);
+    }
+  },
+
+  /**
+   * @returns {object}
+   *          The failures of every policy, keyed by policy name.
+   */
+  getAll() {
+    const failures = {};
+    for (const [policyName, messages] of this._failures) {
+      failures[policyName] = [...messages];
+    }
+    return failures;
+  },
+
+  /**
+   * Forgets the failures of a policy, which happens when the policy is
+   * applied again or removed.
+   *
+   * @param {string} policyName policy name
+   */
+  clear(policyName) {
+    this._failures.delete(policyName);
+  },
+
+  clearAll() {
+    this._failures.clear();
+  },
+};
+
+/**
+ * Logs a failed operation of a policy and records it against that policy, so
+ * that about:policies reports the policy as only partially applied. Add-on
+ * installations happen asynchronously, long after the policy callback
+ * returned, so their failures have to be reported here explicitly to be
+ * visible at all.
+ *
+ * @param {string} policyName
+ *        The policy the failed operation belongs to. When it isn't known, the
+ *        failure is only logged.
+ * @param {string} message
+ *        A description of what failed.
+ */
+export function reportFailure(policyName, message) {
+  lazy.log.error(message);
+  if (policyName) {
+    PolicyFailures.report(policyName, message);
+  }
+}
+
 /*
  * ====================
  * = HELPER FUNCTIONS =
@@ -358,19 +437,36 @@ export function applyExtensionGuards(extensionSettings) {
   lazy.setEnterpriseGuards(guards);
 }
 
-export function installAddonFromRepository(extensionID) {
+/**
+ * installAddonFromRepository
+ *
+ * Helper function that installs an addon from addons.mozilla.org.
+ *
+ * @param {string} extensionID The extension ID that is to be installed.
+ * @param {string} [policyName] The policy requesting the installation.
+ */
+export function installAddonFromRepository(extensionID, policyName) {
   lazy.AddonRepository.getAddonsByIDs([extensionID])
     .then(repoAddons => {
       if (!repoAddons[0]?.sourceURI) {
-        lazy.log.error(
+        reportFailure(
+          policyName,
           `No XPI URL found on AMO for ${extensionID}. Please use install_url for add-ons not listed on addons.mozilla.org.`
         );
         return;
       }
-      installAddonFromURL(repoAddons[0].sourceURI.spec, extensionID, null);
+      installAddonFromURL(
+        repoAddons[0].sourceURI.spec,
+        extensionID,
+        null,
+        policyName
+      );
     })
     .catch(err => {
-      lazy.log.error(`Failed to retrieve ${extensionID} from AMO: ${err}`);
+      reportFailure(
+        policyName,
+        `Failed to retrieve ${extensionID} from AMO: ${err}`
+      );
     });
 }
 
@@ -383,8 +479,9 @@ export function installAddonFromRepository(extensionID) {
  * @param {string} url The URL to install from.
  * @param {string} extensionID The extension ID that is to be installed.
  * @param {object|null} addon Object representing the addon.
+ * @param {string} [policyName] The policy requesting the installation.
  */
-export function installAddonFromURL(url, extensionID, addon) {
+export function installAddonFromURL(url, extensionID, addon, policyName) {
   if (
     addon &&
     addon.sourceURI &&
@@ -396,95 +493,109 @@ export function installAddonFromURL(url, extensionID, addon) {
   }
   lazy.AddonManager.getInstallForURL(url, {
     telemetryInfo: { source: "enterprise-policy" },
-  }).then(install => {
-    if (install.addon && install.addon.appDisabled) {
-      lazy.log.error(`Incompatible add-on - ${install.addon.id}`);
-      install.cancel();
-      return;
-    }
-    let listener = {
-      /* eslint-disable-next-line no-shadow */
-      onDownloadEnded: install => {
-        // Install failed, error will be reported elsewhere.
-        if (!install.addon) {
-          return;
-        }
-        if (extensionID && install.addon.id != extensionID) {
-          lazy.log.error(
-            `Add-on downloaded from ${url} had unexpected id (got ${install.addon.id} expected ${extensionID})`
-          );
-          install.removeListener(listener);
-          install.cancel();
-          return;
-        }
-        if (install.addon.appDisabled) {
-          lazy.log.error(`Incompatible add-on - ${url}`);
-          install.removeListener(listener);
-          install.cancel();
-          return;
-        }
-        if (
-          addon &&
-          Services.vc.compare(addon.version, install.addon.version) == 0
-        ) {
-          lazy.log.debug(
-            "Installation cancelled because versions are the same"
-          );
-          install.removeListener(listener);
-          install.cancel();
-          return;
-        }
-
-        // Cancel install if the addon version downloaded is detected
-        // to be a downgrade compared to the version already installed.
-        if (
-          addon &&
-          Services.vc.compare(addon.version, install.addon.version) > 0
-        ) {
-          lazy.log.warn(
-            `Installation cancelled because installed version ${addon.version} is greater than ${install.addon.version} downloaded from ${url}`
-          );
-          install.removeListener(listener);
-          install.cancel();
-        }
-      },
-      onDownloadFailed: () => {
-        install.removeListener(listener);
-        lazy.log.error(
-          `Download failed - ${lazy.AddonManager.errorToString(
-            install.error
-          )} - ${url}`
-        );
-        clearRunOnceModification("extensionsInstall");
-      },
-      onInstallFailed: () => {
-        install.removeListener(listener);
-        lazy.log.error(
-          `Installation failed - ${lazy.AddonManager.errorToString(
-            install.error
-          )} - ${url}`
-        );
-      },
-      /* eslint-disable-next-line no-shadow */
-      onInstallEnded: (install, addon) => {
-        if (addon.type == "theme") {
-          addon.enable();
-        }
-        install.removeListener(listener);
-        lazy.log.debug(`Installation succeeded - ${url}`);
-      },
-    };
-    // If it's a local file install, onDownloadEnded is never called.
-    // So we call it manually, to handle some error cases.
-    if (url.startsWith("file:")) {
-      listener.onDownloadEnded(install);
-      if (install.state == lazy.AddonManager.STATE_CANCELLED) {
+  })
+    .then(install => {
+      if (!install) {
+        reportFailure(policyName, `Unable to install add-on from ${url}`);
         return;
       }
-    }
-    install.addListener(listener);
-    install.install();
-  });
+      if (install.addon && install.addon.appDisabled) {
+        reportFailure(policyName, `Incompatible add-on - ${install.addon.id}`);
+        install.cancel();
+        return;
+      }
+      let listener = {
+        /* eslint-disable-next-line no-shadow */
+        onDownloadEnded: install => {
+          // Install failed, error will be reported elsewhere.
+          if (!install.addon) {
+            return;
+          }
+          if (extensionID && install.addon.id != extensionID) {
+            reportFailure(
+              policyName,
+              `Add-on downloaded from ${url} had unexpected id (got ${install.addon.id} expected ${extensionID})`
+            );
+            install.removeListener(listener);
+            install.cancel();
+            return;
+          }
+          if (install.addon.appDisabled) {
+            reportFailure(policyName, `Incompatible add-on - ${url}`);
+            install.removeListener(listener);
+            install.cancel();
+            return;
+          }
+          if (
+            addon &&
+            Services.vc.compare(addon.version, install.addon.version) == 0
+          ) {
+            lazy.log.debug(
+              "Installation cancelled because versions are the same"
+            );
+            install.removeListener(listener);
+            install.cancel();
+            return;
+          }
+
+          // Cancel install if the addon version downloaded is detected
+          // to be a downgrade compared to the version already installed.
+          if (
+            addon &&
+            Services.vc.compare(addon.version, install.addon.version) > 0
+          ) {
+            lazy.log.warn(
+              `Installation cancelled because installed version ${addon.version} is greater than ${install.addon.version} downloaded from ${url}`
+            );
+            install.removeListener(listener);
+            install.cancel();
+          }
+        },
+        onDownloadFailed: () => {
+          install.removeListener(listener);
+          reportFailure(
+            policyName,
+            `Download failed - ${lazy.AddonManager.errorToString(
+              install.error
+            )} - ${url}`
+          );
+          clearRunOnceModification("extensionsInstall");
+        },
+        onInstallFailed: () => {
+          install.removeListener(listener);
+          reportFailure(
+            policyName,
+            `Installation failed - ${lazy.AddonManager.errorToString(
+              install.error
+            )} - ${url}`
+          );
+        },
+        /* eslint-disable-next-line no-shadow */
+        onInstallEnded: (install, addon) => {
+          if (addon.type == "theme") {
+            addon.enable();
+          }
+          install.removeListener(listener);
+          lazy.log.debug(`Installation succeeded - ${url}`);
+        },
+      };
+      // If it's a local file install, onDownloadEnded is never called.
+      // So we call it manually, to handle some error cases.
+      if (url.startsWith("file:")) {
+        listener.onDownloadEnded(install);
+        if (install.state == lazy.AddonManager.STATE_CANCELLED) {
+          return;
+        }
+      }
+      install.addListener(listener);
+      install.install();
+    })
+    .catch(e => {
+      reportFailure(
+        policyName,
+        `Unable to install add-on from ${url}: ${e.message ?? e}`
+      );
+    });
 }
 
 let gBlockedAboutPages = [];
