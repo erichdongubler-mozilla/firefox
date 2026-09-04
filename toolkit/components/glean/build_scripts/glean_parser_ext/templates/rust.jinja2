@@ -69,8 +69,8 @@ impl ExtraKeys for {{ obj.name|Camelize }}{{ suffix }} {
 
     fn into_ffi_extra(self) -> ::std::collections::HashMap<String, String> {
       let mut map = ::std::collections::HashMap::new();
-      {% for key, _ in obj|attr(name) %}
-      self.r#{{key|snake_case}}.and_then(|val| map.insert("{{key|snake_case}}".into(), val.to_string()));
+      {% for key, type in obj|attr(name) %}
+      self.r#{{key|snake_case}}.and_then(|val| map.insert("{{key|snake_case}}".into(), {{ "val" if type|extra_type_name == "String" else "val.to_string()" }}));
       {% endfor %}
       map
     }
