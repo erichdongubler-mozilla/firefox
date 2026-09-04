@@ -27,6 +27,8 @@ onnxruntime-x86_64-linux-gnu:
             - "Linux"
             - "x64"
         toolchain-artifact: public/build/onnxruntime-x86_64-linux-gnu.tar.zst
+        resources:
+            - taskcluster/scripts/misc/onnxruntime-thread-atexit.cpp
     fetches:
         toolchain:
             - linux64-clang-toolchain
