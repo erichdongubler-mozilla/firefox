@@ -487,18 +487,25 @@ impl HappyEyeballs {
                 endpoint,
                 is_ech_retry,
             }) => {
-                self.profiler.connection_attempt_started(id, &endpoint);
-                self.metrics.connection_attempt_started(id);
-                if let Some(ref ech) = endpoint.ech_config {
-                    ech_config.extend_from_slice(ech.as_ref());
+                if let Some(address) = endpoint.address() {
+                    self.profiler.connection_attempt_started(id, &endpoint);
+                    self.metrics.connection_attempt_started(id);
+                    if let Some(ref ech) = endpoint.ech_config {
+                        ech_config.extend_from_slice(ech.as_ref());
+                    }
+                    *ret_event = Output::AttemptConnection {
+                        id: id.into(),
+                        http_version: endpoint.http_version.into(),
+                        addr: address.ip().into(),
+                        port: address.port(),
+                        is_ech_retry,
+                    };
+                } else {
+                    // Only the by-name resolution modes lack an address, and we
+                    // use the default `ResolutionMode::ByIp`.
+                    debug_assert!(false, "connection attempt without an address");
+                    *ret_event = Output::None;
                 }
-                *ret_event = Output::AttemptConnection {
-                    id: id.into(),
-                    http_version: endpoint.http_version.into(),
-                    addr: endpoint.address.ip().into(),
-                    port: endpoint.address.port(),
-                    is_ech_retry,
-                };
             }
             Some(happy_eyeballs::Output::CancelConnection { id }) => {
                 self.profiler.connection_cancelled(id);
