@@ -187,7 +187,9 @@ export class FormAutofillML {
    * Apply the model's predictions to `fields`, positionally.
    *
    * Fields already labeled by the heuristics keep their assignment; the ML model
-   * only fills in the ones still missing a fieldName.
+   * only fills in the ones still missing a fieldName. Predictions for the field
+   * types the model is not trusted with are dropped like the "other" sentinel,
+   * since the regexp heuristics have already had their say on those.
    *
    * @param {object[]} fields The field details that were classified.
    * @param {object[]} results One `{ label }` per entry in `fields`.
@@ -200,7 +202,11 @@ export class FormAutofillML {
       }
 
       const fieldName = results[r].label;
-      if (fieldName && fieldName != "other") {
+      if (
+        fieldName &&
+        fieldName != "other" &&
+        !FormAutofillUtils.mlIgnoreFieldTypes.includes(fieldName)
+      ) {
         fd.fieldName = fieldName;
       }
 

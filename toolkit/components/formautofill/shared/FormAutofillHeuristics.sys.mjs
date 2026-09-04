@@ -1257,6 +1257,39 @@ export const FormAutofillHeuristics = {
   },
 
   /**
+   * Get the subset of `fieldNames` the regexp-based heuristics should try to
+   * match for an element.
+   *
+   * Without ML the heuristics classify every field type they can. When the ML
+   * model classifies the form, they only run for the field types the model is
+   * not trusted with, so a bad prediction for one field type can be avoided
+   * without giving up ML for the whole form.
+   *
+   * Note that `_findMatchedFieldNames` tries the rules in the order of the
+   * names it is given, so dropping a name also drops the shadowing it did:
+   * with only "tel" left, the broad tel rule claims a field that
+   * "tel-country-code" would otherwise have matched. Related field types
+   * therefore belong on the list together.
+   *
+   * @param {Array<string>} fieldNames
+   *        The field names this element could be, see `_getPossibleFieldNames`.
+   * @param {boolean} useML
+   *        Whether the ML model classifies this element.
+   * @returns {Array<string>}
+   *        The field names to match with the regexp heuristics. Empty means no
+   *        regexp heuristic should run for this element.
+   */
+  _getRegexpHeuristicFieldNames(fieldNames, useML) {
+    if (!useML) {
+      return fieldNames;
+    }
+
+    return fieldNames.filter(fieldName =>
+      lazy.FormAutofillUtils.mlIgnoreFieldTypes.includes(fieldName)
+    );
+  },
+
+  /**
    * Get inferred information about an input element using autocomplete info, fathom and regex-based heuristics.
    *
    * @param {HTMLElement} element - The input element to infer information about.
@@ -1338,22 +1371,36 @@ export const FormAutofillHeuristics = {
       return [passportFieldName, inferredInfo];
     }
 
-    if (mlTokens) {
-      // If ML is desired, skip heuristics and use the ML data instead.
+    const regexpFields = this._getRegexpHeuristicFieldNames(fields, !!mlTokens);
+    if (!regexpFields.length) {
+      // No regexp heuristic runs for this element, leave it to the model.
       return [matchedFieldNames, inferredInfo, mlTokens?.get(element)];
     }
+
+    // Whether the checks below should consider `fieldName` for this element.
+    // Only the ML path restricts this, so the regexp-only path keeps
+    // considering every field type it did before.
+    const shouldCheck = fieldName =>
+      !mlTokens || regexpFields.includes(fieldName);
 
     // Check every select for options that
     // match credit card network names in value or label.
     if (HTMLSelectElement.isInstance(element)) {
-      if (this._isExpirationMonthLikely(element)) {
+      if (
+        shouldCheck("cc-exp-month") &&
+        this._isExpirationMonthLikely(element)
+      ) {
         return ["cc-exp-month", inferredInfo];
-      } else if (this._isExpirationYearLikely(element)) {
+      } else if (
+        shouldCheck("cc-exp-year") &&
+        this._isExpirationYearLikely(element)
+      ) {
         return ["cc-exp-year", inferredInfo];
       }
 
       const options = Array.from(element.querySelectorAll("option"));
       if (
+        shouldCheck("cc-type") &&
         options.find(
           option =>
             lazy.CreditCard.getNetworkFromName(option.value) ||
@@ -1368,6 +1415,7 @@ export const FormAutofillHeuristics = {
       // options rather than the first, as selects often start with a non-country display option.
       const countryDisplayNames = Array.from(FormAutofill.countries.values());
       if (
+        (shouldCheck("country") || shouldCheck("tel-country-code")) &&
         options.length >= 2 &&
         options
           .slice(-2)
@@ -1378,29 +1426,49 @@ export const FormAutofillHeuristics = {
           )
       ) {
         // Now that it is likely a country dropdown field, check if it is
-        // a telephone country prefix or a separate country field.
-        return this._findMatchedFieldNames(element, ["tel-country-code"])
-          ?.length
-          ? ["tel-country-code", inferredInfo]
-          : ["country", inferredInfo];
+        // a telephone country prefix or a separate country field. The check
+        // above only tells us the field is one of the two, so make sure the
+        // one we settled on is a field name we may match.
+        const fieldName = this._findMatchedFieldNames(element, [
+          "tel-country-code",
+        ])?.length
+          ? "tel-country-code"
+          : "country";
+        if (shouldCheck(fieldName)) {
+          return [fieldName, inferredInfo];
+        }
       }
     }
 
     // Find a matched field name using regexp-based heuristics
     const heuristicMatchedFieldNames = this._findMatchedFieldNames(
       element,
-      fields,
+      regexpFields,
       fathomFoundType
     );
     matchedFieldNames.push(...heuristicMatchedFieldNames);
 
     // If regular expression based heuristics doesn't find any matched field name,
     // and the input type is "tel", just use "tel" as the field name.
-    if (!matchedFieldNames.length && element.type == "tel") {
+    if (
+      !matchedFieldNames.length &&
+      element.type == "tel" &&
+      shouldCheck("tel")
+    ) {
       return ["tel", inferredInfo];
     }
 
-    return [matchedFieldNames, inferredInfo, mlTokens?.get(element)];
+    // Withholding the tokens keeps a field the heuristics classified out of
+    // the model's batch. `#applyResults` would skip it anyway because it has a
+    // name, so this only saves encoding it. Note it asks whether the regexp
+    // heuristics matched rather than whether the field has a name, because
+    // `matchedFieldNames` may hold a name fathom found.
+    const classifiedByRegexp = !!heuristicMatchedFieldNames.length;
+    return [
+      matchedFieldNames,
+      inferredInfo,
+      classifiedByRegexp ? undefined : mlTokens?.get(element),
+    ];
   },
 
   /**
