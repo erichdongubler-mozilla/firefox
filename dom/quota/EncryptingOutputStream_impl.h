@@ -27,8 +27,7 @@ EncryptingOutputStream<CipherStrategy>::EncryptingOutputStream(
     : EncryptingOutputStreamBase(std::move(aBaseStream), aBlockSize) {
   // XXX Move this to a fallible init function.
   MOZ_ALWAYS_SUCCEEDS(mCipherStrategy.Init(CipherMode::Encrypt,
-                                           CipherStrategy::SerializeKey(aKey),
-                                           CipherStrategy::MakeBlockPrefix()));
+                                           CipherStrategy::SerializeKey(aKey)));
 
   MOZ_ASSERT(mBlockSize > 0);
   MOZ_ASSERT(mBlockSize % CipherStrategy::BasicBlockSize == 0);
