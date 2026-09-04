@@ -155,6 +155,32 @@ add_task(async function testQueryParamIsStrippedWhenParamIsLowercase() {
   });
 });
 
+// Bug 1960853 - Tests
+
+// Ensuring a valueless param does not gain a wrong '=' --> bug id = 1960853
+add_task(async function testEqualsSignNotAddedToValuelessParam() {
+  let originalUrl = "https://www.example.com/?utm_ad=test&x";
+  let shortenedUrl = "https://www.example.com/?x";
+  await testMenuItemEnabled({
+    validUrl: originalUrl,
+    strippedUrl: shortenedUrl,
+    useTestList: true,
+    expectedDisabled: false,
+  });
+});
+
+// A genuinely empty value (trailing '=') must be preserved
+add_task(async function testGenuineEmptyValuePreserved() {
+  let originalUrl = "https://www.example.com/?utm_ad=test&x=";
+  let shortenedUrl = "https://www.example.com/?x=";
+  await testMenuItemEnabled({
+    validUrl: originalUrl,
+    strippedUrl: shortenedUrl,
+    useTestList: true,
+    expectedDisabled: false,
+  });
+});
+
 /**
  * Opens a new tab and checks menu item is hidden in the url bar context menu.
  *
