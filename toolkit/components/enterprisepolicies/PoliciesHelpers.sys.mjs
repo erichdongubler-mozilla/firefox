@@ -224,6 +224,45 @@ export const PoliciesUtils = {
   },
 };
 
+const PREF_TYPE_NAMES = {
+  [Ci.nsIPrefBranch.PREF_BOOL]: "boolean",
+  [Ci.nsIPrefBranch.PREF_INT]: "number",
+  [Ci.nsIPrefBranch.PREF_STRING]: "string",
+};
+
+/**
+ * Describes why a preference could not be set, in terms an administrator can
+ * act on: which type the preference takes, and what the policy provided.
+ *
+ * @param {string} preference
+ *        The preference that could not be set.
+ * @param {boolean|number|string} value
+ *        The value the policy asked for.
+ * @param {Error} ex
+ *        The failure raised while setting it.
+ * @returns {string}
+ *        A description of what to correct.
+ */
+export function describePreferenceFailure(preference, value, ex) {
+  const expected =
+    PREF_TYPE_NAMES[
+      Services.prefs.getDefaultBranch("").getPrefType(preference)
+    ];
+  if (expected && expected != typeof value) {
+    return (
+      `Unable to set preference ${preference}: it takes a ${expected}, ` +
+      `but the policy provided a ${typeof value}.`
+    );
+  }
+  if (expected == "number" && !Number.isInteger(value)) {
+    return `Unable to set preference ${preference}: it takes a whole number.`;
+  }
+  const reason = ex?.result
+    ? ChromeUtils.getXPCOMErrorName(ex.result)
+    : (ex?.message ?? ex);
+  return `Unable to set preference ${preference}: ${reason}`;
+}
+
 /**
  * setDefaultPermission
  *
@@ -681,7 +720,7 @@ export function pemToBase64(pem) {
     .replace(/[\r\n]/g, "");
 }
 
-export function processMIMEInfo(mimeInfo, realMIMEInfo) {
+export function processMIMEInfo(mimeInfo, realMIMEInfo, policyName) {
   if ("handlers" in mimeInfo) {
     let firstHandler = true;
     for (let handler of mimeInfo.handlers) {
@@ -697,7 +736,8 @@ export function processMIMEInfo(mimeInfo, realMIMEInfo) {
             ].createInstance(Ci.nsILocalHandlerApp);
             handlerApp.executable = file;
           } catch (ex) {
-            lazy.log.error(
+            reportFailure(
+              policyName,
               `Unable to create handler executable (${handler.path})`
             );
             continue;
@@ -707,11 +747,15 @@ export function processMIMEInfo(mimeInfo, realMIMEInfo) {
           try {
             templateURL = new URL(handler.uriTemplate);
           } catch (ex) {
-            lazy.log.error(`Invalid web handler URL (${handler.uriTemplate})`);
+            reportFailure(
+              policyName,
+              `Invalid web handler URL (${handler.uriTemplate})`
+            );
             continue;
           }
           if (templateURL.protocol != "https:") {
-            lazy.log.error(
+            reportFailure(
+              policyName,
               `Web handler must be https (${handler.uriTemplate})`
             );
             continue;
@@ -720,7 +764,8 @@ export function processMIMEInfo(mimeInfo, realMIMEInfo) {
             !templateURL.pathname.includes("%s") &&
             !templateURL.search.includes("%s")
           ) {
-            lazy.log.error(
+            reportFailure(
+              policyName,
               `Web handler must contain %s (${handler.uriTemplate})`
             );
             continue;
@@ -730,7 +775,7 @@ export function processMIMEInfo(mimeInfo, realMIMEInfo) {
           ].createInstance(Ci.nsIWebHandlerApp);
           handlerApp.uriTemplate = handler.uriTemplate;
         } else {
-          lazy.log.error("Invalid handler");
+          reportFailure(policyName, "Invalid handler");
           continue;
         }
         if ("name" in handler) {
@@ -750,7 +795,7 @@ export function processMIMEInfo(mimeInfo, realMIMEInfo) {
       action == realMIMEInfo.useHelperApp &&
       !realMIMEInfo.possibleApplicationHandlers.length
     ) {
-      lazy.log.error("useHelperApp requires a handler");
+      reportFailure(policyName, "useHelperApp requires a handler");
       return;
     }
     realMIMEInfo.preferredAction = action;

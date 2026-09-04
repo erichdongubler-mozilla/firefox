@@ -52,6 +52,27 @@ add_task(async function test_preference_failure_is_contained() {
     failures[0].includes("browser.startup.page"),
     `The failure names the preference that failed: ${failures[0]}`
   );
+  ok(
+    failures[0].includes("it takes a number, but the policy provided a string"),
+    `The failure says what to correct: ${failures[0]}`
+  );
+});
+
+add_task(async function test_non_integer_preference_is_reported() {
+  await setupPolicyEngineWithJson({
+    policies: {
+      Preferences: {
+        "browser.startup.page": 1.5,
+      },
+    },
+  });
+
+  let failures = getFailures("Preferences");
+  equal(failures.length, 1, "One failure was recorded for the policy");
+  ok(
+    failures[0].includes("it takes a whole number"),
+    `The failure says what to correct: ${failures[0]}`
+  );
 });
 
 add_task(async function test_disallowed_preference_is_reported() {
@@ -162,5 +183,46 @@ add_task(async function test_addon_install_failure_is_reported() {
   ok(
     getFailures("ExtensionSettings")[0].includes("http://"),
     `The failure names the install URL: ${getFailures("ExtensionSettings")[0]}`
+  );
+});
+
+add_task(async function test_handler_failure_is_reported() {
+  // Every Handlers failure is caught and logged rather than thrown, so the
+  // engine's generic handler never sees it and the policy has to report for
+  // itself.
+  await setupPolicyEngineWithJson({
+    policies: {
+      Handlers: {
+        schemes: {
+          "": { action: "saveToDisk" },
+          testscheme: {
+            action: "useHelperApp",
+            handlers: [{ name: "Name", uriTemplate: "not a url" }],
+          },
+        },
+      },
+    },
+  });
+
+  ok(
+    "Handlers" in Services.policies.getActivePolicies(),
+    "The policy is still reported as active"
+  );
+
+  // Three: the empty scheme, the unusable web handler, and the entry left
+  // with no handler once that one was skipped.
+  let failures = getFailures("Handlers");
+  equal(failures.length, 3, `Every failure was recorded: ${failures}`);
+  ok(
+    failures.some(message => message.includes("Invalid scheme (empty)")),
+    "The unusable scheme was reported"
+  );
+  ok(
+    failures.some(message => message.includes("not a url")),
+    "The unusable web handler was reported"
+  );
+  ok(
+    failures.some(message => message.includes("useHelperApp requires")),
+    "The entry left without a handler was reported"
   );
 });

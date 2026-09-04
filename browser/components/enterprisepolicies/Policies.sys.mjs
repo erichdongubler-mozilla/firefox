@@ -40,6 +40,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   blockAboutPage: "resource://gre/modules/PoliciesHelpers.sys.mjs",
   clearBlockedAboutPages: "resource://gre/modules/PoliciesHelpers.sys.mjs",
   clearRunOnceModification: "resource://gre/modules/PoliciesHelpers.sys.mjs",
+  describePreferenceFailure: "resource://gre/modules/PoliciesHelpers.sys.mjs",
   installAddonFromURL: "resource://gre/modules/PoliciesHelpers.sys.mjs",
   installAddonFromRepository: "resource://gre/modules/PoliciesHelpers.sys.mjs",
   pemToBase64: "resource://gre/modules/PoliciesHelpers.sys.mjs",
@@ -1088,7 +1089,11 @@ export var Policies = {
             "application/pdf",
             "pdf"
           );
-          lazy.processMIMEInfo({ action: "handleInternally" }, pdfMIMEInfo);
+          lazy.processMIMEInfo(
+            { action: "handleInternally" },
+            pdfMIMEInfo,
+            "DisableBuiltinPDFViewer"
+          );
         });
         return;
       }
@@ -1096,7 +1101,11 @@ export var Policies = {
         "application/pdf",
         "pdf"
       );
-      lazy.processMIMEInfo({ action: "useSystemDefault" }, pdfMIMEInfo);
+      lazy.processMIMEInfo(
+        { action: "useSystemDefault" },
+        pdfMIMEInfo,
+        "DisableBuiltinPDFViewer"
+      );
     },
   },
 
@@ -2142,7 +2151,7 @@ export var Policies = {
         for (const mimeType in param.mimeTypes) {
           const mimeInfo = param.mimeTypes[mimeType];
           if (!mimeType) {
-            lazy.log.error("Invalid MIME type (empty)");
+            lazy.reportFailure("Handlers", "Invalid MIME type (empty)");
             continue;
           }
           try {
@@ -2150,9 +2159,12 @@ export var Policies = {
               mimeType,
               ""
             );
-            lazy.processMIMEInfo(mimeInfo, realMIMEInfo);
+            lazy.processMIMEInfo(mimeInfo, realMIMEInfo, "Handlers");
           } catch (e) {
-            lazy.log.error(`Invalid MIME type (${mimeType})`);
+            lazy.reportFailure(
+              "Handlers",
+              `Invalid MIME type (${mimeType}): ${e}`
+            );
           }
         }
       }
@@ -2160,7 +2172,7 @@ export var Policies = {
         for (const extension in param.extensions) {
           const mimeInfo = param.extensions[extension];
           if (!extension) {
-            lazy.log.error("Invalid file extension (empty)");
+            lazy.reportFailure("Handlers", "Invalid file extension (empty)");
             continue;
           }
           try {
@@ -2168,9 +2180,12 @@ export var Policies = {
               "",
               extension
             );
-            lazy.processMIMEInfo(mimeInfo, realMIMEInfo);
+            lazy.processMIMEInfo(mimeInfo, realMIMEInfo, "Handlers");
           } catch (e) {
-            lazy.log.error(`Invalid file extension (${extension})`);
+            lazy.reportFailure(
+              "Handlers",
+              `Invalid file extension (${extension}): ${e}`
+            );
           }
         }
       }
@@ -2178,15 +2193,15 @@ export var Policies = {
         for (const scheme in param.schemes) {
           const handlerInfo = param.schemes[scheme];
           if (!scheme) {
-            lazy.log.error("Invalid scheme (empty)");
+            lazy.reportFailure("Handlers", "Invalid scheme (empty)");
             continue;
           }
           try {
             const realHandlerInfo =
               lazy.gExternalProtocolService.getProtocolHandlerInfo(scheme);
-            lazy.processMIMEInfo(handlerInfo, realHandlerInfo);
+            lazy.processMIMEInfo(handlerInfo, realHandlerInfo, "Handlers");
           } catch (e) {
-            lazy.log.error(`Invalid scheme (${scheme})`);
+            lazy.reportFailure("Handlers", `Invalid scheme (${scheme}): ${e}`);
           }
         }
       }
@@ -2854,7 +2869,7 @@ export var Policies = {
             // preferences that come after it.
             lazy.reportFailure(
               "Preferences",
-              `Unable to set preference ${preference}. Probable type mismatch.`
+              lazy.describePreferenceFailure(preference, param[preference], e)
             );
           }
         } else {
@@ -2917,7 +2932,11 @@ export var Policies = {
           } catch (e) {
             lazy.reportFailure(
               "Preferences",
-              `Unable to set preference ${preference}. Probable type mismatch.`
+              lazy.describePreferenceFailure(
+                preference,
+                param[preference].Value,
+                e
+              )
             );
           }
 

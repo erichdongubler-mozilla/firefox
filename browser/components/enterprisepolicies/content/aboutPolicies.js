@@ -277,7 +277,6 @@ function generateErrors() {
     "ProxyPolicies",
     "WebsiteFilter Policy",
     "macOSPoliciesParser",
-    "PoliciesHelpers",
   ];
 
   let new_cont = document.getElementById("errorsContent");
