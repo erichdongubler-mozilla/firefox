@@ -139,22 +139,17 @@ void BaseLocalIter::operator++(int) {
 //
 // Stack map methods.
 
-bool BaseCompiler::checkStackHeight() {
-  if (MOZ_UNLIKELY(!fr.checkStackHeight())) {
-    return decoder_.fail(decoder_.beginOffset(), "stack frame is too large");
-  }
-  return true;
-}
-
 bool BaseCompiler::createStackMap(Maybe<Trap> reason) {
-  return createStackMap(reason, HasDebugFrameWithLiveRefs::No);
+  const ExitStubMapVector noExtras;
+  StackMap* stackMap;
+  return stackMapGenerator_.createStackMap(reason, noExtras,
+                                           HasDebugFrameWithLiveRefs::No, stk_,
+                                           &stackMap) &&
+         (!stackMap || stackMaps_->add(masm.currentOffset(), stackMap));
 }
 
 bool BaseCompiler::createStackMap(Maybe<Trap> reason,
                                   CodeOffset assemblerOffset) {
-  if (!checkStackHeight()) {
-    return false;
-  }
   const ExitStubMapVector noExtras;
   StackMap* stackMap;
   return stackMapGenerator_.createStackMap(reason, noExtras,
@@ -165,9 +160,6 @@ bool BaseCompiler::createStackMap(Maybe<Trap> reason,
 
 bool BaseCompiler::createStackMap(
     Maybe<Trap> reason, HasDebugFrameWithLiveRefs debugFrameWithLiveRefs) {
-  if (!checkStackHeight()) {
-    return false;
-  }
   const ExitStubMapVector noExtras;
   StackMap* stackMap;
   return stackMapGenerator_.createStackMap(
@@ -195,10 +187,6 @@ bool BaseCompiler::createDebugOnlyStackMapForNonResumingTrap(StackMap** result,
   if (MOZ_LIKELY(!compilerEnv_.debugEnabled())) {
     *result = nullptr;
     return true;
-  }
-
-  if (!checkStackHeight()) {
-    return false;
   }
 
   // We can use either `t1` or `t2` (when valid) here, since ::createStackMap

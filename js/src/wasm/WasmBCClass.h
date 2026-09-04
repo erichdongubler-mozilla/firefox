@@ -938,11 +938,6 @@ struct BaseCompiler final {
   //
   // Stack maps
 
-  // Fails compilation if the frame has grown past MaxFrameSize.  This must be
-  // checked before creating each stackmap, since a larger frame would overflow
-  // StackMapHeader::numMappedWords.
-  [[nodiscard]] bool checkStackHeight();
-
   // Various methods for creating a stackmap.  Stackmaps are indexed by the
   // lowest address of the instruction immediately *after* the instruction of
   // interest.  In practice that means either: the return point of a call, the
