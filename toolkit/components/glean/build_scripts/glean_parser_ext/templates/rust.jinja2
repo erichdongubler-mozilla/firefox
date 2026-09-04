@@ -183,11 +183,17 @@ pub mod {{ category_name|snake_case }} {
             {% else %}
             {{ common_metric_data(obj)|indent(12) }};
             {% endif %}
-        let metric = {{ obj|ctor }}(BaseMetricId({{obj|metric_id}}), meta
+{#
+  Only event/object metrics need the instance bound to a name, so that their
+  allocation can be measured below. Binding it unconditionally would trip
+  clippy::let_and_return for every other metric.
+#}
+{% set measure_memory = obj.type == "event" or obj.type == "object" %}
+        {{ "let metric = " if measure_memory else "" }}{{ obj|ctor }}(BaseMetricId({{obj|metric_id}}), meta
         {%- for arg_name in extra_args if not obj.labeled and obj[arg_name] is defined and arg_name not in common_metric_data_args and arg_name != 'allowed_extra_keys' -%}
             , {{ obj[arg_name]|rust }}
         {%- endfor -%}
-        {{ ", " if obj.labeled or obj.dual_labeled else ")\n" }}
+        {{ ", " if obj.labeled or obj.dual_labeled else ")" }}
         {%- if obj.labeled -%}
         {%- if obj.labels -%}
         Some({{ obj.labels|rust }}))
@@ -197,8 +203,9 @@ pub mod {{ category_name|snake_case }} {
         {%- elif obj.dual_labeled -%}
         {{ "Some(" ~ obj.keys|rust ~ ")" if obj.keys else "None" }},
         {{ "Some(" ~ obj.categories|rust ~ ")" if obj.categories else "None" }})
-        {%- endif -%};
-        {% if obj.type == "event" or obj.type == "object" %}
+        {%- endif -%}
+        {{- ";" if measure_memory else "" }}
+        {% if measure_memory %}
         {#
           event/object metrics don't have a map.
           They don't allocate anymore after instantiation, so it's enough to measure once.
@@ -210,8 +217,8 @@ pub mod {{ category_name|snake_case }} {
                 super::count_memory_usage(metric.size_of(ops));
             });
         }
-        {% endif %}
         metric
+        {% endif %}
     });
     {% endif %}
 
