@@ -415,19 +415,23 @@ toolbar[inactive="true"] .urlbar,
   unicode-bidi: plaintext;
   text-align: match-parent;
 
+  /* The input carries dir="auto", so :dir() on the input itself resolves to the
+     direction of the value it holds. Rules that need the locale direction match
+     on the parent, which has no dir attribute and so takes the root's. */
+
   /* Align URLs to the right in RTL mode. */
-  &:-moz-locale-dir(rtl) {
+  :dir(rtl) > & {
     text-align: right !important;
   }
 
   /* Make sure that the location bar's alignment changes according
      to the input box direction if the user switches the text direction using
      cmd_switchTextDirection (which applies a dir attribute to the <input>). */
-  &[dir="ltr"]:-moz-locale-dir(rtl) {
+  :dir(rtl) > &[dir="ltr"] {
     text-align: left !important;
   }
 
-  &[dir="rtl"]:-moz-locale-dir(ltr) {
+  :dir(ltr) > &[dir="rtl"] {
     text-align: right !important;
   }
 
@@ -884,7 +888,7 @@ toolbar[inactive="true"] .urlbar,
 .urlbar-go-button,
 .search-go-button {
   padding: var(--urlbar-icon-padding);
-  &:-moz-locale-dir(rtl) {
+  &:dir(rtl) {
     transform: scaleX(-1);
   }
 }
@@ -992,7 +996,7 @@ toolbar[inactive="true"] .urlbar,
     background-color: transparent;
     transform: translateX(calc(var(--cfr-label-width) * -1));
 
-    &:-moz-locale-dir(rtl) {
+    &:dir(rtl) {
       transform: translateX(calc(var(--cfr-label-width)));
     }
 
@@ -1032,7 +1036,7 @@ toolbar[inactive="true"] .urlbar,
   transition-duration: var(--cfr-animation-duration);
   align-items: center;
 
-  &:-moz-locale-dir(rtl) {
+  &:dir(rtl) {
     mask-position-x: calc(var(--cfr-label-width) * -1);
   }
 
@@ -1055,7 +1059,7 @@ toolbar[inactive="true"] .urlbar,
   mask-repeat: no-repeat;
   transition: mask-position-x ease-in-out var(--cfr-animation-duration);
 
-  &:-moz-locale-dir(rtl) {
+  &:dir(rtl) {
     mask-position-x: calc(var(--cfr-label-width) * -1);
   }
 
@@ -1073,14 +1077,14 @@ toolbar[inactive="true"] .urlbar,
   mask-image: linear-gradient(to left, transparent, black 3ch);
   transition: mask-position-x ease-in-out var(--cfr-animation-duration);
 
-  &:-moz-locale-dir(rtl) {
+  :dir(rtl) > & {
     mask-image: linear-gradient(to right, transparent, black 3ch);
   }
 }
 #urlbar[cfr-recommendation-state="expanded"] .urlbar-input {
   mask-position-x: calc(var(--cfr-label-width) * -1);
 
-  &:-moz-locale-dir(rtl) {
+  :dir(rtl) > & {
     mask-position-x: calc(var(--cfr-label-width));
   }
 }
@@ -1126,7 +1130,7 @@ toolbar[inactive="true"] .urlbar,
   list-style-image: url("chrome://global/skin/media/picture-in-picture-closed.svg");
 }
 
-#picture-in-picture-button:-moz-locale-dir(rtl) > .urlbar-icon {
+#picture-in-picture-button:dir(rtl) > .urlbar-icon {
   transform: scaleX(-1);
 }
 
@@ -1328,7 +1332,7 @@ toolbar[inactive="true"] .urlbar,
     width: 11px;
     height: 11px;
 
-    &:-moz-locale-dir(rtl) {
+    &:dir(rtl) {
       margin-inline: -25px 14px;
     }
   }
@@ -1340,7 +1344,7 @@ toolbar[inactive="true"] .urlbar,
     width: 6px;
     height: 6px;
 
-    &:-moz-locale-dir(rtl) {
+    &:dir(rtl) {
       margin-inline: -26px 20px;
     }
   }
@@ -1470,7 +1474,7 @@ toolbar[inactive="true"] .urlbar,
   .searchmode-switcher[open] & {
     transform: rotate(-180deg);
 
-    &:-moz-locale-dir(rtl) {
+    &:dir(rtl) {
       transform: rotate(180deg);
     }
   }

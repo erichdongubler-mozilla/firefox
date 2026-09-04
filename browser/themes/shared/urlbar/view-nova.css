@@ -75,7 +75,7 @@
   --urlbarView-separator-margin-inline: 0.6em;
 
   --urlbarView-action-slide-in-distance: 200px;
-  &:-moz-locale-dir(rtl) {
+  &:dir(rtl) {
     --urlbarView-action-slide-in-distance: -200px;
   }
 
@@ -301,7 +301,9 @@
   mask-image: linear-gradient(to left, transparent, black 2em);
 }
 
-.urlbarView-overflowable[overflow]:not(.urlbarView-title[is-url]):-moz-locale-dir(rtl) {
+/* Titles that are not URLs carry dir="auto", so anchor on the view, whose
+   direction is the one the row is laid out in. */
+.urlbarView:dir(rtl) .urlbarView-overflowable[overflow]:not(.urlbarView-title[is-url]) {
   mask-image: linear-gradient(to right, transparent, black 2em);
 }
 
@@ -375,13 +377,13 @@
 .urlbarView-row:is([type="bookmark"], [type^="bookmark_"]) > .urlbarView-row-inner {
   > .urlbarView-favicon {
     mask-image: url(chrome://browser/skin/urlbar/badge-bookmark.svg#ltr-mask);
-    &:-moz-locale-dir(rtl) {
+    &:dir(rtl) {
       mask-image: url(chrome://browser/skin/urlbar/badge-bookmark.svg#rtl-mask);
     }
   }
   > .urlbarView-type-icon {
     background-image: url(chrome://browser/skin/urlbar/badge-bookmark.svg#ltr-icon);
-    &:-moz-locale-dir(rtl) {
+    &:dir(rtl) {
       background-image: url(chrome://browser/skin/urlbar/badge-bookmark.svg#rtl-icon);
     }
   }
@@ -390,13 +392,13 @@
 .urlbarView-row:is([type="adaptive-history"], [type="history"], [type^="history_"], [type="semantic-history"]) > .urlbarView-row-inner {
   > .urlbarView-favicon {
     mask-image: url(chrome://browser/skin/urlbar/badge-history.svg#ltr-mask);
-    &:-moz-locale-dir(rtl) {
+    &:dir(rtl) {
       mask-image: url(chrome://browser/skin/urlbar/badge-history.svg#rtl-mask);
     }
   }
   > .urlbarView-type-icon {
     background-image: url(chrome://browser/skin/urlbar/badge-history.svg#ltr-icon);
-    &:-moz-locale-dir(rtl) {
+    &:dir(rtl) {
       background-image: url(chrome://browser/skin/urlbar/badge-history.svg#rtl-icon);
     }
   }
@@ -405,13 +407,13 @@
 .urlbarView-row:is([type="remotetab"], [type="switchtab"], [type="tab"], [type^="tab_"]) > .urlbarView-row-inner {
   > .urlbarView-favicon {
     mask-image: url(chrome://browser/skin/urlbar/badge-tab.svg#ltr-mask);
-    &:-moz-locale-dir(rtl) {
+    &:dir(rtl) {
       mask-image: url(chrome://browser/skin/urlbar/badge-tab.svg#rtl-mask);
     }
   }
   > .urlbarView-type-icon {
     background-image: url(chrome://browser/skin/urlbar/badge-tab.svg#ltr-icon);
-    &:-moz-locale-dir(rtl) {
+    &:dir(rtl) {
       background-image: url(chrome://browser/skin/urlbar/badge-tab.svg#rtl-icon);
     }
   }
@@ -420,13 +422,13 @@
 .urlbarView-row[pinned] > .urlbarView-row-inner {
   > .urlbarView-favicon {
     mask-image: url(chrome://browser/skin/urlbar/badge-pin.svg#ltr-mask);
-    &:-moz-locale-dir(rtl) {
+    &:dir(rtl) {
       mask-image: url(chrome://browser/skin/urlbar/badge-pin.svg#rtl-mask);
     }
   }
   > .urlbarView-type-icon {
     background-image: url(chrome://browser/skin/urlbar/badge-pin.svg#ltr-icon);
-    &:-moz-locale-dir(rtl) {
+    &:dir(rtl) {
       background-image: url(chrome://browser/skin/urlbar/badge-pin.svg#rtl-icon);
     }
   }
@@ -519,7 +521,7 @@
       background-position-x: right 4px;
       font-size: var(--urlbarView-small-font-size);
 
-      &:-moz-locale-dir(rtl) {
+      &:dir(rtl) {
         background-position-x: left 4px;
       }
     }
@@ -736,7 +738,7 @@
       background-position-x: var(--space-medium);
       background-size: var(--urlbarview-favicon-size);
 
-      &:-moz-locale-dir(rtl) {
+      &:dir(rtl) {
         background-position-x: right var(--space-medium);
       }
     }
@@ -888,13 +890,15 @@
   }
 }
 
-.urlbarView-title[is-url]:-moz-locale-dir(rtl),
-.urlbarView-url:-moz-locale-dir(rtl) {
+/* An [is-url] title carries no dir attribute, and the view sets dir="auto" on
+   the other titles alone, so both of these take the row's direction. */
+.urlbarView-title[is-url]:dir(rtl),
+.urlbarView-url:dir(rtl) {
   direction: ltr !important;
 }
 
-.urlbarView-url:-moz-locale-dir(rtl),
-.urlbarView-explanation:-moz-locale-dir(rtl) {
+.urlbarView-url:dir(rtl),
+.urlbarView-explanation:dir(rtl) {
   /* .urlbarView-url can grow due to `flex: auto`, so without `text-align: right`,
      the URL text would be left-aligned within .urlbarView-url for RTL due to
      the `direction: ltr` rule. .urlbarView-title does not have this problem
@@ -1581,7 +1585,7 @@
       fill: var(--airline-color, currentColor);
       stroke: var(--airline-color, currentColor);
 
-      &:-moz-locale-dir(rtl) {
+      &:dir(rtl) {
         /* Flip the background image, an in-progress flight path, and then flip the
            inner foreground image, an airline logo, so it's oriented correctly. */
         transform: scaleX(-1);
