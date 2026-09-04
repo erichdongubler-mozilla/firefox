@@ -1245,6 +1245,19 @@ FFmpegVideoDecoder<LIBAV_VER>::FFmpegVulkanVideoDecoder::InitCopyRingBuffer(
       useP010 ? VK_FORMAT_G10X6_B10X6R10X6_2PLANE_420_UNORM_3PACK16
               : VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
 
+  // LINEAR often uses pitch==width. NVIDIA/AMD EGL PRIME needs 256B pitch
+  // (Mesa ISL). Pad when exporting LINEAR to another GPU; copies still use
+  // the real frame size.
+  uint32_t widthAligned = aWidth;
+  if (!mDecoderMatchesCompositor && !mDrmModifiers.empty() &&
+      mDrmModifiers[0] == DRM_FORMAT_MOD_LINEAR) {
+    constexpr uint32_t kPrimePitchAlign = 256;
+    const uint32_t bpp = useP010 ? 2u : 1u;
+    widthAligned =
+        (((aWidth * bpp) + kPrimePitchAlign - 1) & ~(kPrimePitchAlign - 1)) /
+        bpp;
+  }
+
   VkImageDrmFormatModifierListCreateInfoEXT drmModInfo = {};
   drmModInfo.sType =
       VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_LIST_CREATE_INFO_EXT;
@@ -1284,7 +1297,7 @@ FFmpegVideoDecoder<LIBAV_VER>::FFmpegVulkanVideoDecoder::InitCopyRingBuffer(
     imgInfo.pNext = &extImgInfo;
     imgInfo.imageType = VK_IMAGE_TYPE_2D;
     imgInfo.format = vkFormat;
-    imgInfo.extent = {aWidth, aHeight, 1};
+    imgInfo.extent = {widthAligned, aHeight, 1};
     imgInfo.mipLevels = 1;
     imgInfo.arrayLayers = 1;
     imgInfo.samples = VK_SAMPLE_COUNT_1_BIT;
