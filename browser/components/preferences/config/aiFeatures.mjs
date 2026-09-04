@@ -1449,6 +1449,22 @@ SettingGroupManager.registerGroups({
                 control: "moz-box-item",
                 items: [
                   {
+                    id: "aiControlSpeechRecognitionSelect",
+                    l10nId:
+                      "preferences-ai-controls-speech-recognition-control",
+                    control: "moz-select",
+                    controlAttrs: {
+                      inputlayout: "inline-end",
+                    },
+                    supportPage: "speech-recognition-firefox",
+                    options: [...AI_CONTROL_OPTIONS],
+                  },
+                ],
+              },
+              {
+                control: "moz-box-item",
+                items: [
+                  {
                     id: "aiControlPdfjsAltTextSelect",
                     l10nId: "preferences-ai-controls-pdfjs-control",
                     control: "moz-select",
@@ -1487,22 +1503,6 @@ SettingGroupManager.registerGroups({
                       inputlayout: "inline-end",
                     },
                     supportPage: "use-link-previews-firefox",
-                    options: [...AI_CONTROL_OPTIONS],
-                  },
-                ],
-              },
-              {
-                control: "moz-box-item",
-                items: [
-                  {
-                    id: "aiControlSpeechRecognitionSelect",
-                    l10nId:
-                      "preferences-ai-controls-speech-recognition-control",
-                    control: "moz-select",
-                    controlAttrs: {
-                      inputlayout: "inline-end",
-                    },
-                    supportPage: "speech-recognition-firefox",
                     options: [...AI_CONTROL_OPTIONS],
                   },
                 ],
