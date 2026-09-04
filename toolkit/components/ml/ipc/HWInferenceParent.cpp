@@ -3,6 +3,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPtr.h"
 #include "nsTHashSet.h"
@@ -51,6 +52,15 @@ extern LazyLogModule gHWInferenceLog;
 StaticRefPtr<HWInferenceParent> HWInferenceParent::sInstance;
 
 static StaticAutoPtr<nsTHashSet<nsCString>> sMockInstalledModels;
+
+// The mock hub's contents live only as long as browser.ml.modelHub.testing is
+// on, so a test that pushes that pref starts from an empty hub rather than
+// inheriting whatever an earlier test in the same run installed.
+static void ClearMockInstalledModels(const char*, void*) {
+  if (sMockInstalledModels) {
+    sMockInstalledModels->Clear();
+  }
+}
 
 static nsCString MockModelKey(const nsACString& aModel,
                               const nsACString& aRevision,
@@ -356,6 +366,8 @@ static void PerformModelInstall(
     if (!sMockInstalledModels) {
       sMockInstalledModels = new nsTHashSet<nsCString>();
       ClearOnShutdown(&sMockInstalledModels);
+      Preferences::RegisterCallback(ClearMockInstalledModels,
+                                    "browser.ml.modelHub.testing");
     }
     sMockInstalledModels->Insert(MockModelKey(aModel, aRevision, aFilename));
     LOGD("PerformModelInstall - testing mock: installed {}",

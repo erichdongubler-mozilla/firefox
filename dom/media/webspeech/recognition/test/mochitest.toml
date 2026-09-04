@@ -41,6 +41,8 @@ skip-if = [
 
 ["test_fuzz_session_lifecycle.html"]
 
+["test_install_on_start.html"]
+
 ["test_install_overlap.html"]
 
 ["test_model_available_after_install.html"]
