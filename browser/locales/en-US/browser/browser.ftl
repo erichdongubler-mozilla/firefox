@@ -872,7 +872,7 @@ urlbar-searchmode-no-keyword2 =
     .title = Keyword search is disabled
 
 urlbar-searchmode-dropmarker2 =
-    .title = Pick a Search Engine
+    .title = Pick a search engine
 urlbar-searchmode-bookmarks3 = Bookmarks
     .accesskey = B
 urlbar-searchmode-tabs3 = Tabs
