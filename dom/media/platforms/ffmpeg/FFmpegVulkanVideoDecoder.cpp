@@ -804,6 +804,10 @@ void FFmpegVideoDecoder<LIBAV_VER>::FFmpegVulkanVideoDecoder::InitDrmModifiers(
 
 static void* sVulkanLib = nullptr;
 static bool sVulkanEnumerated = false;
+static char sCachedVulkanDeviceName[VK_MAX_PHYSICAL_DEVICE_NAME_SIZE] = {};
+static uint32_t sCachedVulkanVendorID = 0;
+static uint32_t sCachedVulkanDeviceID = 0;
+static bool sCachedDecoderMatchesCompositor = false;
 
 static bool PhysicalDeviceHasVulkanVideoDecodeStack(
     PFN_vkEnumerateDeviceExtensionProperties aEnumerateExt,
@@ -878,172 +882,188 @@ bool FFmpegVideoDecoder<LIBAV_VER>::FFmpegVulkanVideoDecoder::
 #  endif
 
   const bool useCache = (rendererDrmMajor == 0 && rendererDrmMinor == 0);
-  if (!sVulkanEnumerated || !useCache) {
-    if (useCache) {
-      sVulkanEnumerated = true;
-    }
-
-    if (!sVulkanLib) {
-      sVulkanLib = dlopen("libvulkan.so.1", RTLD_LAZY);
-      if (!sVulkanLib) {
-        FFMPEGV_LOG("Failed to load libvulkan.so.1");
-        return false;
-      }
-    }
-
-    auto vkGetInstanceProcAddr =
-        (PFN_vkGetInstanceProcAddr)dlsym(sVulkanLib, "vkGetInstanceProcAddr");
-    if (!vkGetInstanceProcAddr) {
-      FFMPEGV_LOG("Failed to get vkGetInstanceProcAddr");
-      return false;
-    }
-
-    auto vkCreateInstance = (PFN_vkCreateInstance)vkGetInstanceProcAddr(
-        nullptr, "vkCreateInstance");
-    if (!vkCreateInstance) {
-      FFMPEGV_LOG("Failed to get vkCreateInstance");
-      return false;
-    }
-
-    VkApplicationInfo appInfo = {};
-    appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    appInfo.apiVersion = VK_API_VERSION_1_3;
-
-    VkInstanceCreateInfo createInfo = {};
-    createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-    createInfo.pApplicationInfo = &appInfo;
-
-    VkInstance instance = VK_NULL_HANDLE;
-    if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
-      FFMPEGV_LOG("Failed to create Vulkan instance");
-      return false;
-    }
-
-    auto vkDestroyInstance = (PFN_vkDestroyInstance)vkGetInstanceProcAddr(
-        instance, "vkDestroyInstance");
-    auto destroyInstance = MakeScopeExit([&] {
-      if (vkDestroyInstance && instance) {
-        vkDestroyInstance(instance, nullptr);
-      }
-    });
-
-    auto vkEnumeratePhysicalDevices =
-        (PFN_vkEnumeratePhysicalDevices)vkGetInstanceProcAddr(
-            instance, "vkEnumeratePhysicalDevices");
-    auto vkGetPhysicalDeviceProperties =
-        (PFN_vkGetPhysicalDeviceProperties)vkGetInstanceProcAddr(
-            instance, "vkGetPhysicalDeviceProperties");
-    auto vkGetPhysicalDeviceProperties2 =
-        (PFN_vkGetPhysicalDeviceProperties2)vkGetInstanceProcAddr(
-            instance, "vkGetPhysicalDeviceProperties2");
-    auto vkEnumerateDeviceExtensionProperties =
-        (PFN_vkEnumerateDeviceExtensionProperties)vkGetInstanceProcAddr(
-            instance, "vkEnumerateDeviceExtensionProperties");
-    if (!vkEnumeratePhysicalDevices || !vkGetPhysicalDeviceProperties ||
-        !vkEnumerateDeviceExtensionProperties) {
-      NS_WARNING("Failed to get Vulkan enumeration functions");
-      return false;
-    }
-
-    uint32_t count = 0;
-    vkEnumeratePhysicalDevices(instance, &count, nullptr);
-    if (count == 0) {
-      FFMPEGV_LOG("No Vulkan devices found");
-      return false;
-    }
-
-    std::vector<VkPhysicalDevice> devices(count);
-    vkEnumeratePhysicalDevices(instance, &count, devices.data());
-
-    // Collect valid devices (non-CPU, Vulkan 1.3+), sorted by type (discrete
-    // first).
-    std::vector<std::pair<VkPhysicalDeviceProperties, bool>> validDevices;
-    for (uint32_t i = 0; i < count; i++) {
-      VkPhysicalDeviceProperties p = {};
-      bool isDecoderMatchesRendererFound = false;
-      if (rendererDrmMajor && rendererDrmMinor &&
-          vkGetPhysicalDeviceProperties2) {
-        VkPhysicalDeviceDrmPropertiesEXT drmProps = {};
-        drmProps.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRM_PROPERTIES_EXT;
-        VkPhysicalDeviceProperties2 props2 = {};
-        props2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-        props2.pNext = &drmProps;
-        vkGetPhysicalDeviceProperties2(devices[i], &props2);
-        p = props2.properties;
-        isDecoderMatchesRendererFound =
-            (drmProps.hasRender && rendererDrmMajor == drmProps.renderMajor &&
-             rendererDrmMinor == drmProps.renderMinor) ||
-            (drmProps.hasPrimary && rendererDrmMajor == drmProps.primaryMajor &&
-             rendererDrmMinor == drmProps.primaryMinor);
-      } else {
-        vkGetPhysicalDeviceProperties(devices[i], &p);
-      }
-      if (p.deviceType != VK_PHYSICAL_DEVICE_TYPE_CPU) {
-        uint32_t major = VK_API_VERSION_MAJOR(p.apiVersion);
-        uint32_t minor = VK_API_VERSION_MINOR(p.apiVersion);
-        if (major > 1 || (major == 1 && minor >= 3)) {
-          if (!PhysicalDeviceHasVulkanVideoDecodeStack(
-                  vkEnumerateDeviceExtensionProperties, devices[i],
-                  p.deviceName)) {
-            continue;
-          }
-#  ifdef XP_LINUX
-          if (p.vendorID == 0x10de) {
-            FFMPEGV_LOG("Checking {}: nvidia_drm modeset status", p.deviceName);
-            if (NvidiaDrmModesetDisabled()) {
-              FFMPEGV_LOG("Skipping {}: nvidia_drm modeset is disabled",
-                          p.deviceName);
-              continue;
-            }
-          }
-#  endif
-          validDevices.push_back(
-              std::make_pair(p, isDecoderMatchesRendererFound));
-        }
-      }
-    }
-
-    auto deviceTypePriority = [](VkPhysicalDeviceType t) -> int {
-      switch (t) {
-        case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
-          return 3;
-        case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
-          return 2;
-        case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU:
-          return 1;
-        default:
-          return 0;
-      }
-    };
-    std::sort(
-        validDevices.begin(), validDevices.end(),
-        [&deviceTypePriority](const auto& p1, const auto& p2) {
-          if (p1.second != p2.second) {
-            return p1.second > p2.second;  // renderer-matching device first
-          }
-          return deviceTypePriority(p1.first.deviceType) >
-                 deviceTypePriority(p2.first.deviceType);  // discrete first
-        });
-
-    if (validDevices.empty()) {
-      FFMPEGV_LOG(
-          "No suitable Vulkan device found (need 1.3+, non-CPU, "
-          "VK_KHR_video_queue + VK_KHR_video_decode_queue)");
-      return false;
-    }
-
-    memcpy(mNegotiatedVulkanDeviceName, validDevices[0].first.deviceName,
+  if (useCache && sVulkanEnumerated) {
+    memcpy(mNegotiatedVulkanDeviceName, sCachedVulkanDeviceName,
            VK_MAX_PHYSICAL_DEVICE_NAME_SIZE);
-    mNegotiatedCompositorDecoderVendorID = validDevices[0].first.vendorID;
-    mNegotiatedCompositorDecoderDeviceID = validDevices[0].first.deviceID;
-    mDecoderMatchesCompositor = validDevices[0].second;
+    mNegotiatedCompositorDecoderVendorID = sCachedVulkanVendorID;
+    mNegotiatedCompositorDecoderDeviceID = sCachedVulkanDeviceID;
+    mDecoderMatchesCompositor = sCachedDecoderMatchesCompositor;
     FFMPEGV_LOG(
-        "Selected Vulkan device for video decoding: {} (vendorID=0x{:x}, "
+        "Reusing cached Vulkan device for video decoding: {} (vendorID=0x{:x}, "
         "deviceID=0x{:x}), matches renderer: {}",
         mNegotiatedVulkanDeviceName, mNegotiatedCompositorDecoderVendorID,
         mNegotiatedCompositorDecoderDeviceID,
         mDecoderMatchesCompositor ? "true" : "false");
+    return true;
   }
+
+  if (!sVulkanLib) {
+    sVulkanLib = dlopen("libvulkan.so.1", RTLD_LAZY);
+    if (!sVulkanLib) {
+      FFMPEGV_LOG("Failed to load libvulkan.so.1");
+      return false;
+    }
+  }
+
+  auto vkGetInstanceProcAddr =
+      (PFN_vkGetInstanceProcAddr)dlsym(sVulkanLib, "vkGetInstanceProcAddr");
+  if (!vkGetInstanceProcAddr) {
+    FFMPEGV_LOG("Failed to get vkGetInstanceProcAddr");
+    return false;
+  }
+
+  auto vkCreateInstance =
+      (PFN_vkCreateInstance)vkGetInstanceProcAddr(nullptr, "vkCreateInstance");
+  if (!vkCreateInstance) {
+    FFMPEGV_LOG("Failed to get vkCreateInstance");
+    return false;
+  }
+
+  VkApplicationInfo appInfo = {};
+  appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+  appInfo.apiVersion = VK_API_VERSION_1_3;
+
+  VkInstanceCreateInfo createInfo = {};
+  createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+  createInfo.pApplicationInfo = &appInfo;
+
+  VkInstance instance = VK_NULL_HANDLE;
+  if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
+    FFMPEGV_LOG("Failed to create Vulkan instance");
+    return false;
+  }
+
+  auto vkDestroyInstance = (PFN_vkDestroyInstance)vkGetInstanceProcAddr(
+      instance, "vkDestroyInstance");
+  auto destroyInstance = MakeScopeExit([&] {
+    if (vkDestroyInstance && instance) {
+      vkDestroyInstance(instance, nullptr);
+    }
+  });
+
+  auto vkEnumeratePhysicalDevices =
+      (PFN_vkEnumeratePhysicalDevices)vkGetInstanceProcAddr(
+          instance, "vkEnumeratePhysicalDevices");
+  auto vkGetPhysicalDeviceProperties =
+      (PFN_vkGetPhysicalDeviceProperties)vkGetInstanceProcAddr(
+          instance, "vkGetPhysicalDeviceProperties");
+  auto vkGetPhysicalDeviceProperties2 =
+      (PFN_vkGetPhysicalDeviceProperties2)vkGetInstanceProcAddr(
+          instance, "vkGetPhysicalDeviceProperties2");
+  auto vkEnumerateDeviceExtensionProperties =
+      (PFN_vkEnumerateDeviceExtensionProperties)vkGetInstanceProcAddr(
+          instance, "vkEnumerateDeviceExtensionProperties");
+  if (!vkEnumeratePhysicalDevices || !vkGetPhysicalDeviceProperties ||
+      !vkEnumerateDeviceExtensionProperties) {
+    NS_WARNING("Failed to get Vulkan enumeration functions");
+    return false;
+  }
+
+  uint32_t count = 0;
+  vkEnumeratePhysicalDevices(instance, &count, nullptr);
+  if (count == 0) {
+    FFMPEGV_LOG("No Vulkan devices found");
+    return false;
+  }
+
+  std::vector<VkPhysicalDevice> devices(count);
+  vkEnumeratePhysicalDevices(instance, &count, devices.data());
+
+  // Collect valid devices (non-CPU, Vulkan 1.3+), sorted by type (discrete
+  // first).
+  std::vector<std::pair<VkPhysicalDeviceProperties, bool>> validDevices;
+  for (uint32_t i = 0; i < count; i++) {
+    VkPhysicalDeviceProperties p = {};
+    bool isDecoderMatchesRendererFound = false;
+    if (rendererDrmMajor && rendererDrmMinor &&
+        vkGetPhysicalDeviceProperties2) {
+      VkPhysicalDeviceDrmPropertiesEXT drmProps = {};
+      drmProps.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRM_PROPERTIES_EXT;
+      VkPhysicalDeviceProperties2 props2 = {};
+      props2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+      props2.pNext = &drmProps;
+      vkGetPhysicalDeviceProperties2(devices[i], &props2);
+      p = props2.properties;
+      isDecoderMatchesRendererFound =
+          (drmProps.hasRender && rendererDrmMajor == drmProps.renderMajor &&
+           rendererDrmMinor == drmProps.renderMinor) ||
+          (drmProps.hasPrimary && rendererDrmMajor == drmProps.primaryMajor &&
+           rendererDrmMinor == drmProps.primaryMinor);
+    } else {
+      vkGetPhysicalDeviceProperties(devices[i], &p);
+    }
+    if (p.deviceType != VK_PHYSICAL_DEVICE_TYPE_CPU) {
+      uint32_t major = VK_API_VERSION_MAJOR(p.apiVersion);
+      uint32_t minor = VK_API_VERSION_MINOR(p.apiVersion);
+      if (major > 1 || (major == 1 && minor >= 3)) {
+        if (!PhysicalDeviceHasVulkanVideoDecodeStack(
+                vkEnumerateDeviceExtensionProperties, devices[i],
+                p.deviceName)) {
+          continue;
+        }
+#  ifdef XP_LINUX
+        if (p.vendorID == 0x10de) {
+          FFMPEGV_LOG("Checking {}: nvidia_drm modeset status", p.deviceName);
+          if (NvidiaDrmModesetDisabled()) {
+            FFMPEGV_LOG("Skipping {}: nvidia_drm modeset is disabled",
+                        p.deviceName);
+            continue;
+          }
+        }
+#  endif
+        validDevices.push_back(
+            std::make_pair(p, isDecoderMatchesRendererFound));
+      }
+    }
+  }
+
+  auto deviceTypePriority = [](VkPhysicalDeviceType t) -> int {
+    switch (t) {
+      case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
+        return 3;
+      case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
+        return 2;
+      case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU:
+        return 1;
+      default:
+        return 0;
+    }
+  };
+  std::sort(validDevices.begin(), validDevices.end(),
+            [&deviceTypePriority](const auto& p1, const auto& p2) {
+              if (p1.second != p2.second) {
+                return p1.second > p2.second;  // renderer-matching device first
+              }
+              return deviceTypePriority(p1.first.deviceType) >
+                     deviceTypePriority(p2.first.deviceType);  // discrete first
+            });
+
+  if (validDevices.empty()) {
+    FFMPEGV_LOG(
+        "No suitable Vulkan device found (need 1.3+, non-CPU, "
+        "VK_KHR_video_queue + VK_KHR_video_decode_queue)");
+    return false;
+  }
+
+  memcpy(mNegotiatedVulkanDeviceName, validDevices[0].first.deviceName,
+         VK_MAX_PHYSICAL_DEVICE_NAME_SIZE);
+  mNegotiatedCompositorDecoderVendorID = validDevices[0].first.vendorID;
+  mNegotiatedCompositorDecoderDeviceID = validDevices[0].first.deviceID;
+  mDecoderMatchesCompositor = validDevices[0].second;
+  if (useCache) {
+    memcpy(sCachedVulkanDeviceName, mNegotiatedVulkanDeviceName,
+           VK_MAX_PHYSICAL_DEVICE_NAME_SIZE);
+    sCachedVulkanVendorID = mNegotiatedCompositorDecoderVendorID;
+    sCachedVulkanDeviceID = mNegotiatedCompositorDecoderDeviceID;
+    sCachedDecoderMatchesCompositor = mDecoderMatchesCompositor;
+    sVulkanEnumerated = true;
+  }
+  FFMPEGV_LOG(
+      "Selected Vulkan device for video decoding: {} (vendorID=0x{:x}, "
+      "deviceID=0x{:x}), matches renderer: {}",
+      mNegotiatedVulkanDeviceName, mNegotiatedCompositorDecoderVendorID,
+      mNegotiatedCompositorDecoderDeviceID,
+      mDecoderMatchesCompositor ? "true" : "false");
   return true;
 }
 
