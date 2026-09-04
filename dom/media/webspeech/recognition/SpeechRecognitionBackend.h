@@ -15,12 +15,14 @@
 #include "mozilla/EventTargetCapability.h"
 #include "mozilla/LazyIdleThread.h"
 #include "mozilla/MoveOnlyFunction.h"
+#include "mozilla/MozPromise.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/SPSCQueue.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/ThreadSafety.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/WeakPtr.h"
+#include "mozilla/hwinference/HWInferenceTypes.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "nsIThread.h"
 #include "nsITimer.h"
@@ -137,6 +139,13 @@ class SpeechRecognitionBackend {
   static already_AddRefed<Promise> Install(
       nsIGlobalObject* aGlobal, const nsTArray<nsCString>& aLanguages,
       uint64_t aInnerWindowId);
+  // Rejects when the request could not be made at all.
+  using ModelInstallPromise =
+      MozPromise<hwinference::ModelInstallResult, nsresult, true>;
+
+  static RefPtr<ModelInstallPromise> InstallModels(
+      const nsTArray<nsCString>& aLanguages, uint64_t aInnerWindowId)
+      MOZ_REQUIRES(sMainThreadCapability);
   static RefPtr<hwinference::PSpeechRecognitionChild::IsModelInstalledPromise>
   IsModelInstalledNative(hwinference::SpeechRecognitionChild* aChild,
                          const nsTArray<nsCString>& aLanguages);

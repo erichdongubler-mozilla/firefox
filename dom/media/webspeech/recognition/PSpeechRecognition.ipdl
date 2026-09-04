@@ -4,6 +4,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 using class mozilla::TimeStamp from "mozilla/TimeStamp.h";
+using mozilla::hwinference::ModelInstallResult from "mozilla/hwinference/HWInferenceTypes.h";
 
 namespace mozilla {
 namespace hwinference {
@@ -36,9 +37,10 @@ parent: // HWInference
   // Ask the parent to install the models for the given languages.
   // innerWindowId is the id of the requesting document's window, forwarded
   // (with the trusted content id the utility attaches) so the parent can look
-  // it up, verify ownership, and prompt on that tab. Resolves true once the
-  // models are installed, false on denial/failure.
-  async InstallModels(nsCString[] languages, uint64_t innerWindowId) returns (bool success);
+  // it up, verify ownership, and prompt on that tab. Resolves Installed once
+  // every model is installed, Denied if the download was refused, Failed
+  // otherwise.
+  async InstallModels(nsCString[] languages, uint64_t innerWindowId) returns (ModelInstallResult result);
   // Initialize the speech recognition session with a language and a list of
   // biasing phrases. Resolves with an empty string on success, otherwise with
   // the Web Speech error token describing the failure (e.g.
