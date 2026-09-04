@@ -1170,9 +1170,6 @@ dom:
     type: labeled_counter
     description: >
       Webkit/Blink filesystem used
-
-      This metric was generated to correspond to the Legacy Telemetry boolean
-      histogram BLINK_FILESYSTEM_USED.
     labels:
       - "false"
       - "true"
@@ -1183,15 +1180,11 @@ dom:
     notification_emails:
       - amarchesini@mozilla.com
     expires: never
-    telemetry_mirror: h#BLINK_FILESYSTEM_USED
 
   webkit_directory_used:
     type: labeled_counter
     description: >
       HTMLInputElement.webkitdirectory attribute used
-
-      This metric was generated to correspond to the Legacy Telemetry boolean
-      histogram WEBKIT_DIRECTORY_USED.
     labels:
       - "false"
       - "true"
@@ -1202,4 +1195,3 @@ dom:
     notification_emails:
       - amarchesini@mozilla.com
     expires: never
-    telemetry_mirror: h#WEBKIT_DIRECTORY_USED
