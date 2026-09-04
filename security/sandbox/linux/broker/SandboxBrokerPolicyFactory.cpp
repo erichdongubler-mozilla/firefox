@@ -974,6 +974,9 @@ static void AddVulkanDependencies(SandboxBroker::Policy* policy) {
   policy->AddPath(rdwr, "/dev/nvidia-uvm", SandboxBroker::Policy::AddAlways);
   policy->AddPath(rdwr, "/dev/nvidia-modeset",
                   SandboxBroker::Policy::AddAlways);
+  // Read by InitVulkanDecoder to skip Vulkan when nvidia_drm modeset is off.
+  policy->AddPath(rdonly, "/sys/module/nvidia_drm/parameters/modeset",
+                  SandboxBroker::Policy::AddAlways);
   policy->AddTree(rdonly, "/dev/nvidia-caps");
   for (int i = 0; i < 8; i++) {
     policy->AddPath(rdwr, nsPrintfCString("/dev/nvidia%d", i).get(),
