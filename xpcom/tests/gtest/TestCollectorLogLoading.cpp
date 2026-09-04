@@ -225,8 +225,9 @@ static RefPtr<CollectorLogAnalyzerBackground> InitBothAnalyzer(
       /* aHaveCC */ true, aCCLog, /* aHaveGC */ true, aGCLog);
 }
 
-static const dom::CollectorLogNode* FindResultNodeByLabel(
-    const nsTArray<dom::CollectorLogNode>& aNodes, const nsACString& aLabel) {
+static const mozilla::dom::CollectorLogNode* FindResultNodeByLabel(
+    const nsTArray<mozilla::dom::CollectorLogNode>& aNodes,
+    const nsACString& aLabel) {
   for (const auto& node : aNodes) {
     if (node.mLabel.Equals(aLabel)) {
       return &node;
@@ -834,8 +835,10 @@ TEST(CollectorLogLoading, QueryNodesGarbageLast)
   auto& nodes = rv.inspect();
   EXPECT_EQ(nodes.Length(), 2u);
   // Non-garbage node should come first
-  EXPECT_FALSE(nodes[0].mFlags & dom::CollectorNodeFlags_Binding::GARBAGE);
-  EXPECT_TRUE(nodes[1].mFlags & dom::CollectorNodeFlags_Binding::GARBAGE);
+  EXPECT_FALSE(nodes[0].mFlags &
+               mozilla::dom::CollectorNodeFlags_Binding::GARBAGE);
+  EXPECT_TRUE(nodes[1].mFlags &
+              mozilla::dom::CollectorNodeFlags_Binding::GARBAGE);
 }
 
 TEST(CollectorLogLoading, SampleNodesReturnsNonGarbage)
@@ -862,7 +865,8 @@ TEST(CollectorLogLoading, SampleNodesReturnsNonGarbage)
   auto& nodes = rv.inspect();
   EXPECT_EQ(nodes.Length(), 20u);
   for (const auto& node : nodes) {
-    EXPECT_FALSE(node.mFlags & dom::CollectorNodeFlags_Binding::GARBAGE);
+    EXPECT_FALSE(node.mFlags &
+                 mozilla::dom::CollectorNodeFlags_Binding::GARBAGE);
   }
 }
 
@@ -953,7 +957,7 @@ TEST(CollectorLogLoading, PathToRootHard)
   ASSERT_TRUE(rv.isOk());
   auto& pathResult = rv.inspect();
 
-  EXPECT_EQ(pathResult.mKind, dom::CollectorLogRootKind::Hard);
+  EXPECT_EQ(pathResult.mKind, mozilla::dom::CollectorLogRootKind::Hard);
   // Path: Root -> ChildA -> ChildB (3 nodes in the path)
   ASSERT_EQ(pathResult.mPath.Length(), 3u);
   EXPECT_EQ(pathResult.mPath[0].mOther.mLabel, "Root"_ns);
@@ -986,7 +990,7 @@ TEST(CollectorLogLoading, PathToRootSoft)
 
   auto rv = CollectorLogAnalyzerTestHelper::GetPathToRoot(bg, childIndex);
   ASSERT_TRUE(rv.isOk());
-  EXPECT_EQ(rv.inspect().mKind, dom::CollectorLogRootKind::Soft);
+  EXPECT_EQ(rv.inspect().mKind, mozilla::dom::CollectorLogRootKind::Soft);
   EXPECT_GE(rv.inspect().mPath.Length(), 2u);
 }
 
@@ -1006,7 +1010,7 @@ TEST(CollectorLogLoading, PathToRootNone)
 
   auto rv = CollectorLogAnalyzerTestHelper::GetPathToRoot(bg, garbageIndex);
   ASSERT_TRUE(rv.isOk());
-  EXPECT_EQ(rv.inspect().mKind, dom::CollectorLogRootKind::None);
+  EXPECT_EQ(rv.inspect().mKind, mozilla::dom::CollectorLogRootKind::None);
 }
 
 TEST(CollectorLogLoading, PathToRootViaWeakMap)
@@ -1046,7 +1050,7 @@ TEST(CollectorLogLoading, PathToRootViaWeakMap)
   ASSERT_TRUE(rv.isOk());
   auto& pathResult = rv.inspect();
 
-  EXPECT_EQ(pathResult.mKind, dom::CollectorLogRootKind::Hard);
+  EXPECT_EQ(pathResult.mKind, mozilla::dom::CollectorLogRootKind::Hard);
   // The path should exist and reach Target
   ASSERT_GE(pathResult.mPath.Length(), 1u);
   EXPECT_EQ(pathResult.mPath.LastElement().mOther.mLabel, "Target"_ns);
