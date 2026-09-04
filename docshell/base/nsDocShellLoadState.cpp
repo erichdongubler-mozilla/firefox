@@ -273,6 +273,30 @@ nsDocShellLoadState::nsDocShellLoadState(
       aActor->FatalError("nsDocShellLoadState with invalid principalToInherit");
       return;
     }
+
+    if (effectiveRemoteType != NOT_REMOTE_TYPE) {
+      // Result and Original URI are mostly used by channels to track redirect
+      // information, which gets stored in session history.
+      // Content uses them rarely for meta-refresh or session history and
+      // should pass these checks.
+      if (mResultPrincipalURI) {
+        bool equal = false;
+        if (!mResultPrincipalURIIsSome ||
+            NS_FAILED(mResultPrincipalURI->Equals(mURI, &equal)) || !equal) {
+          aActor->FatalError(
+              "nsDocShellLoadState with invalid mResultPrincipalURI");
+          return;
+        }
+      }
+
+      if (mOriginalURI && !mResultPrincipalURI) {
+        bool equal = false;
+        if (NS_FAILED(mOriginalURI->Equals(mURI, &equal)) || !equal) {
+          aActor->FatalError("nsDocShellLoadState with invalid mOriginalURI");
+          return;
+        }
+      }
+    }
   }
 
   if (!mSrcdocData.IsVoid() && !mURI->SchemeIs("view-source") &&
