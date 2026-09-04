@@ -10072,8 +10072,17 @@ nsFrameState nsGridContainerFrame::ComputeSelfSubgridMasonryBits() const {
   nsFrameState bits = NS_FRAME_STATE_NONE;
   const auto* pos = StylePosition();
 
-  // We can only have masonry layout in one axis.
-  if (pos->mGridTemplateRows.IsMasonry()) {
+  if (StyleDisplay()->DisplayInside() == StyleDisplayInside::GridLanes) {
+    // If rows are defined and columns are none → row tracks;
+    // otherwise (columns defined, both defined, or neither defined) → column
+    // tracks.
+    if (!pos->mGridTemplateRows.IsNone()) {
+      bits |= NS_STATE_GRID_IS_COL_MASONRY;
+    } else {
+      bits |= NS_STATE_GRID_IS_ROW_MASONRY;
+    }
+  } else if (pos->mGridTemplateRows.IsMasonry()) {
+    // We can only have masonry layout in one axis.
     bits |= NS_STATE_GRID_IS_ROW_MASONRY;
   } else if (pos->mGridTemplateColumns.IsMasonry()) {
     bits |= NS_STATE_GRID_IS_COL_MASONRY;
