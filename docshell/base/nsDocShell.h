@@ -605,7 +605,7 @@ class nsDocShell final : public nsDocLoader,
 
   void UpdateActiveEntry(
       bool aReplace, const mozilla::Maybe<nsPoint>& aPreviousScrollPos,
-      nsIURI* aURI, nsIURI* aOriginalURI, nsIReferrerInfo* aReferrerInfo,
+      nsIURI* aURI, nsIReferrerInfo* aReferrerInfo,
       nsIPrincipal* aTriggeringPrincipal, nsIPolicyContainer* aPolicyContainer,
       const nsAString& aTitle, bool aScrollRestorationIsManual,
       nsIStructuredCloneContainer* aData, bool aURIWasModified);
