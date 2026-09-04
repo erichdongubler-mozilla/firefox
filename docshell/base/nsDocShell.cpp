@@ -11119,6 +11119,7 @@ nsresult nsDocShell::UpdateURLAndHistory(
 
     UpdateActiveEntry(false,
                       /* aPreviousScrollPos = */ Some(scrollPos), aNewURI,
+                      /* aOriginalURI = */ nullptr,
                       /* aReferrerInfo = */ referrerInfo,
                       /* aTriggeringPrincipal = */ aDocument->NodePrincipal(),
                       policyContainer, title, scrollRestorationIsManual, aData,
@@ -11127,6 +11128,9 @@ nsresult nsDocShell::UpdateURLAndHistory(
     MOZ_LOG(gSHLog, LogLevel::Debug,
             ("nsDocShell %p UpdateActiveEntry (replacing) mActiveEntry %p",
              this, mActiveEntry.get()));
+    // Setting the resultPrincipalURI to nullptr is fine here: it will cause
+    // NS_GetFinalChannelURI to use the originalURI as the URI, which is aNewURI
+    // in our case.  We could also set it to aNewURI, with the same result.
     // We don't use aTitle here, see bug 544535.
     nsString title;
     nsCOMPtr<nsIReferrerInfo> referrerInfo;
@@ -11137,7 +11141,7 @@ nsresult nsDocShell::UpdateURLAndHistory(
       referrerInfo = nullptr;
     }
     UpdateActiveEntry(
-        true, /* aPreviousScrollPos = */ Nothing(), aNewURI,
+        true, /* aPreviousScrollPos = */ Nothing(), aNewURI, aNewURI,
         /* aReferrerInfo = */ referrerInfo, aDocument->NodePrincipal(),
         aDocument->GetPolicyContainer(), title,
         mActiveEntry && mActiveEntry->GetScrollRestorationIsManual(), aData,
@@ -11245,10 +11249,10 @@ void nsDocShell::SetCacheKeyOnHistoryEntry(uint32_t aCacheKey) {
 
 void nsDocShell::UpdateActiveEntry(
     bool aReplace, const Maybe<nsPoint>& aPreviousScrollPos, nsIURI* aURI,
-    nsIReferrerInfo* aReferrerInfo, nsIPrincipal* aTriggeringPrincipal,
-    nsIPolicyContainer* aPolicyContainer, const nsAString& aTitle,
-    bool aScrollRestorationIsManual, nsIStructuredCloneContainer* aData,
-    bool aURIWasModified) {
+    nsIURI* aOriginalURI, nsIReferrerInfo* aReferrerInfo,
+    nsIPrincipal* aTriggeringPrincipal, nsIPolicyContainer* aPolicyContainer,
+    const nsAString& aTitle, bool aScrollRestorationIsManual,
+    nsIStructuredCloneContainer* aData, bool aURIWasModified) {
   MOZ_ASSERT(aURI, "uri is null");
   MOZ_ASSERT(mLoadType == LOAD_PUSHSTATE,
              "This code only deals with pushState");
@@ -11279,6 +11283,7 @@ void nsDocShell::UpdateActiveEntry(
         aURI, aTriggeringPrincipal, doc->NodePrincipal(), nullptr,
         aPolicyContainer, mContentTypeHint);
   }
+  mActiveEntry->SetOriginalURI(aOriginalURI);
   mActiveEntry->SetUnstrippedURI(nullptr);
   mActiveEntry->SetReferrerInfo(aReferrerInfo);
   mActiveEntry->SetTitle(aTitle);
