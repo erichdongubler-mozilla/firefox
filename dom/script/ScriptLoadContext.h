@@ -91,11 +91,14 @@ class CompileOrDecodeTask : public mozilla::Task {
   // Performs the compilation or decode. Not called if already cancelled.
   virtual TaskResult RunTask() MOZ_REQUIRES(mMutex) = 0;
 
+  // Called by Cancel to abort a task which may already be running.
+  virtual void CancelTask() {}
+
  public:
   TaskResult Run() final;
 
-  // Cancel the task, discarding its result. One that has already started runs
-  // to completion off-thread, so this only blocks once threads shut down.
+  // Cancel the task, discarding its result. One that has already started
+  // aborts off-thread where it can, so this only blocks once threads shut down.
   //
   // Called on the main thread by MaybeCancelOffThreadScript, at most once per
   // task, after which the result must not be taken.
@@ -146,6 +149,8 @@ class StencilCompileOrDecodeTask : public CompileOrDecodeTask {
   virtual ~StencilCompileOrDecodeTask();
 
   nsresult InitFrontendContext();
+
+  void CancelTask() override;
 
   void DidRunTask(RefPtr<JS::Stencil>&& aStencil) MOZ_REQUIRES(mMutex);
 

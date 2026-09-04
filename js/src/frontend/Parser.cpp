@@ -367,6 +367,10 @@ typename ParseHandler::ListNodeResult
 GeneralParser<ParseHandler, Unit>::parse() {
   MOZ_ASSERT(checkOptionsCalled_);
 
+  if (!this->fc_->checkCompilationCancellation()) {
+    return errorResult();
+  }
+
   SourceExtent extent = SourceExtent::makeGlobalExtent(
       /* len = */ 0, options().lineno,
       JS::LimitedColumnNumberOneOrigin::fromUnlimited(
@@ -1868,6 +1872,10 @@ FullParseHandler::ModuleNodeResult Parser<FullParseHandler, Unit>::moduleBody(
     ModuleSharedContext* modulesc) {
   MOZ_ASSERT(checkOptionsCalled_);
 
+  if (!fc_->checkCompilationCancellation()) {
+    return errorResult();
+  }
+
   this->compilationState_.moduleMetadata =
       fc_->getAllocator()->template new_<StencilModuleMetadata>();
   if (!this->compilationState_.moduleMetadata) {
@@ -2984,6 +2992,10 @@ GeneralParser<ParseHandler, Unit>::functionDefinition(
     FunctionAsyncKind asyncKind, bool tryAnnexB /* = false */) {
   MOZ_ASSERT_IF(kind == FunctionSyntaxKind::Statement, funName);
 
+  if (!this->fc_->checkCompilationCancellation()) {
+    return errorResult();
+  }
+
   // If we see any inner function, note it on our current context. The bytecode
   // emitter may eliminate the function later, but we use a conservative
   // definition for consistency between lazy and full parsing.
@@ -3128,6 +3140,10 @@ bool Parser<FullParseHandler, Unit>::trySyntaxParseInnerFunction(
         yieldHandling, kind, newDirectives);
     if (syntaxNodeResult.isErr()) {
       if (syntaxParser->hadAbortedSyntaxParse()) {
+        if (!fc_->checkCompilationCancellation()) {
+          return false;
+        }
+
         // Try again with a full parse. UsedNameTracker needs to be
         // rewound to just before we tried the syntax parse for
         // correctness.
