@@ -1425,7 +1425,7 @@ function displayCCGCLogItem(aSection, aLogData) {
     gcButton.addEventListener(
       "click",
       () => {
-        new nsFile(aLogData.cc).reveal();
+        new nsFile(aLogData.gc).reveal();
       },
       true
     );
