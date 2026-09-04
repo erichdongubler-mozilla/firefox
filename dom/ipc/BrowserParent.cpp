@@ -1060,20 +1060,6 @@ mozilla::ipc::IPCResult BrowserParent::RecvSetDimensions(
   nsCOMPtr<nsIBaseWindow> treeOwnerAsWin = do_QueryInterface(treeOwner);
   NS_ENSURE_TRUE(treeOwnerAsWin, IPC_OK());
 
-  if (nsCOMPtr<nsIDragService> dragService =
-          do_GetService("@mozilla.org/widget/dragservice;1")) {
-    RefPtr<nsIWidget> widget = GetTopLevelWidget();
-    if (RefPtr<nsIDragSession> session =
-            dragService->GetCurrentSession(widget)) {
-      session->EndDragSession(false, 0);
-    }
-  }
-
-  if (nsPresContext* presContext =
-          mFrameElement->OwnerDoc()->GetPresContext()) {
-    presContext->EventStateManager()->StopTrackingDragGesture(true);
-  }
-
   // `BrowserChild` only sends the values to actually be changed, see more
   // details in `BrowserChild::SetDimensions()`.
   // Note that `BrowserChild::SetDimensions()` may be called before receiving
@@ -3897,29 +3883,8 @@ mozilla::ipc::IPCResult BrowserParent::RecvInvokeDragSession(
     const CookieJarSettingsArgs& aCookieJarSettingsArgs,
     const MaybeDiscarded<WindowContext>& aSourceWindowContext,
     const MaybeDiscarded<WindowContext>& aSourceTopWindowContext) {
-  nsCOMPtr<nsIDragService> dragService =
-      do_GetService("@mozilla.org/widget/dragservice;1");
-  nsPresContext* presContext = mFrameElement->OwnerDoc()->GetPresContext();
-  const bool isValidRemoteDrag = [&]() {
-    if (!dragService || !presContext) {
-      return false;
-    }
-
-    if (dragService->GetIsSuppressed()) {
-      return false;
-    }
-
-    BrowserParent* dragTopLevelRemoteTarget =
-        presContext->EventStateManager()
-            ->GetTrackingDragGestureTopLevelRemoteTarget();
-    if (NS_WARN_IF(dragTopLevelRemoteTarget != TopLevelBrowserParent())) {
-      return false;
-    }
-
-    return true;
-  }();
-
-  if (!isValidRemoteDrag) {
+  PresShell* presShell = mFrameElement->OwnerDoc()->GetPresShell();
+  if (!presShell) {
     (void)SendEndDragSession(true, true, LayoutDeviceIntPoint(), 0,
                              nsIDragService::DRAGDROP_ACTION_NONE);
     // Continue sending input events with input priority when stopping the dnd
@@ -3957,10 +3922,15 @@ mozilla::ipc::IPCResult BrowserParent::RecvInvokeDragSession(
     }
   }
 
-  dragService->MaybeAddBrowser(this);
+  nsCOMPtr<nsIDragService> dragService =
+      do_GetService("@mozilla.org/widget/dragservice;1");
+  if (dragService) {
+    dragService->MaybeAddBrowser(this);
+  }
 
-  presContext->EventStateManager()->BeginTrackingRemoteDragGesture(
-      mFrameElement, dragStartData);
+  presShell->GetPresContext()
+      ->EventStateManager()
+      ->BeginTrackingRemoteDragGesture(mFrameElement, dragStartData);
 
   nsCOMPtr<nsIObserverService> os = services::GetObserverService();
   os->NotifyObservers(nullptr, "content-invoked-drag", nullptr);

@@ -510,12 +510,6 @@ void PointerLockManager::SetLockedRemoteTarget(BrowserParent* aBrowserParent,
     return;
   }
 
-  if (nsCOMPtr<nsIDragService> dragService =
-          do_GetService("@mozilla.org/widget/dragservice;1")) {
-    dragService->Suppress();
-  }
-  presContext->EventStateManager()->StopTrackingDragGesture(true);
-
   MOZ_POINTERLOCK_LOG("Set locked remote target to 0x%p", aBrowserParent);
   sLockedRemoteTarget = aBrowserParent;
   PointerEventHandler::ReleaseAllPointerCaptureRemoteTarget();
@@ -545,11 +539,6 @@ void PointerLockManager::ReleaseLockedRemoteTarget(
 
     nsCOMPtr<nsIWidget> widget = aBrowserParent->GetTopLevelWidget();
     EventStateManager::ReleaseLockedPointer(widget);
-
-    if (nsCOMPtr<nsIDragService> dragService =
-            do_GetService("@mozilla.org/widget/dragservice;1")) {
-      dragService->Unsuppress();
-    }
   }
 }
 
