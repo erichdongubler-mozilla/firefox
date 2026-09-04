@@ -46,6 +46,9 @@ support-files = [
 
 ["browser_topLayer.js"]
 
+["browser_trendingDismissal.js"]
+support-files = ["../../../search/test/browser/trendingSuggestionEngine.sjs"]
+
 ["browser_viewBounds.js"]
 
 ["browser_zeroPrefixTelemetry.js"]

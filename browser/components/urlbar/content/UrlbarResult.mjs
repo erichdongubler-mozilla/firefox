@@ -446,6 +446,14 @@ export class UrlbarResult {
    * @returns {object} `payload` if it's valid.
    */
   #validatePayload(payload) {
+    if (!lazy) {
+      // The schemas and the validator live in system modules, out of reach of a
+      // content realm. Skipping this does mean that in a content realm, we will
+      // not validate payloads built directly by the view, such as a dismissal
+      // acknowledge tip. All provider results cross the actor boundary already
+      // validated.
+      return payload;
+    }
     let schema = lazy.UrlbarUtils.getPayloadSchema(this.type);
     if (!schema) {
       throw new Error(`Unrecognized result type: ${this.type}`);
