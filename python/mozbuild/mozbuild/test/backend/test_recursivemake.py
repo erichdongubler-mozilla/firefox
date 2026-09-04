@@ -1658,6 +1658,34 @@ class TestRecursiveMakeBackend(BackendTester):
             root_content = fh.read()
         self.assertNotIn("generated.plist:", root_content)
 
+        sharedlib_backend = mozpath.join(env.topobjdir, "sharedlib", "backend.mk")
+        with open(sharedlib_backend) as fh:
+            sharedlib_content = fh.read()
+        self.assertIn(
+            "libextra-link-deps-lib.so: generated.rsp",
+            sharedlib_content,
+        )
+        self.assertIn("COMPUTED_LDFLAGS += @generated.rsp", sharedlib_content)
+        # A response file the link reads has to be written before the link, so
+        # its rule belongs to the directory rather than the top level.
+        self.assertIn("generated.rsp:", sharedlib_content)
+        self.assertNotIn("generated.rsp:", root_content)
+
+        # A response file no link reads keeps its rule at the top level, where
+        # a consumer in another directory can still see it.
+        unrelated_backend = mozpath.join(env.topobjdir, "unrelated", "backend.mk")
+        with open(unrelated_backend) as fh:
+            unrelated_content = fh.read()
+        self.assertIn("unrelated.rsp:", root_content)
+        self.assertNotIn("unrelated.rsp:", unrelated_content)
+
+        # nested/deep.rsp and other/deep.rsp share a base name and only the
+        # first is linked against, so the two are told apart by path.
+        self.assertIn("nested/deep.rsp:", sharedlib_content)
+        self.assertNotIn("sharedlib/nested/deep.rsp:", root_content)
+        self.assertNotIn("other/deep.rsp:", sharedlib_content)
+        self.assertIn("sharedlib/other/deep.rsp:", root_content)
+
     def test_shared_library_output_category(self):
         """SharedLibrary with output_category should be excluded from
         syms_targets, since the default %/syms: %/target static pattern in

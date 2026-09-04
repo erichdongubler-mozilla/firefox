@@ -241,6 +241,9 @@ CONFIGS = defaultdict(
             "substs": {
                 "COMPILE_ENVIRONMENT": "1",
                 "BIN_SUFFIX": "",
+                "LIB_SUFFIX": "a",
+                "DLL_PREFIX": "lib",
+                "DLL_SUFFIX": ".so",
             },
         },
         "shared-lib-paths": {

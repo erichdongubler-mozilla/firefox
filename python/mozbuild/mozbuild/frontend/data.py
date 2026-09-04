@@ -1460,25 +1460,25 @@ class GeneratedFile(ContextDerived):
         ]
 
         if required_during_compile is None:
-            self.required_during_compile = [
-                f
-                for f in self.outputs
-                if f.endswith((
-                    ".asm",
-                    ".c",
-                    ".cpp",
-                    ".inc",
-                    ".m",
-                    ".mm",
-                    ".def",
-                    ".plist",
-                    ".s",
-                    ".S",
-                    "symverscript",
-                ))
-            ]
-        else:
-            self.required_during_compile = required_during_compile
+            required_during_compile = ()
+        self.required_during_compile = [
+            f
+            for f in self.outputs
+            if f in required_during_compile
+            or f.endswith((
+                ".asm",
+                ".c",
+                ".cpp",
+                ".inc",
+                ".m",
+                ".mm",
+                ".def",
+                ".plist",
+                ".s",
+                ".S",
+                "symverscript",
+            ))
+        ]
         if self.required_during_compile and self.required_before_compile:
             self.required_before_compile += self.required_during_compile
             self.required_during_compile = []

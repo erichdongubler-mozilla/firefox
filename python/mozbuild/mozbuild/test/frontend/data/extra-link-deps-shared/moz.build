@@ -3,14 +3,13 @@
 
 
 @template
-def Program(name):
-    PROGRAM = name
-
-
-@template
 def SharedLibrary(name):
     FORCE_SHARED_LIB = True
     LIBRARY_NAME = name
 
 
-DIRS += ["sharedlib", "subdir", "unrelated"]
+SharedLibrary("extra-link-deps-shared")
+
+EXTRA_LINK_DEPS += [
+    "!generated.rsp",
+]

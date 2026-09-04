@@ -1805,6 +1805,19 @@ class TreeMetadataEmitter(LoggingMixin):
         yield XPIDLModule(context, xpidl_module, context["XPIDL_SOURCES"])
 
     def _process_generated_files(self, context):
+        # The link reads whatever EXTRA_LINK_DEPS names, so a generated file
+        # among them has to be written before the link rather than alongside
+        # the other generated files.
+        link_deps = {
+            mozpath.normpath(dep.full_path)
+            for dep in context.get("EXTRA_LINK_DEPS") or ()
+            if isinstance(dep, ObjDirPath)
+        }
+
+        def links_against(output):
+            path = ObjDirPath(context, "!" + output)
+            return mozpath.normpath(path.full_path) in link_deps
+
         for path in context["CONFIGURE_DEFINE_FILES"]:
             script = mozpath.join(
                 mozpath.dirname(mozpath.dirname(__file__)),
@@ -1886,6 +1899,11 @@ class TreeMetadataEmitter(LoggingMixin):
                     localized=localized,
                     force=flags.force,
                     extra_deps=extra_deps,
+                    required_during_compile=sorted(
+                        f
+                        for f in (outputs if isinstance(outputs, tuple) else (outputs,))
+                        if links_against(f)
+                    ),
                 )
 
     def _process_test_manifests(self, context):
