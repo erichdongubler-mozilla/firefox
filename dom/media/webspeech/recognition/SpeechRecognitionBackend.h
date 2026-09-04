@@ -146,6 +146,11 @@ class SpeechRecognitionBackend {
   static RefPtr<ModelInstallPromise> InstallModels(
       const nsTArray<nsCString>& aLanguages, uint64_t aInnerWindowId)
       MOZ_REQUIRES(sMainThreadCapability);
+  // InstallModels(), but skipping the request - and thus the prompt - when
+  // every model is already installed. What start() waits on.
+  static RefPtr<ModelInstallPromise> EnsureModelsInstalled(
+      const nsTArray<nsCString>& aLanguages, uint64_t aInnerWindowId)
+      MOZ_REQUIRES(sMainThreadCapability);
   static RefPtr<hwinference::PSpeechRecognitionChild::IsModelInstalledPromise>
   IsModelInstalledNative(hwinference::SpeechRecognitionChild* aChild,
                          const nsTArray<nsCString>& aLanguages);

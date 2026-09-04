@@ -80,6 +80,9 @@ add_setup(async function () {
       // No network/IndexedDB/downloads, and RecvInit skips model retrieval, so
       // a session can start without a real multi-hundred-MB model.
       ["browser.ml.modelHub.testing", true],
+      // start() offers to install the missing model; answer that prompt from
+      // media.navigator.permission.disabled instead of waiting for a click.
+      ["media.webspeech.recognition.model-download.prompt.testing", true],
       // Fake mic, so start() gets a track without any device or user prompt.
       ["media.navigator.streams.fake", true],
       ["media.navigator.permission.disabled", true],

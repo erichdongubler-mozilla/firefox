@@ -13244,6 +13244,16 @@
   value: false
   mirror: always
 
+# Whether start() offers to download the on-device model for its language when
+# that model is supported but not installed yet, instead of failing the session
+# with service-not-allowed. The prompt and the download are install()'s; every
+# event, "start" included, waits for the model. Pages predating install() only
+# ever call start(), hence the default.
+- name: media.webspeech.recognition.install_on_start
+  type: bool
+  value: true
+  mirror: always
+
 # How long the HWInference connection (and with it the utility process, when
 # nothing else holds it) is kept alive after the last recognition session ends
 # and the last availability/install call settles. Absorbs stop()/start()

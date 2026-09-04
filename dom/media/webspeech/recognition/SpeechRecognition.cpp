@@ -21,6 +21,7 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/MediaManager.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/StaticPrefs_media.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/dom/AudioStreamTrack.h"
 #include "mozilla/dom/BindingUtils.h"
@@ -254,6 +255,7 @@ void SpeechRecognition::Reset() {
   mAborting = false;
   mBackendListening = false;
   mStartDispatched = false;
+  mAwaitingModelInstall = false;
   // A track obtained via our own getUserMedia() call (the microphone path)
   // has nobody else to stop it; an explicitly-passed track is the caller's
   // to manage.
@@ -726,10 +728,12 @@ void SpeechRecognition::StartImpl(MediaStreamTrack* aAudioTrack,
     }
   }
 
-  // Step 5: set [[started]] to true.
+  // Step 5: set [[started]] to true, before the model install below: for
+  // script the session is running from here on.
   mStarted = true;
   mBackendListening = false;
   mStartDispatched = false;
+  const uint32_t generation = ++mSessionGeneration;
 
   // Register keep-alive event types. While recognition is active, if script
   // has listeners for these events, the object stays alive even without a
@@ -741,13 +745,81 @@ void SpeechRecognition::StartImpl(MediaStreamTrack* aAudioTrack,
   PendingSession session{std::move(audioTrack), aCallerType, effectiveLang,
                          graphRate, std::move(phrasesForBackend)};
 
-  BeginSession(std::move(session));
+  // Pages predating install() just call start(): offer to download the model
+  // rather than failing the session. No event has fired yet, so it merely
+  // starts later. With no language there is no model to ask for.
+  if (!StaticPrefs::media_webspeech_recognition_install_on_start() ||
+      effectiveLang.IsEmpty()) {
+    BeginSession(std::move(session));
+    return;
+  }
+
+  mAwaitingModelInstall = true;
+  AutoTArray<nsCString, 1> languages{NS_ConvertUTF16toUTF8(effectiveLang)};
+  SpeechRecognitionBackend::EnsureModelsInstalled(languages, win->WindowID())
+      ->Then(GetMainThreadSerialEventTarget(), __func__,
+             [self = RefPtr{this}, generation, session = std::move(session)](
+                 SpeechRecognitionBackend::ModelInstallPromise::
+                     ResolveOrRejectValue&& aValue) mutable {
+               AssertIsOnMainThread();
+               self->OnModelInstalled(
+                   generation,
+                   aValue.IsResolve() ? Some(aValue.ResolveValue()) : Nothing(),
+                   std::move(session));
+             });
+}
+
+void SpeechRecognition::OnModelInstalled(
+    uint32_t aGeneration, Maybe<hwinference::ModelInstallResult> aResult,
+    PendingSession&& aSession) {
+  AssertIsOnMainThread();
+  // Dropped if the session ended, or was superseded, while waiting.
+  if (!mStarted || mStopping || mAborting ||
+      mSessionGeneration != aGeneration) {
+    LOG("{} - dropped: result={} started={} stopping={} aborting={} "
+        "generation={} current={}",
+        __func__, aResult ? int(uint8_t(*aResult)) : -1, mStarted, mStopping,
+        mAborting, aGeneration, mSessionGeneration);
+    return;
+  }
+  mAwaitingModelInstall = false;
+
+  if (aResult.isNothing()) {
+    // The request never reached the service, so there is nothing to recognize
+    // with, the same as a backend that cannot be created below.
+    LOGE("Could not ask for the on-device model");
+    DispatchErrorAndEnd(SpeechRecognitionErrorCode::Service_not_allowed,
+                        "Local speech recognition is not available"_ns);
+    return;
+  }
+
+  if (*aResult == hwinference::ModelInstallResult::Installed) {
+    BeginSession(std::move(aSession));
+    return;
+  }
+  // A refused download is a refused permission, like a refused microphone,
+  // rather than a language that cannot be recognized.
+  const bool denied = *aResult == hwinference::ModelInstallResult::Denied;
+  LOGE("The on-device model was not installed, denied={}", denied);
+  DispatchErrorAndEnd(denied ? SpeechRecognitionErrorCode::Not_allowed
+                             : SpeechRecognitionErrorCode::Network,
+                      denied ? "The model download was refused"_ns
+                             : "The model could not be downloaded"_ns);
 }
 
 void SpeechRecognition::BeginSession(PendingSession&& aSession) {
   AssertIsOnMainThread();
   MOZ_ASSERT(mStarted);
   MOZ_ASSERT(!mBackend);
+
+  // start() throws for a track that has already ended; one can also end
+  // while the model is downloading.
+  if (aSession.mTrack && aSession.mTrack->Ended()) {
+    LOGE("The audio track ended before the session could start");
+    DispatchErrorAndEnd(SpeechRecognitionErrorCode::Audio_capture,
+                        "MediaStreamTrack is ended"_ns);
+    return;
+  }
 
   // Step 4: processLocally is always true here (on-device recognition). If the
   // backend cannot start (local recognition unavailable for this lang), fire a
@@ -832,10 +904,16 @@ void SpeechRecognition::Stop() {
   // https://webaudio.github.io/web-speech-api/#dom-speechrecognition-stop
   // "If the stop method is called on an object which is already stopped or
   // being stopped [...] the user agent must ignore the call."
-  if (!mStarted || mStopping || !mBackend) {
+  if (!mStarted || mStopping || (!mBackend && !mAwaitingModelInstall)) {
     return;
   }
   mStopping = true;
+
+  if (mAwaitingModelInstall) {
+    // Nothing was captured: no result to return, no audio lifecycle to close.
+    PostResetAndEnd();
+    return;
+  }
 
   // Same section: "The speech service must attempt to return a recognition
   // result (or a nomatch) based on the audio that it has already collected."

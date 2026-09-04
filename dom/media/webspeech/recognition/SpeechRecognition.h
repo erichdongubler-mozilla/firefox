@@ -10,6 +10,7 @@
 #include "SpeechRecognitionResultList.h"
 #include "js/TypeDecls.h"
 #include "mozilla/DOMEventTargetHelper.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/WeakPtr.h"
@@ -17,6 +18,7 @@
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/SpeechRecognitionBinding.h"
 #include "mozilla/dom/SpeechRecognitionErrorEventBinding.h"
+#include "mozilla/hwinference/HWInferenceTypes.h"
 #include "nsCOMPtr.h"
 #include "nsProxyRelease.h"
 #include "nsString.h"
@@ -235,7 +237,7 @@ class SpeechRecognition final : public DOMEventTargetHelper,
   // the session and "end" fires exactly once.
   void PostResetAndEnd();
   void DispatchNoMatch();
-  // What start() settled on, for BeginSession() to start it with. mTrack is
+  // What start() settled on, carried across the model-install wait. mTrack is
   // null for the microphone start().
   struct PendingSession {
     RefPtr<AudioStreamTrack> mTrack;
@@ -249,6 +251,12 @@ class SpeechRecognition final : public DOMEventTargetHelper,
   // microphone start() and the passed track for start(MediaStreamTrack).
   void StartImpl(MediaStreamTrack* aAudioTrack, CallerType aCallerType,
                  ErrorResult& aRv);
+  // aResult is Nothing() when the install request never reached the
+  // HWInference service, which means local recognition is unavailable rather
+  // than that a download failed.
+  void OnModelInstalled(uint32_t aGeneration,
+                        Maybe<hwinference::ModelInstallResult> aResult,
+                        PendingSession&& aSession);
   // Second half of start(): creates the backend and attaches the audio.
   void BeginSession(PendingSession&& aSession);
   // Fires "start" once the system is successfully listening: the backend
@@ -273,6 +281,13 @@ class SpeechRecognition final : public DOMEventTargetHelper,
   bool mBackendListening = false;
   // Whether "start" has already been dispatched for the current session.
   bool mStartDispatched = false;
+  // Set while start() waits for the on-device model to be downloaded:
+  // [[started]] is true, but there is no backend and no event has fired yet.
+  bool mAwaitingModelInstall = false;
+  // Incremented by every start(), so OnModelInstalled() can tell it is no
+  // longer about the current session: stop()/abort() during the wait ends the
+  // session, and a start() from the "end" handler begins a new one.
+  uint32_t mSessionGeneration = 0;
 
   nsString mLang;
 
