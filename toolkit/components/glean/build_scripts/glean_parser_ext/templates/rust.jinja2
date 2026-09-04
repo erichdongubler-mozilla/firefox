@@ -257,23 +257,23 @@ pub(crate) mod __glean_metric_maps {
     fn fog_submetric_alloc_size(ops: &mut malloc_size_of::MallocSizeOfOps) -> usize {
         let mut n = 0;
 
-        n += once_cell::sync::Lazy::get(&submetric_maps::LABELED_METRICS_TO_IDS).map(|m| {
+        n += once_cell::sync::Lazy::get(&submetric_maps::LABELED_METRICS_TO_IDS).map_or(0, |m| {
             let lock = m.read().unwrap();
             (*lock).size_of(ops)
-        }).unwrap_or(0);
-        n += once_cell::sync::Lazy::get(&submetric_maps::LABELED_ENUMS_TO_IDS).map(|m| {
+        });
+        n += once_cell::sync::Lazy::get(&submetric_maps::LABELED_ENUMS_TO_IDS).map_or(0, |m| {
             let lock = m.read().unwrap();
             (*lock).size_of(ops)
-        }).unwrap_or(0);
+        });
 
         {% for typ, metrics in metric_by_type.items() %}
         {% if typ.0 in ('BOOLEAN_MAP', 'COUNTER_MAP', 'CUSTOM_DISTRIBUTION_MAP', 'MEMORY_DISTRIBUTION_MAP', 'QUANTITY_MAP', 'STRING_MAP', 'TIMING_DISTRIBUTION_MAP') %}
-            n += once_cell::sync::Lazy::get(&submetric_maps::{{typ.0}}).map(|m| {
+            n += once_cell::sync::Lazy::get(&submetric_maps::{{typ.0}}).map_or(0, |m| {
                 // The values are behind an `Arc`. We don't want to measure them.
                 // We only measure the enclosing size of the values.
                 let lock = m.read().unwrap();
                 malloc_size_of::MallocShallowSizeOf::shallow_size_of(&*lock, ops)
-            }).unwrap_or(0);
+            });
         {% endif %}
         {% endfor%}
         n
@@ -444,7 +444,7 @@ pub(crate) mod __glean_metric_maps {
            _ => panic!("No event for metric id {}", metric_id),
         };
 
-        return event.test_get_value(ping_name);
+        event.test_get_value(ping_name)
     }
 
     /// Check the provided event for errors.
@@ -523,7 +523,7 @@ pub(crate) mod __glean_metric_maps {
     /// Panics if no labeled_{{labeled_type}} by the given metric ID could be found.
     #[allow(unused_variables)]
     pub(crate) fn labeled_{{labeled_type}}_test_get(metric_id: u32, ping_name: &str) -> Option<HashMap<String, {{labeled_type|test_get_type}}>> {
-        let ping_name = if ping_name.len() == 0 {
+        let ping_name = if ping_name.is_empty() {
             None
         } else {
             Some(ping_name.to_string())

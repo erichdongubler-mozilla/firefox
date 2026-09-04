@@ -1492,57 +1492,57 @@ pub(crate) mod __glean_metric_maps {
     fn fog_submetric_alloc_size(ops: &mut malloc_size_of::MallocSizeOfOps) -> usize {
         let mut n = 0;
 
-        n += once_cell::sync::Lazy::get(&submetric_maps::LABELED_METRICS_TO_IDS).map(|m| {
+        n += once_cell::sync::Lazy::get(&submetric_maps::LABELED_METRICS_TO_IDS).map_or(0, |m| {
             let lock = m.read().unwrap();
             (*lock).size_of(ops)
-        }).unwrap_or(0);
-        n += once_cell::sync::Lazy::get(&submetric_maps::LABELED_ENUMS_TO_IDS).map(|m| {
+        });
+        n += once_cell::sync::Lazy::get(&submetric_maps::LABELED_ENUMS_TO_IDS).map_or(0, |m| {
             let lock = m.read().unwrap();
             (*lock).size_of(ops)
-        }).unwrap_or(0);
+        });
 
-            n += once_cell::sync::Lazy::get(&submetric_maps::BOOLEAN_MAP).map(|m| {
+            n += once_cell::sync::Lazy::get(&submetric_maps::BOOLEAN_MAP).map_or(0, |m| {
                 // The values are behind an `Arc`. We don't want to measure them.
                 // We only measure the enclosing size of the values.
                 let lock = m.read().unwrap();
                 malloc_size_of::MallocShallowSizeOf::shallow_size_of(&*lock, ops)
-            }).unwrap_or(0);
-            n += once_cell::sync::Lazy::get(&submetric_maps::COUNTER_MAP).map(|m| {
+            });
+            n += once_cell::sync::Lazy::get(&submetric_maps::COUNTER_MAP).map_or(0, |m| {
                 // The values are behind an `Arc`. We don't want to measure them.
                 // We only measure the enclosing size of the values.
                 let lock = m.read().unwrap();
                 malloc_size_of::MallocShallowSizeOf::shallow_size_of(&*lock, ops)
-            }).unwrap_or(0);
-            n += once_cell::sync::Lazy::get(&submetric_maps::CUSTOM_DISTRIBUTION_MAP).map(|m| {
+            });
+            n += once_cell::sync::Lazy::get(&submetric_maps::CUSTOM_DISTRIBUTION_MAP).map_or(0, |m| {
                 // The values are behind an `Arc`. We don't want to measure them.
                 // We only measure the enclosing size of the values.
                 let lock = m.read().unwrap();
                 malloc_size_of::MallocShallowSizeOf::shallow_size_of(&*lock, ops)
-            }).unwrap_or(0);
-            n += once_cell::sync::Lazy::get(&submetric_maps::MEMORY_DISTRIBUTION_MAP).map(|m| {
+            });
+            n += once_cell::sync::Lazy::get(&submetric_maps::MEMORY_DISTRIBUTION_MAP).map_or(0, |m| {
                 // The values are behind an `Arc`. We don't want to measure them.
                 // We only measure the enclosing size of the values.
                 let lock = m.read().unwrap();
                 malloc_size_of::MallocShallowSizeOf::shallow_size_of(&*lock, ops)
-            }).unwrap_or(0);
-            n += once_cell::sync::Lazy::get(&submetric_maps::STRING_MAP).map(|m| {
+            });
+            n += once_cell::sync::Lazy::get(&submetric_maps::STRING_MAP).map_or(0, |m| {
                 // The values are behind an `Arc`. We don't want to measure them.
                 // We only measure the enclosing size of the values.
                 let lock = m.read().unwrap();
                 malloc_size_of::MallocShallowSizeOf::shallow_size_of(&*lock, ops)
-            }).unwrap_or(0);
-            n += once_cell::sync::Lazy::get(&submetric_maps::TIMING_DISTRIBUTION_MAP).map(|m| {
+            });
+            n += once_cell::sync::Lazy::get(&submetric_maps::TIMING_DISTRIBUTION_MAP).map_or(0, |m| {
                 // The values are behind an `Arc`. We don't want to measure them.
                 // We only measure the enclosing size of the values.
                 let lock = m.read().unwrap();
                 malloc_size_of::MallocShallowSizeOf::shallow_size_of(&*lock, ops)
-            }).unwrap_or(0);
-            n += once_cell::sync::Lazy::get(&submetric_maps::QUANTITY_MAP).map(|m| {
+            });
+            n += once_cell::sync::Lazy::get(&submetric_maps::QUANTITY_MAP).map_or(0, |m| {
                 // The values are behind an `Arc`. We don't want to measure them.
                 // We only measure the enclosing size of the values.
                 let lock = m.read().unwrap();
                 malloc_size_of::MallocShallowSizeOf::shallow_size_of(&*lock, ops)
-            }).unwrap_or(0);
+            });
         n
     }
 
@@ -1858,7 +1858,7 @@ pub(crate) mod __glean_metric_maps {
            _ => panic!("No event for metric id {}", metric_id),
         };
 
-        return event.test_get_value(ping_name);
+        event.test_get_value(ping_name)
     }
 
     /// Check the provided event for errors.
@@ -1940,7 +1940,7 @@ pub(crate) mod __glean_metric_maps {
     /// Panics if no labeled_boolean by the given metric ID could be found.
     #[allow(unused_variables)]
     pub(crate) fn labeled_boolean_test_get(metric_id: u32, ping_name: &str) -> Option<HashMap<String, bool>> {
-        let ping_name = if ping_name.len() == 0 {
+        let ping_name = if ping_name.is_empty() {
             None
         } else {
             Some(ping_name.to_string())
@@ -2025,7 +2025,7 @@ pub(crate) mod __glean_metric_maps {
     /// Panics if no labeled_counter by the given metric ID could be found.
     #[allow(unused_variables)]
     pub(crate) fn labeled_counter_test_get(metric_id: u32, ping_name: &str) -> Option<HashMap<String, i32>> {
-        let ping_name = if ping_name.len() == 0 {
+        let ping_name = if ping_name.is_empty() {
             None
         } else {
             Some(ping_name.to_string())
@@ -2106,7 +2106,7 @@ pub(crate) mod __glean_metric_maps {
     /// Panics if no labeled_string by the given metric ID could be found.
     #[allow(unused_variables)]
     pub(crate) fn labeled_string_test_get(metric_id: u32, ping_name: &str) -> Option<HashMap<String, String>> {
-        let ping_name = if ping_name.len() == 0 {
+        let ping_name = if ping_name.is_empty() {
             None
         } else {
             Some(ping_name.to_string())
