@@ -3797,12 +3797,27 @@ void nsHttpConnectionMgr::DoSpeculativeConnectionInternal(
           ("DoSpeculativeConnectionInternal Transport socket creation "
            "failure: %" PRIx32 "\n",
            static_cast<uint32_t>(rv)));
+      // Nothing will complete this transaction now, so release whoever is
+      // waiting on it. See the fallback comment below.
+      if (aTrans->IsForFallback()) {
+        aTrans->InvokeCallback();
+      }
     }
   } else {
     LOG(
         ("DoSpeculativeConnectionInternal Transport ci=%s "
          "not created due to existing connection count:%d",
          aEnt->mConnInfo->HashKey().get(), parallelSpeculativeConnectLimit));
+    // An ordinary speculative connection is only a warm-up and can be skipped,
+    // but a fallback transaction has a real transaction waiting on its
+    // callback to move off a connection that may never come up (e.g. HTTP/3 to
+    // an endpoint that blackholes QUIC). Dropping the callback would leave that
+    // transaction stalled until the HTTP/3 connection times out, so let it fall
+    // back anyway; it will get a connection from the fallback entry through the
+    // regular dispatch path once one is free.
+    if (aTrans->IsForFallback()) {
+      aTrans->InvokeCallback();
+    }
   }
 }
 
