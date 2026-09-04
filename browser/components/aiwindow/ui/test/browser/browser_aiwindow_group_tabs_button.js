@@ -1449,6 +1449,32 @@ describe("Auto Tab Grouping toolbar button", () => {
         "Focus stays on the row the user was on"
       );
     });
+
+    it("stops watching for group changes when the window closes", async () => {
+      const observers = () =>
+        [
+          ...Services.obs.enumerateObservers(
+            "browser-tabgroup-removed-from-dom"
+          ),
+        ].length;
+
+      win = await openGroupingWindowWithTabs();
+      const beforePanel = observers();
+      await openPanelWithSuggestions(win);
+      Assert.equal(
+        observers(),
+        beforePanel + 1,
+        "The open panel watches for group changes"
+      );
+
+      await BrowserTestUtils.closeWindow(win);
+      win = null;
+      Assert.equal(
+        observers(),
+        beforePanel,
+        "Closing the window with the panel open stops the watching"
+      );
+    });
   });
 
   describe("previewing a suggested group", () => {

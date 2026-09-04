@@ -258,32 +258,34 @@ export const AutoTabGrouping = {
       },
       { once: true }
     );
-    panel.addEventListener(
-      "popuphidden",
-      () => {
-        button.setAttribute("aria-expanded", "false");
-        win.removeEventListener("mousedown", onMouseDown, true);
-        win.removeEventListener("keydown", onKeyDown, true);
-        win.removeEventListener("deactivate", onDeactivate);
-        // The panel can be hidden without ever having been shown.
-        if (observingGroups) {
-          for (const topic of GROUPS_CHANGED_TOPICS) {
-            Services.obs.removeObserver(groupsObserver, topic);
-          }
+    const teardown = () => {
+      win.removeEventListener("unload", teardown);
+      button.setAttribute("aria-expanded", "false");
+      win.removeEventListener("mousedown", onMouseDown, true);
+      win.removeEventListener("keydown", onKeyDown, true);
+      win.removeEventListener("deactivate", onDeactivate);
+      // The panel can be hidden without ever having been shown.
+      if (observingGroups) {
+        observingGroups = false;
+        for (const topic of GROUPS_CHANGED_TOPICS) {
+          Services.obs.removeObserver(groupsObserver, topic);
         }
-        this._cancelHideFlyout(panel);
-        panel._flyoutPanel?.remove();
-        this._getState(win).recent = [];
-        if (this._panels.get(win) === panel) {
-          this._panels.delete(win);
-        }
-        panel.remove();
-        if (panel._restoreFocus) {
-          anchor.focus();
-        }
-      },
-      { once: true }
-    );
+      }
+      this._cancelHideFlyout(panel);
+      panel._flyoutPanel?.remove();
+      this._getState(win).recent = [];
+      if (this._panels.get(win) === panel) {
+        this._panels.delete(win);
+      }
+      panel.remove();
+      if (panel._restoreFocus) {
+        anchor.focus();
+      }
+    };
+    panel.addEventListener("popuphidden", teardown, { once: true });
+    // Closing the window tears the panel down without a popuphidden event,
+    // and the observers would otherwise keep the window alive until shutdown.
+    win.addEventListener("unload", teardown, { once: true });
 
     panel.openPopup(anchor, "after_end", 0, 6, false, false);
 
