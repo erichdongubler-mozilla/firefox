@@ -54,8 +54,6 @@ dom/webgpu/tests/cts/checkout/
 editor/libeditor/tests/browserscope/lib/richtext/
 editor/libeditor/tests/browserscope/lib/richtext2/
 extensions/spellcheck/hunspell/src/
-function2/
-fmt/
 gfx/angle/checkout/
 gfx/cairo/
 gfx/graphite2/
@@ -208,4 +206,3 @@ unicode/
 xpcom/build/mach_override.c
 xpcom/build/mach_override.h
 xpcom/io/crc32c.c
-rlbox/rlbox_sandbox.hpp
