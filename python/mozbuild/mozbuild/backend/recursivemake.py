@@ -1815,14 +1815,23 @@ class RecursiveMakeBackend(MakeBackend):
                 # Windows, the absolute file paths that we want to install
                 # from often have spaces.  So we write our own rule.
                 self._no_skip["misc"].add(backend_file.relobjdir)
-                backend_file.write(
-                    "misc::\n%s\n"
-                    % "\n".join(
+                rules = []
+                for f in absolute_files:
+                    basename = mozpath.basename(f)
+                    rules.append(
                         "\t$(INSTALL) %s %s"
                         % (make_quote(shell_quote(f)), install_location)
-                        for f in absolute_files
                     )
-                )
+                    # Libraries installed this way are prebuilt, coming from
+                    # outside the build, so unlike the ones we link ourselves,
+                    # nothing has checked that they work on the systems we
+                    # support. Do it here, as this is where they enter the build.
+                    if f.lower().endswith((".dll", ".so", ".dylib")):
+                        rules.append(
+                            "\t$(call py_action,check_binary %s,%s)"
+                            % (basename, mozpath.join(install_location, basename))
+                        )
+                backend_file.write("misc::\n%s\n" % "\n".join(rules))
 
     def _process_final_target_pp_files(self, obj, files, backend_file, name):
         # Bug 1177710 - We'd like to install these via manifests as

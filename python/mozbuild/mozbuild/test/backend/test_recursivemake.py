@@ -1339,6 +1339,33 @@ class TestRecursiveMakeBackend(BackendTester):
         found = [str for str in lines if "DIST_FILES" in str]
         self.assertEqual(found, expected)
 
+    def test_final_target_files_absolute(self):
+        """Absolute FINAL_TARGET_FILES are installed, and libraries checked."""
+        env = self._get_environment("final-target-files-absolute")
+
+        # The files only need to exist for the moz.build to be read, and *.pdb
+        # is ignored tree-wide, so create them in the objdir rather than
+        # checking them in.
+        so = mozpath.join(env.topobjdir, "libfoo.so")
+        pdb = mozpath.join(env.topobjdir, "libfoo.pdb")
+        for path in (so, pdb):
+            open(path, "a").close()
+
+        self._consume("final-target-files-absolute", RecursiveMakeBackend, env=env)
+
+        backend_path = mozpath.join(env.topobjdir, "backend.mk")
+        lines = [l.strip() for l in open(backend_path).readlines()[2:]]
+
+        expected = [
+            # Debug information is installed, but there is nothing to check.
+            f"$(INSTALL) {pdb} $(DEPTH)/dist/bin/",
+            f"$(INSTALL) {so} $(DEPTH)/dist/bin/",
+            "$(call py_action,check_binary libfoo.so,$(DEPTH)/dist/bin/libfoo.so)",
+        ]
+
+        found = [str for str in lines if "libfoo." in str]
+        self.assertEqual(found, expected)
+
     def test_pp_files_extra_deps(self):
         """Ensure PP_FILES_EXTRA_DEPS is written to backend.mk correctly."""
         env = self._consume("pp-files-extra-deps", RecursiveMakeBackend)
