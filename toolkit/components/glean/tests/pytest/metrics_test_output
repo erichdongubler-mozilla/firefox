@@ -124,20 +124,20 @@ pub mod test {
             }
         }
     }
-    impl Into<&'static str> for LabeledBooleanMetricLabelsLabel {
-        fn into(self) -> &'static str {
-            match self {
-                Self::EOneLabel => "one_label",
-                Self::ETwoLabels => "two_labels",
-                Self::EThreeLabels => "three_labels",
-                Self::EFourLabels => "four_labels",
-                Self::EFiveLabels => "five_labels",
-                Self::ESixLabels => "six_labels",
-                Self::ESevenLabels => "seven_labels",
-                Self::EEightLabels => "eight_labels",
-                Self::ENineLabels => "nine_labels",
-                Self::ETenLabels => "ten_labels",
-                Self::__Other__ => "__other__",
+    impl From<LabeledBooleanMetricLabelsLabel> for &'static str {
+        fn from(value: LabeledBooleanMetricLabelsLabel) -> Self {
+            match value {
+                LabeledBooleanMetricLabelsLabel::EOneLabel => "one_label",
+                LabeledBooleanMetricLabelsLabel::ETwoLabels => "two_labels",
+                LabeledBooleanMetricLabelsLabel::EThreeLabels => "three_labels",
+                LabeledBooleanMetricLabelsLabel::EFourLabels => "four_labels",
+                LabeledBooleanMetricLabelsLabel::EFiveLabels => "five_labels",
+                LabeledBooleanMetricLabelsLabel::ESixLabels => "six_labels",
+                LabeledBooleanMetricLabelsLabel::ESevenLabels => "seven_labels",
+                LabeledBooleanMetricLabelsLabel::EEightLabels => "eight_labels",
+                LabeledBooleanMetricLabelsLabel::ENineLabels => "nine_labels",
+                LabeledBooleanMetricLabelsLabel::ETenLabels => "ten_labels",
+                LabeledBooleanMetricLabelsLabel::__Other__ => "__other__",
             }
         }
     }
@@ -198,12 +198,12 @@ pub mod test {
             }
         }
     }
-    impl Into<&'static str> for LabeledCounterMetricLabelsLabel {
-        fn into(self) -> &'static str {
-            match self {
-                Self::EOneLabel => "one_label",
-                Self::ETwoLabels => "two_labels",
-                Self::__Other__ => "__other__",
+    impl From<LabeledCounterMetricLabelsLabel> for &'static str {
+        fn from(value: LabeledCounterMetricLabelsLabel) -> Self {
+            match value {
+                LabeledCounterMetricLabelsLabel::EOneLabel => "one_label",
+                LabeledCounterMetricLabelsLabel::ETwoLabels => "two_labels",
+                LabeledCounterMetricLabelsLabel::__Other__ => "__other__",
             }
         }
     }
@@ -264,12 +264,12 @@ pub mod test {
             }
         }
     }
-    impl Into<&'static str> for LabeledStringMetricLabelsLabel {
-        fn into(self) -> &'static str {
-            match self {
-                Self::EOneLabel => "one_label",
-                Self::ETwoLabels => "two_labels",
-                Self::__Other__ => "__other__",
+    impl From<LabeledStringMetricLabelsLabel> for &'static str {
+        fn from(value: LabeledStringMetricLabelsLabel) -> Self {
+            match value {
+                LabeledStringMetricLabelsLabel::EOneLabel => "one_label",
+                LabeledStringMetricLabelsLabel::ETwoLabels => "two_labels",
+                LabeledStringMetricLabelsLabel::__Other__ => "__other__",
             }
         }
     }
@@ -870,20 +870,20 @@ pub mod test2 {
             }
         }
     }
-    impl Into<&'static str> for LabeledBooleanMetricLabelsLabel {
-        fn into(self) -> &'static str {
-            match self {
-                Self::EOneLabel => "one_label",
-                Self::ETwoLabels => "two_labels",
-                Self::EThreeLabels => "three_labels",
-                Self::EFourLabels => "four_labels",
-                Self::EFiveLabels => "five_labels",
-                Self::ESixLabels => "six_labels",
-                Self::ESevenLabels => "seven_labels",
-                Self::EEightLabels => "eight_labels",
-                Self::ENineLabels => "nine_labels",
-                Self::ETenLabels => "ten_labels",
-                Self::__Other__ => "__other__",
+    impl From<LabeledBooleanMetricLabelsLabel> for &'static str {
+        fn from(value: LabeledBooleanMetricLabelsLabel) -> Self {
+            match value {
+                LabeledBooleanMetricLabelsLabel::EOneLabel => "one_label",
+                LabeledBooleanMetricLabelsLabel::ETwoLabels => "two_labels",
+                LabeledBooleanMetricLabelsLabel::EThreeLabels => "three_labels",
+                LabeledBooleanMetricLabelsLabel::EFourLabels => "four_labels",
+                LabeledBooleanMetricLabelsLabel::EFiveLabels => "five_labels",
+                LabeledBooleanMetricLabelsLabel::ESixLabels => "six_labels",
+                LabeledBooleanMetricLabelsLabel::ESevenLabels => "seven_labels",
+                LabeledBooleanMetricLabelsLabel::EEightLabels => "eight_labels",
+                LabeledBooleanMetricLabelsLabel::ENineLabels => "nine_labels",
+                LabeledBooleanMetricLabelsLabel::ETenLabels => "ten_labels",
+                LabeledBooleanMetricLabelsLabel::__Other__ => "__other__",
             }
         }
     }
@@ -944,12 +944,12 @@ pub mod test2 {
             }
         }
     }
-    impl Into<&'static str> for LabeledCounterMetricLabelsLabel {
-        fn into(self) -> &'static str {
-            match self {
-                Self::EOneLabel => "one_label",
-                Self::ETwoLabels => "two_labels",
-                Self::__Other__ => "__other__",
+    impl From<LabeledCounterMetricLabelsLabel> for &'static str {
+        fn from(value: LabeledCounterMetricLabelsLabel) -> Self {
+            match value {
+                LabeledCounterMetricLabelsLabel::EOneLabel => "one_label",
+                LabeledCounterMetricLabelsLabel::ETwoLabels => "two_labels",
+                LabeledCounterMetricLabelsLabel::__Other__ => "__other__",
             }
         }
     }
@@ -1010,12 +1010,12 @@ pub mod test2 {
             }
         }
     }
-    impl Into<&'static str> for LabeledStringMetricLabelsLabel {
-        fn into(self) -> &'static str {
-            match self {
-                Self::EOneLabel => "one_label",
-                Self::ETwoLabels => "two_labels",
-                Self::__Other__ => "__other__",
+    impl From<LabeledStringMetricLabelsLabel> for &'static str {
+        fn from(value: LabeledStringMetricLabelsLabel) -> Self {
+            match value {
+                LabeledStringMetricLabelsLabel::EOneLabel => "one_label",
+                LabeledStringMetricLabelsLabel::ETwoLabels => "two_labels",
+                LabeledStringMetricLabelsLabel::__Other__ => "__other__",
             }
         }
     }

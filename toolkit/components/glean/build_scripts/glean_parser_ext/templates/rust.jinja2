@@ -96,13 +96,13 @@ impl From<u16> for {{ obj.name|Camelize }}Label {
         }
     }
 }
-impl Into<&'static str> for {{ obj.name|Camelize }}Label {
-    fn into(self) -> &'static str {
-        match self {
+impl From<{{ obj.name|Camelize }}Label> for &'static str {
+    fn from(value: {{ obj.name|Camelize }}Label) -> Self {
+        match value {
             {% for label in obj.ordered_labels %}
-            Self::E{{ label| Camelize }} => "{{label}}",
+            {{ obj.name|Camelize }}Label::E{{ label| Camelize }} => "{{label}}",
             {% endfor %}
-            Self::__Other__ => "__other__",
+            {{ obj.name|Camelize }}Label::__Other__ => "__other__",
         }
     }
 }
