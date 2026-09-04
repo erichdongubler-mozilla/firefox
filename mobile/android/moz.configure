@@ -168,6 +168,25 @@ set_config(
     depends("MOZ_ANDROID_FAT_AAR_ARCHITECTURES")(lambda x: x),
 )
 
+option(
+    env="MOZ_ANDROID_FAT_AAR_DESKTOP_ARCHITECTURES",
+    nargs="*",
+    choices=(
+        "linux-x86-64",
+        "linux-aarch64",
+        "darwin-x86-64",
+        "darwin-aarch64",
+        "win32-x86-64",
+        "win32-aarch64",
+    ),
+    help='Comma-separated list of Desktop CPU architectures to include in fat AARS, like "linux-x86-64"',
+)
+
+set_config(
+    "MOZ_ANDROID_FAT_AAR_DESKTOP_ARCHITECTURES",
+    depends("MOZ_ANDROID_FAT_AAR_DESKTOP_ARCHITECTURES")(lambda x: x),
+)
+
 
 # Template to check for a build-time host/bin program that is either produced as
 # part of the build or is fetched from a toolchain artifact.  Also allows
