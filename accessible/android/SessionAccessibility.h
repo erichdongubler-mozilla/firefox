@@ -48,7 +48,6 @@ class SessionAccessibility final
   int GetNodeClassName(int32_t aID);
   void SetText(int32_t aID, jni::String::Param aText);
   void Click(int32_t aID);
-  void ChangeValueBySteps(int32_t aID, double aSteps);
   bool Pivot(int32_t aID, int32_t aGranularity, bool aForward, bool aInclusive);
   void ExploreByTouch(int32_t aID, float aX, float aY);
   bool NavigateText(int32_t aID, int32_t aGranularity, int32_t aStartOffset,
@@ -82,7 +81,6 @@ class SessionAccessibility final
   void SendAnnouncementEvent(Accessible* aAccessible,
                              const nsAString& aAnnouncement,
                              uint16_t aPriority);
-  void SendValueChangedEvent(Accessible* aAccessible);
 
   Accessible* GetAccessibleByID(int32_t aID) const;
 

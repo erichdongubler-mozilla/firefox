@@ -144,7 +144,6 @@ class HTMLSpinnerAccessible final : public HTMLTextFieldAccessible {
  public:
   HTMLSpinnerAccessible(nsIContent* aContent, DocAccessible* aDoc)
       : HTMLTextFieldAccessible(aContent, aDoc) {
-    mType = eHTMLSpinnerType;
     mGenericTypes |= eNumericValue;
   }
 
@@ -166,7 +165,6 @@ class HTMLRangeAccessible : public LeafAccessible {
  public:
   HTMLRangeAccessible(nsIContent* aContent, DocAccessible* aDoc)
       : LeafAccessible(aContent, aDoc) {
-    mType = eHTMLRangeType;
     mGenericTypes |= eNumericValue;
   }
 
