@@ -10,6 +10,7 @@ with Files("**"):
 EXPORTS.mozilla.hwinference += [
     "HWInferenceChild.h",
     "HWInferenceParent.h",
+    "HWInferenceTypes.h",
 ]
 
 UNIFIED_SOURCES += [

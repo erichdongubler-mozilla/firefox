@@ -119,7 +119,7 @@ class ModelDownloadCallbacks final
     LOGD("{} - model={} revision={}", __func__, NS_ConvertUTF16toUTF8(aModel),
          NS_ConvertUTF16toUTF8(aRevision));
     Notify(100, 0, 0, 0, true, true);
-    mResolver(true);
+    mResolver(ModelInstallResult::Installed);
     return NS_OK;
   }
 
@@ -127,7 +127,7 @@ class ModelDownloadCallbacks final
     LOGE("{} - Error when downloading {}", __func__,
          NS_ConvertUTF16toUTF8(aError));
     Notify(0, 0, 0, 0, true, false);
-    mResolver(false);
+    mResolver(ModelInstallResult::Failed);
     return NS_OK;
   }
 
@@ -360,7 +360,7 @@ static void PerformModelInstall(
     sMockInstalledModels->Insert(MockModelKey(aModel, aRevision, aFilename));
     LOGD("PerformModelInstall - testing mock: installed {}",
          MockModelKey(aModel, aRevision, aFilename));
-    aResolver(true);
+    aResolver(ModelInstallResult::Installed);
     return;
   }
 
@@ -369,7 +369,7 @@ static void PerformModelInstall(
 
   if (!modelHubService) {
     LOGE("PerformModelInstall - Failed to get ModelHub XPCOM service");
-    aResolver(false);
+    aResolver(ModelInstallResult::Failed);
     return;
   }
 
@@ -427,7 +427,7 @@ class ModelDownloadAuthorizationCallback final
     if (!aAllow) {
       LOGD("ModelDownloadAuthorizationCallback - download of {} not authorized",
            mModel);
-      resolver(false);
+      resolver(ModelInstallResult::Denied);
       return NS_OK;
     }
     PerformModelInstall(mEngine, mTask, mModel, mRevision, mFilename,
@@ -438,7 +438,7 @@ class ModelDownloadAuthorizationCallback final
  private:
   ~ModelDownloadAuthorizationCallback() {
     if (mResolver) {
-      mResolver(false);
+      mResolver(ModelInstallResult::Failed);
     }
   }
 
@@ -463,7 +463,7 @@ ipc::IPCResult HWInferenceParent::RecvInstallModel(
   nsCOMPtr<nsIMLModelResolver> resolver =
       ResolveModelId(aTask, aId, engine, model, revision, filename);
   if (!resolver) {
-    aResolver(false);
+    aResolver(ModelInstallResult::Failed);
     return IPC_OK();
   }
 
@@ -474,7 +474,7 @@ ipc::IPCResult HWInferenceParent::RecvInstallModel(
   if (aContentId != 0 && (!window || window->ContentParentId() != aContentId)) {
     LOGE("{} - window {} not owned by requester {}", __func__, aInnerWindowId,
          uint64_t(aContentId));
-    aResolver(false);
+    aResolver(ModelInstallResult::Failed);
     return IPC_OK();
   }
 
@@ -483,7 +483,7 @@ ipc::IPCResult HWInferenceParent::RecvInstallModel(
   if (StaticPrefs::browser_ml_modelHub_testing() && sMockInstalledModels &&
       sMockInstalledModels->Contains(MockModelKey(model, revision, filename))) {
     LOGD("{} - testing mock: already installed", __func__);
-    aResolver(true);
+    aResolver(ModelInstallResult::Installed);
     return IPC_OK();
   }
 

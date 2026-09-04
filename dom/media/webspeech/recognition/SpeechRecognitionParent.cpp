@@ -201,7 +201,9 @@ mozilla::ipc::IPCResult SpeechRecognitionParent::RecvInstallModels(
                  PHWInferenceChild::InstallModelPromise::ResolveOrRejectValue&&
                      aValue) mutable {
                self->mInstallModelRequest.Complete();
-               aResolver(aValue.IsResolve() && aValue.ResolveValue());
+               aResolver(aValue.IsResolve() &&
+                         aValue.ResolveValue() ==
+                             ModelInstallResult::Installed);
              })
       ->Track(mInstallModelRequest);
 
