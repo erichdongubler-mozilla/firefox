@@ -2956,6 +2956,10 @@ nsresult QuotaManager::LoadQuota() {
   MOZ_ASSERT(mStorageConnection);
   MOZ_ASSERT(!mTemporaryStorageInitializedInternal);
 
+  // If we are shutting down, it's too late to load quota. Stop now: any rescan
+  // needed will be done on next startup.
+  QM_TRY(OkIf(!IsShuttingDown()), NS_ERROR_ABORT);
+
   // A list of all unaccessed default or temporary origins.
   nsTArray<FullOriginMetadata> unaccessedOrigins;
 
@@ -3169,6 +3173,8 @@ nsresult QuotaManager::LoadQuota() {
       nsTArray<RenameAndInitInfo> renameAndInitInfos;
       nsTArray<FullOriginMetadata> failedOrigins;
       for (auto& dirtyOrigin : dirtyOrigins) {
+        QM_TRY(OkIf(!IsShuttingDown()), NS_ERROR_ABORT);
+
         QM_WARNONLY_TRY_UNWRAP(
             auto maybeOk,
             RestoreAndInitializeOrigin(dirtyOrigin, renameAndInitInfos));
@@ -3176,6 +3182,8 @@ nsresult QuotaManager::LoadQuota() {
           failedOrigins.AppendElement(std::move(dirtyOrigin));
         }
       }
+
+      QM_TRY(OkIf(!IsShuttingDown()), NS_ERROR_ABORT);
 
       if (failedOrigins.IsEmpty()) {
         QM_TRY(MOZ_TO_RESULT(InitializeFlushTimer()));
