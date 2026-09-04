@@ -235,10 +235,22 @@ class SpeechRecognition final : public DOMEventTargetHelper,
   // the session and "end" fires exactly once.
   void PostResetAndEnd();
   void DispatchNoMatch();
+  // What start() settled on, for BeginSession() to start it with. mTrack is
+  // null for the microphone start().
+  struct PendingSession {
+    RefPtr<AudioStreamTrack> mTrack;
+    CallerType mCallerType;
+    nsString mLanguage;
+    uint32_t mGraphRate = 0;
+    nsTArray<nsString> mPhrases;
+  };
+
   // Shared body of the two start() overloads. aAudioTrack is null for the
   // microphone start() and the passed track for start(MediaStreamTrack).
   void StartImpl(MediaStreamTrack* aAudioTrack, CallerType aCallerType,
                  ErrorResult& aRv);
+  // Second half of start(): creates the backend and attaches the audio.
+  void BeginSession(PendingSession&& aSession);
   // Fires "start" once the system is successfully listening: the backend
   // session is initialized and a live track is attached (mTrack).
   void MaybeDispatchStart();

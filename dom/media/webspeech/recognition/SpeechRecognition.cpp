@@ -726,19 +726,6 @@ void SpeechRecognition::StartImpl(MediaStreamTrack* aAudioTrack,
     }
   }
 
-  // Step 4: processLocally is always true here (on-device recognition). If the
-  // backend cannot start (local recognition unavailable for this lang), fire a
-  // service-not-allowed error and abort. DispatchErrorAndEnd queues the event.
-  mBackend = SpeechRecognitionBackend::Create(this, graphRate, effectiveLang,
-                                              phrasesForBackend);
-  if (!mBackend) {
-    LOGE("Failed to create the backend");
-    DispatchErrorAndEnd(SpeechRecognitionErrorCode::Service_not_allowed,
-                        "Local speech recognition is not available"_ns);
-    return;
-  }
-  mBackend->Start();
-
   // Step 5: set [[started]] to true.
   mStarted = true;
   mBackendListening = false;
@@ -751,13 +738,37 @@ void SpeechRecognition::StartImpl(MediaStreamTrack* aAudioTrack,
     KeepAliveIfHasListenersFor(atom);
   }
 
+  PendingSession session{std::move(audioTrack), aCallerType, effectiveLang,
+                         graphRate, std::move(phrasesForBackend)};
+
+  BeginSession(std::move(session));
+}
+
+void SpeechRecognition::BeginSession(PendingSession&& aSession) {
+  AssertIsOnMainThread();
+  MOZ_ASSERT(mStarted);
+  MOZ_ASSERT(!mBackend);
+
+  // Step 4: processLocally is always true here (on-device recognition). If the
+  // backend cannot start (local recognition unavailable for this lang), fire a
+  // service-not-allowed error and abort. DispatchErrorAndEnd queues the event.
+  mBackend = SpeechRecognitionBackend::Create(
+      this, aSession.mGraphRate, aSession.mLanguage, aSession.mPhrases);
+  if (!mBackend) {
+    LOGE("Failed to create the backend");
+    DispatchErrorAndEnd(SpeechRecognitionErrorCode::Service_not_allowed,
+                        "Local speech recognition is not available"_ns);
+    return;
+  }
+  mBackend->Start();
+
   // "start" fires once the system is successfully listening (see
   // MaybeDispatchStart()), not here: at this point neither the backend
   // session nor (for the microphone path) the track are ready yet.
 
   // MediaStreamTrack (argument passed) vs. Microphone (no argument passed)
-  if (audioTrack) {
-    NotifyTrackAdded(audioTrack);
+  if (aSession.mTrack) {
+    NotifyTrackAdded(aSession.mTrack);
   } else {
     mListener = new TrackListener(this);
     // Identifies the session this continuation belongs to: mListener is
@@ -773,7 +784,7 @@ void SpeechRecognition::StartImpl(MediaStreamTrack* aAudioTrack,
     AutoNoJSAPI nojsapi;
     RefPtr<SpeechRecognition> self(this);
     MediaManager::Get()
-        ->GetUserMedia(GetOwnerWindow(), constraints, aCallerType)
+        ->GetUserMedia(GetOwnerWindow(), constraints, aSession.mCallerType)
         ->Then(
             GetCurrentSerialEventTarget(), __func__,
             [this, self, startedListener](RefPtr<DOMMediaStream>&& aStream) {
