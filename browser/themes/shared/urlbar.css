@@ -1381,11 +1381,18 @@ toolbar[inactive="true"] .urlbar,
 }
 
 .searchmode-switcher {
+  display: flex;
   height: var(--urlbar-basic-component-size);
   --button-padding: 0 var(--space-small);
   --button-min-height: 100%;
   --button-font-weight: normal;
   --focus-outline-offset: var(--focus-outline-inset);
+
+  /* The button fills the host; sizing to its label would potentially let it
+     overflow the input container. */
+  &::part(button) {
+    height: 100%;
+  }
 
   @media -moz-pref("browser.urlbar.unifiedSearchButton.always") {
     .urlbar[pageproxystate="valid"] & {
