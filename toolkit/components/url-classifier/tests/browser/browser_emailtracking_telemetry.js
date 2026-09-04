@@ -17,12 +17,17 @@ const TEST_EMAIL_WEBAPP_PAGE =
 const EMAIL_TRACKER_PAGE = EMAIL_TRACKER_DOMAIN + TEST_PATH + "page.html";
 const EMAIL_TRACKER_IMAGE = EMAIL_TRACKER_DOMAIN + TEST_PATH + "raptor.jpg";
 
-const TELEMETRY_EMAIL_TRACKER_COUNT = "EMAIL_TRACKER_COUNT";
+const LABEL_BASE_NORMAL = "base_normal";
+const LABEL_CONTENT_NORMAL = "content_normal";
+const LABEL_BASE_EMAIL_WEBAPP = "base_email_webapp";
+const LABEL_CONTENT_EMAIL_WEBAPP = "content_email_webapp";
 
-const LABEL_BASE_NORMAL = 0;
-const LABEL_CONTENT_NORMAL = 1;
-const LABEL_BASE_EMAIL_WEBAPP = 2;
-const LABEL_CONTENT_EMAIL_WEBAPP = 3;
+const EMAIL_TRACKER_COUNT_LABELS = [
+  LABEL_BASE_NORMAL,
+  LABEL_CONTENT_NORMAL,
+  LABEL_BASE_EMAIL_WEBAPP,
+  LABEL_CONTENT_EMAIL_WEBAPP,
+];
 
 const KEY_BASE_NORMAL = "base_normal";
 const KEY_CONTENT_NORMAL = "content_normal";
@@ -33,44 +38,20 @@ const KEY_ALL_EMAILAPP = "all_emailapp";
 
 async function clearTelemetry() {
   Services.telemetry.getSnapshotForHistograms("main", true /* clear */);
-  Services.telemetry.getHistogramById(TELEMETRY_EMAIL_TRACKER_COUNT).clear();
   Services.fog.testResetFOG();
 }
 
-async function getTelemetryProbe(key, label, checkCntFn) {
-  let histogram;
+async function checkEmailTrackerCount(label, expectedCnt) {
+  let getCnt = () =>
+    Glean.contentblocking.emailTrackerCount[label].testGetValue() ?? 0;
 
-  // Wait until the telemetry probe appears.
-  await TestUtils.waitForCondition(() => {
-    let histograms = Services.telemetry.getSnapshotForHistograms(
-      "main",
-      false /* clear */
-    ).parent;
+  // Wait until the metric has been recorded.
+  await TestUtils.waitForCondition(
+    () => getCnt() == expectedCnt,
+    `Waiting for the ${label} count to be ${expectedCnt}.`
+  );
 
-    histogram = histograms[key];
-
-    let checkRes = false;
-
-    if (histogram) {
-      checkRes = checkCntFn ? checkCntFn(histogram.values[label]) : true;
-    }
-
-    return checkRes;
-  });
-
-  return histogram.values[label] || 0;
-}
-
-async function checkTelemetryProbe(key, label, expectedCnt) {
-  let cnt = await getTelemetryProbe(key, label, cnt => {
-    if (cnt === undefined) {
-      cnt = 0;
-    }
-
-    return cnt == expectedCnt;
-  });
-
-  is(cnt, expectedCnt, "There should be expected count in telemetry.");
+  is(getCnt(), expectedCnt, "There should be expected count in telemetry.");
 }
 
 function checkKeyedHistogram(telemetry, key, bucket, expectedCnt) {
@@ -79,15 +60,14 @@ function checkKeyedHistogram(telemetry, key, bucket, expectedCnt) {
   is(cnt, expectedCnt, "There should be expected count in keyed telemetry.");
 }
 
-function checkNoTelemetryProbe(key) {
-  let histograms = Services.telemetry.getSnapshotForHistograms(
-    "main",
-    false /* clear */
-  ).parent;
-
-  let histogram = histograms[key];
-
-  ok(!histogram, `No Telemetry has been recorded for ${key}`);
+function checkNoEmailTrackerCount() {
+  for (let label of EMAIL_TRACKER_COUNT_LABELS) {
+    is(
+      Glean.contentblocking.emailTrackerCount[label].testGetValue(),
+      null,
+      `No Telemetry has been recorded for ${label}`
+    );
+  }
 }
 
 add_setup(async function () {
@@ -142,26 +122,10 @@ add_task(async function test_email_tracking_telemetry() {
     is(res, false, "The image is blocked.");
 
     // Verify the telemetry of the email tracker count.
-    await checkTelemetryProbe(
-      TELEMETRY_EMAIL_TRACKER_COUNT,
-      LABEL_BASE_NORMAL,
-      1
-    );
-    await checkTelemetryProbe(
-      TELEMETRY_EMAIL_TRACKER_COUNT,
-      LABEL_CONTENT_NORMAL,
-      0
-    );
-    await checkTelemetryProbe(
-      TELEMETRY_EMAIL_TRACKER_COUNT,
-      LABEL_BASE_EMAIL_WEBAPP,
-      0
-    );
-    await checkTelemetryProbe(
-      TELEMETRY_EMAIL_TRACKER_COUNT,
-      LABEL_CONTENT_EMAIL_WEBAPP,
-      0
-    );
+    await checkEmailTrackerCount(LABEL_BASE_NORMAL, 1);
+    await checkEmailTrackerCount(LABEL_CONTENT_NORMAL, 0);
+    await checkEmailTrackerCount(LABEL_BASE_EMAIL_WEBAPP, 0);
+    await checkEmailTrackerCount(LABEL_CONTENT_EMAIL_WEBAPP, 0);
   });
 
   // Open an email webapp tab.
@@ -172,26 +136,10 @@ add_task(async function test_email_tracking_telemetry() {
     is(res, false, "The image is blocked.");
 
     // Verify the telemetry of the email tracker count.
-    await checkTelemetryProbe(
-      TELEMETRY_EMAIL_TRACKER_COUNT,
-      LABEL_BASE_NORMAL,
-      1
-    );
-    await checkTelemetryProbe(
-      TELEMETRY_EMAIL_TRACKER_COUNT,
-      LABEL_CONTENT_NORMAL,
-      0
-    );
-    await checkTelemetryProbe(
-      TELEMETRY_EMAIL_TRACKER_COUNT,
-      LABEL_BASE_EMAIL_WEBAPP,
-      1
-    );
-    await checkTelemetryProbe(
-      TELEMETRY_EMAIL_TRACKER_COUNT,
-      LABEL_CONTENT_EMAIL_WEBAPP,
-      0
-    );
+    await checkEmailTrackerCount(LABEL_BASE_NORMAL, 1);
+    await checkEmailTrackerCount(LABEL_CONTENT_NORMAL, 0);
+    await checkEmailTrackerCount(LABEL_BASE_EMAIL_WEBAPP, 1);
+    await checkEmailTrackerCount(LABEL_CONTENT_EMAIL_WEBAPP, 0);
   });
   // Make sure the tab was closed properly before clearing Telemetry.
   await BrowserUtils.promiseObserved("window-global-destroyed");
@@ -208,7 +156,7 @@ add_task(async function test_no_telemetry_for_first_party_email_tracker() {
     is(res, true, "The image is loaded.");
 
     // Verify that there was no telemetry recorded.
-    checkNoTelemetryProbe(TELEMETRY_EMAIL_TRACKER_COUNT);
+    checkNoEmailTrackerCount();
   });
   // Make sure the tab was closed properly before clearing Telemetry.
   await BrowserUtils.promiseObserved("window-global-destroyed");
@@ -235,7 +183,7 @@ add_task(async function test_disable_email_data_collection() {
     is(res, false, "The image is blocked.");
 
     // Verify that there was no telemetry recorded.
-    checkNoTelemetryProbe(TELEMETRY_EMAIL_TRACKER_COUNT);
+    checkNoEmailTrackerCount();
   });
   // Make sure the tab was closed properly before clearing Telemetry.
   await BrowserUtils.promiseObserved("window-global-destroyed");

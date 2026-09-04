@@ -376,9 +376,6 @@ contentblocking:
       tracker is in base category and loaded under a known email webapp,
       'content_email_webapp' = The classified email tracker is in content
       category and loaded under a known email webapp.)
-
-      This metric was generated to correspond to the Legacy Telemetry
-      categorical histogram EMAIL_TRACKER_COUNT.
     labels:
       - base_normal
       - content_normal
@@ -386,13 +383,13 @@ contentblocking:
       - content_email_webapp
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1773701
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2061376
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1773701
     notification_emails:
       - tihuang@mozilla.com
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: h#EMAIL_TRACKER_COUNT
 
   email_tracker_embedded_per_tab:
     type: labeled_custom_distribution
