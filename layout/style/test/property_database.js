@@ -12805,17 +12805,6 @@ gCSSProperties["text-justify"] = {
   invalid_values: [],
 };
 
-var isDisplayGridLanesEnabled = IsCSSPropertyPrefEnabled(
-  "layout.css.display-grid-lanes.enabled"
-);
-
-if (isDisplayGridLanesEnabled) {
-  gCSSProperties["display"].other_values.push(
-    "grid-lanes",
-    "inline-grid-lanes"
-  );
-}
-
 var isGridTemplateMasonryValueEnabled = IsCSSPropertyPrefEnabled(
   "layout.css.grid-template-masonry-value.enabled"
 );
