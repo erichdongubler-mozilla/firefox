@@ -5443,6 +5443,9 @@ gfxRect SVGTextFrame::TransformFrameRectFromTextChild(
     // Scale it into frame user space.
     gfxRect rectInFrameUserSpace = AppUnitsToFloatCSSPixels(rectInTextFrame);
 
+    // Take into account any font size scaling
+    rectInFrameUserSpace.Scale(1.0 / mFontSizeScaleFactor);
+
     // Intersect it with the run.
     TextRenderedRun::GeometryFlags flags(
         TextRenderedRun::GeometryFlag::IncludeFill,
