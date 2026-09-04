@@ -159,3 +159,4 @@ Finally, apply the patches:
   libavcodec's libvorbis wrapper, unlike its native vorbis decoder, does
   neither, so multichannel Vorbis plays with its channels permuted
   (bug 1991957). Drop this patch if it is ever fixed upstream.
+- av1_tilesize.patch to clean up av1 tile handling
