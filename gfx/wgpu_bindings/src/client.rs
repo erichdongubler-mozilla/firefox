@@ -6,7 +6,8 @@ use crate::error::GPUError;
 use crate::{
     cow_label, raw_string_to_string, wgpu_string, AdapterInformation, ByteBuf, DeviceAction,
     FfiDeviceLostReason, FfiErrorFilter, FfiPopErrorScopeResultType, FfiSlice,
-    FfiTexelCopyBufferLayout, FfiTextureDescriptor, QueueWriteAction, RawString, TextureAction,
+    FfiTexelCopyBufferLayout, FfiTextureDescriptor, QueueWriteAction, RawString,
+    ShaderModuleCompilationMessage, TextureAction,
 };
 
 use crate::{BufferMapResult, Message, QueueWriteDataSource, ServerMessage, SwapChainId};
@@ -759,12 +760,24 @@ pub extern "C" fn wgpu_client_receive_server_message(client: &Client, byte_buf: 
         ServerMessage::CreateShaderModuleResponse(shader_module_id, compilation_messages) => {
             let ffi_compilation_messages: Vec<_> = compilation_messages
                 .iter()
-                .map(|m| FfiShaderModuleCompilationMessage {
-                    line_number: m.line_number,
-                    line_pos: m.line_pos,
-                    utf16_offset: m.utf16_offset,
-                    utf16_length: m.utf16_length,
-                    message: nsString::from(&m.message),
+                .map(|m| {
+                    let ShaderModuleCompilationMessage {
+                        line_number,
+                        line_pos,
+                        utf16_offset,
+                        utf16_length,
+                        message,
+                    } = m;
+
+                    let message = nsString::from(message);
+
+                    FfiShaderModuleCompilationMessage {
+                        line_number: *line_number,
+                        line_pos: *line_pos,
+                        utf16_offset: *utf16_offset,
+                        utf16_length: *utf16_length,
+                        message,
+                    }
                 })
                 .collect();
 
