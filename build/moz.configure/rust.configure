@@ -68,13 +68,24 @@ def unwrap_rustup(prog, name):
             # binaries based on `argv[0]`. When `PROG` is a symlink to `rustup`
             # (or `rustup-init`), we can call it "as rustup".
             log.debug("Trying to call '%s' for `rustup which %s`", prog, name)
-            out = check_cmd_output(
-                "rustup",
-                "which",
-                name,
-                executable=prog,
-                onerror=lambda: "",
-            ).rstrip()
+
+            rustup_sibling_bin = os.path.join(
+                os.path.dirname(prog), "rustup" + os.path.splitext(prog)[1]
+            )
+            if os.path.exists(rustup_sibling_bin):
+                # `rustup` is a sibling to `prog`, and it's almost certainly what we
+                # want to call anyway. Call it directly to avoid issues with shell
+                # wrappers installed by, i.e., Linuxbrew.
+                out = check_cmd_output(
+                    rustup_sibling_bin, "which", name, onerror=lambda: ""
+                )
+            else:
+                out = check_cmd_output(
+                    "rustup", "which", name, executable=prog, onerror=lambda: ""
+                )
+            out = out.rstrip()
+            # If for some reason the above failed to return something, keep the
+            # PROG we found originally.
 
             if out:
                 log.info("Actually using '%s' as %s", out, name)
