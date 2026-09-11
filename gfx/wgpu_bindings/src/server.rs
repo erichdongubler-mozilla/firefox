@@ -2180,7 +2180,9 @@ impl Global {
             DeviceAction::CreateTexture(id, desc, swap_chain_id) => {
                 let desc = if let Some(swap_chain_id) = swap_chain_id {
                     // This should have been checked on the content timeline.
-                    assert!(!desc.usage.contains(wgt::TextureUsages::TRANSIENT_ATTACHMENT));
+                    assert!(!desc
+                        .usage
+                        .contains(wgt::TextureUsages::TRANSIENT_ATTACHMENT));
 
                     // n.b. Just because a swap chain is known, does not mean that the configuration
                     // is valid.
