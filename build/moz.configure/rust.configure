@@ -41,19 +41,23 @@ def unwrap_rustup(prog, name):
     # rustc, rustup silently honors toolchain overrides set by vendored crates
     # (see bug 1547196).
     #
-    # In either case, we need to find the plain executables.
+    # Whatever the case, we need to find the plain executables. To achieve that, try to
+    # run `PROG +stable`.
     #
-    # To achieve that, try to run `PROG +stable`. When the rustup wrapper is in
-    # use, it either prints PROG's help and exits with status 0, or prints
-    # an error message (error: toolchain 'stable' is not installed) and exits
-    # with status 1. In the cargo case, when plain cargo is in use, it exits
-    # with a different error message (e.g. "error: no such subcommand:
-    # `+stable`"), and exits with status 101.
+    # When the rustup multicall binary wrapper is found, it either:
     #
-    # Unfortunately, in the rustc case, when plain rustc is in use,
-    # `rustc +stable` will exit with status 1, complaining about a missing
-    # "+stable" file. We'll examine the error output to try and distinguish
-    # between failing rustup and failing rustc.
+    # - Prints PROG's help and exits with status 0
+    # - Prints an error message (error: toolchain 'stable' is not installed) and
+    #   exits with status 1.
+    #
+    # In the cargo case, when plain cargo is in use, it exits with a different error
+    # message (e.g. "error: no such subcommand: `+stable`"), and exits with status
+    # 101.
+    #
+    # Unfortunately, in the rustc case, when plain rustc is in use, `rustc +stable`
+    # will exit with status 1, complaining about a missing "+stable" file.
+    #
+    # We'll examine the error output to try and distinguish between failing rustup and failing rustc.
     @depends(prog, dependable(name))
     @imports(_from="__builtin__", _import="open")
     @imports("os")
