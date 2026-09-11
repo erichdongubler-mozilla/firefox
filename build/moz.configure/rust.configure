@@ -28,8 +28,14 @@ cargo = check_prog(
 
 @template
 def unwrap_rustup(prog, name):
-    # rustc and cargo can either be rustup wrappers, or they can be the actual,
-    # plain executables. For cargo, on OSX, rustup sets DYLD_LIBRARY_PATH (at
+    # rustc and cargo are going to be one of:
+    #
+    # 1. the actual, plain executables
+    # 2. rustup multicall binary wrappers
+    # 3. shell wrappers that point to the rustup multicall binary wrappers (like in the
+    #    case of Linuxbrew)
+    #
+    # For cargo, on OSX, rustup sets DYLD_LIBRARY_PATH (at
     # least until https://github.com/rust-lang/rustup.rs/pull/1752 is merged
     # and shipped) and that can wreak havoc (see bug 1536486). Similarly, for
     # rustc, rustup silently honors toolchain overrides set by vendored crates
@@ -56,7 +62,21 @@ def unwrap_rustup(prog, name):
             return
 
         def from_rustup_which():
-            out = check_cmd_output("rustup", "which", name, executable=prog).rstrip()
+            rustup_sibling_bin = os.path.join(
+                os.path.dirname(prog), "rustup" + os.path.splitext(prog)[1]
+            )
+            if os.path.exists(rustup_sibling_bin):
+                # `rustup` is a sibling to `prog`, and it's almost certainly what we
+                # want to call anyway. Call it directly to avoid issues with shell
+                # wrappers installed by, i.e., Linuxbrew.
+                out = check_cmd_output(
+                    rustup_sibling_bin, "which", name, onerror=lambda: ""
+                )
+            else:
+                out = check_cmd_output(
+                    "rustup", "which", name, executable=prog, onerror=lambda: ""
+                )
+            out = out.rstrip()
             # If for some reason the above failed to return something, keep the
             # PROG we found originally.
             if out:
