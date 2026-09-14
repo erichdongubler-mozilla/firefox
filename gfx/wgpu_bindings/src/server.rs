@@ -2353,7 +2353,7 @@ impl Global {
             DeviceAction::CreateComputePipeline(id, desc, is_async) => {
                 if is_async {
                     let result = self.device_create_compute_pipeline_or_error(device_id, &desc, id);
-                    let error = result.err().map(|e| -> _ {
+                    let error = result.err().map(|e| {
                         let is_validation_error =
                             matches!(e.webgpu_error_type(), ErrorType::Validation);
                         PipelineError {
@@ -2373,7 +2373,7 @@ impl Global {
             DeviceAction::CreateRenderPipeline(id, desc, is_async) => {
                 if is_async {
                     let result = self.create_render_pipeline_or_error(device_id, &desc, id);
-                    let error = result.err().map(|e| -> _ {
+                    let error = result.err().map(|e| {
                         let is_validation_error =
                             matches!(e.webgpu_error_type(), ErrorType::Validation);
                         PipelineError {
