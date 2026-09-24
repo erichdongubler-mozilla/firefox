@@ -574,6 +574,7 @@ extern "C" {
         child: WebGPUChildPtr,
         device_id: id::DeviceId,
         queue_id: id::QueueId,
+        limits: Option<&wgt::Limits>,
         error: Option<&nsCString>,
     );
     fn wgpu_child_resolve_pop_error_scope_promise(
@@ -675,31 +676,32 @@ pub extern "C" fn wgpu_client_receive_server_message(client: &Client, byte_buf: 
                 client.identities.lock().adapters.free(adapter_id)
             }
         }
-        ServerMessage::RequestDeviceResponse(device_id, queue_id, error) => {
-            if let Some(error) = error {
+        ServerMessage::RequestDeviceResponse(device_id, queue_id, res) => match res {
+            Err(error) => {
                 let error = nsCString::from(error);
                 unsafe {
                     wgpu_child_resolve_request_device_promise(
                         client.owner,
                         device_id,
                         queue_id,
+                        None,
                         Some(&error),
                     );
                 }
                 let identities = client.identities.lock();
                 identities.devices.free(device_id);
                 identities.queues.free(queue_id);
-            } else {
-                unsafe {
-                    wgpu_child_resolve_request_device_promise(
-                        client.owner,
-                        device_id,
-                        queue_id,
-                        None,
-                    );
-                }
             }
-        }
+            Ok(limits) => unsafe {
+                wgpu_child_resolve_request_device_promise(
+                    client.owner,
+                    device_id,
+                    queue_id,
+                    Some(&limits),
+                    None,
+                );
+            },
+        },
         ServerMessage::PopErrorScopeResponse(device_id, ty, message) => {
             let message = nsCString::from(message.as_ref());
             unsafe {
