@@ -2828,18 +2828,18 @@ unsafe fn process_message(
             queue_id,
             desc,
         } => {
-            let res = adapter_request_device(global, adapter_id, desc, device_id, queue_id);
-
-            if res.is_ok() {
-                set_uncaptured_error_handler(global, device_id);
-                set_device_lost_handler(global, device_id);
-                wgpu_parent_post_request_device(global.owner, device_id);
-            }
+            let res =
+                adapter_request_device(global, adapter_id, desc, device_id, queue_id).map(|()| {
+                    set_uncaptured_error_handler(global, device_id);
+                    set_device_lost_handler(global, device_id);
+                    wgpu_parent_post_request_device(global.owner, device_id);
+                    // Not the limits we were asked for: wgpu-core adjusts them
+                    // per <https://www.w3.org/TR/webgpu/#a-new-device>.
+                    global.device_limits(device_id)
+                });
 
             *response_byte_buf = make_byte_buf(&ServerMessage::RequestDeviceResponse(
-                device_id,
-                queue_id,
-                res.err(),
+                device_id, queue_id, res,
             ));
         }
         Message::Device(id, action) => {

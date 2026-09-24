@@ -423,7 +423,7 @@ pub enum BufferMapResult<'a> {
 #[derive(serde::Serialize, serde::Deserialize)]
 enum ServerMessage<'a> {
     RequestAdapterResponse(id::AdapterId, Option<AdapterInformation<Cow<'a, str>>>),
-    RequestDeviceResponse(id::DeviceId, id::QueueId, Option<String>),
+    RequestDeviceResponse(id::DeviceId, id::QueueId, Result<wgt::Limits, String>),
     PopErrorScopeResponse(id::DeviceId, FfiPopErrorScopeResultType, Cow<'a, str>),
     CreateRenderPipelineResponse {
         pipeline_id: id::RenderPipelineId,
