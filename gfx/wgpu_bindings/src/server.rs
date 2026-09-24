@@ -207,12 +207,16 @@ fn restrict_limits(limits: wgt::Limits) -> wgt::Limits {
             .min(MAX_BINDINGS_PER_RESOURCE_TYPE),
         max_storage_buffers_per_shader_stage: max_storage_buffers_per_shader_stage
             .min(MAX_BINDINGS_PER_RESOURCE_TYPE),
-        max_storage_buffers_in_vertex_stage,
-        max_storage_buffers_in_fragment_stage,
+        max_storage_buffers_in_vertex_stage: max_storage_buffers_in_vertex_stage
+            .min(MAX_BINDINGS_PER_RESOURCE_TYPE),
+        max_storage_buffers_in_fragment_stage: max_storage_buffers_in_fragment_stage
+            .min(MAX_BINDINGS_PER_RESOURCE_TYPE),
         max_storage_textures_per_shader_stage: max_storage_textures_per_shader_stage
             .min(MAX_BINDINGS_PER_RESOURCE_TYPE),
-        max_storage_textures_in_vertex_stage,
-        max_storage_textures_in_fragment_stage,
+        max_storage_textures_in_vertex_stage: max_storage_textures_in_vertex_stage
+            .min(MAX_BINDINGS_PER_RESOURCE_TYPE),
+        max_storage_textures_in_fragment_stage: max_storage_textures_in_fragment_stage
+            .min(MAX_BINDINGS_PER_RESOURCE_TYPE),
         max_uniform_buffers_per_shader_stage: max_uniform_buffers_per_shader_stage
             .min(MAX_BINDINGS_PER_RESOURCE_TYPE),
         max_binding_array_elements_per_shader_stage,
