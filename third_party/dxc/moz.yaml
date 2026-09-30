@@ -1,0 +1,37 @@
+# NOTE: Keep this in sync. with `taskcluster/kinds/fetch/toolchains.yml`!
+
+schema: 1
+
+bugzilla:
+  product: Core
+  component: "Graphics: WebGPU"
+
+origin:
+  name: dxc
+  description: Source code for Mozilla's DXC fork
+  url: https://github.com/FirefoxGraphics/DirectXShaderCompiler
+  release: bookmark moz-1.9.2602
+  revision: 9c26d96149925760ca86cd43610d9d32b6ec70c2
+  license: DXC
+
+vendoring:
+  flavor: individual-files
+  source-hosting: github
+  url: https://github.com/FirefoxGraphics/DirectXShaderCompiler
+  individual-files:
+    - upstream: LICENSE.TXT
+      destination: LICENSE.TXT
+  update-actions:
+    - action: replace-in-file-regex
+      file: ../../taskcluster/kinds/fetch/toolchains.yml
+      # NOTE: We do an awkward final space in indentation so we work around (TODO BUGZILLA REF).
+      pattern: '\n        repo: https://github\.com/FirefoxGraphics/DirectXShaderCompiler\n       \srevision: [a-fA-F0-9]+\n'
+      with: "\n        repo: https://github.com/FirefoxGraphics/DirectXShaderCompiler\n       \x20revision: {revision}\n"
+
+updatebot:
+  maintainer-phab: ErichDonGubler
+  maintainer-bz: egubler@mozilla.com
+  try-preset: webgpu
+  tasks:
+    - type: vendoring
+      frequency: '1 commits'

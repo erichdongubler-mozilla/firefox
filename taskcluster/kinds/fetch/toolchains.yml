@@ -816,6 +816,7 @@ uv:
         repo: https://github.com/astral-sh/uv
         revision: ebf0f43d7c4267876fc256f5fce75982c33f4399
 
+# NOTE: Keep this in sync with `third_party/dxc/moz.yaml`.
 dxc-src:
     description: Source code for mozilla's DXC fork
     fetch:

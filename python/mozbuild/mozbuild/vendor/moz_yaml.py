@@ -57,6 +57,7 @@ VALID_LICENSES = [
     "Khronos",  # https://www.khronos.org/openmaxdl
     "libpng",  # http://www.libpng.org/pub/png/src/libpng-LICENSE.txt
     "Unicode",  # http://www.unicode.org/copyright.html
+    "DXC",  # http://github.com/FirefoxGraphics/DirectXShaderCompiler/blob/main/LICENSE.txt
 ]
 
 VALID_SOURCE_HOSTS = [
