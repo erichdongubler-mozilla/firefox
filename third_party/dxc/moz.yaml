@@ -24,9 +24,8 @@ vendoring:
   update-actions:
     - action: replace-in-file-regex
       file: ../../taskcluster/kinds/fetch/toolchains.yml
-      # NOTE: We do an awkward final space in indentation so we work around (TODO BUGZILLA REF).
-      pattern: '\n        repo: https://github\.com/FirefoxGraphics/DirectXShaderCompiler\n       \srevision: [a-fA-F0-9]+\n'
-      with: "\n        repo: https://github.com/FirefoxGraphics/DirectXShaderCompiler\n       \x20revision: {revision}\n"
+      pattern: '(repo: https://github\.com/FirefoxGraphics/DirectXShaderCompiler\n\s*?revision: )([a-fA-F0-9]+)\n'
+      with: '\g<1>{revision}'
 
 updatebot:
   maintainer-phab: ErichDonGubler
