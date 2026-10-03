@@ -1085,8 +1085,9 @@ ipc::IPCResult WebGPUParent::GetFrontBufferSnapshot(
       bufferId = data->mUnassignedBufferIds.back();
       data->mUnassignedBufferIds.pop_back();
 
-      ffi::WGPUBufferUsages usage =
-          WGPUBufferUsages_COPY_DST | WGPUBufferUsages_MAP_READ;
+      ffi::WGPUBufferUsagesWebGPU usage =
+          dom::GPUBufferUsage_Binding::COPY_DST |
+          dom::GPUBufferUsage_Binding::MAP_READ;
 
       bool succeeded = ffi::wgpu_server_device_create_buffer(
           mContext.get(), data->mDeviceId, bufferId, bufferSize, usage);
@@ -1234,8 +1235,9 @@ void WebGPUParent::SwapChainPresent(
       bufferId = data->mUnassignedBufferIds.back();
       data->mUnassignedBufferIds.pop_back();
 
-      ffi::WGPUBufferUsages usage =
-          WGPUBufferUsages_COPY_DST | WGPUBufferUsages_MAP_READ;
+      ffi::WGPUBufferUsagesWebGPU usage =
+          dom::GPUBufferUsage_Binding::COPY_DST |
+          dom::GPUBufferUsage_Binding::MAP_READ;
 
       bool succeeded = ffi::wgpu_server_device_create_buffer(
           mContext.get(), data->mDeviceId, bufferId, bufferSize, usage);

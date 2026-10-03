@@ -47,6 +47,8 @@ using WGPURenderBundleEncoderId = uint64_t;
 using WGPUComputePipelineId = uint64_t;
 using WGPUDeviceId = uint64_t;
 using WGPUFeaturesWebGPU = uint64_t;
+using WGPUBufferUsagesWebGPU = uint32_t;
+using WGPUShaderStagesWebGPU = uint32_t;
 using WGPUPipelineLayoutId = uint64_t;
 using WGPUQuerySetId = uint64_t;
 using WGPUQueueId = uint64_t;
@@ -88,7 +90,6 @@ exclude = [
 	"Option_QuerySetId",
 	"Option_DeviceId",
 ]
-include = ["BufferUsages"]
 
 [export.rename]
 "nsString" = "nsString"

@@ -14,7 +14,9 @@ use crate::{BufferMapResult, Message, QueueWriteDataSource, ServerMessage, SwapC
 
 use wgc::naga::front::wgsl::ImplementedLanguageExtension;
 use wgpu_core_remote_types::binding_model::{
-    BindGroupDescriptor, BindGroupEntry, BindGroupLayoutDescriptor, BindingResource, BufferBinding,
+    BindGroupDescriptor, BindGroupEntry, BindGroupLayoutDescriptor, BindGroupLayoutEntry,
+    BindingResource, BufferBinding, BufferBindingLayout, SamplerBindingLayout,
+    StorageTextureBindingLayout, TextureBindingLayout,
 };
 use wgpu_core_remote_types::encoders::{
     BindingCommand, CommandBufferDescriptor, CommandEncoderCommand, ComputePassDescriptor,
@@ -31,8 +33,8 @@ use wgpu_core_remote_types::{
     ffi::FfiOption, id, identity::IdentityHub, identity::IdentityManager,
 };
 use wgpu_core_remote_types::{
-    BufferDescriptor, PipelineLayoutDescriptor, QuerySetDescriptor, RequestAdapterOptions,
-    SamplerDescriptor, TextureViewDescriptor,
+    BufferDescriptor, DeviceDescriptor, PipelineLayoutDescriptor, QuerySetDescriptor,
+    RequestAdapterOptions, SamplerDescriptor, TextureViewDescriptor,
 };
 use wgt::{BufferAddress, CommandEncoderDescriptor, DynamicOffset, IndexFormat};
 
@@ -237,7 +239,7 @@ pub enum BindingTypeError {
 #[repr(C)]
 pub struct FfiBindGroupLayoutEntry<'a> {
     binding: u32,
-    visibility: wgt::ShaderStages,
+    visibility: wgt::ShaderStagesWebGPU,
     ty: RawBindingType,
     has_dynamic_offset: bool,
     min_binding_size: Option<wgt::BufferSize>,
@@ -491,16 +493,14 @@ pub extern "C" fn wgpu_client_request_device(
     drop(identities);
 
     let label = wgpu_string(desc.label);
-    let required_features =
-        wgt::Features::from_internal_flags(wgt::FeaturesWGPU::empty(), desc.required_features);
-    let desc = wgt::DeviceDescriptor {
+    let desc = DeviceDescriptor {
         label,
-        required_features,
+        required_features: desc.required_features,
         required_limits: desc.required_limits.clone(),
         // The content process is untrusted, so values set here in fields of the device descriptor
         // not intended to be set by content are ignored, and are overridden in
         // `server::request_device`.
-        ..wgt::DeviceDescriptor::default()
+        ..DeviceDescriptor::default()
     };
     let message = Message::RequestDevice {
         adapter_id,
@@ -1022,7 +1022,7 @@ pub extern "C" fn wgpu_client_push_error_scope(
 pub struct FfiBufferDescriptor<'a> {
     label: Option<&'a nsACString>,
     size: u64,
-    usage: wgt::BufferUsages,
+    usage: wgt::BufferUsagesWebGPU,
     mapped_at_creation: bool,
 }
 
@@ -1582,36 +1582,53 @@ pub unsafe extern "C" fn wgpu_client_create_bind_group_layout(
         .iter()
         .enumerate()
         .map(|(idx, entry)| {
-            Ok(wgt::BindGroupLayoutEntry {
+            let buffer = |ty| {
+                FfiOption::Some(BufferBindingLayout {
+                    ty,
+                    has_dynamic_offset: entry.has_dynamic_offset,
+                    min_binding_size: entry.min_binding_size,
+                })
+            };
+            let storage_texture = |access| {
+                FfiOption::Some(StorageTextureBindingLayout {
+                    access,
+                    view_dimension: *entry.view_dimension.unwrap(),
+                    format: *entry.storage_texture_format.unwrap(),
+                })
+            };
+
+            let mut out = BindGroupLayoutEntry {
                 binding: entry.binding,
                 visibility: entry.visibility,
-                count: None,
-                ty: match entry.ty {
-                    RawBindingType::UniformBuffer => wgt::BindingType::Buffer {
-                        ty: wgt::BufferBindingType::Uniform,
-                        has_dynamic_offset: entry.has_dynamic_offset,
-                        min_binding_size: entry.min_binding_size,
-                    },
-                    RawBindingType::StorageBuffer => wgt::BindingType::Buffer {
-                        ty: wgt::BufferBindingType::Storage { read_only: false },
-                        has_dynamic_offset: entry.has_dynamic_offset,
-                        min_binding_size: entry.min_binding_size,
-                    },
-                    RawBindingType::ReadonlyStorageBuffer => wgt::BindingType::Buffer {
-                        ty: wgt::BufferBindingType::Storage { read_only: true },
-                        has_dynamic_offset: entry.has_dynamic_offset,
-                        min_binding_size: entry.min_binding_size,
-                    },
-                    RawBindingType::Sampler => {
-                        wgt::BindingType::Sampler(if entry.sampler_compare {
+                buffer: FfiOption::None,
+                sampler: FfiOption::None,
+                texture: FfiOption::None,
+                storage_texture: FfiOption::None,
+                external_texture: false,
+            };
+            match entry.ty {
+                RawBindingType::UniformBuffer => {
+                    out.buffer = buffer(wgt::BufferBindingType::Uniform)
+                }
+                RawBindingType::StorageBuffer => {
+                    out.buffer = buffer(wgt::BufferBindingType::Storage { read_only: false })
+                }
+                RawBindingType::ReadonlyStorageBuffer => {
+                    out.buffer = buffer(wgt::BufferBindingType::Storage { read_only: true })
+                }
+                RawBindingType::Sampler => {
+                    out.sampler = FfiOption::Some(SamplerBindingLayout {
+                        ty: if entry.sampler_compare {
                             wgt::SamplerBindingType::Comparison
                         } else if entry.sampler_filter {
                             wgt::SamplerBindingType::Filtering
                         } else {
                             wgt::SamplerBindingType::NonFiltering
-                        })
-                    }
-                    RawBindingType::SampledTexture => wgt::BindingType::Texture {
+                        },
+                    })
+                }
+                RawBindingType::SampledTexture => {
+                    out.texture = FfiOption::Some(TextureBindingLayout {
                         //TODO: the spec has a bug here
                         view_dimension: *entry
                             .view_dimension
@@ -1628,26 +1645,21 @@ pub unsafe extern "C" fn wgpu_client_create_bind_group_layout(
                             Some(RawTextureSampleType::Depth) => wgt::TextureSampleType::Depth,
                         },
                         multisampled: entry.multisampled,
-                    },
-                    RawBindingType::ReadonlyStorageTexture => wgt::BindingType::StorageTexture {
-                        access: wgt::StorageTextureAccess::ReadOnly,
-                        view_dimension: *entry.view_dimension.unwrap(),
-                        format: *entry.storage_texture_format.unwrap(),
-                    },
-                    RawBindingType::WriteonlyStorageTexture => wgt::BindingType::StorageTexture {
-                        access: wgt::StorageTextureAccess::WriteOnly,
-                        view_dimension: *entry.view_dimension.unwrap(),
-                        format: *entry.storage_texture_format.unwrap(),
-                    },
-                    RawBindingType::ReadWriteStorageTexture => wgt::BindingType::StorageTexture {
-                        access: wgt::StorageTextureAccess::ReadWrite,
-                        view_dimension: *entry.view_dimension.unwrap(),
-                        format: *entry.storage_texture_format.unwrap(),
-                    },
-                    RawBindingType::ExternalTexture => wgt::BindingType::ExternalTexture,
-                    RawBindingType::Error => return Err((idx, entry.error_case)),
-                },
-            })
+                    })
+                }
+                RawBindingType::ReadonlyStorageTexture => {
+                    out.storage_texture = storage_texture(wgt::StorageTextureAccess::ReadOnly)
+                }
+                RawBindingType::WriteonlyStorageTexture => {
+                    out.storage_texture = storage_texture(wgt::StorageTextureAccess::WriteOnly)
+                }
+                RawBindingType::ReadWriteStorageTexture => {
+                    out.storage_texture = storage_texture(wgt::StorageTextureAccess::ReadWrite)
+                }
+                RawBindingType::ExternalTexture => out.external_texture = true,
+                RawBindingType::Error => return Err((idx, entry.error_case)),
+            }
+            Ok(out)
         })
         .collect::<Result<_, _>>();
 

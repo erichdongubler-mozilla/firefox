@@ -466,46 +466,19 @@ unsafe fn adapter_request_device(
     new_device_id: id::DeviceId,
     new_queue_id: id::QueueId,
 ) -> Result<(), String> {
-    let mut sanitized_desc = {
-        let DeviceDescriptor {
-            label,
-            required_features,
-            required_limits,
-            default_queue,
-            experimental_features,
-            memory_hints,
-            trace,
-        } = desc;
+    // Note that wgpu-core will generally ignore all required features and limits that
+    // are not part of the spec. See docs of `InstanceFlags::STRICT_WEBGPU_COMPLIANCE`
+    // for exceptions and actual behavior.
 
-        assert_eq!(required_features.features_wgpu, wgt::FeaturesWGPU::empty());
-        // TODO: compare to DeviceDescriptor::default() once wgpu offers `Eq`
-        // for the necessary types.
-        assert!(!experimental_features.is_enabled());
-        assert!(matches!(memory_hints, wgt::MemoryHints::Performance));
-        assert!(matches!(trace, wgt::Trace::Off));
-
-        // Note that wgpu-core will generally ignore all required features and limits that
-        // are not part of the spec. See docs of `InstanceFlags::STRICT_WEBGPU_COMPLIANCE`
-        // for exceptions and actual behavior.
-
-        DeviceDescriptor {
-            label,
-            required_features,
-            required_limits,
-            default_queue,
-            experimental_features: wgt::ExperimentalFeatures::disabled(),
-            memory_hints: wgt::MemoryHints::MemoryUsage,
-            trace: wgt::Trace::Off, // may be overridden below
-        }
-    };
-
+    let mut trace = wgt::Trace::Off;
     if let Some(env_dir) = std::env::var_os("WGPU_TRACE") {
         match create_next_numbered_dir(&std::path::PathBuf::from(env_dir)) {
-            Ok(path) => sanitized_desc.trace = wgt::Trace::Directory(path),
+            Ok(path) => trace = wgt::Trace::Directory(path),
             Err(err) => log::warn!("Failed to create directory for wgpu recording: {err:?}"),
         }
     }
 
+    let mut additional_features = wgt::Features::empty();
     if unsafe { wgpu_parent_is_external_texture_enabled() } {
         // Enable features used for external texture support, if available. We
         // avoid adding unsupported features to required_features so that we
@@ -518,7 +491,7 @@ unsafe fn adapter_request_device(
             wgt::Features::TEXTURE_FORMAT_16BIT_NORM,
         ] {
             if global.adapter_features(self_id).contains(feature) {
-                sanitized_desc.required_features.insert(feature);
+                additional_features.insert(feature);
             }
         }
     }
@@ -548,6 +521,20 @@ unsafe fn adapter_request_device(
         match support_dma_buf {
             false => {}
             true => {
+                let mut sanitized_desc = wgt::DeviceDescriptor {
+                    label: desc.label,
+                    required_features: wgt::Features::from_internal_flags(
+                        wgt::FeaturesWGPU::empty(),
+                        desc.required_features,
+                    )
+                    .union(additional_features),
+                    required_limits: desc.required_limits,
+                    default_queue: desc.default_queue,
+                    experimental_features: wgt::ExperimentalFeatures::disabled(),
+                    memory_hints: wgt::MemoryHints::MemoryUsage,
+                    trace,
+                };
+
                 global
                     .adapter_validate_device_descriptor(self_id, &mut sanitized_desc)
                     .map_err(request_device_error_to_string)?;
@@ -662,7 +649,14 @@ unsafe fn adapter_request_device(
     }
 
     global
-        .adapter_request_device(self_id, &sanitized_desc, new_device_id, new_queue_id)
+        .adapter_request_device(
+            self_id,
+            &desc,
+            trace,
+            additional_features,
+            new_device_id,
+            new_queue_id,
+        )
         .map_err(request_device_error_to_string)?;
 
     Ok(())
@@ -792,10 +786,8 @@ pub extern "C" fn wgpu_server_device_create_buffer(
     device_id: id::DeviceId,
     buffer_id: id::BufferId,
     size: wgt::BufferAddress,
-    usage: u32,
+    usage: wgt::BufferUsagesWebGPU,
 ) -> bool {
-    let usage = wgt::BufferUsages::from_bits_retain(usage);
-
     let desc = BufferDescriptor {
         label: None,
         size,
@@ -906,10 +898,10 @@ pub enum HostMap {
 }
 
 impl HostMap {
-    fn to_wgc(&self) -> wgc::device::HostMap {
+    fn to_wgc(&self) -> wgt::MapMode {
         match self {
-            HostMap::Read => wgc::device::HostMap::Read,
-            HostMap::Write => wgc::device::HostMap::Write,
+            HostMap::Read => wgt::MapMode::Read,
+            HostMap::Write => wgt::MapMode::Write,
         }
     }
 }
@@ -938,7 +930,7 @@ pub unsafe extern "C" fn wgpu_server_buffer_map(
     .detach();
 
     let operation = wgc::resource::BufferMapOperation {
-        host: map_mode.to_wgc(),
+        mode: map_mode.to_wgc(),
         callback: Some(Box::new(move |result| {
             // Send the map result from whatever thread this callback is running
             // on to the task we spawned above.
@@ -978,7 +970,7 @@ pub extern "C" fn wgpu_server_buffer_map_blocking(
     // poll might happen on another thread.
     let status_passback = Arc::new(OnceLock::new());
     let op = wgc::resource::BufferMapOperation {
-        host: map_mode.to_wgc(),
+        mode: map_mode.to_wgc(),
         callback: Some(Box::new({
             let status_passback = Arc::clone(&status_passback);
             move |status| {
@@ -1796,6 +1788,7 @@ impl Global {
                 desc.size,
                 1,
                 1,
+                None,
             )
         };
         let (_, error) = unsafe {
@@ -2092,9 +2085,9 @@ impl Global {
                 desc,
                 shmem_handle_index,
             } => {
-                let has_map_flags = desc
-                    .usage
-                    .intersects(wgt::BufferUsages::MAP_READ | wgt::BufferUsages::MAP_WRITE);
+                let has_map_flags = desc.usage.intersects(
+                    wgt::BufferUsagesWebGPU::MAP_READ | wgt::BufferUsagesWebGPU::MAP_WRITE,
+                );
                 let needs_shmem = has_map_flags || desc.mapped_at_creation;
 
                 let shmem_data =
@@ -2370,7 +2363,7 @@ impl Global {
             }
             DeviceAction::CreateRenderPipeline(id, desc, is_async) => {
                 if is_async {
-                    let result = self.create_render_pipeline_or_error(device_id, &desc, id);
+                    let result = self.device_create_render_pipeline_or_error(device_id, &desc, id);
                     let error = result.err().map(pipeline_error_to_ffi);
                     *response_byte_buf =
                         make_byte_buf(&ServerMessage::CreateRenderPipelineResponse {
@@ -2560,7 +2553,7 @@ fn process_buffer_map(global: &Global, msg: Message, response_byte_buf: &mut Byt
     .detach();
 
     let operation = wgc::resource::BufferMapOperation {
-        host: mode.to_wgc(),
+        mode: mode.to_wgc(),
         callback: Some(Box::new(move |result| {
             // Send the map result from whatever thread this callback is running
             // on to the task we spawned above.
@@ -3296,6 +3289,7 @@ pub unsafe extern "C" fn wgpu_server_device_import_texture_from_shared_handle(
         desc.size,
         desc.mip_level_count,
         desc.sample_count,
+        None,
     );
 
     let (_, error) = global.create_texture_from_hal(

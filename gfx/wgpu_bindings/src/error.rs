@@ -19,14 +19,24 @@ pub fn error_to_string(error: impl Error) -> String {
     message
 }
 
-pub fn request_device_error_to_string(err: wgc::instance::RequestDeviceError) -> String {
-    err.to_string()
+pub fn request_device_error_to_string(err: wgpu_core_remote_types::RequestDeviceError) -> String {
+    use wgpu_core_remote_types::RequestDeviceError as E;
+    match err {
+        E::UnsupportedFeature(message) | E::FailedLimit(message) | E::Other(message) => message,
+    }
 }
 
-pub(crate) fn pipeline_error_to_ffi(err: impl Error + WebGpuError) -> crate::PipelineError {
+pub(crate) fn pipeline_error_to_ffi(
+    err: wgpu_core_remote_types::PipelineError,
+) -> crate::PipelineError {
+    use wgpu_core_remote_types::PipelineError as E;
+    let (is_validation_error, error) = match err {
+        E::Validation(message) => (true, message),
+        E::Internal(message) => (false, message),
+    };
     crate::PipelineError {
-        is_validation_error: matches!(err.webgpu_error_type(), ErrorType::Validation),
-        error: error_to_string(err),
+        is_validation_error,
+        error,
     }
 }
 
