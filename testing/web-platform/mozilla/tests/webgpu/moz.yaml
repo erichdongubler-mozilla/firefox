@@ -1,0 +1,12 @@
+schema: 1
+
+bugzilla:
+  product: Core
+  component: "Graphics: WebGPU"
+
+origin:
+  name: WebGPU CTS
+  description: A vendored copy of compiled entries in the WebGPU CTS.
+  url: https://github.com/gpuweb/cts
+  license: BSD-3-Clause
+  release: tag idkman

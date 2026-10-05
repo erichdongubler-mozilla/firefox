@@ -295,6 +295,7 @@ def _get_files_info(command_context, paths, rev=None):
 
             relpaths.append(mozpath.relpath(a, command_context.topsrcdir))
 
+    print(f"{relpaths=}")
     # Expand wildcards.
     # One variable is for ordering. The other for membership tests.
     # (Membership testing on a list can be slow.)
