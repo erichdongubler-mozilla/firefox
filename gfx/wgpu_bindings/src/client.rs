@@ -5,8 +5,8 @@
 use crate::error::GPUError;
 use crate::{
     cow_label, raw_string_to_string, wgpu_string, AdapterInformation, ByteBuf, DeviceAction,
-    FfiDeviceLostReason, FfiErrorFilter, FfiPopErrorScopeResultType, FfiSlice,
-    FfiTexelCopyBufferLayout, FfiTextureDescriptor, QueueWriteAction, RawString,
+    FfiDeviceLostReason, FfiErrorFilter, FfiPopErrorScopeResultType, FfiRequestDeviceError,
+    FfiSlice, FfiTexelCopyBufferLayout, FfiTextureDescriptor, QueueWriteAction, RawString,
     ShaderModuleCompilationMessage, TextureAction,
 };
 
@@ -574,7 +574,7 @@ extern "C" {
         child: WebGPUChildPtr,
         device_id: id::DeviceId,
         queue_id: id::QueueId,
-        error: Option<&nsCString>,
+        error: Option<&FfiRequestDeviceError>,
     );
     fn wgpu_child_resolve_pop_error_scope_promise(
         child: WebGPUChildPtr,
@@ -677,7 +677,11 @@ pub extern "C" fn wgpu_client_receive_server_message(client: &Client, byte_buf: 
         }
         ServerMessage::RequestDeviceResponse(device_id, queue_id, error) => {
             if let Some(error) = error {
-                let error = nsCString::from(error);
+                let message = nsCString::from(error.message);
+                let error = FfiRequestDeviceError {
+                    ty: error.ty,
+                    message: &message,
+                };
                 unsafe {
                     wgpu_child_resolve_request_device_promise(
                         client.owner,

@@ -22,7 +22,7 @@ pub mod telemetry;
 use std::marker::PhantomData;
 use std::{borrow::Cow, mem, slice};
 
-use nsstring::nsACString;
+use nsstring::{nsACString, nsCString};
 
 use crate::error::GPUError;
 
@@ -399,6 +399,37 @@ struct PipelineError {
     error: String,
 }
 
+/// The DOM exception `GPUAdapter.requestDevice()` is specified to reject with.
+#[repr(C)]
+#[derive(Clone, Copy, serde::Serialize, serde::Deserialize)]
+pub enum FfiRequestDeviceErrorType {
+    TypeError,
+    OperationError,
+}
+
+#[repr(C)]
+pub struct FfiRequestDeviceError<'a> {
+    pub ty: FfiRequestDeviceErrorType,
+    pub message: &'a nsCString,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+struct RequestDeviceError {
+    ty: FfiRequestDeviceErrorType,
+    message: String,
+}
+
+impl RequestDeviceError {
+    /// Only the Vulkan/dmabuf device-creation path constructs these directly.
+    #[cfg(target_os = "linux")]
+    fn operation_error(message: String) -> Self {
+        Self {
+            ty: FfiRequestDeviceErrorType::OperationError,
+            message,
+        }
+    }
+}
+
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct ShaderModuleCompilationMessage {
     pub line_number: u64,
@@ -422,7 +453,7 @@ pub enum BufferMapResult<'a> {
 #[derive(serde::Serialize, serde::Deserialize)]
 enum ServerMessage<'a> {
     RequestAdapterResponse(id::AdapterId, Option<AdapterInformation<Cow<'a, str>>>),
-    RequestDeviceResponse(id::DeviceId, id::QueueId, Option<String>),
+    RequestDeviceResponse(id::DeviceId, id::QueueId, Option<RequestDeviceError>),
     PopErrorScopeResponse(id::DeviceId, FfiPopErrorScopeResultType, Cow<'a, str>),
     CreateRenderPipelineResponse {
         pipeline_id: id::RenderPipelineId,

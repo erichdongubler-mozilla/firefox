@@ -3,13 +3,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use crate::{
-    error::{pipeline_error_to_ffi, request_device_error_to_string, GPUError},
+    error::{pipeline_error_to_ffi, request_device_error_to_ffi, GPUError},
     make_byte_buf,
     telemetry::build_telemetry_struct,
     wgpu_string, AdapterInformation, BufferMapResult, ByteBuf, DeviceAction, FfiDeviceLostReason,
     FfiErrorFilter, FfiPopErrorScopeResultType, FfiSlice, FfiTextureDescriptor, Message,
-    QueueWriteAction, QueueWriteDataSource, ServerMessage, ShaderModuleCompilationMessage,
-    SwapChainId, TextureAction,
+    QueueWriteAction, QueueWriteDataSource, RequestDeviceError, ServerMessage,
+    ShaderModuleCompilationMessage, SwapChainId, TextureAction,
 };
 
 use futures_util::StreamExt;
@@ -465,7 +465,7 @@ unsafe fn adapter_request_device(
     desc: DeviceDescriptor,
     new_device_id: id::DeviceId,
     new_queue_id: id::QueueId,
-) -> Result<(), String> {
+) -> Result<(), RequestDeviceError> {
     // Note that wgpu-core will generally ignore all required features and limits that
     // are not part of the spec. See docs of `InstanceFlags::STRICT_WEBGPU_COMPLIANCE`
     // for exceptions and actual behavior.
@@ -537,7 +537,7 @@ unsafe fn adapter_request_device(
 
                 global
                     .adapter_validate_device_descriptor(self_id, &mut sanitized_desc)
-                    .map_err(request_device_error_to_string)?;
+                    .map_err(request_device_error_to_ffi)?;
 
                 let mut enabled_extensions =
                     hal_adapter.required_device_extensions(sanitized_desc.required_features);
@@ -568,7 +568,9 @@ unsafe fn adapter_request_device(
                 let Some(queue_family_index) = queue_family_index else {
                     let msg = c"Vulkan device has no graphics queue";
                     unsafe { gfx_critical_note(msg.as_ptr()) };
-                    return Err(format!("Internal Error: Failed to create ash::Device"));
+                    return Err(RequestDeviceError::operation_error(
+                        "Internal Error: Failed to create ash::Device".to_string(),
+                    ));
                 };
 
                 let family_info = vk::DeviceQueueCreateInfo::default()
@@ -599,7 +601,9 @@ unsafe fn adapter_request_device(
                             let msg =
                                 CString::new(format!("create_device() failed: {:?}", err)).unwrap();
                             gfx_critical_note(msg.as_ptr());
-                            format!("Internal Error: Failed to create ash::Device")
+                            RequestDeviceError::operation_error(
+                                "Internal Error: Failed to create ash::Device".to_string(),
+                            )
                         })?
                 };
 
@@ -625,7 +629,9 @@ unsafe fn adapter_request_device(
                             let msg = CString::new(format!("device_from_raw() failed: {:?}", err))
                                 .unwrap();
                             gfx_critical_note(msg.as_ptr());
-                            format!("Internal Error: Failed to create ash::Device")
+                            RequestDeviceError::operation_error(
+                                "Internal Error: Failed to create ash::Device".to_string(),
+                            )
                         })?
                 };
 
@@ -640,7 +646,7 @@ unsafe fn adapter_request_device(
                             new_device_id,
                             new_queue_id,
                         )
-                        .map_err(request_device_error_to_string)?;
+                        .map_err(request_device_error_to_ffi)?;
                 }
 
                 return Ok(());
@@ -657,7 +663,7 @@ unsafe fn adapter_request_device(
             new_device_id,
             new_queue_id,
         )
-        .map_err(request_device_error_to_string)?;
+        .map_err(request_device_error_to_ffi)?;
 
     Ok(())
 }

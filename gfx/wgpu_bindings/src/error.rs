@@ -19,11 +19,17 @@ pub fn error_to_string(error: impl Error) -> String {
     message
 }
 
-pub fn request_device_error_to_string(err: wgpu_core_remote_types::RequestDeviceError) -> String {
+pub(crate) fn request_device_error_to_ffi(
+    err: wgpu_core_remote_types::RequestDeviceError,
+) -> crate::RequestDeviceError {
+    use crate::FfiRequestDeviceErrorType as Ty;
     use wgpu_core_remote_types::RequestDeviceError as E;
-    match err {
-        E::UnsupportedFeature(message) | E::FailedLimit(message) | E::Other(message) => message,
-    }
+    let (ty, message) = match err {
+        E::UnsupportedFeature(message) => (Ty::TypeError, message),
+        E::FailedLimit(message) => (Ty::OperationError, message),
+        E::Other(message) => (Ty::OperationError, message),
+    };
+    crate::RequestDeviceError { ty, message }
 }
 
 pub(crate) fn pipeline_error_to_ffi(
