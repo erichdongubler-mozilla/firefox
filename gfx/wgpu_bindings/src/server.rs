@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use crate::{
-    error::{error_to_string, GPUError},
+    error::{error_to_string, request_device_error_to_string, GPUError},
     make_byte_buf,
     telemetry::build_telemetry_struct,
     wgpu_string, AdapterInformation, BufferMapResult, ByteBuf, DeviceAction, FfiDeviceLostReason,
@@ -550,7 +550,7 @@ unsafe fn adapter_request_device(
             true => {
                 global
                     .adapter_validate_device_descriptor(self_id, &mut sanitized_desc)
-                    .map_err(|err| err.to_string())?;
+                    .map_err(request_device_error_to_string)?;
 
                 let mut enabled_extensions =
                     hal_adapter.required_device_extensions(sanitized_desc.required_features);
@@ -653,7 +653,7 @@ unsafe fn adapter_request_device(
                             new_device_id,
                             new_queue_id,
                         )
-                        .map_err(|err| err.to_string())?;
+                        .map_err(request_device_error_to_string)?;
                 }
 
                 return Ok(());
@@ -663,7 +663,7 @@ unsafe fn adapter_request_device(
 
     global
         .adapter_request_device(self_id, &sanitized_desc, new_device_id, new_queue_id)
-        .map_err(|err| err.to_string())?;
+        .map_err(request_device_error_to_string)?;
 
     Ok(())
 }

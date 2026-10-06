@@ -19,6 +19,10 @@ pub fn error_to_string(error: impl Error) -> String {
     message
 }
 
+pub fn request_device_error_to_string(err: wgc::instance::RequestDeviceError) -> String {
+    err.to_string()
+}
+
 #[derive(Debug, thiserror::Error, Serialize, Deserialize)]
 #[error("{message}")]
 pub struct GPUError<'a> {
