@@ -23,6 +23,13 @@ pub fn request_device_error_to_string(err: wgc::instance::RequestDeviceError) ->
     err.to_string()
 }
 
+pub(crate) fn pipeline_error_to_ffi(err: impl Error + WebGpuError) -> crate::PipelineError {
+    crate::PipelineError {
+        is_validation_error: matches!(err.webgpu_error_type(), ErrorType::Validation),
+        error: error_to_string(err),
+    }
+}
+
 #[derive(Debug, thiserror::Error, Serialize, Deserialize)]
 #[error("{message}")]
 pub struct GPUError<'a> {

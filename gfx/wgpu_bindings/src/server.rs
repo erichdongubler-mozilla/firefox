@@ -3,13 +3,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use crate::{
-    error::{error_to_string, request_device_error_to_string, GPUError},
+    error::{pipeline_error_to_ffi, request_device_error_to_string, GPUError},
     make_byte_buf,
     telemetry::build_telemetry_struct,
     wgpu_string, AdapterInformation, BufferMapResult, ByteBuf, DeviceAction, FfiDeviceLostReason,
     FfiErrorFilter, FfiPopErrorScopeResultType, FfiSlice, FfiTextureDescriptor, Message,
-    PipelineError, QueueWriteAction, QueueWriteDataSource, ServerMessage,
-    ShaderModuleCompilationMessage, SwapChainId, TextureAction,
+    QueueWriteAction, QueueWriteDataSource, ServerMessage, ShaderModuleCompilationMessage,
+    SwapChainId, TextureAction,
 };
 
 use futures_util::StreamExt;
@@ -2358,14 +2358,7 @@ impl Global {
             DeviceAction::CreateComputePipeline(id, desc, is_async) => {
                 if is_async {
                     let result = self.device_create_compute_pipeline_or_error(device_id, &desc, id);
-                    let error = result.err().map(|e| -> _ {
-                        let is_validation_error =
-                            matches!(e.webgpu_error_type(), ErrorType::Validation);
-                        PipelineError {
-                            is_validation_error,
-                            error: error_to_string(e),
-                        }
-                    });
+                    let error = result.err().map(pipeline_error_to_ffi);
                     *response_byte_buf =
                         make_byte_buf(&ServerMessage::CreateComputePipelineResponse {
                             pipeline_id: id,
@@ -2378,14 +2371,7 @@ impl Global {
             DeviceAction::CreateRenderPipeline(id, desc, is_async) => {
                 if is_async {
                     let result = self.create_render_pipeline_or_error(device_id, &desc, id);
-                    let error = result.err().map(|e| -> _ {
-                        let is_validation_error =
-                            matches!(e.webgpu_error_type(), ErrorType::Validation);
-                        PipelineError {
-                            is_validation_error,
-                            error: error_to_string(e),
-                        }
-                    });
+                    let error = result.err().map(pipeline_error_to_ffi);
                     *response_byte_buf =
                         make_byte_buf(&ServerMessage::CreateRenderPipelineResponse {
                             pipeline_id: id,
