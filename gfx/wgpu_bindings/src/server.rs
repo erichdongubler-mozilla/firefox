@@ -3331,7 +3331,9 @@ pub unsafe extern "C" fn wgpu_server_queue_submit(
     let device = queue.device();
 
     device.push_error_scope(ErrorFilter::Validation);
-    let submission_index = global.queue_submit(queue_id, unsafe { command_buffer_ids.as_slice() });
+    let submission_index = global
+        .queue_submit(queue_id, unsafe { command_buffer_ids.as_slice() })
+        .unwrap_or_else(|index| index);
     let error = device.pop_error_scope().unwrap();
     #[cfg_attr(not(target_os = "linux"), expect(unused_mut))]
     let mut submission_succeeded = error.is_none();
@@ -3350,8 +3352,8 @@ pub unsafe extern "C" fn wgpu_server_queue_submit(
     let _ = signal_semaphores;
 
     // NOTE: `0` means "no index to follow up with".
-    submission_succeeded
-        .then_some(submission_index)
+    submission_index
+        .filter(|_idx| submission_succeeded)
         .unwrap_or(0)
 }
 
