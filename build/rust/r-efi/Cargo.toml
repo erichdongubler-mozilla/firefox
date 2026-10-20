@@ -1,6 +1,6 @@
 [package]
 name = "r-efi"
-version = "5.999.999"
+version = "6.999.999"
 edition = "2018"
 license = "MPL-2.0"
 

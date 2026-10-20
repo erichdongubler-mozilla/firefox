@@ -299,8 +299,11 @@ cc = { path = "third_party/rust/cc" }
 # Patch goblin 0.7.0 to 0.8
 goblin = { path = "build/rust/goblin" }
 
-# Implement getrandom 0.2 in terms of 0.3
+# Implement getrandom 0.2 in terms of 0.4
 getrandom = { path = "build/rust/getrandom" }
+
+# Implement getrandom 0.3 in terms of 0.4
+getrandom_0_3 = { package = "getrandom", path = "build/rust/getrandom-0.3" }
 
 # Implement procfs-core 0.17.0 in terms of 0.18.0
 procfs-core = { path = "build/rust/procfs-core" }
@@ -417,9 +420,6 @@ db-crypto = { path = "third_party/application-services/components/support/db-cry
 fxcontainers = { path = "third_party/application-services/components/fxcontainers" }
 # temporary ohttp override enabling app-services build-related hacks while we wait for a new version.
 ohttp = { git = "https://github.com/martinthomson/ohttp", rev = "600931b5a1e947776cbaad931ed78f1e89005352" }
-
-# Patched version of zip 2.4.2 to allow for reading omnijars.
-zip = { path = "third_party/rust/zip" }
 
 # Unpublished changes
 cssparser = { git = "https://github.com/servo/rust-cssparser", rev = "f918ac231a8da7ff8c8e7d98a1b9488fa2bdac20" }

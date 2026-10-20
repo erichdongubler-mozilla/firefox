@@ -1,0 +1,16 @@
+[package]
+name = "getrandom"
+version = "0.3.999"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+
+[lib]
+path = "lib.rs"
+
+[dependencies.getrandom]
+version = "0.4.3"
+default-features = false
+
+[features]
+std = ["getrandom/std"]
+wasm_js = ["getrandom/wasm_js"]

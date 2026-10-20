@@ -95,6 +95,10 @@ notes = "This is a first-party crate which is also published to crates.io. We ce
 audit-as-crates-io = false
 notes = "Backwards-compatible patching crate for getrandom 0.2."
 
+[policy."getrandom:0.3.999"]
+audit-as-crates-io = false
+notes = "Backwards-compatible patching crate for getrandom 0.3."
+
 [policy.gkrust-gtest]
 criteria = "safe-to-run"
 notes = "Used for testing."
@@ -477,10 +481,6 @@ notes = "This is an in-tree first-party crate that is published to crates.io by 
 
 [policy.wr_malloc_size_of]
 audit-as-crates-io = false
-
-[policy."zip:2.4.2"]
-audit-as-crates-io = true
-notes = "Upstream zip with a patch for omnijars."
 
 [policy.zlib-rs]
 audit-as-crates-io = true

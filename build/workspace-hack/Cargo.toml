@@ -79,7 +79,7 @@ yoke = { version = "0.8", features = ["derive"], optional = true }
 zerocopy = { version = "0.8", optional = true }
 zerofrom = { version = "0.1", default-features = false, features = ["alloc", "derive"], optional = true }
 zerovec = { version = "0.11", default-features = false, features = ["derive", "yoke"], optional = true }
-zip = { version = "2.1.2", default-features = false, features = ["deflate-flate2", "flate2"], optional = true }
+zip = { version = "9.0.5", default-features = false, features = ["deflate-flate2"], optional = true }
 
 [target."cfg(windows)".dependencies]
 scopeguard = { version = "1", optional = true }

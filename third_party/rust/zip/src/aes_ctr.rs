@@ -2,20 +2,25 @@
 //!
 //! This was implemented since the zip specification requires the mode to not use a nonce and uses a
 //! different byte order (little endian) than NIST (big endian).
-//! See [AesCtrZipKeyStream] for more information.
+//! See [`AesCtrZipKeyStream`] for more information.
 
-use crate::unstable::LittleEndianWriteExt;
-use aes::cipher::generic_array::GenericArray;
-use aes::cipher::{BlockEncrypt, KeyInit};
-use std::{any, fmt};
+use crate::result::{ZipError, ZipResult};
+use aes::cipher::{BlockCipherEncrypt, KeyInit};
+use core::{any, fmt};
 
 /// Internal block size of an AES cipher.
 const AES_BLOCK_SIZE: usize = 16;
 
+/// How many counter blocks are encrypted per call into the cipher. CTR blocks are
+/// independent, so a backend can pipeline a batch (AES-NI and ARMv8 run eight at a time);
+/// one block per call leaves that unused. Raising it above 32 needs a different way to
+/// initialize `keystream` in `crypt_in_place`: `Default` is implemented for arrays of up to 32.
+const BATCH_BLOCKS: usize = 32;
+
 /// AES-128.
 #[derive(Debug)]
 pub struct Aes128;
-/// AES-192
+/// AES-192.
 #[derive(Debug)]
 pub struct Aes192;
 /// AES-256.
@@ -26,8 +31,9 @@ pub struct Aes256;
 pub trait AesKind {
     /// Key type.
     type Key: AsRef<[u8]>;
-    /// Cipher used to decrypt.
-    type Cipher: KeyInit;
+    /// Cipher used to encrypt and decrypt. The `ZeroizeOnDrop` bound holds only with the
+    /// `aes` crate's `zeroize` feature, which wipes the round keys when the cipher is dropped.
+    type Cipher: KeyInit + zeroize::ZeroizeOnDrop;
 }
 
 impl AesKind for Aes128 {
@@ -47,9 +53,9 @@ impl AesKind for Aes256 {
 
 /// An AES-CTR key stream generator.
 ///
-/// Implements the slightly non-standard AES-CTR variant used by WinZip AES encryption.
+/// Implements the slightly non-standard AES-CTR variant used by `WinZip` AES encryption.
 ///
-/// Typical AES-CTR implementations combine a nonce with a 64 bit counter. WinZIP AES instead uses
+/// Typical AES-CTR implementations combine a nonce with a 64 bit counter. `WinZIP` AES instead uses
 /// no nonce and also uses a different byte order (little endian) than NIST (big endian).
 ///
 /// The stream implements the `Read` trait; encryption or decryption is performed by XOR-ing the
@@ -79,6 +85,14 @@ where
     }
 }
 
+impl<C: AesKind> Drop for AesCtrZipKeyStream<C> {
+    fn drop(&mut self) {
+        use zeroize::Zeroize;
+        self.buffer.zeroize();
+        self.counter.zeroize();
+    }
+}
+
 impl<C> AesCtrZipKeyStream<C>
 where
     C: AesKind,
@@ -86,36 +100,63 @@ where
 {
     /// Creates a new zip variant AES-CTR key stream.
     ///
-    /// # Panics
-    ///
-    /// This panics if `key` doesn't have the correct size for cipher `C`.
-    pub fn new(key: &[u8]) -> AesCtrZipKeyStream<C> {
-        AesCtrZipKeyStream {
+    /// Returns `ZipError::InvalidPassword` if `key` doesn't have the correct size for cipher `C`.
+    pub fn new(key: &[u8]) -> ZipResult<AesCtrZipKeyStream<C>> {
+        Ok(AesCtrZipKeyStream {
             counter: 1,
-            cipher: C::Cipher::new(GenericArray::from_slice(key)),
+            cipher: C::Cipher::new_from_slice(key).map_err(|_| ZipError::InvalidPassword)?,
             buffer: [0u8; AES_BLOCK_SIZE],
             pos: AES_BLOCK_SIZE,
-        }
+        })
     }
 }
 
 impl<C> AesCipher for AesCtrZipKeyStream<C>
 where
     C: AesKind,
-    C::Cipher: BlockEncrypt,
+    C::Cipher: BlockCipherEncrypt,
 {
     /// Decrypt or encrypt `target`.
+    ///
+    /// Whole blocks use keystream from up to [`BATCH_BLOCKS`] counter blocks encrypted in one
+    /// call. A partial block at either end goes through `buffer`, which carries its unused
+    /// keystream over to the next call.
     #[inline]
     fn crypt_in_place(&mut self, mut target: &mut [u8]) {
         while !target.is_empty() {
+            if self.pos == AES_BLOCK_SIZE && target.len() >= AES_BLOCK_SIZE {
+                let blocks = (target.len() / AES_BLOCK_SIZE).min(BATCH_BLOCKS);
+                let mut keystream: [aes::cipher::Block<C::Cipher>; BATCH_BLOCKS] =
+                    Default::default();
+                for block in &mut keystream[..blocks] {
+                    block.copy_from_slice(&self.counter.to_le_bytes());
+                    self.counter += 1;
+                }
+                self.cipher.encrypt_blocks(&mut keystream[..blocks]);
+                let (whole, rest) =
+                    core::mem::take(&mut target).split_at_mut(blocks * AES_BLOCK_SIZE);
+                for (chunk, block) in whole
+                    .as_chunks_mut::<AES_BLOCK_SIZE>()
+                    .0
+                    .iter_mut()
+                    .zip(&keystream)
+                {
+                    xor(chunk, block);
+                }
+                for block in &mut keystream[..blocks] {
+                    zeroize::Zeroize::zeroize(block.as_mut_slice());
+                }
+                target = rest;
+                continue;
+            }
+
             if self.pos == AES_BLOCK_SIZE {
-                // Note: AES block size is always 16 bytes, same as u128.
-                self.buffer
-                    .as_mut()
-                    .write_u128_le(self.counter)
-                    .expect("did not expect u128 le conversion to fail");
+                self.buffer = self.counter.to_le_bytes();
+                #[allow(deprecated)]
                 self.cipher
-                    .encrypt_block(GenericArray::from_mut_slice(&mut self.buffer));
+                    .encrypt_block(aes::cipher::Block::<C::Cipher>::from_mut_slice(
+                        &mut self.buffer,
+                    ));
                 self.counter += 1;
                 self.pos = 0;
             }
@@ -140,7 +181,11 @@ pub trait AesCipher {
 /// XORs a slice in place with another slice.
 #[inline]
 fn xor(dest: &mut [u8], src: &[u8]) {
-    assert_eq!(dest.len(), src.len());
+    debug_assert_eq!(
+        dest.len(),
+        src.len(),
+        "XOR operation requires destination and source slices to have equal length"
+    );
 
     for (lhs, rhs) in dest.iter_mut().zip(src.iter()) {
         *lhs ^= *rhs;
@@ -150,31 +195,90 @@ fn xor(dest: &mut [u8], src: &[u8]) {
 #[cfg(test)]
 mod tests {
     use super::{Aes128, Aes192, Aes256, AesCipher, AesCtrZipKeyStream, AesKind};
-    use aes::cipher::{BlockEncrypt, KeyInit};
+    use aes::cipher::{BlockCipherEncrypt, KeyInit};
 
     /// Checks whether `crypt_in_place` produces the correct plaintext after one use and yields the
-    /// cipertext again after applying it again.
+    /// ciphertext again after applying it again.
     fn roundtrip<Aes>(key: &[u8], ciphertext: &[u8], expected_plaintext: &[u8])
     where
         Aes: AesKind,
-        Aes::Cipher: KeyInit + BlockEncrypt,
+        Aes::Cipher: KeyInit + BlockCipherEncrypt,
     {
-        let mut key_stream = AesCtrZipKeyStream::<Aes>::new(key);
+        let mut key_stream = AesCtrZipKeyStream::<Aes>::new(key).unwrap();
 
         let mut plaintext = ciphertext.to_vec().into_boxed_slice();
         key_stream.crypt_in_place(&mut plaintext);
         assert_eq!(*plaintext, *expected_plaintext);
 
         // Round-tripping should yield the ciphertext again.
-        let mut key_stream = AesCtrZipKeyStream::<Aes>::new(key);
+        let mut key_stream = AesCtrZipKeyStream::<Aes>::new(key).unwrap();
         key_stream.crypt_in_place(&mut plaintext);
         assert_eq!(*plaintext, *ciphertext);
     }
 
+    /// The keystream one block per cipher call, as `crypt_in_place` produced it before
+    /// whole blocks were batched.
+    fn keystream_block_by_block<Aes>(key: &[u8], len: usize) -> Vec<u8>
+    where
+        Aes: AesKind,
+        Aes::Cipher: KeyInit + BlockCipherEncrypt,
+    {
+        let cipher = Aes::Cipher::new_from_slice(key).unwrap();
+        let mut out = Vec::with_capacity(len + 16);
+        let mut counter = 1u128;
+        while out.len() < len {
+            let mut block = aes::cipher::Block::<Aes::Cipher>::default();
+            block.copy_from_slice(&counter.to_le_bytes());
+            cipher.encrypt_block(&mut block);
+            out.extend_from_slice(&block);
+            counter += 1;
+        }
+        out.truncate(len);
+        out
+    }
+
+    /// Batched whole blocks give the same keystream as one block at a time, however the
+    /// input is split across calls: partial blocks at either end, runs shorter and longer
+    /// than a batch, and a split that leaves part of a block in `buffer` between calls.
+    fn batched_matches_block_by_block<Aes>(key: &[u8])
+    where
+        Aes: AesKind,
+        Aes::Cipher: KeyInit + BlockCipherEncrypt,
+    {
+        const LEN: usize = 3 * 512 + 37;
+        let expected = keystream_block_by_block::<Aes>(key, LEN);
+        let splits: &[&[usize]] = &[
+            &[LEN],
+            &[1, LEN - 1],
+            &[15, 1, 16, 17, LEN - 49],
+            &[16; 4],
+            &[511, 1, 513, 7, 9],
+            &[5, 512, 3, 512, 5],
+        ];
+        for split in splits {
+            let mut stream = AesCtrZipKeyStream::<Aes>::new(key).unwrap();
+            let mut data = vec![0u8; LEN];
+            let mut at = 0;
+            for &part in split.iter().chain(core::iter::once(&LEN)) {
+                let end = (at + part).min(LEN);
+                stream.crypt_in_place(&mut data[at..end]);
+                at = end;
+            }
+            assert_eq!(data, expected, "split {split:?}");
+        }
+    }
+
     #[test]
-    #[should_panic]
+    fn batched_keystream_matches_block_by_block() {
+        batched_matches_block_by_block::<Aes128>(&[0x11; 16]);
+        batched_matches_block_by_block::<Aes192>(&[0x22; 24]);
+        batched_matches_block_by_block::<Aes256>(&[0x33; 32]);
+    }
+
+    #[test]
     fn new_with_wrong_key_size() {
-        AesCtrZipKeyStream::<Aes128>::new(&[1, 2, 3, 4, 5]);
+        AesCtrZipKeyStream::<Aes128>::new(&[1, 2, 3, 4, 5])
+            .expect_err("Wrong key size should fail");
     }
 
     // The data used in these tests was generated with p7zip without any compression.
@@ -277,5 +381,15 @@ mod tests {
         ];
 
         roundtrip::<Aes256>(&key, &ciphertext, expected_plaintext);
+    }
+
+    #[test]
+    fn test_aes_ctr_keystream_zeroize_on_drop() {
+        let key = [0x42u8; 16];
+        let mut stream = AesCtrZipKeyStream::<Aes128>::new(&key).unwrap();
+        let mut data = [0u8; 16];
+        stream.crypt_in_place(&mut data);
+        assert_ne!(data, [0u8; 16]);
+        drop(stream);
     }
 }
