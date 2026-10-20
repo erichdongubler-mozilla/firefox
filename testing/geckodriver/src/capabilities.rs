@@ -887,10 +887,16 @@ fn unzip_buffer(buf: &[u8], dest_dir: &Path) -> WebDriverResult<()> {
                 )
             })?;
 
+            let diagnostic_file_name =
+                |file: &zip::read::ZipFile<'_>| -> String { file.name().to_owned() };
+
             if file.is_symlink() {
                 return Err(WebDriverError::new(
                     ErrorStatus::UnknownError,
-                    format!("Zip entry '{}' is a symbolic link", file.name()),
+                    format!(
+                        "Zip entry '{}' is a symbolic link",
+                        diagnostic_file_name(&file)
+                    ),
                 ));
             }
 
@@ -899,7 +905,7 @@ fn unzip_buffer(buf: &[u8], dest_dir: &Path) -> WebDriverResult<()> {
                     ErrorStatus::UnknownError,
                     format!(
                         "Zip entry '{}' has an invalid or traversal path",
-                        file.name()
+                        diagnostic_file_name(&file)
                     ),
                 )
             })?;
