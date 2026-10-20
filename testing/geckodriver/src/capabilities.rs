@@ -887,8 +887,11 @@ fn unzip_buffer(buf: &[u8], dest_dir: &Path) -> WebDriverResult<()> {
                 )
             })?;
 
-            let diagnostic_file_name =
-                |file: &zip::read::ZipFile<'_>| -> String { file.name().to_owned() };
+            let diagnostic_file_name = |file: &zip::read::ZipFile<'_, _>| -> String {
+                file.name()
+                    .map(|name| name.into_owned())
+                    .unwrap_or_else(|_| String::from_utf8_lossy(file.name_raw()).into_owned())
+            };
 
             if file.is_symlink() {
                 return Err(WebDriverError::new(

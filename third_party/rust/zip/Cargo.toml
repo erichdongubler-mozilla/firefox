@@ -10,40 +10,45 @@
 # See Cargo.toml.orig for the original contents.
 
 [package]
-edition = "2021"
-rust-version = "1.73.0"
+edition = "2024"
+rust-version = "1.88"
 name = "zip"
-version = "2.4.2"
+version = "9.0.5"
 authors = [
     "Mathijs van de Nes <git@mathijs.vd-nes.nl>",
     "Marli Frost <marli@frost.red>",
     "Ryan Levick <ryan.levick@gmail.com>",
     "Chris Hennick <hennickc@amazon.com>",
 ]
-build = "src/build.rs"
+build = false
 exclude = [
     "tests/**",
     "examples/**",
     ".github/**",
-    "fuzz_read/**",
-    "fuzz_write/**",
+    "fuzz/**",
+    ".amazonq/**",
+    "benches/**",
+    ".typos.toml",
 ]
 autolib = false
 autobins = false
 autoexamples = false
 autotests = false
 autobenches = false
-description = """
-Library to support the reading and writing of zip files.
-"""
+description = "Library to support the reading and writing of zip files."
 readme = "README.md"
 keywords = [
     "zip",
     "archive",
     "compression",
 ]
+categories = [
+    "compression",
+    "filesystem",
+    "parser-implementations",
+]
 license = "MIT"
-repository = "https://github.com/zip-rs/zip2.git"
+repository = "https://github.com/zip-rs/zip2"
 
 [package.metadata.docs.rs]
 all-features = true
@@ -53,124 +58,157 @@ rustdoc-args = [
 ]
 
 [features]
-_all-features = []
+_arbitrary = ["dep:arbitrary"]
+_bzip2_any = []
 _deflate-any = []
-aes-crypto = [
-    "aes",
-    "constant_time_eq",
-    "hmac",
-    "pbkdf2",
-    "sha1",
-    "getrandom",
-    "zeroize",
+_miri_compatible_features = [
+    "bzip2",
+    "chrono",
+    "deflate-flate2",
+    "flate2/rust_backend",
+    "deflate-zopfli",
+    "jiff-02",
+    "legacy-zip",
+    "lzma",
+    "nt-time",
+    "ppmd",
+    "unreserved",
+    "xz",
+    "time",
 ]
-chrono = ["chrono/default"]
+aes-crypto = [
+    "dep:aes",
+    "dep:constant_time_eq",
+    "getrandom/std",
+    "dep:hmac",
+    "dep:pbkdf2",
+    "dep:sha1",
+    "dep:zeroize",
+]
+bzip2 = [
+    "dep:bzip2",
+    "bzip2/default",
+    "_bzip2_any",
+]
+bzip2-rs = [
+    "dep:bzip2",
+    "bzip2/bzip2-sys",
+    "_bzip2_any",
+]
+chrono = ["dep:chrono"]
 default = [
     "aes-crypto",
     "bzip2",
     "deflate64",
     "deflate",
     "lzma",
+    "ppmd",
     "time",
     "zstd",
     "xz",
 ]
 deflate = [
-    "flate2/rust_backend",
     "deflate-zopfli",
-    "deflate-flate2",
+    "deflate-flate2-zlib-rs",
 ]
-deflate-flate2 = ["_deflate-any"]
-deflate-miniz = [
-    "deflate",
-    "deflate-flate2",
+deflate-flate2 = [
+    "_deflate-any",
+    "dep:flate2",
 ]
-deflate-zlib = [
+deflate-flate2-zlib = [
+    "deflate-flate2",
     "flate2/zlib",
-    "deflate-flate2",
 ]
-deflate-zlib-ng = [
-    "flate2/zlib-ng",
+deflate-flate2-zlib-ng = [
     "deflate-flate2",
+    "flate2/zlib-ng",
+]
+deflate-flate2-zlib-ng-compat = [
+    "deflate-flate2",
+    "flate2/zlib-ng-compat",
+]
+deflate-flate2-zlib-rs = [
+    "deflate-flate2",
+    "flate2/zlib-rs",
 ]
 deflate-zopfli = [
-    "zopfli",
+    "dep:zopfli",
     "_deflate-any",
 ]
-lzma = ["lzma-rs/stream"]
+jiff-02 = ["dep:jiff"]
+legacy-zip = ["bitstream-io"]
+lzma = ["dep:lzma-rust2"]
 nt-time = ["dep:nt-time"]
+ppmd = ["dep:ppmd-rust"]
+time = ["dep:time"]
 unreserved = []
-xz = ["dep:xz2"]
+xz = ["dep:lzma-rust2"]
+zstd = ["dep:zstd"]
 
 [lib]
 name = "zip"
 path = "src/lib.rs"
 
-[[bench]]
-name = "merge_archive"
-path = "benches/merge_archive.rs"
-harness = false
-
-[[bench]]
-name = "read_entry"
-path = "benches/read_entry.rs"
-harness = false
-
-[[bench]]
-name = "read_metadata"
-path = "benches/read_metadata.rs"
-harness = false
-
 [dependencies.aes]
-version = "0.8"
+version = "0.9"
+optional = true
+
+[dependencies.arbitrary]
+version = "1.4"
+features = ["derive"]
+optional = true
+
+[dependencies.bitstream-io]
+version = "4.9"
 optional = true
 
 [dependencies.bzip2]
-version = "0.5.0"
+version = "0.6"
 optional = true
+default-features = false
 
 [dependencies.chrono]
-version = "0.4"
+version = "^0.4.27"
+features = ["std"]
 optional = true
+default-features = false
 
 [dependencies.constant_time_eq]
-version = "0.3"
+version = "^0.6.1"
 optional = true
 
 [dependencies.crc32fast]
-version = "1.4"
+version = "1.5"
 
 [dependencies.deflate64]
-version = "0.1.9"
+version = "^0.1.10"
 optional = true
-
-[dependencies.displaydoc]
-version = "0.2"
-default-features = false
 
 [dependencies.flate2]
-version = "1.0"
+version = "1.1"
 optional = true
 default-features = false
 
-[dependencies.getrandom]
-version = "0.3.1"
-features = [
-    "wasm_js",
-    "std",
-]
-optional = true
-
 [dependencies.hmac]
-version = "0.12"
-features = ["reset"]
+version = "0.13"
+features = ["zeroize"]
 optional = true
 
 [dependencies.indexmap]
 version = "2"
 
-[dependencies.lzma-rs]
-version = "0.3"
+[dependencies.jiff]
+version = "^0.2.4"
+optional = true
+
+[dependencies.lzma-rust2]
+version = "^0.22.0"
+features = [
+    "std",
+    "encoder",
+    "optimization",
+    "xz",
+]
 optional = true
 default-features = false
 
@@ -178,79 +216,102 @@ default-features = false
 version = "2.7"
 
 [dependencies.nt-time]
-version = "0.10.6"
-optional = true
-default-features = false
-
-[dependencies.pbkdf2]
-version = "0.12"
-optional = true
-
-[dependencies.sha1]
-version = "0.10"
-optional = true
-
-[dependencies.thiserror]
-version = "2"
-
-[dependencies.time]
-version = "0.3.37"
-features = ["std"]
-optional = true
-default-features = false
-
-[dependencies.xz2]
-version = "0.1.7"
-optional = true
-
-[dependencies.zeroize]
-version = "1.8"
-features = ["zeroize_derive"]
-optional = true
-
-[dependencies.zopfli]
-version = "0.8"
-optional = true
-
-[dependencies.zstd]
 version = "0.13"
 optional = true
 default-features = false
 
-[dev-dependencies.anyhow]
-version = "1.0.95"
+[dependencies.pbkdf2]
+version = "0.13"
+optional = true
+
+[dependencies.ppmd-rust]
+version = "1.5"
+optional = true
+
+[dependencies.sha1]
+version = "0.11"
+optional = true
+
+[dependencies.typed-path]
+version = "0.12"
+
+[dependencies.zeroize]
+version = "1.8"
+optional = true
+
+[dependencies.zopfli]
+version = "^0.8.3"
+optional = true
+
+[dependencies.zstd]
+version = "^0.14.0"
+optional = true
+default-features = false
 
 [dev-dependencies.bencher]
-version = "0.1.5"
+version = "0.1"
 
 [dev-dependencies.clap]
-version = "=4.4.18"
+version = "^4.4.18"
 features = ["derive"]
 
-[dev-dependencies.getrandom]
-version = "0.3.1"
-features = [
-    "wasm_js",
-    "std",
-]
-
-[dev-dependencies.tempfile]
-version = "3.15"
+[dev-dependencies.rayon]
+version = "1.11"
 
 [dev-dependencies.time]
-version = "0.3.37"
+version = "^0.3.47"
 features = [
     "formatting",
     "macros",
 ]
-default-features = false
 
 [dev-dependencies.walkdir]
 version = "2.5"
 
-[target.'cfg(any(all(target_arch = "arm", target_pointer_width = "32"), target_arch = "mips", target_arch = "powerpc"))'.dependencies.crossbeam-utils]
-version = "0.8.21"
+[target.'cfg(any(target_os = "macos", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd", target_os = "dragonfly"))'.dependencies.nix]
+version = "^0.31.3"
+features = ["fs"]
+default-features = false
 
-[target."cfg(fuzzing)".dependencies.arbitrary]
-version = "1.4.1"
-features = ["derive"]
+[target."cfg(not(miri))".dev-dependencies.count_instructions]
+version = "0.2"
+
+[target."cfg(not(miri))".dev-dependencies.tempfile]
+version = "3.15"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies.getrandom]
+version = "0.4"
+optional = true
+default-features = false
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies.time]
+version = "^0.3.47"
+features = ["std"]
+optional = true
+default-features = false
+
+[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies.rand]
+version = "0.10.3"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies.getrandom]
+version = "0.4"
+features = ["wasm_js"]
+optional = true
+default-features = false
+
+[target.'cfg(target_arch = "wasm32")'.dependencies.time]
+version = "^0.3.47"
+features = [
+    "std",
+    "wasm-bindgen",
+]
+optional = true
+default-features = false
+
+[target.'cfg(target_arch = "wasm32")'.dev-dependencies.getrandom]
+version = "0.4"
+features = ["wasm_js"]
+default-features = false
+
+[target.'cfg(target_arch = "wasm32")'.dev-dependencies.wasm-bindgen-test]
+version = "^0.3.56"
