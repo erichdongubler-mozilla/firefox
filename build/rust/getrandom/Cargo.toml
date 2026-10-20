@@ -8,7 +8,7 @@ license = "MIT OR Apache-2.0"
 path = "lib.rs"
 
 [dependencies.getrandom]
-version = "0.3.1"
+version = "0.4.3"
 default-features = false
 
 [features]
