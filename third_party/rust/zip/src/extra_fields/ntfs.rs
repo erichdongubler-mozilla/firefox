@@ -13,7 +13,7 @@ use crate::{
 ///
 /// [PKWARE's APPNOTE.TXT v6.3.9]: https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT
 /// [Windows file times]: https://docs.microsoft.com/en-us/windows/win32/sysinfo/file-times
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Ntfs {
     mtime: u64,
     atime: u64,
@@ -26,6 +26,11 @@ impl Ntfs {
     ///
     /// This method assumes that the length has already been read, therefore it
     /// must be passed as an argument.
+    ///
+    /// # Errors
+    ///
+    /// Fails if the NTFS extra field doesn't have the correct length or a read fails
+    ///
     pub fn try_from_reader<R>(reader: &mut R, len: u16) -> ZipResult<Self>
     where
         R: Read,
@@ -63,34 +68,40 @@ impl Ntfs {
     }
 
     /// Returns the file last modification time as a file time.
+    #[must_use]
     pub fn mtime(&self) -> u64 {
         self.mtime
     }
 
     /// Returns the file last modification time as a file time.
     #[cfg(feature = "nt-time")]
+    #[must_use]
     pub fn modified_file_time(&self) -> nt_time::FileTime {
         nt_time::FileTime::new(self.mtime)
     }
 
     /// Returns the file last access time as a file time.
+    #[must_use]
     pub fn atime(&self) -> u64 {
         self.atime
     }
 
     /// Returns the file last access time as a file time.
     #[cfg(feature = "nt-time")]
+    #[must_use]
     pub fn accessed_file_time(&self) -> nt_time::FileTime {
         nt_time::FileTime::new(self.atime)
     }
 
     /// Returns the file creation time as a file time.
+    #[must_use]
     pub fn ctime(&self) -> u64 {
         self.ctime
     }
 
     /// Returns the file creation time as a file time.
     #[cfg(feature = "nt-time")]
+    #[must_use]
     pub fn created_file_time(&self) -> nt_time::FileTime {
         nt_time::FileTime::new(self.ctime)
     }

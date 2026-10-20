@@ -12,7 +12,7 @@ num-derive = "0.4"
 num-traits = "0.2"
 
 [target."cfg(any(target_os = \"android\", target_os = \"linux\", target_os = \"macos\"))".dependencies]
-nix = { version = "0.30", features = ["process"] }
+nix = { version = "0.31.3", features = ["process"] }
 
 [target."cfg(target_os = \"macos\")".dependencies]
 mach2 = { version = "0.6" }
