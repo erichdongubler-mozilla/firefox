@@ -1,66 +1,81 @@
-#![allow(missing_docs)]
+#![doc = "Unstable APIs\n\
+\
+All APIs accessible by importing this module are unstable; They may be changed in patch \
+releases. You MUST use an exact version specifier in `Cargo.toml`, to indicate the version of this \
+API you're using:\n\
+\
+```toml\n
+[dependencies]\n
+zip = \"="]
+#![doc=env!("CARGO_PKG_VERSION")]
+#![doc = "\"\n\
+```"]
 
 use std::borrow::Cow;
 use std::io;
-use std::io::{Read, Write};
-use std::path::{Component, Path, MAIN_SEPARATOR};
+use std::io::Read;
+use std::path::{Component, MAIN_SEPARATOR, Path};
 
 /// Provides high level API for reading from a stream.
 pub mod stream {
-    pub use crate::read::stream::*;
+    pub use crate::read::stream::{ZipStreamReader, ZipStreamVisitor};
+}
+
+/// Zip format
+pub mod format {
+    pub use crate::format::*;
 }
 /// Types for creating ZIP archives.
 pub mod write {
+    use crate::result::{ZipError, ZipResult};
     use crate::write::{FileOptionExtension, FileOptions};
     /// Unstable methods for [`FileOptions`].
-    pub trait FileOptionsExt {
-        /// Write the file with the given password using the deprecated ZipCrypto algorithm.
+    pub trait FileOptionsExt<'k> {
+        /// Write the file with the given password using the deprecated `ZipCrypto` algorithm.
         ///
-        /// This is not recommended for new archives, as ZipCrypto is not secure.
-        fn with_deprecated_encryption(self, password: &[u8]) -> Self;
+        /// <div class="warning">This is not recommended for new archives, as `ZipCrypto` is not
+        /// secure (it can be cracked given 12 bytes of known plaintext after compression). It is
+        /// provided only for backward compatibility with older software that doesn't support
+        /// AES-encrypted archives.</div>
+        fn with_deprecated_encryption(self, password: &'k [u8]) -> ZipResult<Self>
+        where
+            Self: Sized;
     }
-    impl<T: FileOptionExtension> FileOptionsExt for FileOptions<'_, T> {
-        fn with_deprecated_encryption(self, password: &[u8]) -> FileOptions<'static, T> {
-            self.with_deprecated_encryption(password)
+    impl<'k, 'n, T: FileOptionExtension> FileOptionsExt<'k> for FileOptions<'k, 'n, T> {
+        fn with_deprecated_encryption(
+            self,
+            password: &'k [u8],
+        ) -> ZipResult<FileOptions<'k, 'n, T>> {
+            if password.is_empty() {
+                // Forbid empty passwords to avoid deriving a predictable key from a
+                // fixed, public value. Callers must ensure passwords are non-empty.
+                // This check isn't in with_deprecated_encryption itself because that would also
+                // affect reading.
+                Err(ZipError::InvalidPassword)
+            } else {
+                Ok(self.with_deprecated_encryption(password))
+            }
         }
     }
 }
 
-/// Helper methods for writing unsigned integers in little-endian form.
-pub trait LittleEndianWriteExt: Write {
-    fn write_u16_le(&mut self, input: u16) -> io::Result<()> {
-        self.write_all(&input.to_le_bytes())
-    }
-
-    fn write_u32_le(&mut self, input: u32) -> io::Result<()> {
-        self.write_all(&input.to_le_bytes())
-    }
-
-    fn write_u64_le(&mut self, input: u64) -> io::Result<()> {
-        self.write_all(&input.to_le_bytes())
-    }
-
-    fn write_u128_le(&mut self, input: u128) -> io::Result<()> {
-        self.write_all(&input.to_le_bytes())
-    }
-}
-
-impl<W: Write + ?Sized> LittleEndianWriteExt for W {}
-
 /// Helper methods for reading unsigned integers in little-endian form.
 pub trait LittleEndianReadExt: Read {
+    /// Read a u16 as little endian
     fn read_u16_le(&mut self) -> io::Result<u16> {
         let mut out = [0u8; 2];
         self.read_exact(&mut out)?;
         Ok(u16::from_le_bytes(out))
     }
 
+    /// Read a u32 as little endian
     fn read_u32_le(&mut self) -> io::Result<u32> {
         let mut out = [0u8; 4];
         self.read_exact(&mut out)?;
         Ok(u32::from_le_bytes(out))
     }
 
+    /// Read a u64 as little endian
     fn read_u64_le(&mut self) -> io::Result<u64> {
         let mut out = [0u8; 8];
         self.read_exact(&mut out)?;
@@ -71,15 +86,15 @@ pub trait LittleEndianReadExt: Read {
 impl<R: Read> LittleEndianReadExt for R {}
 
 /// Converts a path to the ZIP format (forward-slash-delimited and normalized).
-pub fn path_to_string<T: AsRef<Path>>(path: T) -> Box<str> {
+pub fn path_to_string<T: AsRef<Path>>(path: T) -> Result<Box<str>, std::io::Error> {
     let mut maybe_original = None;
     if let Some(original) = path.as_ref().to_str() {
         if original.is_empty() || original == "." || original == ".." {
-            return String::new().into_boxed_str();
+            return Ok(String::new().into_boxed_str());
         }
         if original.starts_with(MAIN_SEPARATOR) {
             if original.len() == 1 {
-                return MAIN_SEPARATOR.to_string().into_boxed_str();
+                return Ok(MAIN_SEPARATOR.to_string().into_boxed_str());
             } else if (MAIN_SEPARATOR == '/' || !original[1..].contains(MAIN_SEPARATOR))
                 && !original.ends_with('.')
                 && !original.contains([MAIN_SEPARATOR, MAIN_SEPARATOR])
@@ -89,7 +104,7 @@ pub fn path_to_string<T: AsRef<Path>>(path: T) -> Box<str> {
                 maybe_original = Some(&original[1..]);
             }
         } else if !original.contains(MAIN_SEPARATOR) {
-            return original.into();
+            return Ok(original.into());
         }
     }
     let mut recreate = maybe_original.is_none();
@@ -97,13 +112,14 @@ pub fn path_to_string<T: AsRef<Path>>(path: T) -> Box<str> {
 
     for component in path.as_ref().components() {
         match component {
-            Component::Normal(os_str) => match os_str.to_str() {
-                Some(valid_str) => normalized_components.push(Cow::Borrowed(valid_str)),
-                None => {
+            Component::Normal(os_str) => {
+                if let Some(valid_str) = os_str.to_str() {
+                    normalized_components.push(Cow::Borrowed(valid_str));
+                } else {
                     recreate = true;
                     normalized_components.push(os_str.to_string_lossy());
                 }
-            },
+            }
             Component::ParentDir => {
                 recreate = true;
                 normalized_components.pop();
@@ -114,8 +130,10 @@ pub fn path_to_string<T: AsRef<Path>>(path: T) -> Box<str> {
         }
     }
     if recreate {
-        normalized_components.join("/").into()
+        Ok(normalized_components.join("/").into())
     } else {
-        maybe_original.unwrap().into()
+        Ok(maybe_original
+            .ok_or_else(|| std::io::Error::other("Original path is empty"))?
+            .into())
     }
 }
