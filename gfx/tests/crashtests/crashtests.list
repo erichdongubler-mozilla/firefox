@@ -242,3 +242,5 @@ pref(ui.caretBlinkTime,0) load 1805333-1.html
 pref(dom.meta-viewport.enabled,true) pref(formhelper.autozoom,true) load 2086198.html
 load 2087171.html
 load 2089033.html
+load 2064751-1.html
+load 2064751-2.html
