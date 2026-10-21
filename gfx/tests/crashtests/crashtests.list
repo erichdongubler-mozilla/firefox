@@ -238,3 +238,5 @@ load 2042237-1.html
 asserts(0-6) load 2052609.html
 pref(gfx.canvas.azure.backends,"cairo") pref(gfx.offscreencanvas.shared-provider,false) load 2045777.html
 load 2075736.html
+load 2064751-1.html
+load 2064751-2.html
