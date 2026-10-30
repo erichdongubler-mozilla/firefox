@@ -337,7 +337,7 @@ extern void wgpu_parent_post_request_device(WGPUWebGPUParentPtr aParent,
 
 extern ffi::WGPUBufferMapClosure wgpu_parent_build_buffer_map_closure(
     WGPUWebGPUParentPtr aParent, RawId aDeviceId, RawId aBufferId,
-    ffi::WGPUHostMap aMode, uint64_t aOffset, uint64_t aSize) {
+    ffi::WGPUMapMode aMode, uint64_t aOffset, uint64_t aSize) {
   auto* parent = static_cast<WebGPUParent*>(aParent);
 
   auto request =
@@ -572,7 +572,7 @@ void WebGPUParent::MapCallback(uint8_t* aUserData,
 
   const std::span<uint8_t> src = maybeSrc->AsSpan();
 
-  if (req->mHostMap == ffi::WGPUHostMap_Read && size > 0) {
+  if (req->mMapMode == ffi::WGPUMapMode_Read && size > 0) {
     auto shmSize = mapData->mShmem->Size();
     MOZ_RELEASE_ASSERT(offset <= shmSize);
     MOZ_RELEASE_ASSERT(size <= shmSize - offset);
@@ -589,7 +589,7 @@ void WebGPUParent::MapCallback(uint8_t* aUserData,
   mapData->mMappedSize = size;
   mapData->mIsMapped = true;
 
-  bool is_writable = req->mHostMap == ffi::WGPUHostMap_Write;
+  bool is_writable = req->mMapMode == ffi::WGPUMapMode_Write;
   ffi::wgpu_server_send_buffer_map_success(req->mParent, req->mBufferId,
                                            is_writable, offset, size);
 }
@@ -1117,7 +1117,7 @@ ipc::IPCResult WebGPUParent::GetFrontBufferSnapshot(
 
   ffi::WGPUBufferMapAsyncStatus status = ffi::wgpu_server_buffer_map_blocking(
       mContext.get(), data->mDeviceId, bufferId, 0, bufferSize,
-      ffi::WGPUHostMap_Read);
+      ffi::WGPUMapMode_Read);
   ReadbackSnapshotCallback(
       reinterpret_cast<uint8_t*>(snapshotRequest.release()), status);
   // bufferId was transferred to ReadbackSnapshotCallback.
@@ -1281,7 +1281,7 @@ void WebGPUParent::SwapChainPresent(
   data->mQueuedBufferIds.insert(data->mQueuedBufferIds.begin(), bufferId);
 
   ffi::wgpu_server_buffer_map(mContext.get(), bufferId, 0, bufferSize,
-                              ffi::WGPUHostMap_Read, closure);
+                              ffi::WGPUMapMode_Read, closure);
   // bufferId was transferred to ReadbackPresentCallback.
   bufferId = 0;
 }

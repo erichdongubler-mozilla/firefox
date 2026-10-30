@@ -141,7 +141,7 @@ class WebGPUParent final : public PWebGPUParent, public SupportsWeakPtr {
     WeakPtr<WebGPUParent> mParent;
     ffi::WGPUDeviceId mDeviceId;
     ffi::WGPUBufferId mBufferId;
-    ffi::WGPUHostMap mHostMap;
+    ffi::WGPUMapMode mMapMode;
     uint64_t mOffset;
     uint64_t mSize;
   };

@@ -24,7 +24,7 @@ use wgc::{
 use wgh::Instance;
 use wgpu_core_remote_types::{
     encoders::{CommandBufferDescriptor, TexelCopyBufferInfo, TexelCopyTextureInfo},
-    id, BufferDescriptor, DeviceDescriptor, ShaderModuleDescriptor, TextureDescriptor,
+    id, BufferDescriptor, DeviceDescriptor, MapMode, ShaderModuleDescriptor, TextureDescriptor,
     TextureViewDescriptor,
 };
 use wgt::{
@@ -1006,22 +1006,6 @@ pub struct BufferMapClosure {
     pub user_data: *mut u8,
 }
 
-#[repr(C)]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum HostMap {
-    Read,
-    Write,
-}
-
-impl HostMap {
-    fn to_wgrt(&self) -> wgpu_core_remote_types::MapMode {
-        match self {
-            HostMap::Read => wgpu_core_remote_types::MapMode::READ,
-            HostMap::Write => wgpu_core_remote_types::MapMode::WRITE,
-        }
-    }
-}
-
 /// # Safety
 ///
 /// Callers are responsible for ensuring `closure` is well-formed.
@@ -1031,7 +1015,7 @@ pub unsafe extern "C" fn wgpu_server_buffer_map(
     buffer_id: id::BufferId,
     start: wgt::BufferAddress,
     size: wgt::BufferAddress,
-    map_mode: HostMap,
+    mode: MapMode,
     closure: BufferMapClosure,
 ) {
     // Create a one-shot channel to carry the map result from the
@@ -1047,7 +1031,6 @@ pub unsafe extern "C" fn wgpu_server_buffer_map(
     })
     .detach();
 
-    let mode = map_mode.to_wgrt();
     let callback: Option<BufferMapCallback> = Some(Box::new(move |result| {
         // Send the map result from whatever thread this callback is running
         // on to the task we spawned above.
@@ -1079,13 +1062,12 @@ pub extern "C" fn wgpu_server_buffer_map_blocking(
     buffer_id: id::BufferId,
     offset: wgt::BufferAddress,
     size: wgt::BufferAddress,
-    map_mode: HostMap,
+    mode: MapMode,
 ) -> BufferMapAsyncStatus {
     // Arrange to pass the map status back to this function. The whole Arc/OnceLock
     // song and dance is required because `buffer_map_async` assumes that the
     // poll might happen on another thread.
     let status_passback = Arc::new(OnceLock::new());
-    let mode = map_mode.to_wgrt();
     let callback: Option<BufferMapCallback> = Some(Box::new({
         let status_passback = Arc::clone(&status_passback);
         move |status| {
@@ -1788,7 +1770,7 @@ extern "C" {
         parent: WebGPUParentPtr,
         device_id: id::DeviceId,
         buffer_id: id::BufferId,
-        mode: HostMap,
+        mode: MapMode,
         offset: u64,
         size: u64,
     ) -> BufferMapClosure;
@@ -2735,9 +2717,10 @@ fn process_buffer_map(global: &Global, msg: Message, response_byte_buf: &mut Byt
     else {
         unreachable!();
     };
+
     let mode = match mode {
-        /* GPUMapMode.READ */ 1 => HostMap::Read,
-        /* GPUMapMode.WRITE */ 2 => HostMap::Write,
+        /* GPUMapMode.READ */ 1 => MapMode::READ,
+        /* GPUMapMode.WRITE */ 2 => MapMode::WRITE,
         _ => {
             #[derive(Debug, thiserror::Error)]
             #[error(
@@ -2779,7 +2762,6 @@ fn process_buffer_map(global: &Global, msg: Message, response_byte_buf: &mut Byt
     })
     .detach();
 
-    let mode = mode.to_wgrt();
     let callback: Option<BufferMapCallback> = Some(Box::new(move |result| {
         // Send the map result from whatever thread this callback is running
         // on to the task we spawned above.
