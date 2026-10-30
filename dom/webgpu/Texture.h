@@ -40,6 +40,9 @@ class Texture final : public nsWrapperCache,
 
   const dom::GPUTextureFormat mFormat;
   const Maybe<uint8_t> mBytesPerBlock;
+  // An estimate of this texture's GPU memory footprint, reported to the GC via
+  // `BindingJSObjectMallocBytes`.
+  const size_t mAllocationSizeEstimate;
 
   WeakPtr<CanvasContext> mTargetContext;
 
@@ -66,6 +69,12 @@ class Texture final : public nsWrapperCache,
   dom::GPUTextureFormat Format() const { return mFormat; }
   uint32_t Usage() const { return mUsage; }
 };
+
+// GPU memory isn't visible to the GC, so without this, a page can exhaust GPU
+// memory with garbage textures long before the GC decides to collect them.
+inline size_t BindingJSObjectMallocBytes(Texture* aTexture) {
+  return aTexture->mAllocationSizeEstimate;
+}
 
 }  // namespace webgpu
 }  // namespace mozilla

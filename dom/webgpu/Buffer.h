@@ -12,6 +12,7 @@
 #include "mozilla/dom/Nullable.h"
 #include "mozilla/ipc/SharedMemoryMapping.h"
 #include "mozilla/webgpu/WebGPUTypes.h"
+#include "mozilla/webgpu/ffi/wgpu.h"
 #include "nsTArray.h"
 
 namespace mozilla {
@@ -152,6 +153,12 @@ class Buffer final : public nsWrapperCache,
   // memory.
   std::shared_ptr<mozilla::ipc::SharedMemoryMapping> mShmem;
 };
+
+// GPU memory isn't visible to the GC, so without this, a page can exhaust GPU
+// memory with garbage buffers long before the GC decides to collect them.
+inline size_t BindingJSObjectMallocBytes(Buffer* aBuffer) {
+  return std::min<uint64_t>(aBuffer->Size(), WGPUMAX_BUFFER_SIZE);
+}
 
 }  // namespace webgpu
 }  // namespace mozilla

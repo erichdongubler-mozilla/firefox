@@ -42,6 +42,13 @@ class QuerySet final : public nsWrapperCache,
   uint32_t mCount;
 };
 
+// GPU memory isn't visible to the GC, so without this, a page can exhaust GPU
+// memory with garbage query sets long before the GC decides to collect them.
+// 256 bytes per query matches `wgpu-hal`'s D3D12 memory budget estimate.
+inline size_t BindingJSObjectMallocBytes(QuerySet* aQuerySet) {
+  return size_t(aQuerySet->Count()) * 256;
+}
+
 }  // namespace webgpu
 
 }  // namespace mozilla

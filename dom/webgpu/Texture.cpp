@@ -4,9 +4,12 @@
 
 #include "Texture.h"
 
+#include <algorithm>
+
 #include "TextureView.h"
 #include "Utility.h"
 #include "ipc/WebGPUChild.h"
+#include "mozilla/CheckedInt.h"
 #include "mozilla/dom/WebGPUBinding.h"
 #include "mozilla/webgpu/CanvasContext.h"
 #include "mozilla/webgpu/WebGPUTypes.h"
@@ -32,12 +35,54 @@ static Maybe<uint8_t> GetBytesPerBlockSingleAspect(
   return Some((uint8_t)info.copy_size);
 }
 
+static size_t EstimateAllocationSize(const dom::GPUTextureDescriptor& aDesc) {
+  const auto format = ConvertTextureFormat(aDesc.mFormat);
+  ffi::WGPUTextureFormatBlockInfo info = {};
+  uint64_t bytesPerBlock = 0;
+  if (ffi::wgpu_texture_format_get_block_info(
+          format, ffi::WGPUTextureAspect_All, &info)) {
+    bytesPerBlock = info.copy_size;
+  } else {
+    for (const auto aspect : {ffi::WGPUTextureAspect_DepthOnly,
+                              ffi::WGPUTextureAspect_StencilOnly}) {
+      if (ffi::wgpu_texture_format_get_block_info(format, aspect, &info)) {
+        bytesPerBlock += info.copy_size;
+      }
+    }
+  }
+  const uint32_t blockWidth = std::max(info.width, 1u);
+  const uint32_t blockHeight = std::max(info.height, 1u);
+
+  const auto size = ConvertExtent(aDesc.mSize);
+  const bool is3d = aDesc.mDimension == dom::GPUTextureDimension::_3d;
+  const uint32_t mipLevelCount = std::min(aDesc.mMipLevelCount, 32u);
+
+  CheckedInt<uint64_t> total = 0;
+  for (uint32_t level = 0; level < mipLevelCount; ++level) {
+    const uint64_t width = std::max(size.width >> level, 1u);
+    const uint64_t height = std::max(size.height >> level, 1u);
+    const uint64_t depthOrLayers =
+        is3d ? std::max(size.depth_or_array_layers >> level, 1u)
+             : size.depth_or_array_layers;
+    total += CheckedInt<uint64_t>((width + blockWidth - 1) / blockWidth) *
+             ((height + blockHeight - 1) / blockHeight) * depthOrLayers *
+             bytesPerBlock;
+  }
+  total *= aDesc.mSampleCount;
+
+  if (!total.isValid()) {
+    return WGPUMAX_BUFFER_SIZE;
+  }
+  return std::min<uint64_t>(total.value(), WGPUMAX_BUFFER_SIZE);
+}
+
 Texture::Texture(Device* const aParent, RawId aId,
                  const dom::GPUTextureDescriptor& aDesc)
     : ObjectBase(aParent->GetChild(), aId, ffi::wgpu_client_drop_texture),
       ChildOf(aParent),
       mFormat(aDesc.mFormat),
       mBytesPerBlock(GetBytesPerBlockSingleAspect(aDesc.mFormat)),
+      mAllocationSizeEstimate(EstimateAllocationSize(aDesc)),
       mSize(ConvertExtent(aDesc.mSize)),
       mMipLevelCount(aDesc.mMipLevelCount),
       mSampleCount(aDesc.mSampleCount),
