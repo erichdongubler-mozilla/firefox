@@ -1,0 +1,52 @@
+schema: 1
+
+bugzilla:
+  product: Core
+  component: "Graphics: WebGPU"
+
+origin:
+  name: DirectXShaderCompiler
+
+  description: DirectX Shader Compiler
+
+  url: https://github.com/microsoft/DirectXShaderCompiler
+
+  release: 2630a1873de4f41354b4449f6861957a838265f4 (2026-11-06T00:38:35Z).
+  revision: 2630a1873de4f41354b4449f6861957a838265f4
+
+  license: NCSA
+  license-file: LICENSE.TXT
+
+updatebot:
+  maintainer-phab: ErichDonGubler
+  maintainer-bz: egubler@mozilla.com
+  tasks:
+    - type: commit-alert
+      enabled: True
+      branch: release-1.10.2611
+      needinfo: ["egubler@mozilla.com"]
+
+vendoring:
+  url: https://github.com/microsoft/DirectXShaderCompiler
+  source-hosting: github
+  tracking: commit
+
+  # DXC is built from the `dxc-src` fetch in
+  # `taskcluster/kinds/fetch/toolchains.yml`, which points at our fork. A vendor
+  # run only verifies that the fork is based on the requested upstream revision
+  # before recording it here.
+  skip-vendoring-steps:
+    - fetch
+    - hg-add
+    - spurious-check
+    - update-moz-build
+
+  update-actions:
+    - action: run-command
+      command: ./mach
+      args:
+        - python
+        - --
+        - '{yaml_dir}/check-dxc-base.py'
+        - '{revision}'
+      cwd: '{topsrcdir}'
