@@ -825,7 +825,7 @@ dxc-src:
     description: Source code for mozilla's DXC fork
     fetch:
         type: git
-        repo: https://github.com/FirefoxGraphics/DirectXShaderCompiler
+        repo: https://github.com/erichdongubler-contrib/DirectXShaderCompiler
         revision: 7a5a442b8a7c62f97e5e9ad0b2d2538907038fb8
 
 jj:
