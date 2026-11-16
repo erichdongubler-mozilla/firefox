@@ -46,6 +46,7 @@ VALID_LICENSES = [
     "MIT",
     "MPL-1.1",
     "MPL-2.0",
+    "NCSA",
     "Public Domain",
     "Unlicense",
     "WTFPL",
