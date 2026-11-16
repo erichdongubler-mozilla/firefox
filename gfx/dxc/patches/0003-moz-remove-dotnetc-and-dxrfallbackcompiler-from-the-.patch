@@ -1,0 +1,26 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nicolas Silva <nical@fastmail.com>
+Date: Mon, 27 Jan 2025 16:11:06 +0100
+Subject: [PATCH 3/7] [moz] remove dotnetc and dxrfallbackcompiler from the
+ build.
+
+---
+ tools/clang/tools/CMakeLists.txt | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/tools/clang/tools/CMakeLists.txt b/tools/clang/tools/CMakeLists.txt
+index 9991de030..aeb4433e2 100644
+--- a/tools/clang/tools/CMakeLists.txt
++++ b/tools/clang/tools/CMakeLists.txt
+@@ -37,9 +37,9 @@ add_subdirectory(dxv)
+ # These targets can currently only be built on Windows.
+ if (MSVC)
+ add_subdirectory(d3dcomp)
+-add_subdirectory(dxrfallbackcompiler)
++#add_subdirectory(dxrfallbackcompiler)
+ add_subdirectory(dxlib-sample)
+ # UI powered by .NET.
+-add_subdirectory(dotnetc)
++#add_subdirectory(dotnetc)
+ endif (MSVC)
+ # HLSL Change Ends

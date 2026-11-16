@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nicolas Silva <nical@fastmail.com>
+Date: Tue, 28 Jan 2025 17:43:11 +0100
+Subject: [PATCH 7/7] [moz] Disable warnings in the build.
+
+Building DXC generates more than 1GB of warnings in the log making the log unusable and any interesting warning would get lost in the mass. For taskcluster builds it's better to simply remove all of them.
+---
+ CMakeLists.txt | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index aa9c41b52..2f933ee4b 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -17,6 +17,8 @@ if(POLICY CMP0022)
+   cmake_policy(SET CMP0022 NEW) # automatic when 2.8.12 is required
+ endif()
+ 
++add_compile_options(-w)
++
+ if(CMAKE_VERSION VERSION_LESS 3.1.20141117)
+   set(cmake_3_2_USES_TERMINAL)
+ else()

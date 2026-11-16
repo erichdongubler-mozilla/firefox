@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nicolas Silva <nical@fastmail.com>
+Date: Mon, 27 Jan 2025 16:15:17 +0100
+Subject: [PATCH 4/7] [moz] Remove DxCompiler.rc and DXCompiler.def from the
+ build.
+
+---
+ tools/clang/tools/dxcompiler/CMakeLists.txt | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/tools/clang/tools/dxcompiler/CMakeLists.txt b/tools/clang/tools/dxcompiler/CMakeLists.txt
+index d88e3d7a1..c0f8b5aab 100644
+--- a/tools/clang/tools/dxcompiler/CMakeLists.txt
++++ b/tools/clang/tools/dxcompiler/CMakeLists.txt
+@@ -54,8 +54,8 @@ set(SOURCES
+   dxcompilerobj.cpp
+   dxcvalidator.cpp
+   DXCompiler.cpp
+-  DXCompiler.rc
+-  DXCompiler.def
++  #DXCompiler.rc
++  #DXCompiler.def
+   dxcfilesystem.cpp
+   dxcutil.cpp
+   dxcdisassembler.cpp

@@ -1,0 +1,31 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nicolas Silva <nical@fastmail.com>
+Date: Wed, 29 Jan 2025 14:59:30 +0100
+Subject: [PATCH 6/7] [moz] Workaround to disable SPIRV codegen.
+
+For some reason this CMakeLists file is not picking up on the fact that we are cross-compiling.
+This causes it to assume that we are targetting linux instead of windows and unconditionally
+include SPIRV in the build, which we do not want.
+As a workaround until we figure out how to get the build to understand that we are targetting
+Windows, comment out the part that enforces SPIRV to be in the build.
+---
+ CMakeLists.txt | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 50b21e943..aa9c41b52 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -133,9 +133,9 @@ option(ENABLE_SPIRV_CODEGEN "Enables SPIR-V code generation." OFF)
+ option(SPIRV_BUILD_TESTS "Build targets for the SPIR-V unit tests." OFF)
+ 
+ # Enable SPIR-V CodeGen for Linux by default.
+-if(NOT WIN32)
+-  set(ENABLE_SPIRV_CODEGEN ON)
+-endif()
++# if(NOT WIN32)
++#   set(ENABLE_SPIRV_CODEGEN ON)
++# endif()
+ 
+ if (${SPIRV_BUILD_TESTS})
+   enable_testing()

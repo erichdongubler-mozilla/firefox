@@ -21,6 +21,10 @@ dxc_folder=${artifact%.tar.*}
 dxc_src_dir="$MOZ_FETCHES_DIR/DirectXShaderCompiler"
 cd "$dxc_src_dir"
 
+for patch in "$GECKO_PATH"/gfx/dxc/patches/*.patch; do
+  patch -p1 < "$patch"
+done
+
 # Configure and build.
 dxc_build_dir="$dxc_src_dir/build"
 mkdir "$dxc_build_dir"

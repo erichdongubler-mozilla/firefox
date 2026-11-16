@@ -822,11 +822,11 @@ uv:
         revision: 7456b60bc6bc348e13e06e3691bf08e78d3aef54
 
 dxc-src:
-    description: Source code for mozilla's DXC fork
+    description: DXC source code; patched by `build-dxc.sh` with `gfx/dxc/patches`
     fetch:
         type: git
-        repo: https://github.com/FirefoxGraphics/DirectXShaderCompiler
-        revision: 7a5a442b8a7c62f97e5e9ad0b2d2538907038fb8
+        repo: https://github.com/microsoft/DirectXShaderCompiler
+        revision: 2630a1873de4f41354b4449f6861957a838265f4
 
 jj:
     # Keep minimum supported version in sync:

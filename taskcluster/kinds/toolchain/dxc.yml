@@ -16,6 +16,8 @@ task-defaults:
             - dxc-src
     run:
         script: build-dxc.sh
+        resources:
+            - gfx/dxc/patches/**
         sparse-profile: null
     worker-type: b-linux-docker-amd
     worker:

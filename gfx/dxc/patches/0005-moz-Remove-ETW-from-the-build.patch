@@ -1,0 +1,96 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nicolas Silva <nical@fastmail.com>
+Date: Tue, 28 Jan 2025 17:28:05 +0100
+Subject: [PATCH 5/7] [moz] Remove ETW from the build.
+
+Fixing the ETW dependency is probably doable but it doesn't seem straightforward
+with our cross-compilation setup and having a few ETW markers in DXC isn't
+hugely important for us so this commit removes them from the build.
+
+To reduce risk of rebase conflicts, the DxcEtw API is stubbed out in
+include/dxcetw.h which would have normally been generated as part of the build.
+---
+ include/dxc/CMakeLists.txt                  |  2 +-
+ include/dxcetw.h                            | 30 +++++++++++++++++++++
+ tools/clang/tools/dxcompiler/CMakeLists.txt |  2 +-
+ tools/clang/tools/dxildll/CMakeLists.txt    |  4 +--
+ 4 files changed, 34 insertions(+), 4 deletions(-)
+ create mode 100644 include/dxcetw.h
+
+diff --git a/include/dxc/CMakeLists.txt b/include/dxc/CMakeLists.txt
+index b2bf96629..9c2d74c52 100644
+--- a/include/dxc/CMakeLists.txt
++++ b/include/dxc/CMakeLists.txt
+@@ -18,7 +18,7 @@ configure_file(
+ add_subdirectory(DXIL)
+ add_subdirectory(DxilContainer)
+ add_subdirectory(Support)
+-add_subdirectory(Tracing)
++#add_subdirectory(Tracing)
+ 
+ set(DXC_PUBLIC_HEADERS
+     ${CMAKE_CURRENT_BINARY_DIR}/config.h
+diff --git a/include/dxcetw.h b/include/dxcetw.h
+new file mode 100644
+index 000000000..3f20dfeca
+--- /dev/null
++++ b/include/dxcetw.h
+@@ -0,0 +1,30 @@
++// Stubbed out tracing functions to remove ETW dependency from the build.
++
++#ifndef DXC_ETW_H
++#define DXC_ETW_H
++
++inline void EventRegisterMicrosoft_Windows_DXCompiler_API() {}
++inline void EventUnregisterMicrosoft_Windows_DXCompiler_API() {}
++
++inline void DxcEtw_DXCompilerInitialization_Start() {}
++inline void DxcEtw_DXCompilerInitialization_Stop(HRESULT hr) {}
++
++inline void DxcEtw_DXCompilerShutdown_Start() {}
++inline void DxcEtw_DXCompilerShutdown_Stop(HRESULT hr) {}
++
++inline void DxcEtw_DXCompilerCreateInstance_Start() {}
++inline void DxcEtw_DXCompilerCreateInstance_Stop(HRESULT hr) {}
++
++inline void DxcEtw_DXCompilerDisassemble_Start() {}
++inline void DxcEtw_DXCompilerDisassemble_Stop(HRESULT hr) {}
++
++inline void DxcEtw_DXCompilerPreprocess_Start() {}
++inline void DxcEtw_DXCompilerPreprocess_Stop(HRESULT hr) {}
++
++inline void DxcEtw_DXCompilerCompile_Start() {}
++inline void DxcEtw_DXCompilerCompile_Stop(HRESULT hr) {}
++
++inline void DxcEtw_DxcValidation_Start() {}
++inline void DxcEtw_DxcValidation_Stop(HRESULT hr) {}
++
++#endif
+diff --git a/tools/clang/tools/dxcompiler/CMakeLists.txt b/tools/clang/tools/dxcompiler/CMakeLists.txt
+index c0f8b5aab..7ef539b1f 100644
+--- a/tools/clang/tools/dxcompiler/CMakeLists.txt
++++ b/tools/clang/tools/dxcompiler/CMakeLists.txt
+@@ -128,7 +128,7 @@ add_clang_library(dxcompiler SHARED ${SOURCES})
+ add_dependencies(dxcompiler TablegenHLSLOptions) 
+ if (MSVC)
+   # No DxcEtw on non-Windows platforms.
+-  add_dependencies(dxcompiler DxcEtw)
++  #add_dependencies(dxcompiler DxcEtw)
+ endif()
+ target_link_libraries(dxcompiler PRIVATE ${LIBRARIES})
+ if (ENABLE_SPIRV_CODEGEN)
+diff --git a/tools/clang/tools/dxildll/CMakeLists.txt b/tools/clang/tools/dxildll/CMakeLists.txt
+index 67a24d110..6ad7c4210 100644
+--- a/tools/clang/tools/dxildll/CMakeLists.txt
++++ b/tools/clang/tools/dxildll/CMakeLists.txt
+@@ -61,8 +61,8 @@ target_link_libraries(dxildll PRIVATE
+ if (WIN32)
+ add_dependencies(dxildll
+     ${DXCDependencies}
+-    DxcEtw
+-    DxcRuntimeEtw
++    #DxcEtw
++    #DxcRuntimeEtw
+ )
+ else()
+ add_dependencies(dxildll

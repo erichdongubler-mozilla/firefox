@@ -1,0 +1,50 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nicolas Silva <nical@fastmail.com>
+Date: Mon, 27 Jan 2025 16:13:56 +0100
+Subject: [PATCH 2/7] [moz] Remove -fno-exceptions in AddLLVM.cmake.
+
+There has to be a better way to this, I have not found it yet.
+
+DXC uses exceptions. If -fno-exceptions is passed during the build, clang-cl produces
+a fair amount of errors caused by the presence of try and throw statements in various
+places such as:
+ - lib/Support/ErrorHandling.cpp
+ - include/llvm/ADT/ilist.h
+ - lib/Support/FoldingSet.cpp
+
+For part of the build, exceptions can be enabled by passing -DLLVM_REQUIRES_EH to the
+cmake invocation. Unfortunately, the build has a multi-step process which involves
+compiling DXC (and LLVM) for the host (in addition to the target OS) to generate some
+tables which are fed into the build for the target configuration.
+That extra build step runs cmake a second time during the build and I have not found
+how to get that invocation to enable exceptions, leading to the compilation errors.
+
+As a workaround, this commit comments out the line that passes -fnoexceptions in
+AddLLVM.make. AddLLVM.cmake comes from the upstream llvm repository.
+A better solution would probably set LLVM_REQUIRES_EH from whichever piece of the
+build is causing the LLVM inclusion for the host build step.
+
+I am also somewhat nervous about having exceptions enabled in a DLL that is called
+by Firfox which does not enable exceptions. From a quick test it looks like unwinding
+stops at the C function boundary and std::terminate is called, but I haven't found
+some definitive wording about this behavior.
+
+Note that Dawn also explicitly enables exceptions in their DXC build and I expect
+that Chrome, much like Firefox, disables C++ exceptions.
+---
+ cmake/modules/AddLLVM.cmake | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/cmake/modules/AddLLVM.cmake b/cmake/modules/AddLLVM.cmake
+index 9b92e3f22..424c8a532 100644
+--- a/cmake/modules/AddLLVM.cmake
++++ b/cmake/modules/AddLLVM.cmake
+@@ -17,7 +17,7 @@ function(llvm_update_compile_flags name)
+     endif()
+   else()
+     if(LLVM_COMPILER_IS_GCC_COMPATIBLE)
+-      list(APPEND LLVM_COMPILE_FLAGS "-fno-exceptions")
++      #list(APPEND LLVM_COMPILE_FLAGS "-fno-exceptions")
+     elseif(MSVC)
+       list(APPEND LLVM_COMPILE_DEFINITIONS _HAS_EXCEPTIONS=0)
+       list(APPEND LLVM_COMPILE_FLAGS "/EHs-c-")
