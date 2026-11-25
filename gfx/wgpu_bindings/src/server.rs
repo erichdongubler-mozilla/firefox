@@ -345,8 +345,7 @@ impl Global {
     /// Poll `device` on a background I/O thread.
     ///
     /// Poll `device` until the submission indicated by `wait_for` has finished
-    /// running on the GPU. If `wait_for` is `None`, do a non-blocking poll to
-    /// process whatever work has finished at this point.
+    /// running on the GPU.
     ///
     /// The background task owns `device`, so it doesn't matter if the
     /// device's id is dropped from the registry while the task is pending.
@@ -356,14 +355,11 @@ impl Global {
         &self,
         name: &'static str,
         device: Arc<wgc::device::Device>,
-        wait_for: Option<wgc::SubmissionIndex>,
+        wait_for: wgc::SubmissionIndex,
     ) {
-        let poll_type = match wait_for {
-            Some(wait_for) => wgt::PollType::Wait {
-                submission_index: Some(wait_for),
-                timeout: Some(Duration::from_secs(60)),
-            },
-            None => wgt::PollType::Poll,
+        let poll_type = wgt::PollType::Wait {
+            submission_index: Some(wait_for),
+            timeout: Some(Duration::from_secs(60)),
         };
 
         moz_task::spawn_onto_blocking(name, &self.poll_queue, async move {
@@ -371,6 +367,22 @@ impl Global {
             device.poll(poll_type).unwrap();
         })
         .detach();
+    }
+
+    /// Do a non-blocking poll of `device` on the calling thread.
+    ///
+    /// This processes whatever work has finished at this point, invoking any
+    /// callbacks that are ready.
+    ///
+    /// We do this on the calling thread, rather than with `poll_in_background`,
+    /// because `poll_queue` runs one poll at a time: a non-blocking poll queued
+    /// there would have to wait for any blocking poll ahead of it to finish,
+    /// even though the callbacks it would invoke may be ready right now.
+    /// wgpu-core permits concurrent polls of the same device from different
+    /// threads.
+    fn poll_now(device: &wgc::device::Device) {
+        // TODO: propagate errors
+        device.poll(wgt::PollType::Poll).unwrap();
     }
 
     /// Poll `device` as needed for a callback that depends on submission `index`.
@@ -395,16 +407,19 @@ impl Global {
     /// never be invoked. So instead, we poll for exactly the index that
     /// wgpu-core returns.
     ///
-    /// If `index` is non-zero, wait for it in the background. Otherwise, a
-    /// non-blocking poll suffices.
+    /// If `index` is non-zero, wait for it in the background. Otherwise, poll
+    /// now, on this thread; see `poll_now` for why.
     fn poll_for_callback(
         &self,
         name: &'static str,
         device: &Arc<wgc::device::Device>,
         index: wgc::SubmissionIndex,
     ) {
-        let wait_for = (index != 0).then_some(index);
-        self.poll_in_background(name, device.clone(), wait_for);
+        if index == 0 {
+            Self::poll_now(device);
+        } else {
+            self.poll_in_background(name, device.clone(), index);
+        }
     }
 
     /// Submit `command_buffer_ids` to `queue_id`, and arrange to poll for
@@ -433,11 +448,7 @@ impl Global {
         let submission_index_opt = self.queue_submit(queue_id, command_buffer_ids);
         if let Some(submission_index) = submission_index_opt {
             let device = self.resolve_queue_id(queue_id).device().clone();
-            self.poll_in_background(
-                "wgpu poll for queue submission",
-                device,
-                Some(submission_index),
-            );
+            self.poll_in_background("wgpu poll for queue submission", device, submission_index);
         }
         submission_index_opt
     }
@@ -3308,7 +3319,7 @@ unsafe fn process_message(
         Message::DestroyDevice(id) => {
             global.device_destroy(id);
             // Ensure that the device loss callback gets invoked.
-            global.poll_in_background("wgpu poll device loss", global.resolve_device_id(id), None);
+            Global::poll_now(&global.resolve_device_id(id));
         }
 
         Message::DropAdapter(id) => {
@@ -3316,9 +3327,7 @@ unsafe fn process_message(
         }
         Message::DropDevice(id) => {
             wgpu_server_pre_device_drop(global.owner, id);
-            let device = global.device_remove(id);
-            // Ensure that the device loss callback gets invoked.
-            global.poll_in_background("wgpu poll device loss", device, None);
+            global.device_remove(id);
         }
         Message::DropQueue(id) => {
             global.queue_remove(id);
