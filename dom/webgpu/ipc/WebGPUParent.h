@@ -7,7 +7,6 @@
 
 #include <unordered_map>
 
-#include "base/timer.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/webgpu/ExternalTexture.h"
@@ -168,7 +167,6 @@ class WebGPUParent final : public PWebGPUParent, public SupportsWeakPtr {
 
  private:
   virtual ~WebGPUParent();
-  void MaintainDevices();
 
   /* Return a `MappedRangeGuard` for the `aSize` bytes at offset
    * `aStart` within `aBufferId`, or `Nothing` on failure.
@@ -182,7 +180,6 @@ class WebGPUParent final : public PWebGPUParent, public SupportsWeakPtr {
                                           uint64_t aStart, uint64_t aSize);
 
   UniquePtr<ffi::WGPUGlobal> mContext;
-  base::RepeatingTimer<WebGPUParent> mTimer;
 
   /// Associated presentation data for each swapchain.
   std::unordered_map<layers::RemoteTextureOwnerId, RefPtr<PresentationData>,

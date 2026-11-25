@@ -36,8 +36,6 @@
 
 namespace mozilla::webgpu {
 
-const uint64_t POLL_TIME_MS = 100;
-
 static mozilla::LazyLogModule sLogger("WebGPU");
 
 namespace ffi {
@@ -451,16 +449,9 @@ class PresentationData {
 };
 
 WebGPUParent::WebGPUParent(const dom::ContentParentId& aContentId)
-    : mContentId(aContentId), mContext(ffi::wgpu_server_new(this)) {
-  mTimer.Start(base::TimeDelta::FromMilliseconds(POLL_TIME_MS), this,
-               &WebGPUParent::MaintainDevices);
-}
+    : mContentId(aContentId), mContext(ffi::wgpu_server_new(this)) {}
 
 WebGPUParent::~WebGPUParent() = default;
-
-void WebGPUParent::MaintainDevices() {
-  ffi::wgpu_server_poll_all_devices(mContext.get(), false);
-}
 
 void WebGPUParent::PostAdapterRequestDevice(RawId aDeviceId) {
 #if defined(XP_WIN)
@@ -1116,8 +1107,7 @@ ipc::IPCResult WebGPUParent::GetFrontBufferSnapshot(
       mContext.get(), data, bufferId, aSnapshot);
 
   ffi::WGPUBufferMapAsyncStatus status = ffi::wgpu_server_buffer_map_blocking(
-      mContext.get(), data->mDeviceId, bufferId, 0, bufferSize,
-      ffi::WGPUHostMap_Read);
+      mContext.get(), bufferId, 0, bufferSize, ffi::WGPUHostMap_Read);
   ReadbackSnapshotCallback(
       reinterpret_cast<uint8_t*>(snapshotRequest.release()), status);
   // bufferId was transferred to ReadbackSnapshotCallback.
@@ -1332,7 +1322,6 @@ void WebGPUParent::SwapChainDrop(const layers::RemoteTextureOwnerId& aOwnerId,
 }
 
 void WebGPUParent::ActorDestroy(ActorDestroyReason aWhy) {
-  mTimer.Stop();
   mPresentationDataMap.clear();
   if (mRemoteTextureOwner) {
     mRemoteTextureOwner->UnregisterAllTextureOwners();

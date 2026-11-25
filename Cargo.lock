@@ -9516,6 +9516,7 @@ dependencies = [
  "wgpu-hal",
  "wgpu-types",
  "windows",
+ "xpcom",
 ]
 
 [[package]]

@@ -101,6 +101,7 @@ arrayvec = "0.7"
 glean = { workspace = true }
 firefox-on-glean = { path = "../../toolkit/components/glean/api" }
 moz_task = { path = "../../xpcom/rust/moz_task" }
+xpcom = { path = "../../xpcom/rust/xpcom" }
 futures-channel = "0.3"
 futures-util = { version = "0.3", default-features = false }
 scopeguard = "1.2"

@@ -15,6 +15,8 @@ use crate::{
 use futures_util::StreamExt;
 use nsstring::{nsACString, nsCString};
 use scopeguard::{guard, ScopeGuard};
+use xpcom::interfaces::nsIEventTarget;
+use xpcom::RefPtr;
 
 use wgc::{
     error::EmptyErrorScopeStack,
@@ -40,7 +42,7 @@ use std::mem;
 use std::os::fd::{AsRawFd, FromRawFd, IntoRawFd, OwnedFd, RawFd};
 use std::os::raw::{c_char, c_void};
 use std::ptr;
-use std::sync::{Arc, Mutex, OnceLock};
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 #[allow(unused_imports)]
@@ -309,6 +311,107 @@ pub struct Global {
     /// descriptors here are not necessarily valid; they must still only be passed to validating
     /// wgpu-core APIs.
     swap_chain_configs: Mutex<HashMap<SwapChainId, TextureDescriptor<'static>>>,
+
+    /// The XPCOM task queue for polling wgpu-core devices.
+    ///
+    /// All polling of wgpu devices should be done by spawning async
+    /// tasks onto this queue, using the `moz_task` crate's `spawn`
+    /// functions.
+    ///
+    /// We would like to run wgpu_core poll calls on the XPCOM background I/O
+    /// pool, since that is designed for work that may block, it automatically
+    /// starts up and shuts down threads as necessary, and it shares the thread
+    /// pool with the rest of Firefox (or the GPU process, at least).
+    ///
+    /// However, the background I/O pool may have more than one thread, and does
+    /// not promise to run runnables one at a time, whereas WebGPU only ever
+    /// needs to have one wgpu-core poll call going at a time per wgpu-core
+    /// Device. To enforce one-at-a-time execution for our poll calls, we create
+    /// this XPCOM task queue targeting the background I/O pool.
+    ///
+    /// Usually poll requests will be enqueued in order of increasing submission
+    /// index, but even if they're not, waiting for a later index processes any
+    /// work completed for earlier indices too, so that's fine.
+    ///
+    /// For the time being, we actually only run one poll call at a time per
+    /// Global. This could mean that one Device ends up waiting for another
+    /// Device's work unnecessarily, but it's a bit simpler to have a single
+    /// queue, and usually they're all the same GPU anyway, so this is probably
+    /// fine for now.
+    poll_queue: RefPtr<nsIEventTarget>,
+}
+
+impl Global {
+    /// Poll `device` on a background I/O thread.
+    ///
+    /// Poll `device` until the submission indicated by `wait_for` has finished
+    /// running on the GPU. If `wait_for` is `None`, do a non-blocking poll to
+    /// process whatever work has finished at this point.
+    ///
+    /// The background task owns `device`, so it doesn't matter if the
+    /// device's id is dropped from the registry while the task is pending.
+    ///
+    /// Use `name` as the name of the XPCOM runnable that polls the device.
+    fn poll_in_background(
+        &self,
+        name: &'static str,
+        device: Arc<wgc::device::Device>,
+        wait_for: Option<wgc::SubmissionIndex>,
+    ) {
+        let poll_type = match wait_for {
+            Some(wait_for) => wgt::PollType::Wait {
+                submission_index: Some(wait_for),
+                timeout: Some(Duration::from_secs(60)),
+            },
+            None => wgt::PollType::Poll,
+        };
+
+        moz_task::spawn_onto_blocking(name, &self.poll_queue, async move {
+            // TODO: propagate errors
+            device.poll(poll_type).unwrap();
+        })
+        .detach();
+    }
+
+    /// Request that a buffer be mapped, and arrange to poll for its readiness.
+    ///
+    /// Map the `size` bytes starting at `offset` in `buffer_id` to be accessed
+    /// according to `mode`, invoking `callback` when the mapping is ready.
+    ///
+    /// Arrange for the buffer's device to be polled as necessary to ensure
+    /// that the mapping is reported promptly. This function assumes that all
+    /// other operations that submit work to the GPU have already arranged for
+    /// their own polling.
+    ///
+    /// Pass along the result from `Global::buffer_map_async`.
+    fn map_buffer_and_poll(
+        &self,
+        buffer_id: id::BufferId,
+        mode: wgpu_core_remote_types::MapMode,
+        start: wgt::BufferAddress,
+        size: Option<wgt::BufferAddress>,
+        callback: Option<BufferMapCallback>,
+    ) -> Option<wgc::SubmissionIndex> {
+        use wgc::resource::ParentDevice as _;
+
+        let result = self.buffer_map_async(buffer_id, mode, start, size, callback);
+
+        if result.is_some() {
+            // We can't know whether future API activity will ever request a
+            // poll, so we must do so here. A non-blocking poll should suffice:
+            //
+            // - If the buffer is ready to be mapped now, a non-blocking poll
+            //   should invoke the mapping callback immediately.
+            //
+            // - Alternatively, if the buffer is currently in use by the GPU,
+            //   then it must be in use by some other queue submission for which
+            //   we have already enqueued a polling operation.
+            let device = self.resolve_buffer_id(buffer_id).device().clone();
+            self.poll_in_background("wgpu poll for buffer mapping", device, None);
+        }
+
+        result
+    }
 }
 
 impl std::ops::Deref for Global {
@@ -376,10 +479,21 @@ pub extern "C" fn wgpu_server_new(owner: WebGPUParentPtr) -> *mut Global {
         },
         Some(build_telemetry_struct()),
     );
+
+    // Create a queue for polling requests. See the doc comment for
+    // `Global::poll_queue` for details.
+    let poll_queue = moz_task::create_background_task_queue(c"wgpu polling")
+        .expect("failed to create wgpu polling task queue");
+
+    // Upcast from `nsISerialEventTarget` to `nsIEventTarget`, which is what all
+    // the `spawn` functions want.
+    let poll_queue: RefPtr<nsIEventTarget> = RefPtr::new(poll_queue.coerce());
+
     let global = Global {
         owner,
         global,
         swap_chain_configs: Mutex::new(HashMap::new()),
+        poll_queue,
     };
     Box::into_raw(Box::new(global))
 }
@@ -393,11 +507,6 @@ pub extern "C" fn wgpu_server_new(owner: WebGPUParentPtr) -> *mut Global {
 pub unsafe extern "C" fn wgpu_server_delete(global: *mut Global) {
     log::info!("Terminating WGPU server");
     let _ = unsafe { Box::from_raw(global) };
-}
-
-#[no_mangle]
-pub extern "C" fn wgpu_server_poll_all_devices(global: &Global, force_wait: bool) {
-    global.poll_all_devices(force_wait).unwrap();
 }
 
 #[no_mangle]
@@ -1053,7 +1162,8 @@ pub unsafe extern "C" fn wgpu_server_buffer_map(
         // on to the task we spawned above.
         map_result_sender.send(result).unwrap();
     }));
-    let _submission_idx_opt = global.buffer_map_async(buffer_id, mode, start, Some(size), callback);
+    let _submission_idx_opt =
+        global.map_buffer_and_poll(buffer_id, mode, start, Some(size), callback);
 }
 
 /// Map a buffer, blocking until it is ready for access.
@@ -1068,61 +1178,37 @@ pub unsafe extern "C" fn wgpu_server_buffer_map(
 /// submitted work that writes data to the buffer, so this shouldn't be much of
 /// a problem.
 ///
-/// All ids are looked up using `global`. The buffer `buffer_id` must belong to
-/// `device_id`.
-///
 /// Return a `BufferMapAsyncStatus` to indicate success or failure.
 #[no_mangle]
 pub extern "C" fn wgpu_server_buffer_map_blocking(
     global: &Global,
-    device_id: id::DeviceId,
     buffer_id: id::BufferId,
     offset: wgt::BufferAddress,
     size: wgt::BufferAddress,
     map_mode: HostMap,
 ) -> BufferMapAsyncStatus {
-    // Arrange to pass the map status back to this function. The whole Arc/OnceLock
-    // song and dance is required because `buffer_map_async` assumes that the
-    // poll might happen on another thread.
-    let status_passback = Arc::new(OnceLock::new());
+    // Create a channel that this thread can block on to wait for the mapping to
+    // finish.
+    //
+    // Whereas the other mapping code in this module uses the oneshot channel
+    // type from `futures_channel`, this function needs to (synchronously) block
+    // the calling thread until the result is available. The right tool for that
+    // is a classic `std::sync::mpsc` channel.
+    let (map_result_sender, map_result_receiver) = std::sync::mpsc::channel();
+
+    // Create a wgpu-core mapping callback that will send the result on the channel.
     let mode = map_mode.to_wgrt();
-    let callback: Option<BufferMapCallback> = Some(Box::new({
-        let status_passback = Arc::clone(&status_passback);
-        move |status| {
-            // unwrap: This callback is the only place that initializes the
-            // `OnceLock`, and it should only be invoked once.
-            status_passback.set(status).unwrap();
-        }
+    let callback: Option<BufferMapCallback> = Some(Box::new(move |status| {
+        map_result_sender.send(status).unwrap();
     }));
 
-    // Submit the map request, and note its submission index.
-    let submission_index;
-    match global.buffer_map_async(buffer_id, mode, offset, Some(size), callback) {
-        Some(i) => {
-            submission_index = i;
-        }
-        None => {
-            return BufferMapAsyncStatus::Error;
-        }
-    }
+    // Submit the map request. If it fails, `buffer_map_async` has already
+    // invoked the callback with the error, so we can just fall through and
+    // receive it below.
+    let _ = global.map_buffer_and_poll(buffer_id, mode, offset, Some(size), callback);
 
-    // Wait until the map request submission is done.
-    let poll_type = wgt::PollType::Wait {
-        submission_index: Some(submission_index),
-        timeout: Some(Duration::from_secs(60)),
-    };
-    if let Err(err) = global.device_poll(device_id, poll_type) {
-        return BufferMapAsyncStatus::from(Err(err));
-    }
-
-    // We could just lock the mutex and unwrap the status, but let's take it
-    // step by step and check everything is as we expect.
-
-    // unwrap: `status_passback` should be the only owner of the `Arc`.
-    let status_oncelock = Arc::into_inner(status_passback).unwrap();
-
-    // unwrap: the `OnceLock` should have been initialized.
-    let status_result = status_oncelock.into_inner().unwrap();
+    // Block until the buffer has been mapped.
+    let status_result = map_result_receiver.recv().unwrap();
 
     BufferMapAsyncStatus::from(status_result)
 }
@@ -2780,12 +2866,13 @@ fn process_buffer_map(global: &Global, msg: Message, response_byte_buf: &mut Byt
     .detach();
 
     let mode = mode.to_wgrt();
+    // Create a wgpu_core mapping callback that sends the mapping result on the
+    // channel. Since the channel takes care of synchronization, we don't care
+    // what thread `callback` runs on.
     let callback: Option<BufferMapCallback> = Some(Box::new(move |result| {
-        // Send the map result from whatever thread this callback is running
-        // on to the task we spawned above.
         map_result_sender.send(result).unwrap();
     }));
-    global.buffer_map_async(buffer_id, mode, offset, Some(size), callback);
+    global.map_buffer_and_poll(buffer_id, mode, offset, Some(size), callback);
 }
 
 // Process one WebGPU message
@@ -2984,6 +3071,12 @@ unsafe fn process_message(
                     global.queue_write_texture(queue_id, &dst, data, &layout, &size);
                 }
             }
+
+            // We shouldn't request a poll here: `queue_write_texture` and
+            // `queue_write_buffer` don't return a submission index, and a
+            // non-blocking poll probably won't do anything since the write
+            // probably hasn't completed. (And also, wgpu-core buffers writes
+            // until the next queue submission...)
         }
         msg @ Message::BufferMap { .. } => {
             process_buffer_map(global, msg, response_byte_buf);
@@ -3007,7 +3100,7 @@ unsafe fn process_message(
             external_texture_source_ids.len(),
         ),
         Message::QueueOnSubmittedWorkDone {
-            device_id: _,
+            device_id,
             queue_id,
         } => {
             let closure = wgpu_parent_build_submitted_work_done_closure(global.owner, queue_id);
@@ -3022,6 +3115,19 @@ unsafe fn process_message(
                 Box::new(move || {
                     work_done_sender.send(()).unwrap();
                 }),
+            );
+
+            // We can't know whether future API activity will ever request a
+            // poll, so we must do so here. If the submission has already
+            // completed, a non-blocking poll should invoke the callback
+            // immediately. Alternatively, if the submission is still in flight
+            // on the GPU, then we should have enqueued a polling operation when
+            // we submitted it. In neither case is it necessary for us to
+            // request a blocking poll here.
+            global.poll_in_background(
+                "wgpu poll for onSubmittedWorkDone",
+                global.resolve_device_id(device_id),
+                None,
             );
         }
 
@@ -3143,14 +3249,20 @@ unsafe fn process_message(
         Message::DestroyExternalTextureSource(id) => {
             wgpu_parent_destroy_external_texture_source(global.owner, id);
         }
-        Message::DestroyDevice(id) => global.device_destroy(id),
+        Message::DestroyDevice(id) => {
+            global.device_destroy(id);
+            // Ensure that the device loss callback gets invoked.
+            global.poll_in_background("wgpu poll device loss", global.resolve_device_id(id), None);
+        }
 
         Message::DropAdapter(id) => {
             global.adapter_remove(id);
         }
         Message::DropDevice(id) => {
             wgpu_server_pre_device_drop(global.owner, id);
-            global.device_remove(id);
+            let device = global.device_remove(id);
+            // Ensure that the device loss callback gets invoked.
+            global.poll_in_background("wgpu poll device loss", device, None);
         }
         Message::DropQueue(id) => {
             global.queue_remove(id);
@@ -3308,6 +3420,11 @@ pub unsafe extern "C" fn wgpu_server_queue_write_texture(
         let msg = CString::new(format!("write_texture() failed: {:?}", err)).unwrap();
         unsafe { gfx_critical_note(msg.as_ptr()) };
     }
+
+    // We shouldn't request a poll here: `queue_write_texture` doesn't return a
+    // submission index, and a non-blocking poll probably won't do anything
+    // since the write probably hasn't completed. (And also, wgpu-core buffers
+    // writes until the next queue submission...)
 }
 
 /// A raw `VkSemaphore`, or 0 for null. Defined on all platforms so that
@@ -3384,6 +3501,20 @@ pub unsafe extern "C" fn wgpu_server_queue_submit(
 ) -> u64 {
     let submission_index_opt =
         global.queue_submit(queue_id, unsafe { command_buffer_ids.as_slice() });
+
+    if let Some(submission_index) = submission_index_opt {
+        use wgc::resource::ParentDevice as _;
+
+        // Enqueue a poll call on the background I/O thread pool, to clean
+        // up resources and invoke callbacks once this submission finishes
+        // running on the GPU.
+        let device = global.resolve_queue_id(queue_id).device().clone();
+        global.poll_in_background(
+            "wgpu poll for queue submission",
+            device,
+            Some(submission_index),
+        );
+    }
 
     #[cfg(target_os = "linux")]
     {
