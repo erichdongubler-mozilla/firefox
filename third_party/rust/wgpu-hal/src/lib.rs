@@ -1281,6 +1281,20 @@ pub trait Device: WasmNotSendSync {
     }
 
     fn check_if_oom(&self) -> Result<(), DeviceError>;
+
+    /// Release device-wide resources that are only needed to record and
+    /// execute new work, now that the device has been lost.
+    ///
+    /// Resources owned by the device that are expensive to keep around, but
+    /// can only be released when the device itself is dropped, can instead be
+    /// released here. This may be called more than once.
+    ///
+    /// # Safety
+    ///
+    /// - All work submitted to this device's queue must have completed.
+    /// - No more work may be submitted to this device's queue, including
+    ///   command buffers that have already been recorded.
+    unsafe fn release_resources_after_loss(&self) {}
 }
 
 pub trait Queue: WasmNotSendSync {

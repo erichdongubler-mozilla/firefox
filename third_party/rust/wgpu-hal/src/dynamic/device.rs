@@ -180,6 +180,9 @@ pub trait DynDevice: DynResource {
     fn generate_allocator_report(&self) -> Option<wgt::AllocatorReport>;
 
     fn check_if_oom(&self) -> Result<(), DeviceError>;
+
+    /// Dynamic version of [Device::release_resources_after_loss]
+    unsafe fn release_resources_after_loss(&self);
 }
 
 impl<D: Device + DynResource> DynDevice for D {
@@ -619,5 +622,9 @@ impl<D: Device + DynResource> DynDevice for D {
 
     fn check_if_oom(&self) -> Result<(), DeviceError> {
         D::check_if_oom(self)
+    }
+
+    unsafe fn release_resources_after_loss(&self) {
+        unsafe { D::release_resources_after_loss(self) }
     }
 }

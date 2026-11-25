@@ -180,12 +180,16 @@ impl super::CommandEncoder {
         }
         self.pass.dirty_root_elements = 0;
         self.pass.dirty_vertex_buffers = 0;
-        unsafe {
-            list.SetDescriptorHeaps(&[
-                Some(self.shared.heap_views.raw.clone()),
-                Some(self.shared.sampler_heap.heap().clone()),
-            ])
-        };
+        // The view heap is only released once the device is lost, after which
+        // this command list can never be submitted.
+        if let Some(heap_views) = self.shared.heap_views.raw() {
+            unsafe {
+                list.SetDescriptorHeaps(&[
+                    Some(heap_views),
+                    Some(self.shared.sampler_heap.heap().clone()),
+                ])
+            };
+        }
     }
 
     unsafe fn end_pass(&mut self) {

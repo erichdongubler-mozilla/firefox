@@ -2784,4 +2784,10 @@ impl crate::Device for super::Device {
 
         Ok(())
     }
+
+    unsafe fn release_resources_after_loss(&self) {
+        // The shader-visible view heap is sized for the maximum number of
+        // bindings, which can be tens of MiB of video memory per device.
+        self.shared.heap_views.release();
+    }
 }

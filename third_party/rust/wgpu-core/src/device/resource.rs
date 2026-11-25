@@ -5906,6 +5906,13 @@ impl Device {
         for texture in textures {
             texture.destroy();
         }
+
+        // SAFETY: Our caller, `maintain`, has observed that the device is
+        // invalid and that the queue is empty, holding the lock that
+        // `Queue::allocate_submission` holds while checking validity. Thus,
+        // all submitted work has completed, and no further work can be
+        // submitted.
+        unsafe { self.raw().release_resources_after_loss() };
     }
 
     pub(crate) fn new_usage_scope(&self) -> UsageScope<'_> {

@@ -31,7 +31,8 @@ impl fmt::Debug for DualHandle {
 type DescriptorIndex = u64;
 
 pub(super) struct GeneralHeap {
-    pub raw: Direct3D12::ID3D12DescriptorHeap,
+    /// The heap itself, or `None` once [`Self::release`] has been called.
+    raw: Mutex<Option<Direct3D12::ID3D12DescriptorHeap>>,
     ty: Direct3D12::D3D12_DESCRIPTOR_HEAP_TYPE,
     handle_size: u64,
     total_handles: u64,
@@ -64,13 +65,32 @@ impl GeneralHeap {
         };
 
         Ok(Self {
-            raw,
+            raw: Mutex::new(Some(raw)),
             ty,
             handle_size: unsafe { device.GetDescriptorHandleIncrementSize(ty) } as u64,
             total_handles,
             start,
             ranges: Mutex::new(RangeAllocator::new(0..total_handles)),
         })
+    }
+
+    /// Returns a new reference to the heap, or `None` if it has been
+    /// [released](Self::release).
+    ///
+    /// The returned reference keeps the heap alive, even if it is released
+    /// concurrently.
+    pub(super) fn raw(&self) -> Option<Direct3D12::ID3D12DescriptorHeap> {
+        self.raw.lock().clone()
+    }
+
+    /// Drops this object's reference to the heap, so that its memory can be
+    /// reclaimed once no other references remain.
+    ///
+    /// Descriptors may still be allocated and freed afterwards, but handles
+    /// into this heap must never be used by command lists that execute after
+    /// this is called.
+    pub(super) fn release(&self) {
+        drop(self.raw.lock().take());
     }
 
     pub(super) fn at(&self, index: DescriptorIndex, count: u64) -> DualHandle {
@@ -312,6 +332,10 @@ pub(super) unsafe fn upload(
     dst: &GeneralHeap,
     dummy_copy_counts: &[u32],
 ) -> Result<DualHandle, crate::DeviceError> {
+    // Keep the heap alive while we write into it.
+    let Some(_dst_raw) = dst.raw() else {
+        return Err(crate::DeviceError::Lost);
+    };
     let count = src.stage.len() as u32;
     let index = dst.allocate_slice(count as u64)?;
     unsafe {
