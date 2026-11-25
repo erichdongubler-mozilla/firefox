@@ -341,6 +341,30 @@ pub struct Global {
     poll_queue: RefPtr<nsIEventTarget>,
 }
 
+/// Report an error, if any, from polling a wgpu-core device.
+///
+/// This may be called from any thread.
+///
+/// There's no content-visible way to report these: none of them are
+/// associated with a particular API call.
+fn report_poll_error(context: &str, result: Result<wgt::PollStatus, wgc::device::WaitIdleError>) {
+    match result {
+        Ok(_) => {}
+        // wgpu-core has already lost the device, which invokes the device
+        // lost callback, so content will hear about it that way.
+        Err(err @ wgc::device::WaitIdleError::Device(_)) => {
+            log::warn!("{context}: {err}");
+        }
+        // This means we've made a mistake about which submission indices we
+        // wait for.
+        Err(err) => {
+            log::error!("{context}: {err}");
+            let msg = CString::new(format!("{context}: {err}")).unwrap();
+            unsafe { gfx_critical_note(msg.as_ptr()) };
+        }
+    }
+}
+
 impl Global {
     /// Poll `device` on a background I/O thread.
     ///
@@ -357,14 +381,25 @@ impl Global {
         device: Arc<wgc::device::Device>,
         wait_for: wgc::SubmissionIndex,
     ) {
-        let poll_type = wgt::PollType::Wait {
-            submission_index: Some(wait_for),
-            timeout: Some(Duration::from_secs(60)),
-        };
-
         moz_task::spawn_onto_blocking(name, &self.poll_queue, async move {
-            // TODO: propagate errors
-            device.poll(poll_type).unwrap();
+            loop {
+                let poll_type = wgt::PollType::Wait {
+                    submission_index: Some(wait_for),
+                    timeout: Some(Duration::from_secs(60)),
+                };
+                match device.poll(poll_type) {
+                    // The submission may legitimately take a long time, and
+                    // its callbacks won't be invoked unless someone polls for
+                    // it, so keep waiting.
+                    Err(wgc::device::WaitIdleError::Timeout) => {
+                        log::warn!("{name}: still waiting for submission {wait_for}");
+                    }
+                    result => {
+                        report_poll_error(name, result);
+                        break;
+                    }
+                }
+            }
         })
         .detach();
     }
@@ -381,8 +416,7 @@ impl Global {
     /// wgpu-core permits concurrent polls of the same device from different
     /// threads.
     fn poll_now(device: &wgc::device::Device) {
-        // TODO: propagate errors
-        device.poll(wgt::PollType::Poll).unwrap();
+        report_poll_error("wgpu non-blocking poll", device.poll(wgt::PollType::Poll));
     }
 
     /// Poll `device` as needed for a callback that depends on submission `index`.
@@ -1231,8 +1265,12 @@ pub unsafe extern "C" fn wgpu_server_buffer_map(
     let mode = map_mode.to_wgrt();
     let callback: Option<BufferMapCallback> = Some(Box::new(move |result| {
         // Send the map result from whatever thread this callback is running
-        // on to the task we spawned above.
-        map_result_sender.send(result).unwrap();
+        // on to the task we spawned above. Sending fails only if that task
+        // was dropped before it ran, which as far as we know happens only when
+        // this thread is shutting down, so log rather than panic.
+        if map_result_sender.send(result).is_err() {
+            log::warn!("wgpu_server_buffer_map: receiving task is gone");
+        }
     }));
     let _submission_idx_opt =
         global.map_buffer_and_poll(buffer_id, mode, start, Some(size), callback);
@@ -2940,9 +2978,13 @@ fn process_buffer_map(global: &Global, msg: Message, response_byte_buf: &mut Byt
     let mode = mode.to_wgrt();
     // Create a wgpu_core mapping callback that sends the mapping result on the
     // channel. Since the channel takes care of synchronization, we don't care
-    // what thread `callback` runs on.
+    // what thread `callback` runs on. Sending fails only if the receiving
+    // task was dropped before it ran, which as far as we know happens only
+    // when this thread is shutting down, so log rather than panic.
     let callback: Option<BufferMapCallback> = Some(Box::new(move |result| {
-        map_result_sender.send(result).unwrap();
+        if map_result_sender.send(result).is_err() {
+            log::warn!("process_buffer_map: receiving task is gone");
+        }
     }));
     global.map_buffer_and_poll(buffer_id, mode, offset, Some(size), callback);
 }
@@ -3185,7 +3227,13 @@ unsafe fn process_message(
             let index = global.queue_on_submitted_work_done(
                 queue_id,
                 Box::new(move || {
-                    work_done_sender.send(()).unwrap();
+                    // Sending fails only if the receiving task was dropped
+                    // before it ran, which as far as we know happens only
+                    // when this thread is shutting down, so log rather than
+                    // panic.
+                    if work_done_sender.send(()).is_err() {
+                        log::warn!("onSubmittedWorkDone: receiving task is gone");
+                    }
                 }),
             );
 
