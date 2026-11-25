@@ -1,0 +1,54 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <script src="/tests/SimpleTest/SimpleTest.js"></script>
+    <link rel="stylesheet" href="/tests/SimpleTest/test.css" />
+  </head>
+  <body>
+    <script>
+      // `mapAsync` and `onSubmittedWorkDone` flush pending `writeBuffer` data
+      // to the GPU themselves, so they must resolve even if nothing is ever
+      // submitted.
+
+      ok(
+        SpecialPowers.getBoolPref("dom.webgpu.enabled"),
+        "Pref should be enabled."
+      );
+
+      const func = async function () {
+        const adapter = await navigator.gpu.requestAdapter();
+        const device = await adapter.requestDevice();
+
+        const workDoneBuffer = device.createBuffer({
+          size: 16,
+          usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.VERTEX,
+        });
+        device.queue.writeBuffer(workDoneBuffer, 0, new Uint32Array(4));
+        await device.queue.onSubmittedWorkDone();
+        ok(true, "onSubmittedWorkDone resolved after writeBuffer");
+
+        const mapBuffer = device.createBuffer({
+          size: 16,
+          usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+        });
+        device.queue.writeBuffer(mapBuffer, 0, new Uint32Array([1, 2, 3, 4]));
+        await mapBuffer.mapAsync(GPUMapMode.READ);
+        const contents = Array.from(
+          new Uint32Array(mapBuffer.getMappedRange())
+        );
+        is(
+          contents.join(","),
+          "1,2,3,4",
+          "mapAsync resolved after writeBuffer, with the written data"
+        );
+        mapBuffer.unmap();
+      };
+
+      SimpleTest.waitForExplicitFinish();
+      func()
+        .catch(e => ok(false, "Unhandled exception " + e))
+        .finally(() => SimpleTest.finish());
+    </script>
+  </body>
+</html>

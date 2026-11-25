@@ -373,15 +373,82 @@ impl Global {
         .detach();
     }
 
+    /// Poll `device` as needed for a callback that depends on submission `index`.
+    ///
+    /// `index` should be the submission index returned by a wgpu-core
+    /// operation that registers a callback, like `buffer_map_async` or
+    /// `queue_on_submitted_work_done`. Zero means that the callback doesn't
+    /// depend on any submission: wgpu-core has queued it to be invoked by the
+    /// next poll of `device`.
+    ///
+    /// It might seem sufficient to just do a non-blocking poll here, on the
+    /// theory that if the callback isn't ready yet, it must be waiting for some
+    /// submission made by `queue_submit_and_poll`, which has already arranged
+    /// to poll for it. But wgpu-core also makes submissions of its own, which
+    /// this module never sees: `buffer_map_async` and
+    /// `queue_on_submitted_work_done` flush pending writes to the GPU as a new
+    /// submission. Pending writes include data from `queue_write_buffer` and
+    /// `queue_write_texture`, and also the zero buffer initialization that
+    /// `Queue::new` records for every new queue, so even the first
+    /// `queue_on_submitted_work_done` call on a new device makes such a
+    /// submission. Nothing else would ever poll for it, so its callbacks would
+    /// never be invoked. So instead, we poll for exactly the index that
+    /// wgpu-core returns.
+    ///
+    /// If `index` is non-zero, wait for it in the background. Otherwise, a
+    /// non-blocking poll suffices.
+    fn poll_for_callback(
+        &self,
+        name: &'static str,
+        device: &Arc<wgc::device::Device>,
+        index: wgc::SubmissionIndex,
+    ) {
+        let wait_for = (index != 0).then_some(index);
+        self.poll_in_background(name, device.clone(), wait_for);
+    }
+
+    /// Submit `command_buffer_ids` to `queue_id`, and arrange to poll for
+    /// their completion.
+    ///
+    /// All code in this module that submits work to a queue should use this
+    /// function, so that resources are cleaned up and callbacks are invoked
+    /// once the submission finishes running on the GPU. (This doesn't cover
+    /// submissions that wgpu-core makes internally; see `poll_for_callback`.)
+    ///
+    /// Return the submission's index if the work was handed to the GPU, or
+    /// `None` if it wasn't. This is not the same as reporting whether an error
+    /// occurred: wgpu-core returns `None` only if the submission failed before
+    /// reaching the GPU (for example, because a command buffer was invalid or
+    /// the device was lost), but returns the index if the work was submitted,
+    /// even if it then reports an error. Either way, wgpu-core has already
+    /// reported any error to the device. We poll exactly when there is a
+    /// submission for the GPU to complete.
+    fn queue_submit_and_poll(
+        &self,
+        queue_id: id::QueueId,
+        command_buffer_ids: &[id::CommandBufferId],
+    ) -> Option<wgc::SubmissionIndex> {
+        use wgc::resource::ParentDevice as _;
+
+        let submission_index_opt = self.queue_submit(queue_id, command_buffer_ids);
+        if let Some(submission_index) = submission_index_opt {
+            let device = self.resolve_queue_id(queue_id).device().clone();
+            self.poll_in_background(
+                "wgpu poll for queue submission",
+                device,
+                Some(submission_index),
+            );
+        }
+        submission_index_opt
+    }
+
     /// Request that a buffer be mapped, and arrange to poll for its readiness.
     ///
     /// Map the `size` bytes starting at `offset` in `buffer_id` to be accessed
     /// according to `mode`, invoking `callback` when the mapping is ready.
     ///
     /// Arrange for the buffer's device to be polled as necessary to ensure
-    /// that the mapping is reported promptly. This function assumes that all
-    /// other operations that submit work to the GPU have already arranged for
-    /// their own polling.
+    /// that the mapping is reported promptly.
     ///
     /// Pass along the result from `Global::buffer_map_async`.
     fn map_buffer_and_poll(
@@ -396,18 +463,12 @@ impl Global {
 
         let result = self.buffer_map_async(buffer_id, mode, start, size, callback);
 
-        if result.is_some() {
-            // We can't know whether future API activity will ever request a
-            // poll, so we must do so here. A non-blocking poll should suffice:
-            //
-            // - If the buffer is ready to be mapped now, a non-blocking poll
-            //   should invoke the mapping callback immediately.
-            //
-            // - Alternatively, if the buffer is currently in use by the GPU,
-            //   then it must be in use by some other queue submission for which
-            //   we have already enqueued a polling operation.
+        // We can't know whether future API activity will ever request a poll,
+        // so we must do so here. If `buffer_map_async` returned `None`, it has
+        // already invoked the callback with an error.
+        if let Some(index) = result {
             let device = self.resolve_buffer_id(buffer_id).device().clone();
-            self.poll_in_background("wgpu poll for buffer mapping", device, None);
+            self.poll_for_callback("wgpu poll for buffer mapping", &device, index);
         }
 
         result
@@ -1172,11 +1233,11 @@ pub unsafe extern "C" fn wgpu_server_buffer_map(
 /// according to `map_mode`, blocking the calling thread until the mapping is
 /// ready.
 ///
-/// This function actually blocks the calling thread until the GPU has completed
-/// all previously submitted work, even if the buffer is actually available
-/// right now. In practice, this function is generally used immediately after
-/// submitted work that writes data to the buffer, so this shouldn't be much of
-/// a problem.
+/// If the mapping must wait for a submission, the wait happens on
+/// `Global::poll_queue`, which runs one poll at a time, so this function may
+/// also wait for earlier submissions to finish. In practice, this function is
+/// generally used immediately after submitting work that writes data to the
+/// buffer, so this shouldn't be much of a problem.
 ///
 /// Return a `BufferMapAsyncStatus` to indicate success or failure.
 #[no_mangle]
@@ -3110,7 +3171,7 @@ unsafe fn process_message(
                 (closure.callback)(closure.user_data)
             })
             .detach();
-            global.queue_on_submitted_work_done(
+            let index = global.queue_on_submitted_work_done(
                 queue_id,
                 Box::new(move || {
                     work_done_sender.send(()).unwrap();
@@ -3118,16 +3179,11 @@ unsafe fn process_message(
             );
 
             // We can't know whether future API activity will ever request a
-            // poll, so we must do so here. If the submission has already
-            // completed, a non-blocking poll should invoke the callback
-            // immediately. Alternatively, if the submission is still in flight
-            // on the GPU, then we should have enqueued a polling operation when
-            // we submitted it. In neither case is it necessary for us to
-            // request a blocking poll here.
-            global.poll_in_background(
+            // poll, so we must do so here.
+            global.poll_for_callback(
                 "wgpu poll for onSubmittedWorkDone",
-                global.resolve_device_id(device_id),
-                None,
+                &global.resolve_device_id(device_id),
+                index,
             );
         }
 
@@ -3382,7 +3438,7 @@ pub extern "C" fn wgpu_server_submit_copy_texture_to_buffer(
         &CommandBufferDescriptor { label: None },
         command_buffer_id,
     );
-    global.queue_submit(queue_id, &[command_buffer_id]);
+    global.queue_submit_and_poll(queue_id, &[command_buffer_id]);
 
     global.command_encoder_remove(command_encoder_id);
     global.command_buffer_remove(command_buffer_id);
@@ -3500,21 +3556,7 @@ pub unsafe extern "C" fn wgpu_server_queue_submit(
     signal_semaphores: FfiSlice<'_, VkSemaphoreHandle>,
 ) -> u64 {
     let submission_index_opt =
-        global.queue_submit(queue_id, unsafe { command_buffer_ids.as_slice() });
-
-    if let Some(submission_index) = submission_index_opt {
-        use wgc::resource::ParentDevice as _;
-
-        // Enqueue a poll call on the background I/O thread pool, to clean
-        // up resources and invoke callbacks once this submission finishes
-        // running on the GPU.
-        let device = global.resolve_queue_id(queue_id).device().clone();
-        global.poll_in_background(
-            "wgpu poll for queue submission",
-            device,
-            Some(submission_index),
-        );
-    }
+        global.queue_submit_and_poll(queue_id, unsafe { command_buffer_ids.as_slice() });
 
     #[cfg(target_os = "linux")]
     {
